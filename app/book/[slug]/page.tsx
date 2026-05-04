@@ -18,6 +18,7 @@ export default function PublicBookingPage() {
   const [salon, setSalon] = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
   const [staffList, setStaffList] = useState<any[]>([]);
+  const [offers, setOffers] = useState<any[]>([]);   // ← NEW
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [step, setStep] = useState<Step>("service");
@@ -38,13 +39,27 @@ export default function PublicBookingPage() {
       if (!salonData) { setNotFound(true); setLoading(false); return; }
       setSalon(salonData);
 
-      const { data: svcData } = await supabase
-        .from("services").select("*").eq("salon_id", salonData.id).order("name");
-      setServices(svcData || []);
+      const today = new Date().toISOString().slice(0, 10);
 
-      const { data: staffData } = await supabase
-        .from("staff").select("*").eq("salon_id", salonData.id).eq("active", true);
+      const [
+        { data: svcData },
+        { data: staffData },
+        { data: offersData },   // ← NEW
+      ] = await Promise.all([
+        supabase.from("services").select("*").eq("salon_id", salonData.id).order("name"),
+        supabase.from("staff").select("*").eq("salon_id", salonData.id).eq("active", true),
+        supabase                                          // ← NEW
+          .from("offers")
+          .select("*")
+          .eq("salon_id", salonData.id)
+          .eq("active", true)
+          .or(`valid_until.is.null,valid_until.gte.${today}`)
+          .order("created_at", { ascending: false }),
+      ]);
+
+      setServices(svcData || []);
       setStaffList(staffData || []);
+      setOffers(offersData || []);   // ← NEW
 
       setLoading(false);
     };
@@ -68,14 +83,10 @@ export default function PublicBookingPage() {
       status: "confirmed",
     });
 
-    if (!error) {
-      // Send confirmation email via Supabase edge function or just mark as booked
-      setBooked(true);
-    }
+    if (!error) setBooked(true);
     setSubmitting(false);
   };
 
-  // Generate calendar days (next 30 days)
   const getDays = () => {
     const days = [];
     for (let i = 0; i < 30; i++) {
@@ -153,6 +164,66 @@ export default function PublicBookingPage() {
 
       <div style={{ maxWidth: "600px", margin: "0 auto", padding: "32px 24px" }}>
 
+        {/* ─────────────────────────────────────────────
+            OFFERS BANNER — only on service step
+            ───────────────────────────────────────────── */}
+        {step === "service" && offers.length > 0 && (
+          <div style={{ marginBottom: "28px" }}>
+            <div style={{ fontSize: "11px", color: "#555", letterSpacing: "1.5px", marginBottom: "10px" }}>
+              ✨ CURRENT OFFERS
+            </div>
+            <div style={{
+              display: "flex", gap: "10px",
+              overflowX: "auto", paddingBottom: "4px",
+              msOverflowStyle: "none", scrollbarWidth: "none",
+            }}>
+              {offers.map(offer => {
+                const discountLabel = offer.discount_type === "percentage"
+                  ? `${offer.discount_value}% off`
+                  : `£${offer.discount_value} off`;
+                return (
+                  <div key={offer.id} style={{
+                    flexShrink: 0,
+                    minWidth: "200px", maxWidth: "240px",
+                    background: "linear-gradient(135deg, #1A1200 0%, #1F1600 100%)",
+                    border: "1px solid #3D2E00",
+                    borderRadius: "12px",
+                    padding: "14px 16px",
+                    display: "flex", flexDirection: "column", gap: "7px",
+                  }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                      <span style={{ fontSize: "16px", lineHeight: 1 }}>🎉</span>
+                      <div style={{ fontSize: "13px", fontWeight: 600, color: "#FCD34D", lineHeight: 1.3 }}>
+                        {offer.title}
+                      </div>
+                    </div>
+                    {offer.description && (
+                      <div style={{ fontSize: "12px", color: "#A16207", lineHeight: 1.4 }}>
+                        {offer.description}
+                      </div>
+                    )}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <span style={{
+                        background: "#F59E0B", color: "#000",
+                        fontSize: "11px", fontWeight: 700,
+                        padding: "3px 10px", borderRadius: "20px",
+                      }}>
+                        {discountLabel}
+                      </span>
+                      {offer.valid_until && (
+                        <span style={{ fontSize: "10px", color: "#78350F" }}>
+                          Until {new Date(offer.valid_until).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        {/* ─────────────────────────────────────────────── */}
+
         {/* STEP 1: Service */}
         {step === "service" && (
           <div>
@@ -186,7 +257,6 @@ export default function PublicBookingPage() {
               <div style={{ fontSize: "13px", color: "#666" }}>Or skip to see all availability</div>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {/* No preference option */}
               <div onClick={() => { setSelectedStaff(null); setStep("datetime"); }}
                 style={{ background: "#161616", border: "1px solid #222", borderRadius: "12px", padding: "18px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: "14px", transition: "all 0.2s" }}>
                 <div style={{ width: "44px", height: "44px", borderRadius: "50%", background: "#2A2A2A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>✨</div>
@@ -220,7 +290,6 @@ export default function PublicBookingPage() {
               <div style={{ fontSize: "13px", color: "#666" }}>Next 30 days available</div>
             </div>
 
-            {/* Date picker */}
             <div style={{ marginBottom: "24px" }}>
               <div style={{ fontSize: "12px", color: "#666", marginBottom: "12px", letterSpacing: "1px" }}>SELECT DATE</div>
               <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "8px" }}>
@@ -234,7 +303,7 @@ export default function PublicBookingPage() {
                       <div style={{ fontSize: "10px", color: isSelected ? "#B8C8FF" : "#666", marginBottom: "4px" }}>
                         {d.toLocaleDateString("en-GB", { weekday: "short" })}
                       </div>
-                      <div style={{ fontSize: "16px", fontWeight: 600, color: isSelected ? "#fff" : "#fff" }}>
+                      <div style={{ fontSize: "16px", fontWeight: 600, color: "#fff" }}>
                         {d.getDate()}
                       </div>
                       {isToday && <div style={{ fontSize: "9px", color: isSelected ? "#B8C8FF" : "#4F6EF7", marginTop: "2px" }}>Today</div>}
@@ -244,7 +313,6 @@ export default function PublicBookingPage() {
               </div>
             </div>
 
-            {/* Time slots */}
             {selectedDate && (
               <div>
                 <div style={{ fontSize: "12px", color: "#666", marginBottom: "12px", letterSpacing: "1px" }}>SELECT TIME</div>
