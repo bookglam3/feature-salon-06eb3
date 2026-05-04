@@ -10,15 +10,20 @@ export default function DashboardPage() {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
+  const [offers, setOffers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("All");
   const [showModal, setShowModal] = useState(false);
+  const [showOfferModal, setShowOfferModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [origin, setOrigin] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [formData, setFormData] = useState({
     client_name: "", client_email: "", client_phone: "",
     service_id: "", staff_id: "", date: "", time: "",
+  });
+  const [offerForm, setOfferForm] = useState({
+    title: "", description: "", discount_percent: "", valid_until: "",
   });
 
   const timeSlots = [
@@ -35,14 +40,21 @@ export default function DashboardPage() {
       if (!profile || !profile.salon) { router.push("/login"); return; }
       setSalon(profile.salon);
       const salonId = profile.salon.id;
-      const [{ data: appts }, { data: staffData }, { data: servicesData }] = await Promise.all([
+      const [
+        { data: appts },
+        { data: staffData },
+        { data: servicesData },
+        { data: offersData },
+      ] = await Promise.all([
         supabase.from("appointments").select("*, services(name,price), staff(name)").eq("salon_id", salonId).order("date_time", { ascending: true }),
         supabase.from("staff").select("*").eq("salon_id", salonId),
         supabase.from("services").select("*").eq("salon_id", salonId),
+        supabase.from("offers").select("*").eq("salon_id", salonId).order("created_at", { ascending: false }),
       ]);
       setAppointments(appts || []);
       setStaff(staffData || []);
       setServices(servicesData || []);
+      setOffers(offersData || []);
       setLoading(false);
     };
     loadData();
@@ -67,21 +79,21 @@ export default function DashboardPage() {
       status: "confirmed",
     });
     const selectedService = services.find(s => s.id === formData.service_id);
-const selectedStaff = staff.find(s => s.id === formData.staff_id);
-await fetch("/api/send-booking-emails", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    clientEmail: formData.client_email,
-    clientName: formData.client_name,
-    clientPhone: formData.client_phone,
-    serviceName: selectedService?.name || "Service",
-    dateTime: date_time,
-    staffName: selectedStaff?.name,
-    salonName: salon.name,
-    salonOwnerEmail: salon.owner_email,
-  }),
-});
+    const selectedStaff = staff.find(s => s.id === formData.staff_id);
+    await fetch("/api/send-booking-emails", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        clientEmail: formData.client_email,
+        clientName: formData.client_name,
+        clientPhone: formData.client_phone,
+        serviceName: selectedService?.name || "Service",
+        dateTime: date_time,
+        staffName: selectedStaff?.name,
+        salonName: salon.name,
+        salonOwnerEmail: salon.owner_email,
+      }),
+    });
     setShowModal(false);
     setFormData({ client_name: "", client_email: "", client_phone: "", service_id: "", staff_id: "", date: "", time: "" });
     const { data: appts } = await supabase.from("appointments")
@@ -89,6 +101,32 @@ await fetch("/api/send-booking-emails", {
       .eq("salon_id", salon.id)
       .order("date_time", { ascending: true });
     setAppointments(appts || []);
+  };
+
+  const handleCreateOffer = async () => {
+    if (!salon || !offerForm.title) return;
+    await supabase.from("offers").insert({
+      salon_id: salon.id,
+      title: offerForm.title,
+      description: offerForm.description || null,
+      discount_percent: offerForm.discount_percent ? parseInt(offerForm.discount_percent) : null,
+      valid_until: offerForm.valid_until || null,
+      is_active: true,
+    });
+    setShowOfferModal(false);
+    setOfferForm({ title: "", description: "", discount_percent: "", valid_until: "" });
+    const { data } = await supabase.from("offers").select("*").eq("salon_id", salon.id).order("created_at", { ascending: false });
+    setOffers(data || []);
+  };
+
+  const handleToggleOffer = async (id: string, current: boolean) => {
+    await supabase.from("offers").update({ is_active: !current }).eq("id", id);
+    setOffers(offers.map(o => o.id === id ? { ...o, is_active: !current } : o));
+  };
+
+  const handleDeleteOffer = async (id: string) => {
+    await supabase.from("offers").delete().eq("id", id);
+    setOffers(offers.filter(o => o.id !== id));
   };
 
   const handleCopyLink = () => {
@@ -126,150 +164,51 @@ await fetch("/api/send-booking-emails", {
 
   return (
     <>
-      {/* ── Global responsive styles ── */}
       <style>{`
         * { box-sizing: border-box; }
-
-        /* Sidebar overlay on mobile */
-        .sidebar-overlay {
-          display: none;
-          position: fixed; inset: 0;
-          background: rgba(0,0,0,0.35);
-          z-index: 40;
-        }
+        .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 40; }
         .sidebar-overlay.open { display: block; }
-
-        /* Sidebar */
-        .sidebar {
-          position: fixed; top: 0; left: 0; bottom: 0;
-          width: 220px;
-          background: #fff;
-          border-right: 0.5px solid #E8EAF0;
-          display: flex; flex-direction: column;
-          z-index: 50;
-          transform: translateX(-100%);
-          transition: transform 0.25s ease;
-        }
+        .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 220px; background: #fff; border-right: 0.5px solid #E8EAF0; display: flex; flex-direction: column; z-index: 50; transform: translateX(-100%); transition: transform 0.25s ease; }
         @media (min-width: 768px) {
           .sidebar { position: relative; transform: none !important; }
           .sidebar-overlay { display: none !important; }
           .hamburger { display: none !important; }
-          .main-layout { margin-left: 0; }
         }
         .sidebar.open { transform: translateX(0); }
-
-        /* Stats grid: 2-col on mobile, 4-col on desktop */
-        .stats-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 10px;
-          margin-bottom: 16px;
-        }
-        @media (min-width: 768px) {
-          .stats-grid { grid-template-columns: repeat(4, 1fr); }
-        }
-
-        /* Booking banner */
-        .booking-banner {
-          background: linear-gradient(135deg, #4F6EF7 0%, #7C3AED 100%);
-          border-radius: 12px;
-          padding: 16px 18px;
-          margin-bottom: 16px;
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-        @media (min-width: 600px) {
-          .booking-banner {
-            flex-direction: row;
-            align-items: center;
-            justify-content: space-between;
-            padding: 18px 22px;
-          }
-        }
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+        @media (min-width: 768px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
+        .booking-banner { background: linear-gradient(135deg, #4F6EF7 0%, #7C3AED 100%); border-radius: 12px; padding: 16px 18px; margin-bottom: 16px; display: flex; flex-direction: column; gap: 12px; }
+        @media (min-width: 600px) { .booking-banner { flex-direction: row; align-items: center; justify-content: space-between; padding: 18px 22px; } }
         .banner-btns { display: flex; gap: 8px; flex-wrap: wrap; }
-
-        /* Table hidden on mobile — show cards instead */
         .appt-table { display: none; }
         .appt-cards { display: flex; flex-direction: column; gap: 10px; padding: 12px; }
-        @media (min-width: 768px) {
-          .appt-table { display: table; width: 100%; border-collapse: collapse; }
-          .appt-cards { display: none; }
-        }
-
-        /* Modal: full-screen on mobile */
-        .modal-box {
-          background: #fff;
-          border-radius: 12px;
-          padding: 24px 20px;
-          width: 100%;
-          max-width: 440px;
-          max-height: 95vh;
-          overflow-y: auto;
-          margin: 0 12px;
-        }
-        @media (max-width: 480px) {
-          .modal-box {
-            border-radius: 16px 16px 0 0;
-            margin: 0;
-            max-height: 92vh;
-            position: fixed;
-            bottom: 0; left: 0; right: 0;
-          }
-        }
-
-        /* Topbar booking button — compact on mobile */
-        .new-booking-btn {
-          background: #4F6EF7; color: #fff;
-          font-size: 13px; padding: 8px 18px;
-          border-radius: 8px; border: none; cursor: pointer;
-          white-space: nowrap;
-        }
-        @media (max-width: 480px) {
-          .new-booking-btn { padding: 8px 12px; font-size: 12px; }
-        }
-
-        /* Appointment card (mobile) */
-        .appt-card {
-          background: #fff;
-          border: 0.5px solid #E8EAF0;
-          border-radius: 10px;
-          padding: 14px;
-        }
+        @media (min-width: 768px) { .appt-table { display: table; width: 100%; border-collapse: collapse; } .appt-cards { display: none; } }
+        .modal-box { background: #fff; border-radius: 12px; padding: 24px 20px; width: 100%; max-width: 440px; max-height: 95vh; overflow-y: auto; margin: 0 12px; }
+        @media (max-width: 480px) { .modal-box { border-radius: 16px 16px 0 0; margin: 0; max-height: 92vh; position: fixed; bottom: 0; left: 0; right: 0; } }
+        .new-booking-btn { background: #4F6EF7; color: #fff; font-size: 13px; padding: 8px 18px; border-radius: 8px; border: none; cursor: pointer; white-space: nowrap; }
+        @media (max-width: 480px) { .new-booking-btn { padding: 8px 12px; font-size: 12px; } }
+        .appt-card { background: #fff; border: 0.5px solid #E8EAF0; border-radius: 10px; padding: 14px; }
         .appt-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
         .appt-card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
         .appt-card-field { font-size: 11px; color: #94A3B8; }
         .appt-card-val { font-size: 13px; color: #0F172A; font-weight: 500; }
-        .status-badge {
-          font-size: 10px; padding: 3px 9px;
-          border-radius: 20px; display: inline-block;
-        }
+        .status-badge { font-size: 10px; padding: 3px 9px; border-radius: 20px; display: inline-block; }
       `}</style>
 
       <div style={{ minHeight: "100vh", background: "#F2F4F7", display: "flex" }}>
 
-        {/* Sidebar overlay (mobile) */}
         <div className={`sidebar-overlay ${sidebarOpen ? "open" : ""}`} onClick={() => setSidebarOpen(false)} />
 
-        {/* ── Sidebar ── */}
+        {/* Sidebar */}
         <div className={`sidebar ${sidebarOpen ? "open" : ""}`}>
           <div style={{ padding: "20px", borderBottom: "0.5px solid #E8EAF0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ fontFamily: "Georgia, serif", fontSize: "18px", color: "#0F172A" }}>feature</div>
-            {/* Close btn (mobile only) */}
-            <button onClick={() => setSidebarOpen(false)}
-              style={{ background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: "#94A3B8", display: "block" }}
-              className="hamburger">✕</button>
+            <button onClick={() => setSidebarOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: "#94A3B8" }} className="hamburger">✕</button>
           </div>
-
           <div style={{ padding: "8px 0", flex: 1 }}>
             {navItems.slice(0, 4).map(item => (
               <div key={item.label} onClick={() => { router.push(item.path); setSidebarOpen(false); }}
-                style={{
-                  padding: "10px 20px", fontSize: "13px", cursor: "pointer",
-                  color: item.path === "/dashboard" ? "#4F6EF7" : "#64748B",
-                  background: item.path === "/dashboard" ? "#EEF2FF" : "transparent",
-                  borderRight: item.path === "/dashboard" ? "2px solid #4F6EF7" : "none",
-                }}>
+                style={{ padding: "10px 20px", fontSize: "13px", cursor: "pointer", color: item.path === "/dashboard" ? "#4F6EF7" : "#64748B", background: item.path === "/dashboard" ? "#EEF2FF" : "transparent", borderRight: item.path === "/dashboard" ? "2px solid #4F6EF7" : "none" }}>
                 {item.label}
               </div>
             ))}
@@ -286,23 +225,18 @@ await fetch("/api/send-booking-emails", {
               Settings
             </div>
           </div>
-
           <div style={{ padding: "16px 20px", borderTop: "0.5px solid #E8EAF0" }}>
             <div style={{ fontSize: "12px", color: "#64748B", marginBottom: "8px" }}>{salon?.name}</div>
-            <button onClick={handleLogout}
-              style={{ fontSize: "12px", color: "#EF4444", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-              Sign out
-            </button>
+            <button onClick={handleLogout} style={{ fontSize: "12px", color: "#EF4444", background: "none", border: "none", cursor: "pointer", padding: 0 }}>Sign out</button>
           </div>
         </div>
 
-        {/* ── Main ── */}
+        {/* Main */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
 
           {/* Topbar */}
           <div style={{ background: "#fff", borderBottom: "0.5px solid #E8EAF0", padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              {/* Hamburger (mobile) */}
               <button className="hamburger" onClick={() => setSidebarOpen(true)}
                 style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", display: "flex", flexDirection: "column", gap: "5px" }}>
                 <span style={{ display: "block", width: "20px", height: "1.5px", background: "#0F172A" }} />
@@ -357,9 +291,53 @@ await fetch("/api/send-booking-emails", {
               ))}
             </div>
 
+            {/* ── Offers Section ── */}
+            <div style={{ background: "#fff", border: "0.5px solid #E8EAF0", borderRadius: "10px", overflow: "hidden", marginBottom: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: "0.5px solid #E8EAF0" }}>
+                <div style={{ fontSize: "13px", fontWeight: 500 }}>🎁 Special Offers</div>
+                <button onClick={() => setShowOfferModal(true)}
+                  style={{ fontSize: "11px", padding: "5px 14px", background: "#4F6EF7", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: 500 }}>
+                  + New Offer
+                </button>
+              </div>
+
+              {offers.length === 0 ? (
+                <div style={{ padding: "28px", textAlign: "center", color: "#94A3B8", fontSize: "13px" }}>
+                  Abhi koi offer nahi — clients ko attract karne ke liye offer lagao!
+                </div>
+              ) : (
+                <div style={{ padding: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {offers.map(offer => (
+                    <div key={offer.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: "#F8F9FC", borderRadius: "8px", border: "0.5px solid #E8EAF0", gap: "8px", flexWrap: "wrap" }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: "13px", fontWeight: 500, color: "#0F172A" }}>{offer.title}</div>
+                        <div style={{ fontSize: "11px", color: "#94A3B8", marginTop: "2px" }}>
+                          {offer.discount_percent ? `${offer.discount_percent}% off` : ""}
+                          {offer.discount_percent && offer.valid_until ? " · " : ""}
+                          {offer.valid_until ? `Valid until ${new Date(offer.valid_until).toLocaleDateString("en-GB")}` : ""}
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+                        <span style={{ fontSize: "10px", padding: "3px 8px", borderRadius: "20px", background: offer.is_active ? "#ECFDF5" : "#F1F5F9", color: offer.is_active ? "#059669" : "#94A3B8" }}>
+                          {offer.is_active ? "Active" : "Inactive"}
+                        </span>
+                        <button onClick={() => handleToggleOffer(offer.id, offer.is_active)}
+                          style={{ fontSize: "11px", padding: "4px 10px", border: "0.5px solid #E8EAF0", borderRadius: "6px", background: "#fff", cursor: "pointer", color: "#64748B" }}>
+                          Toggle
+                        </button>
+                        <button onClick={() => handleDeleteOffer(offer.id)}
+                          style={{ fontSize: "13px", padding: "2px 6px", border: "none", background: "none", cursor: "pointer", color: "#EF4444" }}>
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Appointments */}
             <div style={{ background: "#fff", border: "0.5px solid #E8EAF0", borderRadius: "10px", overflow: "hidden" }}>
-              {/* Header */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: "0.5px solid #E8EAF0", flexWrap: "wrap", gap: "8px" }}>
                 <div style={{ fontSize: "13px", fontWeight: 500 }}>Appointments</div>
                 <div style={{ display: "flex", gap: "4px" }}>
@@ -378,7 +356,6 @@ await fetch("/api/send-booking-emails", {
                 </div>
               ) : (
                 <>
-                  {/* Desktop table */}
                   <table className="appt-table">
                     <thead>
                       <tr style={{ background: "#F8F9FC" }}>
@@ -405,7 +382,6 @@ await fetch("/api/send-booking-emails", {
                     </tbody>
                   </table>
 
-                  {/* Mobile cards */}
                   <div className="appt-cards">
                     {filteredAppts.map(a => {
                       const statusColor =
@@ -419,18 +395,9 @@ await fetch("/api/send-booking-emails", {
                             <span className="status-badge" style={{ background: statusColor.bg, color: statusColor.txt }}>{a.status}</span>
                           </div>
                           <div className="appt-card-grid">
-                            <div>
-                              <div className="appt-card-field">Service</div>
-                              <div className="appt-card-val">{a.services?.name || "—"}</div>
-                            </div>
-                            <div>
-                              <div className="appt-card-field">Amount</div>
-                              <div className="appt-card-val">£{a.services?.price || "—"}</div>
-                            </div>
-                            <div>
-                              <div className="appt-card-field">Staff</div>
-                              <div className="appt-card-val" style={{ fontWeight: 400, color: "#64748B" }}>{a.staff?.name || "—"}</div>
-                            </div>
+                            <div><div className="appt-card-field">Service</div><div className="appt-card-val">{a.services?.name || "—"}</div></div>
+                            <div><div className="appt-card-field">Amount</div><div className="appt-card-val">£{a.services?.price || "—"}</div></div>
+                            <div><div className="appt-card-field">Staff</div><div className="appt-card-val" style={{ fontWeight: 400, color: "#64748B" }}>{a.staff?.name || "—"}</div></div>
                             <div>
                               <div className="appt-card-field">Date & Time</div>
                               <div className="appt-card-val" style={{ fontWeight: 400, color: "#64748B", fontSize: "12px" }}>
@@ -455,10 +422,8 @@ await fetch("/api/send-booking-emails", {
             <div className="modal-box">
               <div style={{ fontSize: "16px", fontWeight: 500, marginBottom: "18px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 New Booking
-                <button onClick={() => setShowModal(false)}
-                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: "#94A3B8" }}>✕</button>
+                <button onClick={() => setShowModal(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: "#94A3B8" }}>✕</button>
               </div>
-
               {[
                 { label: "Client Name",  key: "client_name",  type: "text",  placeholder: "Sarah Johnson" },
                 { label: "Client Email", key: "client_email", type: "email", placeholder: "sarah@email.com" },
@@ -472,7 +437,6 @@ await fetch("/api/send-booking-emails", {
                     style={{ width: "100%", padding: "10px 12px", border: "0.5px solid #E8EAF0", borderRadius: "8px", fontSize: "14px", fontFamily: "inherit", outline: "none" }} />
                 </div>
               ))}
-
               {[
                 { label: "Time",    key: "time",       opts: timeSlots.map(t => ({ v: t, l: t })) },
                 { label: "Service", key: "service_id", opts: services.map(s => ({ v: s.id, l: `${s.name} — £${s.price}` })) },
@@ -487,7 +451,6 @@ await fetch("/api/send-booking-emails", {
                   </select>
                 </div>
               ))}
-
               <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
                 <button onClick={() => setShowModal(false)}
                   style={{ flex: 1, padding: "12px", border: "0.5px solid #E8EAF0", borderRadius: "8px", fontSize: "14px", cursor: "pointer", background: "#fff" }}>
@@ -501,6 +464,43 @@ await fetch("/api/send-booking-emails", {
             </div>
           </div>
         )}
+
+        {/* ── New Offer Modal ── */}
+        {showOfferModal && (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 50 }}
+            onClick={e => { if (e.target === e.currentTarget) setShowOfferModal(false); }}>
+            <div className="modal-box">
+              <div style={{ fontSize: "16px", fontWeight: 500, marginBottom: "18px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                New Offer
+                <button onClick={() => setShowOfferModal(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: "#94A3B8" }}>✕</button>
+              </div>
+              {[
+                { label: "Offer Title *",          key: "title",            type: "text",   placeholder: "Eid Special — 20% Off!" },
+                { label: "Description (optional)", key: "description",      type: "text",   placeholder: "Sab services par discount milega" },
+                { label: "Discount % (optional)",  key: "discount_percent", type: "number", placeholder: "20" },
+                { label: "Valid Until (optional)", key: "valid_until",      type: "date",   placeholder: "" },
+              ].map(f => (
+                <div key={f.key} style={{ marginBottom: "12px" }}>
+                  <label style={{ fontSize: "12px", fontWeight: 500, display: "block", marginBottom: "5px" }}>{f.label}</label>
+                  <input type={f.type} placeholder={f.placeholder} value={(offerForm as any)[f.key]}
+                    onChange={e => setOfferForm({ ...offerForm, [f.key]: e.target.value })}
+                    style={{ width: "100%", padding: "10px 12px", border: "0.5px solid #E8EAF0", borderRadius: "8px", fontSize: "14px", fontFamily: "inherit", outline: "none" }} />
+                </div>
+              ))}
+              <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
+                <button onClick={() => setShowOfferModal(false)}
+                  style={{ flex: 1, padding: "12px", border: "0.5px solid #E8EAF0", borderRadius: "8px", fontSize: "14px", cursor: "pointer", background: "#fff" }}>
+                  Cancel
+                </button>
+                <button onClick={handleCreateOffer}
+                  style={{ flex: 1, padding: "12px", background: "#4F6EF7", color: "#fff", border: "none", borderRadius: "8px", fontSize: "14px", cursor: "pointer", fontWeight: 500 }}>
+                  Create Offer
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </>
   );
