@@ -14,12 +14,24 @@ export default function SettingsPage() {
   const [form, setForm] = useState({ name: "", price: "", duration_minutes: "" });
   const [saving, setSaving] = useState(false);
 
+  // Branding state
+  const [brandingForm, setBrandingForm] = useState({ name: "", logo_url: "" });
+  const [brandingSaving, setBrandingSaving] = useState(false);
+  const [brandingSaved, setBrandingSaved] = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoPreview, setLogoPreview] = useState<string>("");
+
   useEffect(() => {
     const load = async () => {
       const profile = await getCurrentUserProfile();
       if (!profile) { window.location.href = "/login"; return; }
 
       setSalon(profile.salon);
+      setBrandingForm({
+        name: profile.salon?.name || "",
+        logo_url: profile.salon?.logo_url || "",
+      });
+      setLogoPreview(profile.salon?.logo_url || "");
 
       const { data } = await supabase
         .from("services")
@@ -31,6 +43,40 @@ export default function SettingsPage() {
     };
     load();
   }, []);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLogoUploading(true);
+
+    const ext = file.name.split(".").pop();
+    const fileName = `${salon.id}-logo-${Date.now()}.${ext}`;
+
+    const { error } = await supabase.storage
+      .from("salon-logos")
+      .upload(fileName, file, { upsert: true });
+
+    if (!error) {
+      const { data: urlData } = supabase.storage.from("salon-logos").getPublicUrl(fileName);
+      const url = urlData.publicUrl;
+      setBrandingForm(f => ({ ...f, logo_url: url }));
+      setLogoPreview(url);
+    }
+    setLogoUploading(false);
+  };
+
+  const handleBrandingSave = async () => {
+    if (!brandingForm.name) return;
+    setBrandingSaving(true);
+    await supabase.from("salons").update({
+      name: brandingForm.name,
+      logo_url: brandingForm.logo_url,
+    }).eq("id", salon.id);
+    setSalon((s: any) => ({ ...s, name: brandingForm.name, logo_url: brandingForm.logo_url }));
+    setBrandingSaving(false);
+    setBrandingSaved(true);
+    setTimeout(() => setBrandingSaved(false), 2500);
+  };
 
   const openAdd = () => {
     setEditingService(null);
@@ -95,13 +141,25 @@ export default function SettingsPage() {
             { label: "Staff", path: "/dashboard/staff" },
           ].map((item) => (
             <div key={item.label} onClick={() => router.push(item.path)}
-              style={{ padding: "9px 20px", fontSize: "13px", color: "#64748B", cursor: "pointer" }}>
+              style={{ padding: "9px 20px", fontSize: "13px", color: "#64748B", cursor: "pointer", transition: "all 0.2s ease" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#F8F9FF"; e.currentTarget.style.color = "#4F6EF7"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#64748B"; }}>
               {item.label}
             </div>
           ))}
           <div style={{ padding: "12px 20px 4px", fontSize: "9px", color: "#CBD5E1", letterSpacing: "2px" }}>FINANCE</div>
-          <div onClick={() => router.push("/dashboard/payments")} style={{ padding: "9px 20px", fontSize: "13px", color: "#64748B", cursor: "pointer" }}>Payments</div>
-          <div onClick={() => router.push("/dashboard/reports")} style={{ padding: "9px 20px", fontSize: "13px", color: "#64748B", cursor: "pointer" }}>Reports</div>
+          <div onClick={() => router.push("/dashboard/payments")}
+            style={{ padding: "9px 20px", fontSize: "13px", color: "#64748B", cursor: "pointer", transition: "all 0.2s ease" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#F8F9FF"; e.currentTarget.style.color = "#4F6EF7"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#64748B"; }}>
+            Payments
+          </div>
+          <div onClick={() => router.push("/dashboard/reports")}
+            style={{ padding: "9px 20px", fontSize: "13px", color: "#64748B", cursor: "pointer", transition: "all 0.2s ease" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#F8F9FF"; e.currentTarget.style.color = "#4F6EF7"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#64748B"; }}>
+            Reports
+          </div>
           <div style={{ padding: "12px 20px 4px", fontSize: "9px", color: "#CBD5E1", letterSpacing: "2px" }}>SYSTEM</div>
           <div onClick={() => router.push("/dashboard/settings")}
             style={{ padding: "9px 20px", fontSize: "13px", color: "#4F6EF7", background: "#EEF2FF", borderRight: "2px solid #4F6EF7", cursor: "pointer" }}>
@@ -121,10 +179,98 @@ export default function SettingsPage() {
       <div style={{ flex: 1, padding: "32px" }}>
         <div style={{ marginBottom: "24px" }}>
           <h1 style={{ fontFamily: "Georgia, serif", fontSize: "24px", color: "#0F172A", margin: 0 }}>Settings</h1>
-          <p style={{ fontSize: "13px", color: "#64748B", marginTop: "4px" }}>Manage your salon services</p>
+          <p style={{ fontSize: "13px", color: "#64748B", marginTop: "4px" }}>Manage your salon profile and services</p>
         </div>
 
-        {/* Services Section */}
+        {/* ── Salon Branding Section ── */}
+        <div style={{ background: "#fff", border: "0.5px solid #E8EAF0", borderRadius: "12px", overflow: "hidden", marginBottom: "24px" }}>
+          <div style={{ padding: "16px 20px", borderBottom: "0.5px solid #E8EAF0" }}>
+            <div style={{ fontSize: "14px", fontWeight: 500, color: "#0F172A" }}>Salon Branding</div>
+            <div style={{ fontSize: "12px", color: "#94A3B8", marginTop: "2px" }}>This will appear on your public booking page</div>
+          </div>
+
+          <div style={{ padding: "24px 20px" }}>
+
+            {/* Logo Upload */}
+            <div style={{ marginBottom: "24px" }}>
+              <label style={{ fontSize: "12px", fontWeight: 500, color: "#0F172A", display: "block", marginBottom: "12px" }}>
+                Salon Logo
+              </label>
+              <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+                {/* Logo Preview */}
+                <div style={{
+                  width: "80px", height: "80px", borderRadius: "12px",
+                  border: "0.5px solid #E8EAF0", background: "#F8F9FC",
+                  display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0
+                }}>
+                  {logoPreview ? (
+                    <img src={logoPreview} alt="Logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <div style={{ fontSize: "11px", color: "#CBD5E1", textAlign: "center", padding: "8px" }}>No logo</div>
+                  )}
+                </div>
+
+                {/* Upload Button */}
+                <div>
+                  <label style={{
+                    display: "inline-block", padding: "8px 16px",
+                    background: "#F8F9FC", border: "0.5px solid #E8EAF0",
+                    borderRadius: "8px", fontSize: "13px", color: "#0F172A",
+                    cursor: "pointer", transition: "all 0.2s ease"
+                  }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#4F6EF7"; (e.currentTarget as HTMLElement).style.color = "#4F6EF7"; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "#E8EAF0"; (e.currentTarget as HTMLElement).style.color = "#0F172A"; }}>
+                    {logoUploading ? "Uploading..." : "Upload Logo"}
+                    <input type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: "none" }} />
+                  </label>
+                  <div style={{ fontSize: "11px", color: "#94A3B8", marginTop: "6px" }}>PNG, JPG up to 2MB</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Salon Name */}
+            <div style={{ marginBottom: "24px" }}>
+              <label style={{ fontSize: "12px", fontWeight: 500, color: "#0F172A", display: "block", marginBottom: "6px" }}>
+                Salon Name
+              </label>
+              <input
+                type="text"
+                value={brandingForm.name}
+                onChange={e => setBrandingForm(f => ({ ...f, name: e.target.value }))}
+                placeholder="e.g. Feature Salon"
+                style={{
+                  width: "100%", maxWidth: "400px",
+                  padding: "10px 14px", border: "0.5px solid #E8EAF0",
+                  borderRadius: "8px", fontSize: "14px", color: "#0F172A",
+                  outline: "none", boxSizing: "border-box", fontFamily: "inherit"
+                }}
+              />
+            </div>
+
+            {/* Save Button */}
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <button
+                onClick={handleBrandingSave}
+                disabled={brandingSaving}
+                style={{
+                  padding: "10px 20px", background: "#4F6EF7", color: "#fff",
+                  border: "none", borderRadius: "8px", fontSize: "13px",
+                  cursor: "pointer", opacity: brandingSaving ? 0.7 : 1,
+                  transition: "all 0.2s ease"
+                }}
+                onMouseEnter={e => { if (!brandingSaving) (e.currentTarget as HTMLElement).style.background = "#3D5CE8"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "#4F6EF7"; }}
+              >
+                {brandingSaving ? "Saving..." : "Save Branding"}
+              </button>
+              {brandingSaved && (
+                <span style={{ fontSize: "13px", color: "#22C55E" }}>✓ Saved!</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Services Section ── */}
         <div style={{ background: "#fff", border: "0.5px solid #E8EAF0", borderRadius: "12px", overflow: "hidden" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "0.5px solid #E8EAF0" }}>
             <div>
