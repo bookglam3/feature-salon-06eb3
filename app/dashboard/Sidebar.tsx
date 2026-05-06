@@ -17,20 +17,19 @@ export default function DashboardSidebar() {
 
   return (
     <>
-      {/* ─── DESKTOP SIDEBAR ─── */}
-      <aside style={{
-        width: "220px",
-        minWidth: "220px",
-        height: "100vh",
-        backgroundColor: "#ffffff",
-        borderRight: "0.5px solid #E8EAF0",
-        padding: "24px 0",
-        display: "flex",
-        flexDirection: "column",
-        position: "sticky",
-        top: 0,
-      }}
-        className="desktop-sidebar"
+      <aside
+        className="hidden md:flex"
+        style={{
+          width: "220px",
+          minWidth: "220px",
+          height: "100vh",
+          backgroundColor: "#ffffff",
+          borderRight: "0.5px solid #E8EAF0",
+          padding: "24px 0",
+          flexDirection: "column",
+          position: "sticky",
+          top: 0,
+        }}
       >
         <div style={{ padding: "0 24px", marginBottom: "28px" }}>
           <div style={{
@@ -42,14 +41,7 @@ export default function DashboardSidebar() {
             feature
           </div>
         </div>
-
-        <nav style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "4px",
-          padding: "0 8px",
-          flex: 1,
-        }}>
+        <nav style={{ display: "flex", flexDirection: "column", gap: "4px", padding: "0 8px", flex: 1 }}>
           {navItems.map((item) => {
             const active = pathname === item.path;
             return (
@@ -69,7 +61,6 @@ export default function DashboardSidebar() {
                   fontWeight: active ? 600 : 500,
                   cursor: "pointer",
                   borderLeft: active ? "3px solid #4F6EF7" : "3px solid transparent",
-                  transition: "background 0.15s, color 0.15s",
                 }}
               >
                 {item.label}
@@ -79,27 +70,22 @@ export default function DashboardSidebar() {
         </nav>
       </aside>
 
-      {/* ─── MOBILE BOTTOM NAV ─── */}
-      <nav className="mobile-bottom-nav" style={{
-        display: "none",
-        position: "fixed",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: "64px",
-        backgroundColor: "#ffffff",
-        borderTop: "0.5px solid #E8EAF0",
-        zIndex: 100,
-        overflowX: "auto",
-        overflowY: "hidden",
-      }}>
-        <div style={{
-          display: "flex",
-          alignItems: "stretch",
-          height: "100%",
-          minWidth: "max-content",
-          padding: "0 4px",
-        }}>
+      <nav
+        className="flex md:hidden"
+        style={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: "64px",
+          backgroundColor: "#ffffff",
+          borderTop: "0.5px solid #E8EAF0",
+          zIndex: 100,
+          overflowX: "auto",
+          overflowY: "hidden",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "stretch", height: "100%", minWidth: "max-content", padding: "0 4px" }}>
           {navItems.map((item) => {
             const active = pathname === item.path;
             return (
@@ -123,11 +109,7 @@ export default function DashboardSidebar() {
                 }}
               >
                 <span style={{ fontSize: "18px", lineHeight: 1 }}>{item.icon}</span>
-                <span style={{
-                  fontSize: "10px",
-                  fontWeight: active ? 600 : 400,
-                  whiteSpace: "nowrap",
-                }}>
+                <span style={{ fontSize: "10px", fontWeight: active ? 600 : 400, whiteSpace: "nowrap" }}>
                   {item.label}
                 </span>
               </button>
@@ -135,18 +117,6 @@ export default function DashboardSidebar() {
           })}
         </div>
       </nav>
-
-      {/* ─── CSS ─── */}
-      <style>{`
-        @media (max-width: 768px) {
-          .desktop-sidebar {
-            display: none !important;
-          }
-          .mobile-bottom-nav {
-            display: block !important;
-          }
-        }
-      `}</style>
     </>
   );
 }
