@@ -4,43 +4,6 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
 
-type Salon = {
-  id: string;
-  name: string;
-  slug: string;
-  owner_email: string;
-  description?: string;
-  logo_url?: string;
-  address?: string;
-  phone?: string;
-};
-
-type Service = {
-  id: string;
-  name: string;
-  price: number;
-  duration_minutes?: number;
-  description?: string;
-};
-
-type Staff = {
-  id: string;
-  name: string;
-  role?: string;
-  avatar_url?: string;
-};
-
-type Offer = {
-  id: string;
-  title: string;
-  description?: string;
-  discount_type: string;
-  discount_value: number;
-  valid_until?: string;
-};
-
-const STEPS = ["Service", "Staff", "Date & Time", "Your Details"];
-
 const TIME_SLOTS = [
   "09:00","09:30","10:00","10:30","11:00","11:30",
   "12:00","12:30","13:00","13:30","14:00","14:30",
@@ -48,145 +11,57 @@ const TIME_SLOTS = [
 ];
 
 const SERVICE_ICONS: Record<string, string> = {
-  haircut: "✂️",
-  cut: "✂️",
-  hair: "💇",
-  color: "🎨",
-  colour: "🎨",
-  highlights: "✨",
-  blowout: "💨",
-  styling: "💫",
-  beard: "🧔",
-  shave: "🪒",
-  facial: "🧖",
-  massage: "💆",
-  nails: "💅",
-  manicure: "💅",
-  pedicure: "🦶",
-  wax: "🌿",
-  threading: "🧵",
-  lash: "👁️",
-  brow: "🪮",
-  keratin: "✨",
-  treatment: "🌿",
+  haircut: "✂️", cut: "✂️", hair: "💇", color: "🎨", colour: "🎨",
+  highlights: "✨", blowout: "💨", styling: "💫", beard: "🧔", shave: "🪒",
+  facial: "🧖", massage: "💆", nails: "💅", manicure: "💅", pedicure: "🦶",
+  wax: "🌿", threading: "🧵", lash: "👁️", brow: "🪮", keratin: "✨", treatment: "🌿",
 };
 
 function getServiceIcon(name: string): string {
   const lower = name.toLowerCase();
-
   for (const [key, icon] of Object.entries(SERVICE_ICONS)) {
     if (lower.includes(key)) return icon;
   }
-
   return "💈";
 }
 
 function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  return name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 }
-
-function getDaysInMonth(year: number, month: number): Date[] {
-  const days: Date[] = [];
-  const d = new Date(year, month, 1);
-
-  while (d.getMonth() === month) {
-    days.push(new Date(d));
-    d.setDate(d.getDate() + 1);
-  }
-
-  return days;
-}
-
-const AVATAR_COLORS = [
-  ["#EFF6FF", "#2563EB"],
-  ["#ECFDF5", "#059669"],
-  ["#FFF7ED", "#EA580C"],
-  ["#F5F3FF", "#7C3AED"],
-  ["#FDF2F8", "#DB2777"],
-];
 
 export default function BookingPage() {
   const { slug } = useParams() as { slug: string };
 
-  const [salon, setSalon] = useState<Salon | null>(null);
-  const [services, setServices] = useState<Service[]>([]);
-  const [staffList, setStaffList] = useState<Staff[]>([]);
-  const [offers, setOffers] = useState<Offer[]>([]);
+  const [salon, setSalon] = useState<any>(null);
+  const [services, setServices] = useState<any[]>([]);
+  const [staffList, setStaffList] = useState<any[]>([]);
+  const [offers, setOffers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const [step, setStep] = useState(0);
-
-  const [selectedService, setSelectedService] =
-    useState<Service | null>(null);
-
-  const [selectedStaff, setSelectedStaff] =
-    useState<Staff | null>(null);
-
+  const [selectedService, setSelectedService] = useState<any>(null);
+  const [selectedStaff, setSelectedStaff] = useState<any>(null);
   const [staffConfirmed, setStaffConfirmed] = useState(false);
-
-  const today = new Date();
-
-  const [calYear, setCalYear] = useState(today.getFullYear());
-  const [calMonth, setCalMonth] = useState(today.getMonth());
-
   const [selDate, setSelDate] = useState<Date | null>(null);
   const [selTime, setSelTime] = useState("");
-
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-  });
+  const [form, setForm] = useState({ name: "", email: "", phone: "" });
 
   useEffect(() => {
     if (!slug) return;
-
     (async () => {
-      const { data: s } = await supabase
-        .from("salons")
-        .select("*")
-        .eq("slug", slug)
-        .single();
-
-      if (!s) {
-        setNotFound(true);
-        setLoading(false);
-        return;
-      }
-
+      const { data: s } = await supabase.from("salons").select("*").eq("slug", slug).single();
+      if (!s) { setNotFound(true); setLoading(false); return; }
       setSalon(s);
 
-      const todayStr = new Date().toISOString().slice(0, 10);
-
-      const [{ data: sv }, { data: st }, { data: of }] =
-        await Promise.all([
-          supabase
-            .from("services")
-            .select("*")
-            .eq("salon_id", s.id)
-            .order("price"),
-
-          supabase
-            .from("staff")
-            .select("*")
-            .eq("salon_id", s.id),
-
-          supabase
-            .from("offers")
-            .select("*")
-            .eq("salon_id", s.id)
-            .eq("active", true)
-            .or(`valid_until.is.null,valid_until.gte.${todayStr}`)
-            .order("created_at", { ascending: false }),
-        ]);
-
+      const now = new Date().toISOString();
+      const [{ data: sv }, { data: st }, { data: of }] = await Promise.all([
+        supabase.from("services").select("*").eq("salon_id", s.id).order("price"),
+        supabase.from("staff").select("*").eq("salon_id", s.id),
+        supabase.from("offers").select("*").eq("salon_id", s.id).eq("active", true)
+       .or(`valid_until.is.null,valid_until.gte.${now}`).order("created_at", { ascending: false }),
+      ]);
       setServices(sv || []);
       setStaffList(st || []);
       setOffers(of || []);
@@ -195,33 +70,21 @@ export default function BookingPage() {
   }, [slug]);
 
   const handleBook = async () => {
-    if (
-      !salon ||
-      !selectedService ||
-      !selDate ||
-      !selTime ||
-      !form.name
-    )
-      return;
-
+    if (!salon ||!selectedService ||!selDate ||!selTime ||!form.name.trim()) return;
     setSubmitting(true);
 
-    const iso = new Date(
-      `${selDate.getFullYear()}-${String(
-        selDate.getMonth() + 1
-      ).padStart(2, "0")}-${String(selDate.getDate()).padStart(
-        2,
-        "0"
-      )}T${selTime}`
-    ).toISOString();
+    const [hours, minutes] = selTime.split(":");
+    const bookingDateTime = new Date(selDate);
+    bookingDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    const iso = bookingDateTime.toISOString();
 
     const { data: existing } = await supabase
-      .from("appointments")
-      .select("id")
-      .eq("salon_id", salon.id)
-      .eq("date_time", iso)
-      .eq("staff_id", selectedStaff?.id || null)
-      .maybeSingle();
+   .from("appointments")
+   .select("id")
+   .eq("salon_id", salon.id)
+   .eq("date_time", iso)
+   .eq("staff_id", selectedStaff?.id || null)
+   .maybeSingle();
 
     if (existing) {
       alert("This slot is already booked.");
@@ -229,18 +92,16 @@ export default function BookingPage() {
       return;
     }
 
-    const { error } = await supabase
-      .from("appointments")
-      .insert({
-        salon_id: salon.id,
-        client_name: form.name,
-        client_email: form.email,
-        client_phone: form.phone,
-        service_id: selectedService.id,
-        staff_id: selectedStaff?.id || null,
-        date_time: iso,
-        status: "pending",
-      });
+    const { error } = await supabase.from("appointments").insert({
+      salon_id: salon.id,
+      client_name: form.name,
+      client_email: form.email,
+      client_phone: form.phone,
+      service_id: selectedService.id,
+      staff_id: selectedStaff?.id || null,
+      date_time: iso,
+      status: "pending",
+    });
 
     if (error) {
       alert("Booking failed. Please try again.");
@@ -251,9 +112,7 @@ export default function BookingPage() {
     try {
       await fetch("/api/send-booking-emails", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           clientEmail: form.email,
           clientName: form.name,
@@ -273,60 +132,24 @@ export default function BookingPage() {
     setStep(4);
   };
 
-  const calDays = getDaysInMonth(calYear, calMonth);
-
-  const firstDow = new Date(
-    calYear,
-    calMonth,
-    1
-  ).getDay();
-
-  const monthLabel = new Date(
-    calYear,
-    calMonth
-  ).toLocaleDateString("en-GB", {
-    month: "long",
-    year: "numeric",
-  });
-
-  const isPast = (d: Date) => {
-    const t = new Date();
-    t.setHours(0, 0, 0, 0);
-    return d < t;
-  };
-
-  const canNext0 = !!selectedService;
+  const canNext0 =!!selectedService;
   const canNext1 = staffConfirmed;
-  const canNext2 = !!selDate && !!selTime;
-  const canSubmit = !!form.name.trim();
+  const canNext2 =!!selDate &&!!selTime;
+  const canSubmit =!!form.name.trim();
+  const todayStr = new Date().toISOString().split('T')[0];
 
   if (loading) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        Loading...
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#F8FAFF" }}>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');`}</style>
+        <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "18px", fontWeight: 600, color: "#1E3A8A", letterSpacing: "-0.3px" }}>Loading...</div>
       </div>
     );
   }
 
   if (notFound) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 20,
-          fontWeight: 700,
-        }}
-      >
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 700, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
         Booking page not found.
       </div>
     );
@@ -334,379 +157,116 @@ export default function BookingPage() {
 
   if (step === 4) {
     return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexDirection: "column",
-          gap: 20,
-          padding: 20,
-          textAlign: "center",
-        }}
-      >
-        <div
-          style={{
-            width: 90,
-            height: 90,
-            borderRadius: "50%",
-            background: "#DCFCE7",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 40,
-          }}
-        >
-          ✓
+      <>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap'); *{font-family:'Plus Jakarta Sans',sans-serif;box-sizing:border-box;margin:0}`}</style>
+        <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 20, padding: 20, textAlign: "center", background: "#F8FAFF" }}>
+          <div style={{ width: 90, height: 90, borderRadius: "50%", background: "#DCFCE7", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40 }}>✓</div>
+          <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: "-0.6px" }}>Booking Confirmed 🎉</h1>
+          <p style={{ fontSize: 15, color: "#475569" }}>Your appointment request has been submitted.</p>
+          <div style={{ padding: 20, border: "1px solid #E5E7EB", borderRadius: 12, width: "100%", maxWidth: 400, background: "white" }}>
+            <p style={{ marginBottom: 8 }}><strong>Service:</strong> {selectedService?.name}</p>
+            <p style={{ marginBottom: 8 }}><strong>Staff:</strong> {selectedStaff?.name || "Any available"}</p>
+            <p style={{ marginBottom: 8 }}><strong>Date:</strong> {selDate?.toLocaleDateString("en-GB")}</p>
+            <p><strong>Time:</strong> {selTime}</p>
+          </div>
         </div>
-
-        <h1>Booking Confirmed 🎉</h1>
-
-        <p>
-          Your appointment request has been submitted.
-        </p>
-
-        <div
-          style={{
-            padding: 20,
-            border: "1px solid #ddd",
-            borderRadius: 12,
-            width: "100%",
-            maxWidth: 400,
-          }}
-        >
-          <p>
-            <strong>Service:</strong>{" "}
-            {selectedService?.name}
-          </p>
-
-          <p>
-            <strong>Staff:</strong>{" "}
-            {selectedStaff?.name || "Any available"}
-          </p>
-
-          <p>
-            <strong>Date:</strong>{" "}
-            {selDate?.toLocaleDateString()}
-          </p>
-
-          <p>
-            <strong>Time:</strong> {selTime}
-          </p>
-        </div>
-      </div>
+      </>
     );
   }
 
   return (
     <>
       <style>{`
-        *{
-          box-sizing:border-box;
-        }
-
-        body{
-          margin:0;
-          font-family:Inter,sans-serif;
-          background:#f6f8ff;
-        }
-
-        input,
-        button,
-        textarea,
-        select{
-          -webkit-appearance:none;
-          appearance:none;
-        }
-
-        .container{
-          max-width:700px;
-          margin:auto;
-          padding:20px;
-        }
-
-        .hero{
-          background:#2563EB;
-          color:white;
-          padding:40px 20px;
-          text-align:center;
-          border-bottom-left-radius:30px;
-          border-bottom-right-radius:30px;
-        }
-
-        .logo{
-          width:90px;
-          height:90px;
-          border-radius:20px;
-          object-fit:cover;
-          margin:auto;
-          margin-bottom:15px;
-        }
-
-        .service-card,
-        .staff-card{
-          border:2px solid #E5E7EB;
-          border-radius:16px;
-          padding:16px;
-          margin-bottom:12px;
-          cursor:pointer;
-          background:white;
-          transition:0.2s;
-        }
-
-        .service-card.selected,
-        .staff-card.selected{
-          border-color:#2563EB;
-          background:#EFF6FF;
-        }
-
-        .btn{
-          width:100%;
-          background:#2563EB;
-          color:white;
-          border:none;
-          padding:14px;
-          border-radius:12px;
-          font-weight:700;
-          cursor:pointer;
-          margin-top:20px;
-        }
-
-        .btn:disabled{
-          opacity:0.5;
-          cursor:not-allowed;
-        }
-
-        .time-grid{
-          display:grid;
-          grid-template-columns:repeat(4,1fr);
-          gap:10px;
-        }
-
-        .time-btn{
-          padding:10px;
-          border-radius:10px;
-          border:1px solid #ddd;
-          background:white;
-          cursor:pointer;
-        }
-
-        .time-btn.selected{
-          background:#2563EB;
-          color:white;
-          border-color:#2563EB;
-        }
-
-        .input{
-          width:100%;
-          padding:12px;
-          border-radius:10px;
-          border:1px solid #ddd;
-          margin-top:6px;
-          margin-bottom:16px;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0;font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;}
+        body{background:#f6f8ff;}
+        input,button,textarea,select{-webkit-appearance:none;appearance:none;font-family:inherit;}
+       .container{max-width:700px;margin:auto;padding:20px;}
+       .hero{background:#2563EB;color:white;padding:40px 20px;text-align:center;border-bottom-left-radius:30px;border-bottom-right-radius:30px;}
+       .logo{width:90px;height:90px;border-radius:20px;object-fit:cover;margin:auto;margin-bottom:15px;}
+       .service-card,.staff-card{border:2px solid #E5E7EB;border-radius:16px;padding:16px;margin-bottom:12px;cursor:pointer;background:white;transition:0.2s;}
+       .service-card.selected,.staff-card.selected{border-color:#2563EB;background:#EFF6FF;}
+       .btn{width:100%;background:#2563EB;color:white;border:none;padding:14px;border-radius:12px;font-weight:700;cursor:pointer;margin-top:20px;font-size:15px;letter-spacing:-0.2px;}
+       .btn:disabled{opacity:0.5;cursor:not-allowed;}
+       .time-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+       .time-btn{padding:10px;border-radius:10px;border:1px solid #D1D5DB;background:white;cursor:pointer;font-weight:600;font-size:14px;}
+       .time-btn.selected{background:#2563EB;color:white;border-color:#2563EB;}
+       .time-btn:disabled{opacity:0.4;cursor:not-allowed;}
+       .input{width:100%;padding:12px;border-radius:10px;border:1px solid #D1D5DB;margin-top:6px;margin-bottom:16px;font-size:15px;font-weight:500;}
+       .input:focus{outline:none;border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,0.1);}
+        h1{font-size:28px;font-weight:700;letter-spacing:-0.6px;margin-bottom:8px;}
+        h2{font-size:22px;font-weight:700;letter-spacing:-0.5px;margin-bottom:16px;}
+        h3{font-size:16px;font-weight:600;letter-spacing:-0.3px;margin-bottom:4px;}
+        p{font-size:14px;color:#475569;line-height:1.5;}
+        small{font-size:13px;color:#64748B;font-weight:500;}
+       .back-btn{background:none;border:none;color:#2563EB;font-weight:600;cursor:pointer;margin-bottom:20px;font-size:14px;padding:0;}
       `}</style>
 
       <div className="hero">
-        {salon?.logo_url ? (
-          <img
-            src={salon.logo_url}
-            className="logo"
-            alt={salon.name}
-          />
+        {salon?.logo_url? (
+          <img src={salon.logo_url} className="logo" alt={salon.name} />
         ) : (
-          <div
-            style={{
-              width: 90,
-              height: 90,
-              borderRadius: 20,
-              background: "rgba(255,255,255,0.2)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              margin: "auto",
-              marginBottom: 15,
-              fontSize: 30,
-              fontWeight: 800,
-            }}
-          >
+          <div style={{ width: 90, height: 90, borderRadius: 20, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", margin: "auto", marginBottom: 15, fontSize: 30, fontWeight: 800 }}>
             {getInitials(salon?.name || "S")}
           </div>
         )}
-
         <h1>{salon?.name}</h1>
-
-        {salon?.description && (
-          <p>{salon.description}</p>
-        )}
+        {salon?.description && <p style={{ opacity: 0.9, marginTop: 4 }}>{salon.description}</p>}
       </div>
 
       <div className="container">
         {step === 0 && (
           <>
             <h2>Select Service</h2>
-
             {services.map((s) => (
-              <div
-                key={s.id}
-                className={`service-card ${
-                  selectedService?.id === s.id
-                    ? "selected"
-                    : ""
-                }`}
-                onClick={() => setSelectedService(s)}
-              >
-                <h3>
-                  {getServiceIcon(s.name)} {s.name}
-                </h3>
-
-                <p>£{s.price}</p>
-
-                {s.duration_minutes && (
-                  <small>
-                    {s.duration_minutes} mins
-                  </small>
-                )}
+              <div key={s.id} className={`service-card ${selectedService?.id === s.id? "selected" : ""}`} onClick={() => setSelectedService(s)}>
+                <h3>{getServiceIcon(s.name)} {s.name}</h3>
+                <p style={{ fontWeight: 600, color: "#0F172A" }}>£{s.price}</p>
+                {s.duration_minutes && <small>{s.duration_minutes} mins</small>}
               </div>
             ))}
-
-            <button
-              className="btn"
-              disabled={!canNext0}
-              onClick={() => setStep(1)}
-            >
-              Continue
-            </button>
+            <button className="btn" disabled={!canNext0} onClick={() => setStep(1)}>Continue</button>
           </>
         )}
 
         {step === 1 && (
           <>
-            <button
-              onClick={() => setStep(0)}
-              style={{ marginBottom: 20 }}
-            >
-              ← Back
-            </button>
-
+            <button onClick={() => setStep(0)} className="back-btn">← Back</button>
             <h2>Select Staff</h2>
-
-            <div
-              className={`staff-card ${
-                staffConfirmed &&
-                selectedStaff === null
-                  ? "selected"
-                  : ""
-              }`}
-              onClick={() => {
-                setSelectedStaff(null);
-                setStaffConfirmed(true);
-              }}
-            >
-              Any Available Staff
+            <div className={`staff-card ${staffConfirmed && selectedStaff === null? "selected" : ""}`} onClick={() => { setSelectedStaff(null); setStaffConfirmed(true); }}>
+              <h3>Any Available Staff</h3>
+              <p>We'll assign the best available</p>
             </div>
-
             {staffList.map((s) => (
-              <div
-                key={s.id}
-                className={`staff-card ${
-                  selectedStaff?.id === s.id
-                    ? "selected"
-                    : ""
-                }`}
-                onClick={() => {
-                  setSelectedStaff(s);
-                  setStaffConfirmed(true);
-                }}
-              >
+              <div key={s.id} className={`staff-card ${selectedStaff?.id === s.id? "selected" : ""}`} onClick={() => { setSelectedStaff(s); setStaffConfirmed(true); }}>
                 <h3>{s.name}</h3>
-
                 {s.role && <p>{s.role}</p>}
               </div>
             ))}
-
-            <button
-              className="btn"
-              disabled={!canNext1}
-              onClick={() => setStep(2)}
-            >
-              Continue
-            </button>
+            <button className="btn" disabled={!canNext1} onClick={() => setStep(2)}>Continue</button>
           </>
         )}
 
         {step === 2 && (
           <>
-            <button
-              onClick={() => setStep(1)}
-              style={{ marginBottom: 20 }}
-            >
-              ← Back
-            </button>
-
+            <button onClick={() => setStep(1)} className="back-btn">← Back</button>
             <h2>Select Date & Time</h2>
-
-            <input
-              type="date"
-              className="input"
-              onChange={(e) =>
-                setSelDate(new Date(e.target.value))
-              }
-            />
-
+            <input type="date" className="input" min={todayStr} onChange={(e) => setSelDate(new Date(e.target.value))} />
             {selDate && (
               <>
                 <div className="time-grid">
                   {TIME_SLOTS.map((t) => {
                     const now = new Date();
-
-                    const selectedDateTime =
-                      selDate
-                        ? new Date(
-                            `${selDate.getFullYear()}-${String(
-                              selDate.getMonth() + 1
-                            ).padStart(2, "0")}-${String(
-                              selDate.getDate()
-                            ).padStart(2, "0")}T${t}`
-                          )
-                        : null;
-
-                    const disabled =
-                      selectedDateTime &&
-                      selectedDateTime < now &&
-                      selDate?.toDateString() ===
-                        now.toDateString();
-
+                    const selectedDateTime = new Date(`${selDate.getFullYear()}-${String(selDate.getMonth() + 1).padStart(2, "0")}-${String(selDate.getDate()).padStart(2, "0")}T${t}`);
+                    const disabled = selectedDateTime < now && selDate.toDateString() === now.toDateString();
                     return (
-                      <button
-                        key={t}
-                        disabled={disabled}
-                        className={`time-btn ${
-                          selTime === t
-                            ? "selected"
-                            : ""
-                        }`}
-                        onClick={() =>
-                          !disabled && setSelTime(t)
-                        }
-                        style={{
-                          opacity: disabled ? 0.4 : 1,
-                        }}
-                      >
+                      <button key={t} disabled={disabled} className={`time-btn ${selTime === t? "selected" : ""}`} onClick={() =>!disabled && setSelTime(t)}>
                         {t}
                       </button>
                     );
                   })}
                 </div>
-
-                <button
-                  className="btn"
-                  disabled={!canNext2}
-                  onClick={() => setStep(3)}
-                >
-                  Continue
-                </button>
+                <button className="btn" disabled={!canNext2} onClick={() => setStep(3)}>Continue</button>
               </>
             )}
           </>
@@ -714,94 +274,20 @@ export default function BookingPage() {
 
         {step === 3 && (
           <>
-            <button
-              onClick={() => setStep(2)}
-              style={{ marginBottom: 20 }}
-            >
-              ← Back
-            </button>
-
+            <button onClick={() => setStep(2)} className="back-btn">← Back</button>
             <h2>Your Details</h2>
-
-            <input
-              className="input"
-              placeholder="Full Name"
-              value={form.name}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  name: e.target.value,
-                })
-              }
-            />
-
-            <input
-              className="input"
-              placeholder="Email"
-              value={form.email}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  email: e.target.value,
-                })
-              }
-            />
-
-            <input
-              className="input"
-              placeholder="Phone"
-              value={form.phone}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  phone: e.target.value,
-                })
-              }
-            />
-
-            <div
-              style={{
-                padding: 20,
-                border: "1px solid #ddd",
-                borderRadius: 12,
-                marginTop: 20,
-                background: "white",
-              }}
-            >
-              <p>
-                <strong>Service:</strong>{" "}
-                {selectedService?.name}
-              </p>
-
-              <p>
-                <strong>Staff:</strong>{" "}
-                {selectedStaff?.name ||
-                  "Any available"}
-              </p>
-
-              <p>
-                <strong>Date:</strong>{" "}
-                {selDate?.toLocaleDateString()}
-              </p>
-
-              <p>
-                <strong>Time:</strong> {selTime}
-              </p>
-
-              <p>
-                <strong>Price:</strong> £
-                {selectedService?.price}
-              </p>
+            <input className="input" placeholder="Full Name *" value={form.name} onChange={(e) => setForm({...form, name: e.target.value })} />
+            <input className="input" placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({...form, email: e.target.value })} />
+            <input className="input" placeholder="Phone" value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value })} />
+            <div style={{ padding: 20, border: "1px solid #E5E7EB", borderRadius: 12, marginTop: 20, background: "white" }}>
+              <p style={{ marginBottom: 8 }}><strong>Service:</strong> {selectedService?.name}</p>
+              <p style={{ marginBottom: 8 }}><strong>Staff:</strong> {selectedStaff?.name || "Any available"}</p>
+              <p style={{ marginBottom: 8 }}><strong>Date:</strong> {selDate?.toLocaleDateString("en-GB")}</p>
+              <p style={{ marginBottom: 8 }}><strong>Time:</strong> {selTime}</p>
+              <p style={{ fontWeight: 600, fontSize: 16, marginTop: 12 }}><strong>Price:</strong> £{selectedService?.price}</p>
             </div>
-
-            <button
-              className="btn"
-              disabled={!canSubmit || submitting}
-              onClick={handleBook}
-            >
-              {submitting
-                ? "Booking..."
-                : "Confirm Booking"}
+            <button className="btn" disabled={!canSubmit ||!!submitting} onClick={handleBook}>
+              {submitting? "Booking..." : "Confirm Booking"}
             </button>
           </>
         )}
