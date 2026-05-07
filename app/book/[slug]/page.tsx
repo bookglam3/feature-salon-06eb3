@@ -142,9 +142,17 @@ export default function BookingPage() {
     bookingDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
     const iso = bookingDateTime.toISOString();
 
-    // Check slot availability
-    const { data: existing } = await supabase.from("appointments").select("id").eq("salon_id", salon.id).eq("date_time", iso).eq("staff_id", selectedStaff?.id || null).maybeSingle();
-    if (existing) { alert("This slot is already booked."); setSubmitting(false); return; }
+    // Check slot availability (use .is() for null staff_id — PostgREST requires is.null not eq.null)
+    let availQuery = supabase.from("appointments").select("id")
+      .eq("salon_id", salon.id)
+      .eq("date_time", iso);
+    if (selectedStaff?.id) {
+      availQuery = availQuery.eq("staff_id", selectedStaff.id);
+    } else {
+      availQuery = availQuery.is("staff_id", null);
+    }
+    const { data: existing } = await availQuery.maybeSingle();
+    if (existing) { alert("This time slot is already booked. Please choose another time."); setSubmitting(false); return; }
 
     // Insert appointment with pending_payment status
     const { data: appt, error } = await supabase.from("appointments").insert({
@@ -159,7 +167,12 @@ export default function BookingPage() {
       payment_status: "pending",
     }).select().single();
 
-    if (error || !appt) { alert("Booking failed. Please try again."); setSubmitting(false); return; }
+    if (error || !appt) {
+      console.error("Appointment insert error:", error);
+      alert("Booking failed: " + (error?.message || "Unknown error. Please try again."));
+      setSubmitting(false);
+      return;
+    }
 
     setBookingId(appt.id);
 
@@ -177,7 +190,12 @@ export default function BookingPage() {
       }),
     });
     const data = await res.json();
-    if (data.error) { alert("Payment setup failed: " + data.error); setSubmitting(false); return; }
+    if (data.error || !data.clientSecret) {
+      console.error("Payment intent error:", data.error);
+      alert("Payment setup failed: " + (data.error || "Could not connect to payment provider. Please check Stripe configuration."));
+      setSubmitting(false);
+      return;
+    }
 
     setClientSecret(data.clientSecret);
     setSubmitting(false);
