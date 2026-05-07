@@ -1,287 +1,277 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { getCurrentUserProfile } from "../../lib/auth";
+import DashboardShell, { HamburgerBtn } from "../components/DashboardShell";
+import Modal, { FormGroup, Input, Select, ModalActions, BtnPrimary, BtnSecondary } from "../components/Modal";
+import EmptyState from "../components/EmptyState";
+import { SkeletonDashboard } from "../components/SkeletonLoader";
+import { useToast } from "../components/Toast";
+import type { StaffMember } from "../../types";
 
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const SERVICES_LIST = ["Haircut", "Hair Color", "Blowout", "Makeup", "Facial", "Manicure", "Pedicure", "Waxing", "Massage"];
+const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+const SERVICES_LIST = ["Haircut","Hair Color","Blowout","Makeup","Facial","Manicure","Pedicure","Waxing","Massage"];
+
+const EMPTY_FORM = {
+  name: "", email: "", role: "stylist", active: true, services: [] as string[],
+  working_hours: { Mon:{enabled:true,start:"09:00",end:"18:00"}, Tue:{enabled:true,start:"09:00",end:"18:00"}, Wed:{enabled:true,start:"09:00",end:"18:00"}, Thu:{enabled:true,start:"09:00",end:"18:00"}, Fri:{enabled:true,start:"09:00",end:"18:00"}, Sat:{enabled:false,start:"10:00",end:"16:00"}, Sun:{enabled:false,start:"10:00",end:"16:00"} } as Record<string,{enabled:boolean;start:string;end:string}>,
+};
+
+function Avatar({ name }: { name: string }) {
+  const initials = name.split(" ").map(w => w[0]).join("").slice(0,2).toUpperCase();
+  const colors = ["#6366F1","#10B981","#F59E0B","#EF4444","#8B5CF6","#06B6D4"];
+  const bg = colors[name.charCodeAt(0) % colors.length];
+  return <div style={{ width: 40, height: 40, borderRadius: "50%", background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{initials}</div>;
+}
 
 export default function StaffPage() {
   const router = useRouter();
+  const toast = useToast();
   const [salon, setSalon] = useState<any>(null);
-  const [staffList, setStaffList] = useState<any[]>([]);
+  const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [editingStaff, setEditingStaff] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"info" | "services" | "hours">("info");
+  const [editingStaff, setEditingStaff] = useState<StaffMember|null>(null);
+  const [formTab, setFormTab] = useState<"info"|"services"|"hours">("info");
   const [searchTerm, setSearchTerm] = useState("");
+  const [formData, setFormData] = useState(EMPTY_FORM);
 
-  const emptyForm = {
-    name: "", email: "", role: "stylist", active: true, services: [] as string[],
-    working_hours: {
-      Mon: { enabled: true, start: "09:00", end: "18:00" },
-      Tue: { enabled: true, start: "09:00", end: "18:00" },
-      Wed: { enabled: true, start: "09:00", end: "18:00" },
-      Thu: { enabled: true, start: "09:00", end: "18:00" },
-      Fri: { enabled: true, start: "09:00", end: "18:00" },
-      Sat: { enabled: false, start: "10:00", end: "16:00" },
-      Sun: { enabled: false, start: "10:00", end: "16:00" },
-    } as Record<string, { enabled: boolean; start: string; end: string }>,
-  };
-
-  const [formData, setFormData] = useState(emptyForm);
-
-  const loadStaff = async (salonId: string) => {
+  const loadStaff = useCallback(async (salonId: string) => {
     const { data } = await supabase.from("staff").select("*").eq("salon_id", salonId);
     setStaffList(data || []);
-  };
+  }, []);
 
   useEffect(() => {
-    const loadData = async () => {
+    const load = async () => {
       try {
         const profile = await getCurrentUserProfile();
         if (!profile) { router.push("/login"); return; }
         setSalon(profile.salon);
         await loadStaff(profile.salon.id);
-      } catch (error) {
-        console.error("Error loading staff data:", error);
-      } finally {
-        setLoading(false);
-      }
+      } catch (e) { console.error(e); } finally { setLoading(false); }
     };
-    loadData();
-  }, [router]);
+    load();
+  }, [router, loadStaff]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!salon) return;
-    try {
-      const payload = { salon_id: salon.id, name: formData.name, email: formData.email, role: formData.role, active: formData.active, services: formData.services, working_hours: formData.working_hours };
-      if (editingStaff) {
-        await supabase.from("staff").update(payload).eq("id", editingStaff.id);
-      } else {
-        await supabase.from("staff").insert(payload);
-      }
-      setFormData(emptyForm);
-      setShowForm(false);
-      setEditingStaff(null);
-      setActiveTab("info");
-      await loadStaff(salon.id);
-    } catch (error) {
-      console.error("Error saving staff:", error);
+    const payload = { salon_id: salon.id, name: formData.name, email: formData.email, role: formData.role, active: formData.active, services: formData.services, working_hours: formData.working_hours };
+    if (editingStaff) {
+      const { error } = await supabase.from("staff").update(payload).eq("id", editingStaff.id);
+      if (error) { toast.error("Failed to update"); return; }
+      toast.success("Staff updated!");
+    } else {
+      const { error } = await supabase.from("staff").insert(payload);
+      if (error) { toast.error("Failed to add staff"); return; }
+      toast.success("Staff added!");
     }
-  };
+    setFormData(EMPTY_FORM); setShowForm(false); setEditingStaff(null); setFormTab("info");
+    await loadStaff(salon.id);
+  }, [salon, editingStaff, formData, toast, loadStaff]);
 
-  const handleEdit = (staff: any) => {
-    setEditingStaff(staff);
-    setFormData({ name: staff.name || "", email: staff.email || "", role: staff.role || "stylist", active: staff.active ?? true, services: staff.services || [], working_hours: staff.working_hours || emptyForm.working_hours });
-    setActiveTab("info");
-    setShowForm(true);
-  };
+  const handleEdit = useCallback((s: StaffMember) => {
+    setEditingStaff(s);
+    setFormData({ name: s.name||"", email: s.email||"", role: s.role||"stylist", active: s.active??true, services: s.services||[], working_hours: s.working_hours||EMPTY_FORM.working_hours });
+    setFormTab("info"); setShowForm(true);
+  }, []);
 
-  const handleToggleActive = async (id: string, currentActive: boolean) => {
-    await supabase.from("staff").update({ active: !currentActive }).eq("id", id);
+  const handleToggle = useCallback(async (id: string, active: boolean) => {
+    await supabase.from("staff").update({ active: !active }).eq("id", id);
+    toast.success(active ? "Staff deactivated" : "Staff activated");
     await loadStaff(salon?.id);
-  };
+  }, [salon, toast, loadStaff]);
 
-  const handleDeleteStaff = async (id: string) => {
-    if (!confirm("Delete this staff member?")) return;
-    await supabase.from("staff").delete().eq("id", id);
+  const handleDelete = useCallback(async (id: string) => {
+    const { error } = await supabase.from("staff").delete().eq("id", id);
+    if (error) { toast.error("Failed to delete"); return; }
+    toast.success("Staff deleted");
     await loadStaff(salon?.id);
-  };
+  }, [salon, toast, loadStaff]);
 
-  const toggleService = (service: string) => {
-    setFormData(prev => ({ ...prev, services: prev.services.includes(service) ? prev.services.filter(s => s !== service) : [...prev.services, service] }));
-  };
+  const toggleService = useCallback((svc: string) => {
+    setFormData(p => ({ ...p, services: p.services.includes(svc) ? p.services.filter(s => s !== svc) : [...p.services, svc] }));
+  }, []);
 
-  const updateWorkingHour = (day: string, field: string, value: any) => {
-    setFormData(prev => ({ ...prev, working_hours: { ...prev.working_hours, [day]: { ...prev.working_hours[day], [field]: value } } }));
-  };
+  const updateHour = useCallback((day: string, field: string, value: string|boolean) => {
+    setFormData(p => ({ ...p, working_hours: { ...p.working_hours, [day]: { ...p.working_hours[day], [field]: value } } }));
+  }, []);
 
-  const filteredStaff = staffList.filter(s =>
+  const filtered = useMemo(() => staffList.filter(s =>
     s.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     s.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ), [staffList, searchTerm]);
 
-  if (loading) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
-      <div style={{ fontFamily: "Georgia, serif", fontSize: "24px", color: "#4F6EF7" }}>feature</div>
-    </div>
+  if (loading) return <DashboardShell salonName=""><SkeletonDashboard /></DashboardShell>;
+
+  const Topbar = (
+    <header style={{ background: "#fff", borderBottom: "1px solid var(--border)", padding: "0 20px", height: 58, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 30 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <HamburgerBtn onClick={() => {}} />
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)", letterSpacing: "-0.3px" }}>Staff Management</div>
+          <div style={{ fontSize: 11.5, color: "var(--text-3)" }}>{staffList.length} team members</div>
+        </div>
+      </div>
+      <button onClick={() => { setEditingStaff(null); setFormData(EMPTY_FORM); setShowForm(true); }} style={{ background: "var(--indigo)", color: "#fff", fontSize: 13, fontWeight: 600, padding: "8px 16px", borderRadius: "var(--r-sm)", border: "none", cursor: "pointer", boxShadow: "var(--shadow-indigo)", whiteSpace: "nowrap", transition: "all 0.14s" }}
+        onMouseEnter={e => { e.currentTarget.style.background = "var(--indigo-dark)"; }}
+        onMouseLeave={e => { e.currentTarget.style.background = "var(--indigo)"; }}
+      >+ Add Staff</button>
+    </header>
   );
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F2F4F7" }}>
-      {/* Topbar */}
-      <div style={{ background: "#fff", borderBottom: "0.5px solid #E8EAF0", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div>
-          <div style={{ fontSize: "17px", fontWeight: 500, color: "#0F172A" }}>Staff Management</div>
-          <div style={{ fontSize: "12px", color: "#94A3B8", marginTop: "2px" }}>{staffList.length} team members</div>
-        </div>
-        <button onClick={() => { setEditingStaff(null); setFormData(emptyForm); setShowForm(true); }}
-          style={{ background: "#4F6EF7", color: "#fff", fontSize: "13px", padding: "8px 18px", borderRadius: "8px", border: "none", cursor: "pointer" }}>
-          + Add Staff
-        </button>
-      </div>
-
-      <div style={{ padding: "24px" }}>
-        {/* Form */}
-        {showForm && (
-          <div style={{ background: "#fff", border: "0.5px solid #E8EAF0", borderRadius: "10px", marginBottom: "20px", overflow: "hidden" }}>
-            <div style={{ padding: "18px 24px", borderBottom: "0.5px solid #E8EAF0", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
-              <div style={{ fontSize: "15px", fontWeight: 500, color: "#0F172A" }}>
-                {editingStaff ? `Edit — ${editingStaff.name}` : "Add New Staff Member"}
-              </div>
-              <div style={{ display: "flex", gap: "4px", background: "#F2F4F7", borderRadius: "8px", padding: "3px" }}>
-                {(["info", "services", "hours"] as const).map(tab => (
-                  <button key={tab} type="button" onClick={() => setActiveTab(tab)}
-                    style={{ padding: "5px 14px", fontSize: "12px", borderRadius: "6px", border: "none", cursor: "pointer", background: activeTab === tab ? "#fff" : "transparent", color: activeTab === tab ? "#0F172A" : "#64748B", fontWeight: activeTab === tab ? 500 : 400 }}>
-                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <form onSubmit={handleSubmit} style={{ padding: "20px 24px" }}>
-              {activeTab === "info" && (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
-                  <input type="text" placeholder="Name" value={formData.name} required onChange={e => setFormData({ ...formData, name: e.target.value })} style={{ padding: "10px 12px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "6px" }} />
-                  <input type="email" placeholder="Email" value={formData.email} required onChange={e => setFormData({ ...formData, email: e.target.value })} style={{ padding: "10px 12px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "6px" }} />
-                  <select value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })} style={{ padding: "10px 12px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "6px" }}>
-                    <option value="stylist">Stylist</option>
-                    <option value="makeup-artist">Makeup Artist</option>
-                    <option value="esthetician">Esthetician</option>
-                    <option value="receptionist">Receptionist</option>
-                    <option value="manager">Manager</option>
-                  </select>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <input type="checkbox" id="active" checked={formData.active} onChange={e => setFormData({ ...formData, active: e.target.checked })} style={{ width: "16px", height: "16px" }} />
-                    <label htmlFor="active" style={{ fontSize: "13px", color: "#0F172A" }}>Active</label>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === "services" && (
-                <div>
-                  <div style={{ fontSize: "12px", color: "#94A3B8", marginBottom: "14px" }}>Select services this staff member provides:</div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                    {SERVICES_LIST.map(service => {
-                      const selected = formData.services.includes(service);
-                      return (
-                        <button key={service} type="button" onClick={() => toggleService(service)}
-                          style={{ padding: "7px 16px", fontSize: "13px", borderRadius: "20px", border: `1px solid ${selected ? "#4F6EF7" : "#E8EAF0"}`, background: selected ? "#EEF2FF" : "#fff", color: selected ? "#4F6EF7" : "#64748B", cursor: "pointer" }}>
-                          {service}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {activeTab === "hours" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                  {DAYS.map(day => {
-                    const h = formData.working_hours[day];
-                    return (
-                      <div key={day} style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
-                        <div style={{ width: "36px", fontSize: "13px", color: "#0F172A", fontWeight: 500 }}>{day}</div>
-                        <input type="checkbox" checked={h.enabled} onChange={e => updateWorkingHour(day, "enabled", e.target.checked)} style={{ width: "15px", height: "15px" }} />
-                        {h.enabled ? (
-                          <>
-                            <input type="time" value={h.start} onChange={e => updateWorkingHour(day, "start", e.target.value)} style={{ padding: "6px 10px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "6px" }} />
-                            <span style={{ fontSize: "12px", color: "#94A3B8" }}>to</span>
-                            <input type="time" value={h.end} onChange={e => updateWorkingHour(day, "end", e.target.value)} style={{ padding: "6px 10px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "6px" }} />
-                          </>
-                        ) : (
-                          <span style={{ fontSize: "12px", color: "#CBD5E1" }}>Day off</span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              <div style={{ display: "flex", gap: "8px", marginTop: "20px" }}>
-                <button type="submit" style={{ flex: 1, padding: "10px", background: "#4F6EF7", color: "#fff", border: "none", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}>
-                  {editingStaff ? "Save Changes" : "Add Staff"}
-                </button>
-                <button type="button" onClick={() => { setShowForm(false); setEditingStaff(null); setFormData(emptyForm); setActiveTab("info"); }}
-                  style={{ flex: 1, padding: "10px", background: "#E8EAF0", color: "#64748B", border: "none", borderRadius: "6px", fontSize: "13px", cursor: "pointer" }}>
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
+    <DashboardShell salonName={salon?.name} topbar={Topbar}>
+      <div style={{ padding: "24px 20px" }}>
 
         {/* Search */}
-        <div style={{ marginBottom: "16px" }}>
-          <input type="text" placeholder="Search staff..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-            style={{ padding: "8px 12px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "6px", width: "200px" }} />
+        <div style={{ marginBottom: 16 }}>
+          <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Search staff by name or email..." style={{ width: "100%", maxWidth: 360, padding: "9px 13px", border: "1px solid var(--border-2)", borderRadius: "var(--r-sm)", fontSize: 13.5, fontFamily: "var(--font)", outline: "none", color: "var(--text-1)" }}
+            onFocus={e => { e.currentTarget.style.borderColor = "var(--indigo)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.12)"; }}
+            onBlur={e => { e.currentTarget.style.borderColor = "var(--border-2)"; e.currentTarget.style.boxShadow = "none"; }}
+          />
         </div>
 
-        {/* Staff Table */}
-        <div style={{ background: "#fff", border: "0.5px solid #E8EAF0", borderRadius: "10px", overflow: "hidden" }}>
-          {filteredStaff.length === 0 ? (
-            <div style={{ padding: "48px", textAlign: "center", color: "#94A3B8", fontSize: "14px" }}>
-              {searchTerm ? "No staff found" : "No staff members yet"}
-            </div>
-          ) : (
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "600px" }}>
-                <thead>
-                  <tr style={{ background: "#F8F9FC" }}>
-                    {["Name", "Email", "Role", "Services", "Hours", "Status", "Actions"].map(h => (
-                      <th key={h} style={{ fontSize: "11px", color: "#94A3B8", textAlign: "left", padding: "10px 18px", fontWeight: 500, borderBottom: "0.5px solid #E8EAF0" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredStaff.map(s => {
-                    const services: string[] = s.services || [];
-                    const wh: Record<string, any> = s.working_hours || {};
-                    const activeDays = DAYS.filter(d => wh[d]?.enabled);
-                    return (
-                      <tr key={s.id}>
-                        <td style={{ padding: "11px 18px", fontSize: "13px", color: "#0F172A", borderBottom: "0.5px solid #F1F5F9" }}>{s.name}</td>
-                        <td style={{ padding: "11px 18px", fontSize: "13px", color: "#64748B", borderBottom: "0.5px solid #F1F5F9" }}>{s.email}</td>
-                        <td style={{ padding: "11px 18px", borderBottom: "0.5px solid #F1F5F9" }}>
-                          <span style={{ background: "#EEF2FF", color: "#4F6EF7", fontSize: "11px", padding: "4px 10px", borderRadius: "20px", textTransform: "capitalize" }}>{s.role}</span>
-                        </td>
-                        <td style={{ padding: "11px 18px", fontSize: "12px", color: "#64748B", borderBottom: "0.5px solid #F1F5F9" }}>
-                          {services.length === 0 ? <span style={{ color: "#CBD5E1" }}>—</span> : (
-                            <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
-                              {services.slice(0, 2).map(sv => (
-                                <span key={sv} style={{ background: "#F8F9FC", border: "0.5px solid #E8EAF0", borderRadius: "4px", padding: "2px 7px", fontSize: "11px" }}>{sv}</span>
-                              ))}
-                              {services.length > 2 && <span style={{ fontSize: "11px", color: "#94A3B8" }}>+{services.length - 2}</span>}
-                            </div>
-                          )}
-                        </td>
-                        <td style={{ padding: "11px 18px", fontSize: "12px", color: "#64748B", borderBottom: "0.5px solid #F1F5F9" }}>
-                          {activeDays.length === 0 ? <span style={{ color: "#CBD5E1" }}>—</span> : activeDays.join(", ")}
-                        </td>
-                        <td style={{ padding: "11px 18px", borderBottom: "0.5px solid #F1F5F9" }}>
-                          <span style={{ background: s.active ? "#ECFDF5" : "#FEF2F2", color: s.active ? "#166534" : "#DC2626", fontSize: "11px", padding: "4px 10px", borderRadius: "20px" }}>
-                            {s.active ? "Active" : "Inactive"}
-                          </span>
-                        </td>
-                        <td style={{ padding: "11px 18px", fontSize: "13px", borderBottom: "0.5px solid #F1F5F9", whiteSpace: "nowrap" }}>
-                          <button onClick={() => handleEdit(s)} style={{ color: "#4F6EF7", background: "none", border: "none", cursor: "pointer", fontSize: "12px", marginRight: "10px" }}>Edit</button>
-                          <button onClick={() => handleToggleActive(s.id, s.active)} style={{ color: s.active ? "#DC2626" : "#166534", background: "none", border: "none", cursor: "pointer", fontSize: "12px", marginRight: "10px" }}>
-                            {s.active ? "Deactivate" : "Activate"}
-                          </button>
-                          <button onClick={() => handleDeleteStaff(s.id)} style={{ color: "#EF4444", background: "none", border: "none", cursor: "pointer", fontSize: "12px" }}>Delete</button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+        {/* Staff cards grid */}
+        {filtered.length === 0 ? (
+          <div style={{ background: "#fff", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", overflow: "hidden" }}>
+            <EmptyState icon="??" title={searchTerm ? "No staff found" : "No staff members yet"} description={searchTerm ? "Try a different search" : "Add your first team member to get started"} action={{ label: "+ Add Staff", onClick: () => setShowForm(true) }} />
+          </div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 14 }}>
+            {filtered.map(s => {
+              const wh = s.working_hours || {};
+              const activeDays = DAYS.filter(d => wh[d]?.enabled);
+              return (
+                <div key={s.id} style={{ background: "#fff", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", padding: "18px", transition: "all 0.14s" }}
+                  onMouseEnter={e => { e.currentTarget.style.boxShadow = "var(--shadow-md)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "none"; }}
+                >
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 14 }}>
+                    <Avatar name={s.name} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text-1)", letterSpacing: "-0.2px" }}>{s.name}</div>
+                      <div style={{ fontSize: 12, color: "var(--text-3)", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.email}</div>
+                    </div>
+                    <span style={{ fontSize: 10.5, fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: s.active ? "var(--green-light)" : "var(--red-light)", color: s.active ? "var(--green)" : "var(--red)", border: `1px solid ${s.active ? "var(--green-pale)" : "var(--red-pale)"}`, whiteSpace: "nowrap" }}>
+                      {s.active ? "Active" : "Inactive"}
+                    </span>
+                  </div>
+
+                  <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 99, background: "var(--indigo-light)", color: "var(--indigo)", border: "1px solid var(--indigo-pale)", textTransform: "capitalize" }}>{s.role}</span>
+                    {activeDays.length > 0 && <span style={{ fontSize: 11, fontWeight: 500, padding: "3px 9px", borderRadius: 99, background: "var(--slate-100)", color: "var(--text-2)", border: "1px solid var(--border)" }}>{activeDays.join(", ")}</span>}
+                  </div>
+
+                  {s.services?.length > 0 && (
+                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 14 }}>
+                      {s.services.slice(0,3).map((sv: string) => (
+                        <span key={sv} style={{ fontSize: 10.5, padding: "2px 8px", borderRadius: 4, background: "var(--slate-50)", border: "1px solid var(--border)", color: "var(--text-2)" }}>{sv}</span>
+                      ))}
+                      {s.services.length > 3 && <span style={{ fontSize: 10.5, color: "var(--text-3)" }}>+{s.services.length - 3} more</span>}
+                    </div>
+                  )}
+
+                  <div style={{ display: "flex", gap: 6, paddingTop: 12, borderTop: "1px solid var(--slate-100)" }}>
+                    <button onClick={() => handleEdit(s)} style={{ flex: 1, padding: "7px", borderRadius: "var(--r-sm)", border: "1px solid var(--border)", background: "#fff", color: "var(--text-2)", fontSize: 12.5, fontWeight: 600, cursor: "pointer", transition: "all 0.12s", fontFamily: "var(--font)" }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--indigo)"; e.currentTarget.style.color = "var(--indigo)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text-2)"; }}
+                    >Edit</button>
+                    <button onClick={() => handleToggle(s.id, s.active)} style={{ flex: 1, padding: "7px", borderRadius: "var(--r-sm)", border: "1px solid var(--border)", background: "#fff", color: s.active ? "var(--red)" : "var(--green)", fontSize: 12.5, fontWeight: 600, cursor: "pointer", transition: "all 0.12s", fontFamily: "var(--font)" }}>
+                      {s.active ? "Deactivate" : "Activate"}
+                    </button>
+                    <button onClick={() => handleDelete(s.id)} style={{ padding: "7px 10px", borderRadius: "var(--r-sm)", border: "1px solid var(--border)", background: "#fff", color: "var(--text-3)", fontSize: 12.5, cursor: "pointer", transition: "all 0.12s", fontFamily: "var(--font)" }}
+                      onMouseEnter={e => { e.currentTarget.style.color = "var(--red)"; e.currentTarget.style.borderColor = "var(--red-pale)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.color = "var(--text-3)"; e.currentTarget.style.borderColor = "var(--border)"; }}
+                    >??</button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Staff Form Modal */}
+      <Modal open={showForm} onClose={() => { setShowForm(false); setEditingStaff(null); }} title={editingStaff ? `Edit � ${editingStaff.name}` : "Add New Staff Member"} maxWidth={520}>
+        {/* Tabs */}
+        <div style={{ display: "flex", gap: 2, background: "var(--slate-100)", padding: 3, borderRadius: 8, marginBottom: 20 }}>
+          {(["info","services","hours"] as const).map(tab => (
+            <button key={tab} type="button" onClick={() => setFormTab(tab)} style={{ flex: 1, padding: "6px 12px", fontSize: 12.5, borderRadius: 6, border: "none", background: formTab === tab ? "#fff" : "transparent", color: formTab === tab ? "var(--text-1)" : "var(--text-3)", fontWeight: formTab === tab ? 600 : 400, cursor: "pointer", boxShadow: formTab === tab ? "var(--shadow-xs)" : "none", transition: "all 0.12s", fontFamily: "var(--font)", textTransform: "capitalize" }}>
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          {formTab === "info" && (
+            <>
+              <FormGroup label="Name *"><Input placeholder="Jane Smith" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required /></FormGroup>
+              <FormGroup label="Email *"><Input type="email" placeholder="jane@salon.com" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} required /></FormGroup>
+              <FormGroup label="Role"><Select value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })}><option value="stylist">Stylist</option><option value="makeup-artist">Makeup Artist</option><option value="esthetician">Esthetician</option><option value="receptionist">Receptionist</option><option value="manager">Manager</option></Select></FormGroup>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "var(--slate-50)", borderRadius: "var(--r-sm)", border: "1px solid var(--border)" }}>
+                <label style={{ position: "relative", width: 32, height: 17, cursor: "pointer" }}>
+                  <input type="checkbox" checked={formData.active} onChange={e => setFormData({ ...formData, active: e.target.checked })} style={{ opacity: 0, width: 0, height: 0 }} />
+                  <span style={{ position: "absolute", inset: 0, background: formData.active ? "var(--green)" : "var(--slate-300)", borderRadius: 99, transition: "background 0.18s" }}>
+                    <span style={{ position: "absolute", width: 11, height: 11, left: formData.active ? 18 : 3, top: 3, background: "#fff", borderRadius: "50%", transition: "left 0.18s" }} />
+                  </span>
+                </label>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-1)" }}>Active � accepting bookings</span>
+              </div>
+            </>
+          )}
+
+          {formTab === "services" && (
+            <div>
+              <p style={{ fontSize: 12.5, color: "var(--text-3)", marginBottom: 14 }}>Select services this staff member provides:</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {SERVICES_LIST.map(svc => {
+                  const sel = formData.services.includes(svc);
+                  return (
+                    <button key={svc} type="button" onClick={() => toggleService(svc)} style={{ padding: "7px 14px", fontSize: 13, borderRadius: 99, border: `1px solid ${sel ? "var(--indigo)" : "var(--border)"}`, background: sel ? "var(--indigo-light)" : "#fff", color: sel ? "var(--indigo)" : "var(--text-2)", cursor: "pointer", fontWeight: sel ? 600 : 400, transition: "all 0.12s", fontFamily: "var(--font)" }}>
+                      {svc}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
-        </div>
-      </div>
-    </div>
+
+          {formTab === "hours" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {DAYS.map(day => {
+                const h = formData.working_hours[day];
+                return (
+                  <div key={day} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", borderRadius: "var(--r-sm)", background: h.enabled ? "var(--slate-50)" : "transparent", border: "1px solid var(--border)", transition: "background 0.12s" }}>
+                    <div style={{ width: 36, fontSize: 13, fontWeight: 600, color: "var(--text-1)" }}>{day}</div>
+                    <label style={{ position: "relative", width: 28, height: 15, cursor: "pointer", flexShrink: 0 }}>
+                      <input type="checkbox" checked={h.enabled} onChange={e => updateHour(day, "enabled", e.target.checked)} style={{ opacity: 0, width: 0, height: 0 }} />
+                      <span style={{ position: "absolute", inset: 0, background: h.enabled ? "var(--indigo)" : "var(--slate-300)", borderRadius: 99, transition: "background 0.18s" }}>
+                        <span style={{ position: "absolute", width: 9, height: 9, left: h.enabled ? 16 : 3, top: 3, background: "#fff", borderRadius: "50%", transition: "left 0.18s" }} />
+                      </span>
+                    </label>
+                    {h.enabled ? (
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, flex: 1 }}>
+                        <input type="time" value={h.start} onChange={e => updateHour(day, "start", e.target.value)} style={{ padding: "5px 8px", fontSize: 12.5, border: "1px solid var(--border-2)", borderRadius: "var(--r-xs)", fontFamily: "var(--font)", outline: "none" }} />
+                        <span style={{ fontSize: 11, color: "var(--text-3)" }}>to</span>
+                        <input type="time" value={h.end} onChange={e => updateHour(day, "end", e.target.value)} style={{ padding: "5px 8px", fontSize: 12.5, border: "1px solid var(--border-2)", borderRadius: "var(--r-xs)", fontFamily: "var(--font)", outline: "none" }} />
+                      </div>
+                    ) : (
+                      <span style={{ fontSize: 12, color: "var(--text-3)", fontStyle: "italic" }}>Day off</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <ModalActions>
+            <BtnSecondary type="button" onClick={() => { setShowForm(false); setEditingStaff(null); setFormData(EMPTY_FORM); setFormTab("info"); }}>Cancel</BtnSecondary>
+            <BtnPrimary type="submit">{editingStaff ? "Save Changes" : "Add Staff"}</BtnPrimary>
+          </ModalActions>
+        </form>
+      </Modal>
+    </DashboardShell>
   );
 }
