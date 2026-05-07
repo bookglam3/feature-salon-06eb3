@@ -1,26 +1,11 @@
-import DashboardSidebar from "./Sidebar";
-
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        minHeight: "100vh",
-        backgroundColor: "#F8F9FB",
-      }}
-    >
-      <DashboardSidebar />
-      <main
-        style={{
-          flex: 1,
-          overflow: "auto",
-        }}
-        className="dashboard-main"
-      >
+    <div style={{ minHeight: "100vh" }}>
+      <main className="dashboard-main">
         {children}
       </main>
       <style>{`
