@@ -17,6 +17,8 @@ const SERVICE_ICONS: Record<string, string> = {
   wax: "🌿", threading: "🧵", lash: "👁️", brow: "🪮", keratin: "✨", treatment: "🌿",
 };
 
+const STEPS = ["Service", "Staff", "Date & Time", "Details"];
+
 function getServiceIcon(name: string): string {
   const lower = name.toLowerCase();
   for (const [key, icon] of Object.entries(SERVICE_ICONS)) {
@@ -29,13 +31,22 @@ function getInitials(name: string): string {
   return name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 }
 
+// ✅ Professional validation
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function isValidPhone(phone: string): boolean {
+  const cleaned = phone.replace(/[\s\-\(\)]/g, "");
+  return /^(\+44|0)[\d]{10,11}$/.test(cleaned);
+}
+
 export default function BookingPage() {
   const { slug } = useParams() as { slug: string };
 
   const [salon, setSalon] = useState<any>(null);
   const [services, setServices] = useState<any[]>([]);
   const [staffList, setStaffList] = useState<any[]>([]);
-  const [offers, setOffers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -47,6 +58,7 @@ export default function BookingPage() {
   const [selDate, setSelDate] = useState<Date | null>(null);
   const [selTime, setSelTime] = useState("");
   const [form, setForm] = useState({ name: "", email: "", phone: "" });
+  const [errors, setErrors] = useState({ email: "", phone: "" });
 
   useEffect(() => {
     if (!slug) return;
@@ -55,22 +67,35 @@ export default function BookingPage() {
       if (!s) { setNotFound(true); setLoading(false); return; }
       setSalon(s);
 
-      const now = new Date().toISOString();
-      const [{ data: sv }, { data: st }, { data: of }] = await Promise.all([
+      const [{ data: sv }, { data: st }] = await Promise.all([
         supabase.from("services").select("*").eq("salon_id", s.id).order("price"),
         supabase.from("staff").select("*").eq("salon_id", s.id),
-        supabase.from("offers").select("*").eq("salon_id", s.id).eq("active", true)
-       .or(`valid_until.is.null,valid_until.gte.${now}`).order("created_at", { ascending: false }),
       ]);
       setServices(sv || []);
       setStaffList(st || []);
-      setOffers(of || []);
       setLoading(false);
     })();
   }, [slug]);
 
+  const validateForm = () => {
+    const newErrors = { email: "", phone: "" };
+
+    if (form.email &&!isValidEmail(form.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    if (form.phone &&!isValidPhone(form.phone)) {
+      newErrors.phone = "Please enter a valid UK phone number";
+    }
+
+    setErrors(newErrors);
+    return!newErrors.email &&!newErrors.phone;
+  };
+
   const handleBook = async () => {
     if (!salon ||!selectedService ||!selDate ||!selTime ||!form.name.trim()) return;
+    if (!validateForm()) return;
+
     setSubmitting(true);
 
     const [hours, minutes] = selTime.split(":");
@@ -79,12 +104,12 @@ export default function BookingPage() {
     const iso = bookingDateTime.toISOString();
 
     const { data: existing } = await supabase
-   .from("appointments")
-   .select("id")
-   .eq("salon_id", salon.id)
-   .eq("date_time", iso)
-   .eq("staff_id", selectedStaff?.id || null)
-   .maybeSingle();
+     .from("appointments")
+     .select("id")
+     .eq("salon_id", salon.id)
+     .eq("date_time", iso)
+     .eq("staff_id", selectedStaff?.id || null)
+     .maybeSingle();
 
     if (existing) {
       alert("This slot is already booked.");
@@ -135,15 +160,21 @@ export default function BookingPage() {
   const canNext0 =!!selectedService;
   const canNext1 = staffConfirmed;
   const canNext2 =!!selDate &&!!selTime;
-  const canSubmit =!!form.name.trim();
+  const canSubmit =!!form.name.trim() &&!!form.email &&!!form.phone &&!errors.email &&!errors.phone;
   const todayStr = new Date().toISOString().split('T')[0];
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#F8FAFF" }}>
-        <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');`}</style>
-        <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "18px", fontWeight: 600, color: "#1E3A8A", letterSpacing: "-0.3px" }}>Loading...</div>
-      </div>
+      <>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');`}</style>
+        <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" }}>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: "18px", fontWeight: 700, color: "white", letterSpacing: "-0.4px" }}>
+            <div style={{ width: 40, height: 40, border: "3px solid rgba(255,255,255,0.3)", borderTop: "3px solid white", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 12px" }}></div>
+            Loading...
+          </div>
+        </div>
+        <style>{`@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}`}</style>
+      </>
     );
   }
 
@@ -158,18 +189,21 @@ export default function BookingPage() {
   if (step === 4) {
     return (
       <>
-        <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap'); *{font-family:'Plus Jakarta Sans',sans-serif;box-sizing:border-box;margin:0}`}</style>
-        <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 20, padding: 20, textAlign: "center", background: "#F8FAFF" }}>
-          <div style={{ width: 90, height: 90, borderRadius: "50%", background: "#DCFCE7", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40 }}>✓</div>
-          <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: "-0.6px" }}>Booking Confirmed 🎉</h1>
-          <p style={{ fontSize: 15, color: "#475569" }}>Your appointment request has been submitted.</p>
-          <div style={{ padding: 20, border: "1px solid #E5E7EB", borderRadius: 12, width: "100%", maxWidth: 400, background: "white" }}>
-            <p style={{ marginBottom: 8 }}><strong>Service:</strong> {selectedService?.name}</p>
-            <p style={{ marginBottom: 8 }}><strong>Staff:</strong> {selectedStaff?.name || "Any available"}</p>
-            <p style={{ marginBottom: 8 }}><strong>Date:</strong> {selDate?.toLocaleDateString("en-GB")}</p>
-            <p><strong>Time:</strong> {selTime}</p>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap'); *{font-family:'Plus Jakarta Sans',sans-serif;box-sizing:border-box;margin:0}`}</style>
+        <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ background: "white", borderRadius: 24, padding: "48px 32px", maxWidth: 480, width: "100%", textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.3)", animation: "slideUp 0.5s ease-out" }}>
+            <div style={{ width: 80, height: 80, borderRadius: "50%", background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40, margin: "0 auto 24px", boxShadow: "0 8px 16px rgba(16,185,129,0.4)" }}>✓</div>
+            <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.8px", marginBottom: 12, background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Booking Confirmed!</h1>
+            <p style={{ fontSize: 15, color: "#64748B", marginBottom: 32 }}>Your appointment request has been submitted successfully.</p>
+            <div style={{ padding: 20, background: "#F8FAFC", borderRadius: 16, textAlign: "left", border: "1px solid #E2E8F0" }}>
+              <div style={{ marginBottom: 12, display: "flex", justifyContent: "space-between" }}><span style={{ color: "#64748B", fontSize: 14 }}>Service</span><strong style={{ fontSize: 14 }}>{selectedService?.name}</strong></div>
+              <div style={{ marginBottom: 12, display: "flex", justifyContent: "space-between" }}><span style={{ color: "#64748B", fontSize: 14 }}>Staff</span><strong style={{ fontSize: 14 }}>{selectedStaff?.name || "Any available"}</strong></div>
+              <div style={{ marginBottom: 12, display: "flex", justifyContent: "space-between" }}><span style={{ color: "#64748B", fontSize: 14 }}>Date</span><strong style={{ fontSize: 14 }}>{selDate?.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</strong></div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "#64748B", fontSize: 14 }}>Time</span><strong style={{ fontSize: 14 }}>{selTime}</strong></div>
+            </div>
           </div>
         </div>
+        <style>{`@keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}`}</style>
       </>
     );
   }
@@ -177,120 +211,257 @@ export default function BookingPage() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         *{box-sizing:border-box;margin:0;padding:0;font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;}
-        body{background:#f6f8ff;}
+        body{background:#F8FAFF;}
         input,button,textarea,select{-webkit-appearance:none;appearance:none;font-family:inherit;}
-       .container{max-width:700px;margin:auto;padding:20px;}
-       .hero{background:#2563EB;color:white;padding:40px 20px;text-align:center;border-bottom-left-radius:30px;border-bottom-right-radius:30px;}
-       .logo{width:90px;height:90px;border-radius:20px;object-fit:cover;margin:auto;margin-bottom:15px;}
-       .service-card,.staff-card{border:2px solid #E5E7EB;border-radius:16px;padding:16px;margin-bottom:12px;cursor:pointer;background:white;transition:0.2s;}
-       .service-card.selected,.staff-card.selected{border-color:#2563EB;background:#EFF6FF;}
-       .btn{width:100%;background:#2563EB;color:white;border:none;padding:14px;border-radius:12px;font-weight:700;cursor:pointer;margin-top:20px;font-size:15px;letter-spacing:-0.2px;}
-       .btn:disabled{opacity:0.5;cursor:not-allowed;}
-       .time-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
-       .time-btn{padding:10px;border-radius:10px;border:1px solid #D1D5DB;background:white;cursor:pointer;font-weight:600;font-size:14px;}
-       .time-btn.selected{background:#2563EB;color:white;border-color:#2563EB;}
-       .time-btn:disabled{opacity:0.4;cursor:not-allowed;}
-       .input{width:100%;padding:12px;border-radius:10px;border:1px solid #D1D5DB;margin-top:6px;margin-bottom:16px;font-size:15px;font-weight:500;}
-       .input:focus{outline:none;border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,0.1);}
-        h1{font-size:28px;font-weight:700;letter-spacing:-0.6px;margin-bottom:8px;}
-        h2{font-size:22px;font-weight:700;letter-spacing:-0.5px;margin-bottom:16px;}
-        h3{font-size:16px;font-weight:600;letter-spacing:-0.3px;margin-bottom:4px;}
-        p{font-size:14px;color:#475569;line-height:1.5;}
-        small{font-size:13px;color:#64748B;font-weight:500;}
-       .back-btn{background:none;border:none;color:#2563EB;font-weight:600;cursor:pointer;margin-bottom:20px;font-size:14px;padding:0;}
+
+       .page-bg{min-height:100vh;background:linear-gradient(180deg, #667eea 0%, #764ba2 100%);padding-bottom:40px;}
+       .container{max-width:680px;margin:auto;padding:0 20px;}
+
+       .hero{padding:48px 20px 120px;text-align:center;position:relative;}
+       .hero-bg{position:absolute;inset:0;background:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23ffffff" fill-opacity="0.1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,138.7C960,139,1056,117,1152,112C1248,107,1344,117,1392,122.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>') no-repeat bottom;background-size:cover;opacity:0.3;}
+
+       .logo-wrapper{width:96px;height:96px;border-radius:24px;background:white;padding:4px;margin:0 auto 20px;box-shadow:0 12px 24px rgba(0,0,0,0.2);position:relative;z-index:1;}
+       .logo{width:100%;height:100%;border-radius:20px;object-fit:cover;}
+       .logo-placeholder{width:100%;height:100%;border-radius:20px;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;color:white;}
+
+       .hero h1{font-size:32px;font-weight:800;letter-spacing:-1px;color:white;margin-bottom:8px;position:relative;z-index:1;}
+       .hero p{font-size:15px;color:rgba(255,255,255,0.9);position:relative;z-index:1;font-weight:500;}
+
+       .card{background:white;border-radius:24px;margin-top:-80px;position:relative;z-index:2;box-shadow:0 20px 60px rgba(0,0,0,0.15);padding:32px 24px;animation:slideUp 0.5s ease-out;}
+
+       .progress{display:flex;gap:8px;margin-bottom:32px;}
+       .progress-step{flex:1;height:4px;background:#E2E8F0;border-radius:2px;transition:all 0.3s;}
+       .progress-step.active{background:linear-gradient(90deg, #667eea 0%, #764ba2 100%);box-shadow:0 2px 8px rgba(102,126,234,0.4);}
+       .progress-labels{display:flex;justify-content:space-between;margin-bottom:24px;}
+       .progress-label{font-size:12px;font-weight:600;color:#94A3B8;transition:color 0.3s;}
+       .progress-label.active{color:#667eea;}
+
+        h2{font-size:24px;font-weight:800;letter-spacing:-0.6px;margin-bottom:20px;color:#0F172A;}
+
+       .item-card{border:2px solid #E2E8F0;border-radius:16px;padding:18px;margin-bottom:12px;cursor:pointer;background:white;transition:all 0.2s;display:flex;align-items:center;gap:16px;}
+       .item-card:hover{border-color:#CBD5E1;transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.08);}
+       .item-card.selected{border-color:#667eea;background:linear-gradient(135deg, rgba(102,126,234,0.05) 0%, rgba(118,75,162,0.05) 100%);box-shadow:0 4px 12px rgba(102,126,234,0.2);}
+       .item-icon{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
+       .item-card.selected.item-icon{background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);}
+       .item-content{flex:1;}
+       .item-content h3{font-size:16px;font-weight:700;letter-spacing:-0.3px;margin-bottom:4px;color:#0F172A;}
+       .item-content p{font-size:14px;color:#64748B;font-weight:600;}
+       .item-meta{font-size:13px;color:#94A3B8;font-weight:500;}
+
+       .btn{width:100%;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:white;border:none;padding:16px;border-radius:14px;font-weight:700;cursor:pointer;margin-top:24px;font-size:16px;letter-spacing:-0.3px;box-shadow:0 8px 16px rgba(102,126,234,0.4);transition:all 0.2s;}
+       .btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 12px 24px rgba(102,126,234,0.5);}
+       .btn:active:not(:disabled){transform:translateY(0);}
+       .btn:disabled{opacity:0.5;cursor:not-allowed;box-shadow:none;}
+
+       .back-btn{background:none;border:none;color:#667eea;font-weight:700;cursor:pointer;margin-bottom:20px;font-size:15px;padding:8px 0;display:flex;align-items:center;gap:6px;transition:gap 0.2s;}
+       .back-btn:hover{gap:10px;}
+
+       .input-group{margin-bottom:20px;}
+       .input-label{display:block;font-size:14px;font-weight:700;color:#334155;margin-bottom:8px;letter-spacing:-0.2px;}
+       .input{width:100%;padding:14px 16px;border-radius:12px;border:2px solid #E2E8F0;font-size:15px;font-weight:600;color:#0F172A;transition:all 0.2s;background:#F8FAFC;}
+       .input:focus{outline:none;border-color:#667eea;background:white;box-shadow:0 0 0 4px rgba(102,126,234,0.1);}
+       .input::placeholder{color:#94A3B8;font-weight:500;}
+       .input.error{border-color:#EF4444;background:#FEF2F2;}
+       .error-text{font-size:13px;color:#EF4444;font-weight:600;margin-top:6px;display:block;}
+
+       .time-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px;}
+       .time-btn{padding:12px;border-radius:12px;border:2px solid #E2E8F0;background:white;cursor:pointer;font-weight:700;font-size:14px;color:#334155;transition:all 0.2s;}
+       .time-btn:hover:not(:disabled){border-color:#CBD5E1;transform:translateY(-2px);}
+       .time-btn.selected{background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);color:white;border-color:transparent;box-shadow:0 4px 12px rgba(102,126,234,0.4);}
+       .time-btn:disabled{opacity:0.3;cursor:not-allowed;background:#F1F5F9;}
+
+       .summary{padding:20px;background:linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%);border-radius:16px;margin-top:24px;border:2px solid #E2E8F0;}
+       .summary-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #E2E8F0;}
+       .summary-row:last-child{border-bottom:none;padding-bottom:0;}
+       .summary-row:first-child{padding-top:0;}
+       .summary-label{font-size:14px;color:#64748B;font-weight:600;}
+       .summary-value{font-size:14px;color:#0F172A;font-weight:700;}
+       .summary-total{margin-top:12px;padding-top:12px;border-top:2px solid #CBD5E1;}
+       .summary-total.summary-value{font-size:18px;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+
+        @keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+
+        @media (max-width:640px){
+         .time-grid{grid-template-columns:repeat(3,1fr);}
+         .hero{padding:32px 20px 100px;}
+         .hero h1{font-size:26px;}
+         .card{padding:24px 20px;margin-top:-60px;}
+        }
       `}</style>
 
-      <div className="hero">
-        {salon?.logo_url? (
-          <img src={salon.logo_url} className="logo" alt={salon.name} />
-        ) : (
-          <div style={{ width: 90, height: 90, borderRadius: 20, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", margin: "auto", marginBottom: 15, fontSize: 30, fontWeight: 800 }}>
-            {getInitials(salon?.name || "S")}
+      <div className="page-bg">
+        <div className="hero">
+          <div className="hero-bg"></div>
+          <div className="logo-wrapper">
+            {salon?.logo_url? (
+              <img src={salon.logo_url} className="logo" alt={salon.name} />
+            ) : (
+              <div className="logo-placeholder">{getInitials(salon?.name || "S")}</div>
+            )}
           </div>
-        )}
-        <h1>{salon?.name}</h1>
-        {salon?.description && <p style={{ opacity: 0.9, marginTop: 4 }}>{salon.description}</p>}
-      </div>
+          <h1>{salon?.name}</h1>
+          {salon?.description && <p>{salon.description}</p>}
+        </div>
 
-      <div className="container">
-        {step === 0 && (
-          <>
-            <h2>Select Service</h2>
-            {services.map((s) => (
-              <div key={s.id} className={`service-card ${selectedService?.id === s.id? "selected" : ""}`} onClick={() => setSelectedService(s)}>
-                <h3>{getServiceIcon(s.name)} {s.name}</h3>
-                <p style={{ fontWeight: 600, color: "#0F172A" }}>£{s.price}</p>
-                {s.duration_minutes && <small>{s.duration_minutes} mins</small>}
-              </div>
-            ))}
-            <button className="btn" disabled={!canNext0} onClick={() => setStep(1)}>Continue</button>
-          </>
-        )}
-
-        {step === 1 && (
-          <>
-            <button onClick={() => setStep(0)} className="back-btn">← Back</button>
-            <h2>Select Staff</h2>
-            <div className={`staff-card ${staffConfirmed && selectedStaff === null? "selected" : ""}`} onClick={() => { setSelectedStaff(null); setStaffConfirmed(true); }}>
-              <h3>Any Available Staff</h3>
-              <p>We'll assign the best available</p>
+        <div className="container">
+          <div className="card">
+            <div className="progress">
+              {STEPS.map((_, i) => (
+                <div key={i} className={`progress-step ${i <= step? "active" : ""}`}></div>
+              ))}
             </div>
-            {staffList.map((s) => (
-              <div key={s.id} className={`staff-card ${selectedStaff?.id === s.id? "selected" : ""}`} onClick={() => { setSelectedStaff(s); setStaffConfirmed(true); }}>
-                <h3>{s.name}</h3>
-                {s.role && <p>{s.role}</p>}
-              </div>
-            ))}
-            <button className="btn" disabled={!canNext1} onClick={() => setStep(2)}>Continue</button>
-          </>
-        )}
+            <div className="progress-labels">
+              {STEPS.map((label, i) => (
+                <span key={i} className={`progress-label ${i <= step? "active" : ""}`}>{label}</span>
+              ))}
+            </div>
 
-        {step === 2 && (
-          <>
-            <button onClick={() => setStep(1)} className="back-btn">← Back</button>
-            <h2>Select Date & Time</h2>
-            <input type="date" className="input" min={todayStr} onChange={(e) => setSelDate(new Date(e.target.value))} />
-            {selDate && (
+            {step === 0 && (
               <>
-                <div className="time-grid">
-                  {TIME_SLOTS.map((t) => {
-                    const now = new Date();
-                    const selectedDateTime = new Date(`${selDate.getFullYear()}-${String(selDate.getMonth() + 1).padStart(2, "0")}-${String(selDate.getDate()).padStart(2, "0")}T${t}`);
-                    const disabled = selectedDateTime < now && selDate.toDateString() === now.toDateString();
-                    return (
-                      <button key={t} disabled={disabled} className={`time-btn ${selTime === t? "selected" : ""}`} onClick={() =>!disabled && setSelTime(t)}>
-                        {t}
-                      </button>
-                    );
-                  })}
-                </div>
-                <button className="btn" disabled={!canNext2} onClick={() => setStep(3)}>Continue</button>
+                <h2>Choose Your Service</h2>
+                {services.map((s) => (
+                  <div key={s.id} className={`item-card ${selectedService?.id === s.id? "selected" : ""}`} onClick={() => setSelectedService(s)}>
+                    <div className="item-icon">{getServiceIcon(s.name)}</div>
+                    <div className="item-content">
+                      <h3>{s.name}</h3>
+                      <p>£{s.price}</p>
+                      {s.duration_minutes && <span className="item-meta">{s.duration_minutes} mins</span>}
+                    </div>
+                  </div>
+                ))}
+                <button className="btn" disabled={!canNext0} onClick={() => setStep(1)}>Continue →</button>
               </>
             )}
-          </>
-        )}
 
-        {step === 3 && (
-          <>
-            <button onClick={() => setStep(2)} className="back-btn">← Back</button>
-            <h2>Your Details</h2>
-            <input className="input" placeholder="Full Name *" value={form.name} onChange={(e) => setForm({...form, name: e.target.value })} />
-            <input className="input" placeholder="Email" type="email" value={form.email} onChange={(e) => setForm({...form, email: e.target.value })} />
-            <input className="input" placeholder="Phone" value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value })} />
-            <div style={{ padding: 20, border: "1px solid #E5E7EB", borderRadius: 12, marginTop: 20, background: "white" }}>
-              <p style={{ marginBottom: 8 }}><strong>Service:</strong> {selectedService?.name}</p>
-              <p style={{ marginBottom: 8 }}><strong>Staff:</strong> {selectedStaff?.name || "Any available"}</p>
-              <p style={{ marginBottom: 8 }}><strong>Date:</strong> {selDate?.toLocaleDateString("en-GB")}</p>
-              <p style={{ marginBottom: 8 }}><strong>Time:</strong> {selTime}</p>
-              <p style={{ fontWeight: 600, fontSize: 16, marginTop: 12 }}><strong>Price:</strong> £{selectedService?.price}</p>
-            </div>
-            <button className="btn" disabled={!canSubmit ||!!submitting} onClick={handleBook}>
-              {submitting? "Booking..." : "Confirm Booking"}
-            </button>
-          </>
-        )}
+            {step === 1 && (
+              <>
+                <button onClick={() => setStep(0)} className="back-btn">← Back to Services</button>
+                <h2>Select Your Stylist</h2>
+                <div className={`item-card ${staffConfirmed && selectedStaff === null? "selected" : ""}`} onClick={() => { setSelectedStaff(null); setStaffConfirmed(true); }}>
+                  <div className="item-icon">👥</div>
+                  <div className="item-content">
+                    <h3>Any Available Staff</h3>
+                    <p>We'll assign the best available</p>
+                  </div>
+                </div>
+                {staffList.map((s) => (
+                  <div key={s.id} className={`item-card ${selectedStaff?.id === s.id? "selected" : ""}`} onClick={() => { setSelectedStaff(s); setStaffConfirmed(true); }}>
+                    <div className="item-icon">{getInitials(s.name)}</div>
+                    <div className="item-content">
+                      <h3>{s.name}</h3>
+                      {s.role && <p>{s.role}</p>}
+                    </div>
+                  </div>
+                ))}
+                <button className="btn" disabled={!canNext1} onClick={() => setStep(2)}>Continue →</button>
+              </>
+            )}
+
+            {step === 2 && (
+              <>
+                <button onClick={() => setStep(1)} className="back-btn">← Back to Staff</button>
+                <h2>Pick Date & Time</h2>
+                <div className="input-group">
+                  <label className="input-label">Select Date</label>
+                  <input type="date" className="input" min={todayStr} onChange={(e) => setSelDate(new Date(e.target.value))} />
+                </div>
+                {selDate && (
+                  <>
+                    <label className="input-label">Available Times</label>
+                    <div className="time-grid">
+                      {TIME_SLOTS.map((t) => {
+                        const now = new Date();
+                        const selectedDateTime = new Date(`${selDate.getFullYear()}-${String(selDate.getMonth() + 1).padStart(2, "0")}-${String(selDate.getDate()).padStart(2, "0")}T${t}`);
+                        const disabled = selectedDateTime < now && selDate.toDateString() === now.toDateString();
+                        return (
+                          <button key={t} disabled={disabled} className={`time-btn ${selTime === t? "selected" : ""}`} onClick={() =>!disabled && setSelTime(t)}>
+                            {t}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <button className="btn" disabled={!canNext2} onClick={() => setStep(3)}>Continue →</button>
+                  </>
+                )}
+              </>
+            )}
+
+            {step === 3 && (
+              <>
+                <button onClick={() => setStep(2)} className="back-btn">← Back to Date & Time</button>
+                <h2>Your Information</h2>
+                <div className="input-group">
+                  <label className="input-label">Full Name *</label>
+                  <input
+                    className="input"
+                    placeholder="John Doe"
+                    value={form.name}
+                    onChange={(e) => setForm({...form, name: e.target.value })}
+                  />
+                </div>
+                <div className="input-group">
+                  <label className="input-label">Email Address *</label>
+                  <input
+                    className={`input ${errors.email? "error" : ""}`}
+                    placeholder="john@example.com"
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => {
+                      setForm({...form, email: e.target.value });
+                      if (errors.email) setErrors({...errors, email: ""});
+                    }}
+                    onBlur={validateForm}
+                  />
+                  {errors.email && <span className="error-text">{errors.email}</span>}
+                </div>
+                <div className="input-group">
+                  <label className="input-label">Phone Number *</label>
+                  <input
+                    className={`input ${errors.phone? "error" : ""}`}
+                    placeholder="+44 1234 567890"
+                    value={form.phone}
+                    onChange={(e) => {
+                      setForm({...form, phone: e.target.value });
+                      if (errors.phone) setErrors({...errors, phone: ""});
+                    }}
+                    onBlur={validateForm}
+                  />
+                  {errors.phone && <span className="error-text">{errors.phone}</span>}
+                </div>
+
+                <div className="summary">
+                  <div className="summary-row">
+                    <span className="summary-label">Service</span>
+                    <span className="summary-value">{selectedService?.name}</span>
+                  </div>
+                  <div className="summary-row">
+                    <span className="summary-label">Stylist</span>
+                    <span className="summary-value">{selectedStaff?.name || "Any available"}</span>
+                  </div>
+                  <div className="summary-row">
+                    <span className="summary-label">Date</span>
+                    <span className="summary-value">{selDate?.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
+                  </div>
+                  <div className="summary-row">
+                    <span className="summary-label">Time</span>
+                    <span className="summary-value">{selTime}</span>
+                  </div>
+                  <div className="summary-row summary-total">
+                    <span className="summary-label">Total</span>
+                    <span className="summary-value">£{selectedService?.price}</span>
+                  </div>
+                </div>
+
+                <button className="btn" disabled={!canSubmit ||!!submitting} onClick={handleBook}>
+                  {submitting? "Booking..." : "Confirm Booking"}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       </div>
     </>
   );
