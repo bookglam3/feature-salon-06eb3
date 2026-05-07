@@ -1,421 +1,811 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { supabase } from "../../../lib/supabase";
+import { supabase } from "@/app/lib/supabase";
 
-type Step = "service" | "staff" | "datetime" | "details" | "confirm";
+type Salon = {
+  id: string;
+  name: string;
+  slug: string;
+  owner_email: string;
+  description?: string;
+  logo_url?: string;
+  address?: string;
+  phone?: string;
+};
+
+type Service = {
+  id: string;
+  name: string;
+  price: number;
+  duration_minutes?: number;
+  description?: string;
+};
+
+type Staff = {
+  id: string;
+  name: string;
+  role?: string;
+  avatar_url?: string;
+};
+
+type Offer = {
+  id: string;
+  title: string;
+  description?: string;
+  discount_type: string;
+  discount_value: number;
+  valid_until?: string;
+};
+
+const STEPS = ["Service", "Staff", "Date & Time", "Your Details"];
 
 const TIME_SLOTS = [
-  "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-  "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
-  "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
+  "09:00","09:30","10:00","10:30","11:00","11:30",
+  "12:00","12:30","13:00","13:30","14:00","14:30",
+  "15:00","15:30","16:00","16:30","17:00","17:30",
 ];
 
-export default function PublicBookingPage() {
-  const params = useParams();
-  const slug = params?.slug as string;
+const SERVICE_ICONS: Record<string, string> = {
+  haircut: "✂️",
+  cut: "✂️",
+  hair: "💇",
+  color: "🎨",
+  colour: "🎨",
+  highlights: "✨",
+  blowout: "💨",
+  styling: "💫",
+  beard: "🧔",
+  shave: "🪒",
+  facial: "🧖",
+  massage: "💆",
+  nails: "💅",
+  manicure: "💅",
+  pedicure: "🦶",
+  wax: "🌿",
+  threading: "🧵",
+  lash: "👁️",
+  brow: "🪮",
+  keratin: "✨",
+  treatment: "🌿",
+};
 
-  const [salon, setSalon] = useState<any>(null);
-  const [services, setServices] = useState<any[]>([]);
-  const [staffList, setStaffList] = useState<any[]>([]);
-  const [offers, setOffers] = useState<any[]>([]);   // ← NEW
+function getServiceIcon(name: string): string {
+  const lower = name.toLowerCase();
+
+  for (const [key, icon] of Object.entries(SERVICE_ICONS)) {
+    if (lower.includes(key)) return icon;
+  }
+
+  return "💈";
+}
+
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function getDaysInMonth(year: number, month: number): Date[] {
+  const days: Date[] = [];
+  const d = new Date(year, month, 1);
+
+  while (d.getMonth() === month) {
+    days.push(new Date(d));
+    d.setDate(d.getDate() + 1);
+  }
+
+  return days;
+}
+
+const AVATAR_COLORS = [
+  ["#EFF6FF", "#2563EB"],
+  ["#ECFDF5", "#059669"],
+  ["#FFF7ED", "#EA580C"],
+  ["#F5F3FF", "#7C3AED"],
+  ["#FDF2F8", "#DB2777"],
+];
+
+export default function BookingPage() {
+  const { slug } = useParams() as { slug: string };
+
+  const [salon, setSalon] = useState<Salon | null>(null);
+  const [services, setServices] = useState<Service[]>([]);
+  const [staffList, setStaffList] = useState<Staff[]>([]);
+  const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [step, setStep] = useState<Step>("service");
-  const [booked, setBooked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Selections
-  const [selectedService, setSelectedService] = useState<any>(null);
-  const [selectedStaff, setSelectedStaff] = useState<any>(null);
-  const [selectedDate, setSelectedDate] = useState<string>("");
-  const [selectedTime, setSelectedTime] = useState<string>("");
-  const [clientForm, setClientForm] = useState({ name: "", email: "", phone: "" });
+  const [step, setStep] = useState(0);
+
+  const [selectedService, setSelectedService] =
+    useState<Service | null>(null);
+
+  const [selectedStaff, setSelectedStaff] =
+    useState<Staff | null>(null);
+
+  const [staffConfirmed, setStaffConfirmed] = useState(false);
+
+  const today = new Date();
+
+  const [calYear, setCalYear] = useState(today.getFullYear());
+  const [calMonth, setCalMonth] = useState(today.getMonth());
+
+  const [selDate, setSelDate] = useState<Date | null>(null);
+  const [selTime, setSelTime] = useState("");
+
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+  });
 
   useEffect(() => {
-    const load = async () => {
-      const { data: salonData } = await supabase
-        .from("salons").select("*").eq("slug", slug).single();
-      if (!salonData) { setNotFound(true); setLoading(false); return; }
-      setSalon(salonData);
+    if (!slug) return;
 
-      const today = new Date().toISOString().slice(0, 10);
+    (async () => {
+      const { data: s } = await supabase
+        .from("salons")
+        .select("*")
+        .eq("slug", slug)
+        .single();
 
-      const [
-        { data: svcData },
-        { data: staffData },
-        { data: offersData },   // ← NEW
-      ] = await Promise.all([
-        supabase.from("services").select("*").eq("salon_id", salonData.id).order("name"),
-        supabase.from("staff").select("*").eq("salon_id", salonData.id).eq("active", true),
-        supabase                                          // ← NEW
-          .from("offers")
-          .select("*")
-          .eq("salon_id", salonData.id)
-          .eq("active", true)
-          .or(`valid_until.is.null,valid_until.gte.${today}`)
-          .order("created_at", { ascending: false }),
-      ]);
+      if (!s) {
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
 
-      setServices(svcData || []);
-      setStaffList(staffData || []);
-      setOffers(offersData || []);   // ← NEW
+      setSalon(s);
 
+      const todayStr = new Date().toISOString().slice(0, 10);
+
+      const [{ data: sv }, { data: st }, { data: of }] =
+        await Promise.all([
+          supabase
+            .from("services")
+            .select("*")
+            .eq("salon_id", s.id)
+            .order("price"),
+
+          supabase
+            .from("staff")
+            .select("*")
+            .eq("salon_id", s.id),
+
+          supabase
+            .from("offers")
+            .select("*")
+            .eq("salon_id", s.id)
+            .eq("active", true)
+            .or(`valid_until.is.null,valid_until.gte.${todayStr}`)
+            .order("created_at", { ascending: false }),
+        ]);
+
+      setServices(sv || []);
+      setStaffList(st || []);
+      setOffers(of || []);
       setLoading(false);
-    };
-    if (slug) load();
+    })();
   }, [slug]);
 
   const handleBook = async () => {
-    if (!clientForm.name || !clientForm.email || !selectedDate || !selectedTime) return;
+    if (
+      !salon ||
+      !selectedService ||
+      !selDate ||
+      !selTime ||
+      !form.name
+    )
+      return;
+
     setSubmitting(true);
 
-    const dateTime = `${selectedDate}T${selectedTime}:00`;
+    const iso = new Date(
+      `${selDate.getFullYear()}-${String(
+        selDate.getMonth() + 1
+      ).padStart(2, "0")}-${String(selDate.getDate()).padStart(
+        2,
+        "0"
+      )}T${selTime}`
+    ).toISOString();
 
-    const { error } = await supabase.from("appointments").insert({
-      salon_id: salon.id,
-      service_id: selectedService?.id || null,
-      staff_id: selectedStaff?.id || null,
-      client_name: clientForm.name,
-      client_email: clientForm.email,
-      client_phone: clientForm.phone,
-      date_time: dateTime,
-      status: "confirmed",
-    });
+    const { data: existing } = await supabase
+      .from("appointments")
+      .select("id")
+      .eq("salon_id", salon.id)
+      .eq("date_time", iso)
+      .eq("staff_id", selectedStaff?.id || null)
+      .maybeSingle();
 
-    if (!error) setBooked(true);
-    setSubmitting(false);
-  };
-
-  const getDays = () => {
-    const days = [];
-    for (let i = 0; i < 30; i++) {
-      const d = new Date();
-      d.setDate(d.getDate() + i);
-      days.push(d);
+    if (existing) {
+      alert("This slot is already booked.");
+      setSubmitting(false);
+      return;
     }
-    return days;
+
+    const { error } = await supabase
+      .from("appointments")
+      .insert({
+        salon_id: salon.id,
+        client_name: form.name,
+        client_email: form.email,
+        client_phone: form.phone,
+        service_id: selectedService.id,
+        staff_id: selectedStaff?.id || null,
+        date_time: iso,
+        status: "pending",
+      });
+
+    if (error) {
+      alert("Booking failed. Please try again.");
+      setSubmitting(false);
+      return;
+    }
+
+    try {
+      await fetch("/api/send-booking-emails", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          clientEmail: form.email,
+          clientName: form.name,
+          clientPhone: form.phone,
+          serviceName: selectedService.name,
+          dateTime: iso,
+          staffName: selectedStaff?.name,
+          salonName: salon.name,
+          salonOwnerEmail: salon.owner_email,
+        }),
+      });
+    } catch (err) {
+      console.log(err);
+    }
+
+    setSubmitting(false);
+    setStep(4);
   };
 
-  const steps: Step[] = ["service", "staff", "datetime", "details", "confirm"];
-  const stepIndex = steps.indexOf(step);
+  const calDays = getDaysInMonth(calYear, calMonth);
 
-  if (loading) return (
-    <div style={{ minHeight: "100vh", background: "#0F0F0F", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ color: "#fff", fontFamily: "Georgia, serif", fontSize: "20px", opacity: 0.6 }}>Loading...</div>
-    </div>
-  );
+  const firstDow = new Date(
+    calYear,
+    calMonth,
+    1
+  ).getDay();
 
-  if (notFound) return (
-    <div style={{ minHeight: "100vh", background: "#0F0F0F", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "16px" }}>
-      <div style={{ color: "#fff", fontFamily: "Georgia, serif", fontSize: "28px" }}>Salon not found</div>
-      <div style={{ color: "#666", fontSize: "14px" }}>Check the link and try again</div>
-    </div>
-  );
+  const monthLabel = new Date(
+    calYear,
+    calMonth
+  ).toLocaleDateString("en-GB", {
+    month: "long",
+    year: "numeric",
+  });
 
-  if (booked) return (
-    <div style={{ minHeight: "100vh", background: "#0F0F0F", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
-      <div style={{ maxWidth: "480px", width: "100%", textAlign: "center" }}>
-        <div style={{ width: "72px", height: "72px", borderRadius: "50%", background: "#ECFDF5", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px", fontSize: "32px" }}>✓</div>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: "28px", color: "#fff", marginBottom: "12px" }}>Booking Confirmed!</div>
-        <div style={{ fontSize: "14px", color: "#888", marginBottom: "32px", lineHeight: 1.6 }}>
-          Thank you, <strong style={{ color: "#fff" }}>{clientForm.name}</strong>!<br />
-          Your appointment at <strong style={{ color: "#fff" }}>{salon.name}</strong> is confirmed.<br />
-          A confirmation has been sent to <strong style={{ color: "#fff" }}>{clientForm.email}</strong>.
+  const isPast = (d: Date) => {
+    const t = new Date();
+    t.setHours(0, 0, 0, 0);
+    return d < t;
+  };
+
+  const canNext0 = !!selectedService;
+  const canNext1 = staffConfirmed;
+  const canNext2 = !!selDate && !!selTime;
+  const canSubmit = !!form.name.trim();
+
+  if (loading) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        Loading...
+      </div>
+    );
+  }
+
+  if (notFound) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 20,
+          fontWeight: 700,
+        }}
+      >
+        Booking page not found.
+      </div>
+    );
+  }
+
+  if (step === 4) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexDirection: "column",
+          gap: 20,
+          padding: 20,
+          textAlign: "center",
+        }}
+      >
+        <div
+          style={{
+            width: 90,
+            height: 90,
+            borderRadius: "50%",
+            background: "#DCFCE7",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 40,
+          }}
+        >
+          ✓
         </div>
-        <div style={{ background: "#1A1A1A", borderRadius: "12px", padding: "20px", textAlign: "left", border: "0.5px solid #333" }}>
-          {selectedService && <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-            <span style={{ color: "#888", fontSize: "13px" }}>Service</span>
-            <span style={{ color: "#fff", fontSize: "13px" }}>{selectedService.name}</span>
-          </div>}
-          {selectedStaff && <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-            <span style={{ color: "#888", fontSize: "13px" }}>Staff</span>
-            <span style={{ color: "#fff", fontSize: "13px" }}>{selectedStaff.name}</span>
-          </div>}
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-            <span style={{ color: "#888", fontSize: "13px" }}>Date</span>
-            <span style={{ color: "#fff", fontSize: "13px" }}>{new Date(selectedDate).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</span>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: "#888", fontSize: "13px" }}>Time</span>
-            <span style={{ color: "#fff", fontSize: "13px" }}>{selectedTime}</span>
-          </div>
+
+        <h1>Booking Confirmed 🎉</h1>
+
+        <p>
+          Your appointment request has been submitted.
+        </p>
+
+        <div
+          style={{
+            padding: 20,
+            border: "1px solid #ddd",
+            borderRadius: 12,
+            width: "100%",
+            maxWidth: 400,
+          }}
+        >
+          <p>
+            <strong>Service:</strong>{" "}
+            {selectedService?.name}
+          </p>
+
+          <p>
+            <strong>Staff:</strong>{" "}
+            {selectedStaff?.name || "Any available"}
+          </p>
+
+          <p>
+            <strong>Date:</strong>{" "}
+            {selDate?.toLocaleDateString()}
+          </p>
+
+          <p>
+            <strong>Time:</strong> {selTime}
+          </p>
         </div>
       </div>
-    </div>
-  );
+    );
+  }
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0F0F0F", fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+    <>
+      <style>{`
+        *{
+          box-sizing:border-box;
+        }
 
-      {/* Header */}
-      <div style={{ borderBottom: "0.5px solid #1F1F1F", padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div>
-          <div style={{ fontFamily: "Georgia, serif", fontSize: "20px", color: "#fff", letterSpacing: "-0.5px" }}>{salon.name}</div>
-          <div style={{ fontSize: "12px", color: "#555", marginTop: "2px" }}>Online Booking</div>
-        </div>
-        {/* Progress */}
-        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
-          {steps.map((s, i) => (
-            <div key={s} style={{ width: i <= stepIndex ? "20px" : "6px", height: "6px", borderRadius: "3px", background: i <= stepIndex ? "#4F6EF7" : "#333", transition: "all 0.3s ease" }} />
-          ))}
-        </div>
+        body{
+          margin:0;
+          font-family:Inter,sans-serif;
+          background:#f6f8ff;
+        }
+
+        input,
+        button,
+        textarea,
+        select{
+          -webkit-appearance:none;
+          appearance:none;
+        }
+
+        .container{
+          max-width:700px;
+          margin:auto;
+          padding:20px;
+        }
+
+        .hero{
+          background:#2563EB;
+          color:white;
+          padding:40px 20px;
+          text-align:center;
+          border-bottom-left-radius:30px;
+          border-bottom-right-radius:30px;
+        }
+
+        .logo{
+          width:90px;
+          height:90px;
+          border-radius:20px;
+          object-fit:cover;
+          margin:auto;
+          margin-bottom:15px;
+        }
+
+        .service-card,
+        .staff-card{
+          border:2px solid #E5E7EB;
+          border-radius:16px;
+          padding:16px;
+          margin-bottom:12px;
+          cursor:pointer;
+          background:white;
+          transition:0.2s;
+        }
+
+        .service-card.selected,
+        .staff-card.selected{
+          border-color:#2563EB;
+          background:#EFF6FF;
+        }
+
+        .btn{
+          width:100%;
+          background:#2563EB;
+          color:white;
+          border:none;
+          padding:14px;
+          border-radius:12px;
+          font-weight:700;
+          cursor:pointer;
+          margin-top:20px;
+        }
+
+        .btn:disabled{
+          opacity:0.5;
+          cursor:not-allowed;
+        }
+
+        .time-grid{
+          display:grid;
+          grid-template-columns:repeat(4,1fr);
+          gap:10px;
+        }
+
+        .time-btn{
+          padding:10px;
+          border-radius:10px;
+          border:1px solid #ddd;
+          background:white;
+          cursor:pointer;
+        }
+
+        .time-btn.selected{
+          background:#2563EB;
+          color:white;
+          border-color:#2563EB;
+        }
+
+        .input{
+          width:100%;
+          padding:12px;
+          border-radius:10px;
+          border:1px solid #ddd;
+          margin-top:6px;
+          margin-bottom:16px;
+        }
+      `}</style>
+
+      <div className="hero">
+        {salon?.logo_url ? (
+          <img
+            src={salon.logo_url}
+            className="logo"
+            alt={salon.name}
+          />
+        ) : (
+          <div
+            style={{
+              width: 90,
+              height: 90,
+              borderRadius: 20,
+              background: "rgba(255,255,255,0.2)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "auto",
+              marginBottom: 15,
+              fontSize: 30,
+              fontWeight: 800,
+            }}
+          >
+            {getInitials(salon?.name || "S")}
+          </div>
+        )}
+
+        <h1>{salon?.name}</h1>
+
+        {salon?.description && (
+          <p>{salon.description}</p>
+        )}
       </div>
 
-      <div style={{ maxWidth: "600px", margin: "0 auto", padding: "32px 24px" }}>
+      <div className="container">
+        {step === 0 && (
+          <>
+            <h2>Select Service</h2>
 
-        {/* ─────────────────────────────────────────────
-            OFFERS BANNER — only on service step
-            ───────────────────────────────────────────── */}
-        {step === "service" && offers.length > 0 && (
-          <div style={{ marginBottom: "28px" }}>
-            <div style={{ fontSize: "11px", color: "#555", letterSpacing: "1.5px", marginBottom: "10px" }}>
-              ✨ CURRENT OFFERS
-            </div>
-            <div style={{
-              display: "flex", gap: "10px",
-              overflowX: "auto", paddingBottom: "4px",
-              msOverflowStyle: "none", scrollbarWidth: "none",
-            }}>
-              {offers.map(offer => {
-                const discountLabel = offer.discount_type === "percentage"
-                  ? `${offer.discount_value}% off`
-                  : `£${offer.discount_value} off`;
-                return (
-                  <div key={offer.id} style={{
-                    flexShrink: 0,
-                    minWidth: "200px", maxWidth: "240px",
-                    background: "linear-gradient(135deg, #1A1200 0%, #1F1600 100%)",
-                    border: "1px solid #3D2E00",
-                    borderRadius: "12px",
-                    padding: "14px 16px",
-                    display: "flex", flexDirection: "column", gap: "7px",
-                  }}>
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
-                      <span style={{ fontSize: "16px", lineHeight: 1 }}>🎉</span>
-                      <div style={{ fontSize: "13px", fontWeight: 600, color: "#FCD34D", lineHeight: 1.3 }}>
-                        {offer.title}
-                      </div>
-                    </div>
-                    {offer.description && (
-                      <div style={{ fontSize: "12px", color: "#A16207", lineHeight: 1.4 }}>
-                        {offer.description}
-                      </div>
-                    )}
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <span style={{
-                        background: "#F59E0B", color: "#000",
-                        fontSize: "11px", fontWeight: 700,
-                        padding: "3px 10px", borderRadius: "20px",
-                      }}>
-                        {discountLabel}
-                      </span>
-                      {offer.valid_until && (
-                        <span style={{ fontSize: "10px", color: "#78350F" }}>
-                          Until {new Date(offer.valid_until).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-        {/* ─────────────────────────────────────────────── */}
+            {services.map((s) => (
+              <div
+                key={s.id}
+                className={`service-card ${
+                  selectedService?.id === s.id
+                    ? "selected"
+                    : ""
+                }`}
+                onClick={() => setSelectedService(s)}
+              >
+                <h3>
+                  {getServiceIcon(s.name)} {s.name}
+                </h3>
 
-        {/* STEP 1: Service */}
-        {step === "service" && (
-          <div>
-            <div style={{ marginBottom: "28px" }}>
-              <div style={{ fontSize: "24px", fontWeight: 600, color: "#fff", fontFamily: "Georgia, serif", marginBottom: "6px" }}>Choose a Service</div>
-              <div style={{ fontSize: "13px", color: "#666" }}>What would you like today?</div>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {services.length === 0 ? (
-                <div style={{ color: "#666", fontSize: "14px", textAlign: "center", padding: "40px" }}>No services available</div>
-              ) : services.map((s) => (
-                <div key={s.id} onClick={() => { setSelectedService(s); setStep("staff"); }}
-                  style={{ background: selectedService?.id === s.id ? "#1A2040" : "#161616", border: `1px solid ${selectedService?.id === s.id ? "#4F6EF7" : "#222"}`, borderRadius: "12px", padding: "18px 20px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", transition: "all 0.2s" }}>
-                  <div>
-                    <div style={{ fontSize: "15px", fontWeight: 500, color: "#fff", marginBottom: "4px" }}>{s.name}</div>
-                    <div style={{ fontSize: "12px", color: "#666" }}>{s.duration_minutes} min</div>
-                  </div>
-                  <div style={{ fontSize: "16px", fontWeight: 600, color: "#4F6EF7" }}>£{s.price}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+                <p>£{s.price}</p>
 
-        {/* STEP 2: Staff */}
-        {step === "staff" && (
-          <div>
-            <button onClick={() => setStep("service")} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontSize: "13px", marginBottom: "20px", padding: 0, display: "flex", alignItems: "center", gap: "6px" }}>← Back</button>
-            <div style={{ marginBottom: "28px" }}>
-              <div style={{ fontSize: "24px", fontWeight: 600, color: "#fff", fontFamily: "Georgia, serif", marginBottom: "6px" }}>Choose a Stylist</div>
-              <div style={{ fontSize: "13px", color: "#666" }}>Or skip to see all availability</div>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              <div onClick={() => { setSelectedStaff(null); setStep("datetime"); }}
-                style={{ background: "#161616", border: "1px solid #222", borderRadius: "12px", padding: "18px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: "14px", transition: "all 0.2s" }}>
-                <div style={{ width: "44px", height: "44px", borderRadius: "50%", background: "#2A2A2A", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px" }}>✨</div>
-                <div>
-                  <div style={{ fontSize: "15px", fontWeight: 500, color: "#fff" }}>No Preference</div>
-                  <div style={{ fontSize: "12px", color: "#666" }}>Any available stylist</div>
-                </div>
+                {s.duration_minutes && (
+                  <small>
+                    {s.duration_minutes} mins
+                  </small>
+                )}
               </div>
-              {staffList.map((s) => (
-                <div key={s.id} onClick={() => { setSelectedStaff(s); setStep("datetime"); }}
-                  style={{ background: selectedStaff?.id === s.id ? "#1A2040" : "#161616", border: `1px solid ${selectedStaff?.id === s.id ? "#4F6EF7" : "#222"}`, borderRadius: "12px", padding: "18px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: "14px", transition: "all 0.2s" }}>
-                  <div style={{ width: "44px", height: "44px", borderRadius: "50%", background: "#4F6EF7", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", fontWeight: 700, color: "#fff" }}>
-                    {s.name?.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <div style={{ fontSize: "15px", fontWeight: 500, color: "#fff" }}>{s.name}</div>
-                    <div style={{ fontSize: "12px", color: "#666", textTransform: "capitalize" }}>{s.role}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+            ))}
+
+            <button
+              className="btn"
+              disabled={!canNext0}
+              onClick={() => setStep(1)}
+            >
+              Continue
+            </button>
+          </>
         )}
 
-        {/* STEP 3: Date & Time */}
-        {step === "datetime" && (
-          <div>
-            <button onClick={() => setStep("staff")} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontSize: "13px", marginBottom: "20px", padding: 0 }}>← Back</button>
-            <div style={{ marginBottom: "28px" }}>
-              <div style={{ fontSize: "24px", fontWeight: 600, color: "#fff", fontFamily: "Georgia, serif", marginBottom: "6px" }}>Pick a Date & Time</div>
-              <div style={{ fontSize: "13px", color: "#666" }}>Next 30 days available</div>
+        {step === 1 && (
+          <>
+            <button
+              onClick={() => setStep(0)}
+              style={{ marginBottom: 20 }}
+            >
+              ← Back
+            </button>
+
+            <h2>Select Staff</h2>
+
+            <div
+              className={`staff-card ${
+                staffConfirmed &&
+                selectedStaff === null
+                  ? "selected"
+                  : ""
+              }`}
+              onClick={() => {
+                setSelectedStaff(null);
+                setStaffConfirmed(true);
+              }}
+            >
+              Any Available Staff
             </div>
 
-            <div style={{ marginBottom: "24px" }}>
-              <div style={{ fontSize: "12px", color: "#666", marginBottom: "12px", letterSpacing: "1px" }}>SELECT DATE</div>
-              <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "8px" }}>
-                {getDays().map((d) => {
-                  const key = d.toISOString().slice(0, 10);
-                  const isSelected = selectedDate === key;
-                  const isToday = d.toDateString() === new Date().toDateString();
-                  return (
-                    <div key={key} onClick={() => setSelectedDate(key)}
-                      style={{ minWidth: "60px", padding: "12px 8px", borderRadius: "10px", background: isSelected ? "#4F6EF7" : "#161616", border: `1px solid ${isSelected ? "#4F6EF7" : "#222"}`, cursor: "pointer", textAlign: "center", transition: "all 0.2s" }}>
-                      <div style={{ fontSize: "10px", color: isSelected ? "#B8C8FF" : "#666", marginBottom: "4px" }}>
-                        {d.toLocaleDateString("en-GB", { weekday: "short" })}
-                      </div>
-                      <div style={{ fontSize: "16px", fontWeight: 600, color: "#fff" }}>
-                        {d.getDate()}
-                      </div>
-                      {isToday && <div style={{ fontSize: "9px", color: isSelected ? "#B8C8FF" : "#4F6EF7", marginTop: "2px" }}>Today</div>}
-                    </div>
-                  );
-                })}
+            {staffList.map((s) => (
+              <div
+                key={s.id}
+                className={`staff-card ${
+                  selectedStaff?.id === s.id
+                    ? "selected"
+                    : ""
+                }`}
+                onClick={() => {
+                  setSelectedStaff(s);
+                  setStaffConfirmed(true);
+                }}
+              >
+                <h3>{s.name}</h3>
+
+                {s.role && <p>{s.role}</p>}
               </div>
-            </div>
+            ))}
 
-            {selectedDate && (
-              <div>
-                <div style={{ fontSize: "12px", color: "#666", marginBottom: "12px", letterSpacing: "1px" }}>SELECT TIME</div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px" }}>
+            <button
+              className="btn"
+              disabled={!canNext1}
+              onClick={() => setStep(2)}
+            >
+              Continue
+            </button>
+          </>
+        )}
+
+        {step === 2 && (
+          <>
+            <button
+              onClick={() => setStep(1)}
+              style={{ marginBottom: 20 }}
+            >
+              ← Back
+            </button>
+
+            <h2>Select Date & Time</h2>
+
+            <input
+              type="date"
+              className="input"
+              onChange={(e) =>
+                setSelDate(new Date(e.target.value))
+              }
+            />
+
+            {selDate && (
+              <>
+                <div className="time-grid">
                   {TIME_SLOTS.map((t) => {
-                    const isSelected = selectedTime === t;
+                    const now = new Date();
+
+                    const selectedDateTime =
+                      selDate
+                        ? new Date(
+                            `${selDate.getFullYear()}-${String(
+                              selDate.getMonth() + 1
+                            ).padStart(2, "0")}-${String(
+                              selDate.getDate()
+                            ).padStart(2, "0")}T${t}`
+                          )
+                        : null;
+
+                    const disabled =
+                      selectedDateTime &&
+                      selectedDateTime < now &&
+                      selDate?.toDateString() ===
+                        now.toDateString();
+
                     return (
-                      <div key={t} onClick={() => setSelectedTime(t)}
-                        style={{ padding: "10px", borderRadius: "8px", background: isSelected ? "#4F6EF7" : "#161616", border: `1px solid ${isSelected ? "#4F6EF7" : "#222"}`, cursor: "pointer", textAlign: "center", fontSize: "13px", color: isSelected ? "#fff" : "#aaa", transition: "all 0.2s" }}>
+                      <button
+                        key={t}
+                        disabled={disabled}
+                        className={`time-btn ${
+                          selTime === t
+                            ? "selected"
+                            : ""
+                        }`}
+                        onClick={() =>
+                          !disabled && setSelTime(t)
+                        }
+                        style={{
+                          opacity: disabled ? 0.4 : 1,
+                        }}
+                      >
                         {t}
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
-              </div>
-            )}
 
-            {selectedDate && selectedTime && (
-              <button onClick={() => setStep("details")}
-                style={{ width: "100%", marginTop: "24px", padding: "14px", background: "#4F6EF7", color: "#fff", border: "none", borderRadius: "10px", fontSize: "15px", fontWeight: 500, cursor: "pointer" }}>
-                Continue →
-              </button>
+                <button
+                  className="btn"
+                  disabled={!canNext2}
+                  onClick={() => setStep(3)}
+                >
+                  Continue
+                </button>
+              </>
             )}
-          </div>
+          </>
         )}
 
-        {/* STEP 4: Client Details */}
-        {step === "details" && (
-          <div>
-            <button onClick={() => setStep("datetime")} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontSize: "13px", marginBottom: "20px", padding: 0 }}>← Back</button>
-            <div style={{ marginBottom: "28px" }}>
-              <div style={{ fontSize: "24px", fontWeight: 600, color: "#fff", fontFamily: "Georgia, serif", marginBottom: "6px" }}>Your Details</div>
-              <div style={{ fontSize: "13px", color: "#666" }}>We'll send confirmation to your email</div>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              {[
-                { label: "Full Name", key: "name", type: "text", placeholder: "Sarah Johnson", required: true },
-                { label: "Email Address", key: "email", type: "email", placeholder: "sarah@email.com", required: true },
-                { label: "Phone Number", key: "phone", type: "tel", placeholder: "+44 7700 900000", required: false },
-              ].map((f) => (
-                <div key={f.key}>
-                  <label style={{ fontSize: "12px", color: "#666", display: "block", marginBottom: "6px", letterSpacing: "0.5px" }}>
-                    {f.label} {f.required && <span style={{ color: "#4F6EF7" }}>*</span>}
-                  </label>
-                  <input
-                    type={f.type}
-                    placeholder={f.placeholder}
-                    value={(clientForm as any)[f.key]}
-                    onChange={(e) => setClientForm({ ...clientForm, [f.key]: e.target.value })}
-                    style={{ width: "100%", padding: "13px 16px", background: "#161616", border: "1px solid #222", borderRadius: "10px", fontSize: "14px", color: "#fff", fontFamily: "inherit", boxSizing: "border-box", outline: "none" }}
-                  />
-                </div>
-              ))}
-            </div>
+        {step === 3 && (
+          <>
             <button
-              onClick={() => { if (clientForm.name && clientForm.email) setStep("confirm"); }}
-              disabled={!clientForm.name || !clientForm.email}
-              style={{ width: "100%", marginTop: "24px", padding: "14px", background: clientForm.name && clientForm.email ? "#4F6EF7" : "#222", color: clientForm.name && clientForm.email ? "#fff" : "#555", border: "none", borderRadius: "10px", fontSize: "15px", fontWeight: 500, cursor: clientForm.name && clientForm.email ? "pointer" : "not-allowed" }}>
-              Review Booking →
+              onClick={() => setStep(2)}
+              style={{ marginBottom: 20 }}
+            >
+              ← Back
             </button>
-          </div>
-        )}
 
-        {/* STEP 5: Confirm */}
-        {step === "confirm" && (
-          <div>
-            <button onClick={() => setStep("details")} style={{ background: "none", border: "none", color: "#666", cursor: "pointer", fontSize: "13px", marginBottom: "20px", padding: 0 }}>← Back</button>
-            <div style={{ marginBottom: "28px" }}>
-              <div style={{ fontSize: "24px", fontWeight: 600, color: "#fff", fontFamily: "Georgia, serif", marginBottom: "6px" }}>Confirm Booking</div>
-              <div style={{ fontSize: "13px", color: "#666" }}>Please review your appointment details</div>
+            <h2>Your Details</h2>
+
+            <input
+              className="input"
+              placeholder="Full Name"
+              value={form.name}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  name: e.target.value,
+                })
+              }
+            />
+
+            <input
+              className="input"
+              placeholder="Email"
+              value={form.email}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  email: e.target.value,
+                })
+              }
+            />
+
+            <input
+              className="input"
+              placeholder="Phone"
+              value={form.phone}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  phone: e.target.value,
+                })
+              }
+            />
+
+            <div
+              style={{
+                padding: 20,
+                border: "1px solid #ddd",
+                borderRadius: 12,
+                marginTop: 20,
+                background: "white",
+              }}
+            >
+              <p>
+                <strong>Service:</strong>{" "}
+                {selectedService?.name}
+              </p>
+
+              <p>
+                <strong>Staff:</strong>{" "}
+                {selectedStaff?.name ||
+                  "Any available"}
+              </p>
+
+              <p>
+                <strong>Date:</strong>{" "}
+                {selDate?.toLocaleDateString()}
+              </p>
+
+              <p>
+                <strong>Time:</strong> {selTime}
+              </p>
+
+              <p>
+                <strong>Price:</strong> £
+                {selectedService?.price}
+              </p>
             </div>
 
-            <div style={{ background: "#161616", borderRadius: "14px", padding: "24px", border: "0.5px solid #222", marginBottom: "20px" }}>
-              {[
-                { label: "Salon", value: salon.name },
-                { label: "Service", value: selectedService?.name || "Not selected" },
-                { label: "Duration", value: selectedService ? `${selectedService.duration_minutes} min` : "—" },
-                { label: "Price", value: selectedService ? `£${selectedService.price}` : "—" },
-                { label: "Stylist", value: selectedStaff?.name || "No preference" },
-                { label: "Date", value: new Date(selectedDate).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) },
-                { label: "Time", value: selectedTime },
-                { label: "Name", value: clientForm.name },
-                { label: "Email", value: clientForm.email },
-                { label: "Phone", value: clientForm.phone || "—" },
-              ].map((item, i, arr) => (
-                <div key={item.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "10px 0", borderBottom: i < arr.length - 1 ? "0.5px solid #222" : "none" }}>
-                  <span style={{ fontSize: "13px", color: "#666" }}>{item.label}</span>
-                  <span style={{ fontSize: "13px", color: "#fff", textAlign: "right", maxWidth: "60%" }}>{item.value}</span>
-                </div>
-              ))}
-            </div>
-
-            <button onClick={handleBook} disabled={submitting}
-              style={{ width: "100%", padding: "16px", background: submitting ? "#333" : "#4F6EF7", color: "#fff", border: "none", borderRadius: "12px", fontSize: "16px", fontWeight: 600, cursor: submitting ? "not-allowed" : "pointer", letterSpacing: "0.3px" }}>
-              {submitting ? "Confirming..." : "Confirm Booking ✓"}
+            <button
+              className="btn"
+              disabled={!canSubmit || submitting}
+              onClick={handleBook}
+            >
+              {submitting
+                ? "Booking..."
+                : "Confirm Booking"}
             </button>
-            <div style={{ textAlign: "center", marginTop: "12px", fontSize: "12px", color: "#555" }}>
-              A confirmation email will be sent to {clientForm.email}
-            </div>
-          </div>
+          </>
         )}
-
       </div>
-    </div>
+    </>
   );
 }
