@@ -2,7 +2,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
-import { getCurrentUserProfile } from "@/app/lib/auth";
+
+const timeSlots = ["09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30"];
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -10,747 +11,202 @@ export default function DashboardPage() {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
-  const [offers, setOffers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("All");
   const [showModal, setShowModal] = useState(false);
-  const [showOfferModal, setShowOfferModal] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [origin, setOrigin] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    client_name: "", client_email: "", client_phone: "",
-    service_id: "", staff_id: "", date: "", time: "",
-  });
-  const [offerForm, setOfferForm] = useState({
-    title: "",
-    description: "",
-    discount_type: "percentage", // "percentage" | "fixed"
-    discount_value: "",
-    valid_until: "",
-    active: true,
-  });
-
-  const timeSlots = [
-    "09:00","09:30","10:00","10:30","11:00","11:30","12:00",
-    "12:30","13:00","13:30","14:00","14:30","15:00","15:30",
-    "16:00","16:30","17:00","17:30",
-  ];
-
-  useEffect(() => { setOrigin(window.location.origin); }, []);
+  const [error, setError] = useState("");
+  const [formData, setFormData] = useState({ client_name: "", client_email: "", client_phone: "", service_id: "", staff_id: "", date: "", time: "" });
 
   useEffect(() => {
     const loadData = async () => {
-      const profile = await getCurrentUserProfile();
-      if (!profile || !profile.salon) { router.push("/login"); return; }
-      setSalon(profile.salon);
-      const salonId = profile.salon.id;
-      const [{ data: appts }, { data: staffData }, { data: servicesData }, { data: offersData }] = await Promise.all([
-        supabase.from("appointments").select("*, services(name,price), staff(name)").eq("salon_id", salonId).order("date_time", { ascending: true }),
-        supabase.from("staff").select("*").eq("salon_id", salonId),
-        supabase.from("services").select("*").eq("salon_id", salonId),
-        supabase.from("offers").select("*").eq("salon_id", salonId).order("created_at", { ascending: false }),
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData?.user;
+      if (!user) { router.push("/login"); return; }
+      const { data: salonData, error: salonError } = await supabase.from("salons").select("*").eq("owner_id", user.id).single();
+      if (salonError || !salonData) { router.push("/login"); return; }
+      setSalon(salonData);
+      const [{ data: appts }, { data: staffData }, { data: servicesData }] = await Promise.all([
+        supabase.from("appointments").select("*, services(name, price), staff(name)").eq("salon_id", salonData.id).order("date_time", { ascending: true }),
+        supabase.from("staff").select("*").eq("salon_id", salonData.id),
+        supabase.from("services").select("*").eq("salon_id", salonData.id),
       ]);
       setAppointments(appts || []);
       setStaff(staffData || []);
       setServices(servicesData || []);
-      setOffers(offersData || []);
       setLoading(false);
     };
     loadData();
   }, [router]);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/login");
-  };
-
-  const handleNewBooking = async () => {
+  const reloadAppointments = async () => {
     if (!salon) return;
-    const date_time = new Date(formData.date + "T" + formData.time).toISOString();
-    await supabase.from("appointments").insert({
-      salon_id: salon.id,
-      client_name: formData.client_name,
-      client_email: formData.client_email,
-      client_phone: formData.client_phone,
-      service_id: formData.service_id || null,
-      staff_id: formData.staff_id || null,
-      date_time,
-      status: "confirmed",
-    });
-    const selectedService = services.find(s => s.id === formData.service_id);
-    const selectedStaff = staff.find(s => s.id === formData.staff_id);
-    await fetch("/api/send-booking-emails", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        clientEmail: formData.client_email,
-        clientName: formData.client_name,
-        clientPhone: formData.client_phone,
-        serviceName: selectedService?.name || "Service",
-        dateTime: date_time,
-        staffName: selectedStaff?.name,
-        salonName: salon.name,
-        salonOwnerEmail: salon.owner_email,
-      }),
-    });
-    setShowModal(false);
-    setFormData({ client_name: "", client_email: "", client_phone: "", service_id: "", staff_id: "", date: "", time: "" });
-    const { data: appts } = await supabase.from("appointments")
-      .select("*, services(name,price), staff(name)")
-      .eq("salon_id", salon.id)
-      .order("date_time", { ascending: true });
+    const { data: appts } = await supabase.from("appointments").select("*, services(name, price), staff(name)").eq("salon_id", salon.id).order("date_time", { ascending: true });
     setAppointments(appts || []);
   };
 
-  // ── Offer handlers ──────────────────────────────────────────
-  const handleAddOffer = async () => {
-    if (!salon || !offerForm.title) return;
-    const { data } = await supabase.from("offers").insert({
-      salon_id: salon.id,
-      title: offerForm.title,
-      description: offerForm.description,
-      discount_type: offerForm.discount_type,
-      discount_value: parseFloat(offerForm.discount_value) || 0,
-      valid_until: offerForm.valid_until || null,
-      active: offerForm.active,
-    }).select();
-    if (data) setOffers(prev => [data[0], ...prev]);
-    setShowOfferModal(false);
-    setOfferForm({ title: "", description: "", discount_type: "percentage", discount_value: "", valid_until: "", active: true });
+  const todayAppointments = appointments.filter(a => new Date(a.date_time).toDateString() === new Date().toDateString());
+  const upcomingAppointments = appointments.filter(a => new Date(a.date_time) > new Date());
+  const filteredAppointments = activeTab === "Today" ? todayAppointments : activeTab === "Upcoming" ? upcomingAppointments : appointments;
+  const revenue = appointments.reduce((sum, a) => sum + (a.services?.price || 0), 0);
+
+  const handleCreateBooking = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError("");
+    if (!formData.client_name || !formData.service_id || !formData.date || !formData.time) { setError("Please complete the required fields."); return; }
+    const dateTime = new Date(`${formData.date}T${formData.time}`);
+    if (Number.isNaN(dateTime.getTime())) { setError("Please select a valid date and time."); return; }
+    const { error: createError } = await supabase.from("appointments").insert({
+      salon_id: salon.id, client_name: formData.client_name, client_email: formData.client_email,
+      client_phone: formData.client_phone, service_id: formData.service_id,
+      staff_id: formData.staff_id || null, date_time: dateTime.toISOString(), status: "pending",
+    });
+    if (createError) { setError(createError.message); return; }
+    setShowModal(false);
+    setFormData({ client_name: "", client_email: "", client_phone: "", service_id: "", staff_id: "", date: "", time: "" });
+    await reloadAppointments();
   };
-
-  const handleToggleOffer = async (offerId: string, current: boolean) => {
-    await supabase.from("offers").update({ active: !current }).eq("id", offerId);
-    setOffers(prev => prev.map(o => o.id === offerId ? { ...o, active: !current } : o));
-  };
-
-  const handleDeleteOffer = async (offerId: string) => {
-    await supabase.from("offers").delete().eq("id", offerId);
-    setOffers(prev => prev.filter(o => o.id !== offerId));
-  };
-  // ────────────────────────────────────────────────────────────
-
-  const handleCopyLink = () => {
-    const link = `${origin}/book/${salon?.slug}`;
-    navigator.clipboard.writeText(link);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const bookingLink = `${origin}/book/${salon?.slug}`;
-  const todayAppts = appointments.filter(
-    a => new Date(a.date_time).toDateString() === new Date().toDateString()
-  );
-  const revenue = todayAppts.reduce((sum, a) => sum + (a.services?.price || 0), 0);
-  const filteredAppts =
-    activeTab === "Today" ? todayAppts :
-    activeTab === "Upcoming" ? appointments.filter(a => new Date(a.date_time) > new Date()) :
-    appointments;
-
-  const navItems = [
-    { label: "Dashboard", path: "/dashboard" },
-    { label: "Bookings",  path: "/dashboard/bookings" },
-    { label: "Clients",   path: "/dashboard/clients" },
-    { label: "Staff",     path: "/dashboard/staff" },
-    { label: "Payments",  path: "/dashboard/payments" },
-    { label: "Reports",   path: "/dashboard/reports" },
-    { label: "Settings",  path: "/dashboard/settings" },
-  ];
 
   if (loading) return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#F2F4F7" }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
       <div style={{ fontFamily: "Georgia, serif", fontSize: "24px", color: "#4F6EF7" }}>feature</div>
     </div>
   );
 
   return (
-    <>
-      <style>{`
-        * { box-sizing: border-box; }
-
-        .sidebar-overlay {
-          display: none;
-          position: fixed; inset: 0;
-          background: rgba(0,0,0,0.35);
-          z-index: 40;
-        }
-        .sidebar-overlay.open { display: block; }
-
-        .sidebar {
-          position: fixed; top: 0; left: 0; bottom: 0;
-          width: 220px;
-          background: #fff;
-          border-right: 0.5px solid #E8EAF0;
-          display: flex; flex-direction: column;
-          z-index: 50;
-          transform: translateX(-100%);
-          transition: transform 0.25s ease;
-        }
-        @media (min-width: 768px) {
-          .sidebar { position: relative; transform: none !important; }
-          .sidebar-overlay { display: none !important; }
-          .hamburger { display: none !important; }
-          .main-layout { margin-left: 0; }
-        }
-        .sidebar.open { transform: translateX(0); }
-
-        .stats-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 10px;
-          margin-bottom: 16px;
-        }
-        @media (min-width: 768px) {
-          .stats-grid { grid-template-columns: repeat(4, 1fr); }
-        }
-
-        .booking-banner {
-          background: linear-gradient(135deg, #4F6EF7 0%, #7C3AED 100%);
-          border-radius: 12px;
-          padding: 16px 18px;
-          margin-bottom: 16px;
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-        @media (min-width: 600px) {
-          .booking-banner {
-            flex-direction: row;
-            align-items: center;
-            justify-content: space-between;
-            padding: 18px 22px;
-          }
-        }
-        .banner-btns { display: flex; gap: 8px; flex-wrap: wrap; }
-
-        .appt-table { display: none; }
-        .appt-cards { display: flex; flex-direction: column; gap: 10px; padding: 12px; }
-        @media (min-width: 768px) {
-          .appt-table { display: table; width: 100%; border-collapse: collapse; }
-          .appt-cards { display: none; }
-        }
-
-        .modal-box {
-          background: #fff;
-          border-radius: 12px;
-          padding: 24px 20px;
-          width: 100%;
-          max-width: 440px;
-          max-height: 95vh;
-          overflow-y: auto;
-          margin: 0 12px;
-        }
-        @media (max-width: 480px) {
-          .modal-box {
-            border-radius: 16px 16px 0 0;
-            margin: 0;
-            max-height: 92vh;
-            position: fixed;
-            bottom: 0; left: 0; right: 0;
-          }
-        }
-
-        .new-booking-btn {
-          background: #4F6EF7; color: #fff;
-          font-size: 13px; padding: 8px 18px;
-          border-radius: 8px; border: none; cursor: pointer;
-          white-space: nowrap;
-        }
-        @media (max-width: 480px) {
-          .new-booking-btn { padding: 8px 12px; font-size: 12px; }
-        }
-
-        .appt-card {
-          background: #fff;
-          border: 0.5px solid #E8EAF0;
-          border-radius: 10px;
-          padding: 14px;
-        }
-        .appt-card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-        .appt-card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-        .appt-card-field { font-size: 11px; color: #94A3B8; }
-        .appt-card-val { font-size: 13px; color: #0F172A; font-weight: 500; }
-        .status-badge {
-          font-size: 10px; padding: 3px 9px;
-          border-radius: 20px; display: inline-block;
-        }
-
-        /* Offers grid */
-        .offers-grid {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 10px;
-        }
-        @media (min-width: 640px) {
-          .offers-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (min-width: 1024px) {
-          .offers-grid { grid-template-columns: repeat(3, 1fr); }
-        }
-
-        .offer-card {
-          background: #fff;
-          border: 0.5px solid #E8EAF0;
-          border-radius: 10px;
-          padding: 14px;
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          position: relative;
-          transition: box-shadow 0.15s;
-        }
-        .offer-card:hover { box-shadow: 0 2px 12px rgba(79,110,247,0.08); }
-        .offer-card.inactive { opacity: 0.55; }
-
-        /* Toggle switch */
-        .toggle {
-          position: relative;
-          width: 34px;
-          height: 18px;
-          flex-shrink: 0;
-        }
-        .toggle input { opacity: 0; width: 0; height: 0; }
-        .toggle-slider {
-          position: absolute; inset: 0;
-          background: #E2E8F0;
-          border-radius: 18px;
-          cursor: pointer;
-          transition: background 0.2s;
-        }
-        .toggle-slider::before {
-          content: "";
-          position: absolute;
-          width: 12px; height: 12px;
-          left: 3px; top: 3px;
-          background: #fff;
-          border-radius: 50%;
-          transition: transform 0.2s;
-        }
-        .toggle input:checked + .toggle-slider { background: #4F6EF7; }
-        .toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
-      `}</style>
-
-      <div style={{ minHeight: "100vh", background: "#F2F4F7", display: "flex" }}>
-
-        <div className={`sidebar-overlay ${sidebarOpen ? "open" : ""}`} onClick={() => setSidebarOpen(false)} />
-
-        {/* ── Sidebar ── */}
-        <div className={`sidebar ${sidebarOpen ? "open" : ""}`}>
-          <div style={{ padding: "20px", borderBottom: "0.5px solid #E8EAF0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: "18px", color: "#0F172A" }}>feature</div>
-            <button onClick={() => setSidebarOpen(false)}
-              style={{ background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: "#94A3B8", display: "block" }}
-              className="hamburger">✕</button>
-          </div>
-
-          <div style={{ padding: "8px 0", flex: 1 }}>
-            {navItems.slice(0, 4).map(item => (
-              <div key={item.label} onClick={() => { router.push(item.path); setSidebarOpen(false); }}
-                style={{
-                  padding: "10px 20px", fontSize: "13px", cursor: "pointer",
-                  color: item.path === "/dashboard" ? "#4F6EF7" : "#64748B",
-                  background: item.path === "/dashboard" ? "#EEF2FF" : "transparent",
-                  borderRight: item.path === "/dashboard" ? "2px solid #4F6EF7" : "none",
-                }}>
-                {item.label}
-              </div>
-            ))}
-            <div style={{ padding: "12px 20px 4px", fontSize: "9px", color: "#CBD5E1", letterSpacing: "2px" }}>FINANCE</div>
-            {navItems.slice(4, 6).map(item => (
-              <div key={item.label} onClick={() => { router.push(item.path); setSidebarOpen(false); }}
-                style={{ padding: "10px 20px", fontSize: "13px", color: "#64748B", cursor: "pointer" }}>
-                {item.label}
-              </div>
-            ))}
-            <div style={{ padding: "12px 20px 4px", fontSize: "9px", color: "#CBD5E1", letterSpacing: "2px" }}>SYSTEM</div>
-            <div onClick={() => { router.push("/dashboard/settings"); setSidebarOpen(false); }}
-              style={{ padding: "10px 20px", fontSize: "13px", color: "#64748B", cursor: "pointer" }}>
-              Settings
-            </div>
-          </div>
-
-          <div style={{ padding: "16px 20px", borderTop: "0.5px solid #E8EAF0" }}>
-            <div style={{ fontSize: "12px", color: "#64748B", marginBottom: "8px" }}>{salon?.name}</div>
-            <button onClick={handleLogout}
-              style={{ fontSize: "12px", color: "#EF4444", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-              Sign out
-            </button>
-          </div>
+    <div style={{ backgroundColor: "#F2F4F7", minHeight: "100vh", padding: "28px 24px" }}>
+      {/* Header */}
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "16px", marginBottom: "24px" }}>
+        <div>
+          <p style={{ margin: 0, fontSize: "14px", color: "#64748B" }}>Salon dashboard</p>
+          <h1 style={{ margin: 0, fontSize: "28px", color: "#0F172A" }}>Welcome back</h1>
         </div>
-
-        {/* ── Main ── */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-
-          {/* Topbar */}
-          <div style={{ background: "#fff", borderBottom: "0.5px solid #E8EAF0", padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <button className="hamburger" onClick={() => setSidebarOpen(true)}
-                style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", display: "flex", flexDirection: "column", gap: "5px" }}>
-                <span style={{ display: "block", width: "20px", height: "1.5px", background: "#0F172A" }} />
-                <span style={{ display: "block", width: "20px", height: "1.5px", background: "#0F172A" }} />
-                <span style={{ display: "block", width: "20px", height: "1.5px", background: "#0F172A" }} />
-              </button>
-              <div>
-                <div style={{ fontSize: "15px", fontWeight: 500, color: "#0F172A" }}>Good morning 👋</div>
-                <div style={{ fontSize: "11px", color: "#94A3B8" }}>
-                  {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
-                </div>
-              </div>
-            </div>
-            <button onClick={() => setShowModal(true)} className="new-booking-btn">+ New Booking</button>
-          </div>
-
-          {/* Content */}
-          <div style={{ padding: "16px", flex: 1, overflowY: "auto" }}>
-
-            {/* Booking link banner */}
-            <div className="booking-banner">
-              <div>
-                <div style={{ fontSize: "13px", fontWeight: 600, color: "#fff", marginBottom: "4px" }}>🔗 Your Booking Link</div>
-                <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.75)", fontFamily: "monospace", wordBreak: "break-all" }}>
-                  {salon?.slug ? bookingLink : "Loading..."}
-                </div>
-              </div>
-              <div className="banner-btns">
-                <button onClick={handleCopyLink}
-                  style={{ padding: "8px 16px", background: copied ? "#10B981" : "rgba(255,255,255,0.2)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)", borderRadius: "8px", fontSize: "13px", cursor: "pointer", fontWeight: 500 }}>
-                  {copied ? "✓ Copied!" : "Copy Link"}
-                </button>
-                <button onClick={() => window.open(`/book/${salon?.slug}`, "_blank")}
-                  style={{ padding: "8px 16px", background: "#fff", color: "#4F6EF7", border: "none", borderRadius: "8px", fontSize: "13px", cursor: "pointer", fontWeight: 500 }}>
-                  Preview ↗
-                </button>
-              </div>
-            </div>
-
-            {/* Stats */}
-            <div className="stats-grid">
-              {[
-                { label: "Today's bookings", value: todayAppts.length.toString() },
-                { label: "Revenue today",    value: `£${revenue}` },
-                { label: "Total bookings",   value: appointments.length.toString() },
-                { label: "Plan",             value: salon?.plan || "Starter" },
-              ].map(s => (
-                <div key={s.label} style={{ background: "#fff", border: "0.5px solid #E8EAF0", borderRadius: "10px", padding: "14px" }}>
-                  <div style={{ fontSize: "11px", color: "#94A3B8", marginBottom: "6px" }}>{s.label}</div>
-                  <div style={{ fontSize: "20px", fontWeight: 500, color: "#0F172A" }}>{s.value}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* ── OFFERS SECTION ── */}
-            <div style={{ background: "#fff", border: "0.5px solid #E8EAF0", borderRadius: "10px", overflow: "hidden", marginBottom: "16px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: "0.5px solid #E8EAF0" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ fontSize: "16px" }}>🏷️</span>
-                  <div>
-                    <div style={{ fontSize: "13px", fontWeight: 500, color: "#0F172A" }}>Special Offers</div>
-                    <div style={{ fontSize: "11px", color: "#94A3B8" }}>Displayed on your public booking page</div>
-                  </div>
-                </div>
-                <button onClick={() => setShowOfferModal(true)}
-                  style={{ fontSize: "12px", padding: "7px 14px", background: "#EEF2FF", color: "#4F6EF7", border: "0.5px solid #C7D2FE", borderRadius: "8px", cursor: "pointer", fontWeight: 500 }}>
-                  + Add Offer
-                </button>
-              </div>
-
-              {offers.length === 0 ? (
-                <div style={{ padding: "32px", textAlign: "center" }}>
-                  <div style={{ fontSize: "28px", marginBottom: "8px" }}>🎁</div>
-                  <div style={{ fontSize: "13px", color: "#94A3B8" }}>No offers yet — add one to attract more bookings!</div>
-                </div>
-              ) : (
-                <div style={{ padding: "14px" }}>
-                  <div className="offers-grid">
-                    {offers.map(offer => {
-                      const isExpired = offer.valid_until && new Date(offer.valid_until) < new Date();
-                      const discountLabel = offer.discount_type === "percentage"
-                        ? `${offer.discount_value}% off`
-                        : `£${offer.discount_value} off`;
-                      return (
-                        <div key={offer.id} className={`offer-card ${!offer.active ? "inactive" : ""}`}>
-                          {/* Top row: title + toggle */}
-                          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "8px" }}>
-                            <div style={{ fontSize: "13px", fontWeight: 600, color: "#0F172A", lineHeight: 1.3 }}>{offer.title}</div>
-                            <label className="toggle">
-                              <input type="checkbox" checked={offer.active} onChange={() => handleToggleOffer(offer.id, offer.active)} />
-                              <span className="toggle-slider" />
-                            </label>
-                          </div>
-
-                          {/* Description */}
-                          {offer.description && (
-                            <div style={{ fontSize: "12px", color: "#64748B" }}>{offer.description}</div>
-                          )}
-
-                          {/* Discount badge */}
-                          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                            <span style={{
-                              background: "#ECFDF5", color: "#059669",
-                              fontSize: "11px", fontWeight: 600,
-                              padding: "3px 10px", borderRadius: "20px",
-                              display: "inline-flex", alignItems: "center", gap: "4px"
-                            }}>
-                              🎉 {discountLabel}
-                            </span>
-                            {isExpired && (
-                              <span style={{ fontSize: "10px", color: "#EF4444", background: "#FEE2E2", padding: "2px 8px", borderRadius: "20px" }}>Expired</span>
-                            )}
-                            {!offer.active && !isExpired && (
-                              <span style={{ fontSize: "10px", color: "#94A3B8", background: "#F1F5F9", padding: "2px 8px", borderRadius: "20px" }}>Hidden</span>
-                            )}
-                          </div>
-
-                          {/* Expiry + delete */}
-                          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "2px" }}>
-                            <div style={{ fontSize: "11px", color: "#94A3B8" }}>
-                              {offer.valid_until
-                                ? `Valid until ${new Date(offer.valid_until).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`
-                                : "No expiry date"}
-                            </div>
-                            <button onClick={() => handleDeleteOffer(offer.id)}
-                              style={{ background: "none", border: "none", cursor: "pointer", color: "#CBD5E1", fontSize: "14px", padding: "2px 4px", lineHeight: 1 }}
-                              title="Delete offer">🗑</button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-            {/* ── END OFFERS SECTION ── */}
-
-            {/* Appointments */}
-            <div style={{ background: "#fff", border: "0.5px solid #E8EAF0", borderRadius: "10px", overflow: "hidden" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", borderBottom: "0.5px solid #E8EAF0", flexWrap: "wrap", gap: "8px" }}>
-                <div style={{ fontSize: "13px", fontWeight: 500 }}>Appointments</div>
-                <div style={{ display: "flex", gap: "4px" }}>
-                  {["All", "Today", "Upcoming"].map(tab => (
-                    <button key={tab} onClick={() => setActiveTab(tab)}
-                      style={{ fontSize: "11px", padding: "4px 12px", borderRadius: "6px", border: "0.5px solid", borderColor: activeTab === tab ? "#C7D2FE" : "#E8EAF0", background: activeTab === tab ? "#EEF2FF" : "#fff", color: activeTab === tab ? "#4F6EF7" : "#94A3B8", cursor: "pointer" }}>
-                      {tab}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {filteredAppts.length === 0 ? (
-                <div style={{ padding: "48px", textAlign: "center", color: "#94A3B8", fontSize: "14px" }}>
-                  No appointments yet — share your booking link to get started!
-                </div>
-              ) : (
-                <>
-                  <table className="appt-table">
-                    <thead>
-                      <tr style={{ background: "#F8F9FC" }}>
-                        {["Status","Client","Service","Staff","Date & Time","Amount"].map(h => (
-                          <th key={h} style={{ fontSize: "11px", color: "#94A3B8", textAlign: "left", padding: "10px 18px", fontWeight: 500 }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredAppts.map(a => (
-                        <tr key={a.id}>
-                          <td style={{ padding: "11px 18px", borderBottom: "0.5px solid #F1F5F9" }}>
-                            <span style={{ background: a.status === "confirmed" ? "#ECFDF5" : a.status === "cancelled" ? "#FEE2E2" : "#FFF7ED", color: a.status === "confirmed" ? "#059669" : a.status === "cancelled" ? "#DC2626" : "#D97706", fontSize: "10px", padding: "3px 8px", borderRadius: "20px" }}>
-                              {a.status}
-                            </span>
-                          </td>
-                          <td style={{ padding: "11px 18px", fontSize: "13px", borderBottom: "0.5px solid #F1F5F9" }}>{a.client_name}</td>
-                          <td style={{ padding: "11px 18px", fontSize: "13px", borderBottom: "0.5px solid #F1F5F9" }}>{a.services?.name || "—"}</td>
-                          <td style={{ padding: "11px 18px", fontSize: "13px", color: "#64748B", borderBottom: "0.5px solid #F1F5F9" }}>{a.staff?.name || "—"}</td>
-                          <td style={{ padding: "11px 18px", fontSize: "13px", color: "#64748B", borderBottom: "0.5px solid #F1F5F9" }}>{new Date(a.date_time).toLocaleString("en-GB")}</td>
-                          <td style={{ padding: "11px 18px", fontSize: "13px", borderBottom: "0.5px solid #F1F5F9" }}>£{a.services?.price || "—"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-
-                  <div className="appt-cards">
-                    {filteredAppts.map(a => {
-                      const statusColor =
-                        a.status === "confirmed" ? { bg: "#ECFDF5", txt: "#059669" } :
-                        a.status === "cancelled" ? { bg: "#FEE2E2", txt: "#DC2626" } :
-                        { bg: "#FFF7ED", txt: "#D97706" };
-                      return (
-                        <div key={a.id} className="appt-card">
-                          <div className="appt-card-top">
-                            <div style={{ fontSize: "14px", fontWeight: 500, color: "#0F172A" }}>{a.client_name}</div>
-                            <span className="status-badge" style={{ background: statusColor.bg, color: statusColor.txt }}>{a.status}</span>
-                          </div>
-                          <div className="appt-card-grid">
-                            <div>
-                              <div className="appt-card-field">Service</div>
-                              <div className="appt-card-val">{a.services?.name || "—"}</div>
-                            </div>
-                            <div>
-                              <div className="appt-card-field">Amount</div>
-                              <div className="appt-card-val">£{a.services?.price || "—"}</div>
-                            </div>
-                            <div>
-                              <div className="appt-card-field">Staff</div>
-                              <div className="appt-card-val" style={{ fontWeight: 400, color: "#64748B" }}>{a.staff?.name || "—"}</div>
-                            </div>
-                            <div>
-                              <div className="appt-card-field">Date & Time</div>
-                              <div className="appt-card-val" style={{ fontWeight: 400, color: "#64748B", fontSize: "12px" }}>
-                                {new Date(a.date_time).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* ── New Booking Modal ── */}
-        {showModal && (
-          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 50 }}
-            onClick={e => { if (e.target === e.currentTarget) setShowModal(false); }}>
-            <div className="modal-box">
-              <div style={{ fontSize: "16px", fontWeight: 500, marginBottom: "18px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                New Booking
-                <button onClick={() => setShowModal(false)}
-                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: "#94A3B8" }}>✕</button>
-              </div>
-
-              {[
-                { label: "Client Name",  key: "client_name",  type: "text",  placeholder: "Sarah Johnson" },
-                { label: "Client Email", key: "client_email", type: "email", placeholder: "sarah@email.com" },
-                { label: "Client Phone", key: "client_phone", type: "text",  placeholder: "+44 7700 900000" },
-                { label: "Date",         key: "date",         type: "date",  placeholder: "" },
-              ].map(f => (
-                <div key={f.key} style={{ marginBottom: "12px" }}>
-                  <label style={{ fontSize: "12px", fontWeight: 500, display: "block", marginBottom: "5px" }}>{f.label}</label>
-                  <input type={f.type} placeholder={f.placeholder} value={(formData as any)[f.key]}
-                    onChange={e => setFormData({ ...formData, [f.key]: e.target.value })}
-                    style={{ width: "100%", padding: "10px 12px", border: "0.5px solid #E8EAF0", borderRadius: "8px", fontSize: "14px", fontFamily: "inherit", outline: "none" }} />
-                </div>
-              ))}
-
-              {[
-                { label: "Time",    key: "time",       opts: timeSlots.map(t => ({ v: t, l: t })) },
-                { label: "Service", key: "service_id", opts: services.map(s => ({ v: s.id, l: `${s.name} — £${s.price}` })) },
-                { label: "Staff",   key: "staff_id",   opts: staff.map(s => ({ v: s.id, l: s.name })) },
-              ].map(f => (
-                <div key={f.key} style={{ marginBottom: "12px" }}>
-                  <label style={{ fontSize: "12px", fontWeight: 500, display: "block", marginBottom: "5px" }}>{f.label}</label>
-                  <select value={(formData as any)[f.key]} onChange={e => setFormData({ ...formData, [f.key]: e.target.value })}
-                    style={{ width: "100%", padding: "10px 12px", border: "0.5px solid #E8EAF0", borderRadius: "8px", fontSize: "14px", fontFamily: "inherit", background: "#fff" }}>
-                    <option value="">Select {f.label.toLowerCase()}</option>
-                    {f.opts.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
-                  </select>
-                </div>
-              ))}
-
-              <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
-                <button onClick={() => setShowModal(false)}
-                  style={{ flex: 1, padding: "12px", border: "0.5px solid #E8EAF0", borderRadius: "8px", fontSize: "14px", cursor: "pointer", background: "#fff" }}>
-                  Cancel
-                </button>
-                <button onClick={handleNewBooking}
-                  style={{ flex: 1, padding: "12px", background: "#4F6EF7", color: "#fff", border: "none", borderRadius: "8px", fontSize: "14px", cursor: "pointer", fontWeight: 500 }}>
-                  Create Booking
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── Add Offer Modal ── */}
-        {showOfferModal && (
-          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 50 }}
-            onClick={e => { if (e.target === e.currentTarget) setShowOfferModal(false); }}>
-            <div className="modal-box">
-              <div style={{ fontSize: "16px", fontWeight: 500, marginBottom: "18px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                🏷️ Add Special Offer
-                <button onClick={() => setShowOfferModal(false)}
-                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: "18px", color: "#94A3B8" }}>✕</button>
-              </div>
-
-              {/* Title */}
-              <div style={{ marginBottom: "12px" }}>
-                <label style={{ fontSize: "12px", fontWeight: 500, display: "block", marginBottom: "5px" }}>Offer Title *</label>
-                <input type="text" placeholder="e.g. Summer Special, New Client Discount"
-                  value={offerForm.title}
-                  onChange={e => setOfferForm({ ...offerForm, title: e.target.value })}
-                  style={{ width: "100%", padding: "10px 12px", border: "0.5px solid #E8EAF0", borderRadius: "8px", fontSize: "14px", fontFamily: "inherit", outline: "none" }} />
-              </div>
-
-              {/* Description */}
-              <div style={{ marginBottom: "12px" }}>
-                <label style={{ fontSize: "12px", fontWeight: 500, display: "block", marginBottom: "5px" }}>Description <span style={{ color: "#94A3B8", fontWeight: 400 }}>(optional)</span></label>
-                <textarea placeholder="e.g. Book any haircut and get 20% off — limited time only!"
-                  value={offerForm.description}
-                  onChange={e => setOfferForm({ ...offerForm, description: e.target.value })}
-                  rows={2}
-                  style={{ width: "100%", padding: "10px 12px", border: "0.5px solid #E8EAF0", borderRadius: "8px", fontSize: "14px", fontFamily: "inherit", outline: "none", resize: "vertical" }} />
-              </div>
-
-              {/* Discount type + value */}
-              <div style={{ marginBottom: "12px" }}>
-                <label style={{ fontSize: "12px", fontWeight: 500, display: "block", marginBottom: "5px" }}>Discount</label>
-                <div style={{ display: "flex", gap: "8px" }}>
-                  <select value={offerForm.discount_type}
-                    onChange={e => setOfferForm({ ...offerForm, discount_type: e.target.value })}
-                    style={{ flex: "0 0 140px", padding: "10px 12px", border: "0.5px solid #E8EAF0", borderRadius: "8px", fontSize: "14px", fontFamily: "inherit", background: "#fff" }}>
-                    <option value="percentage">Percentage (%)</option>
-                    <option value="fixed">Fixed amount (£)</option>
-                  </select>
-                  <input type="number" min="0" max={offerForm.discount_type === "percentage" ? 100 : undefined}
-                    placeholder={offerForm.discount_type === "percentage" ? "e.g. 20" : "e.g. 10"}
-                    value={offerForm.discount_value}
-                    onChange={e => setOfferForm({ ...offerForm, discount_value: e.target.value })}
-                    style={{ flex: 1, padding: "10px 12px", border: "0.5px solid #E8EAF0", borderRadius: "8px", fontSize: "14px", fontFamily: "inherit", outline: "none" }} />
-                </div>
-                <div style={{ fontSize: "11px", color: "#94A3B8", marginTop: "5px" }}>
-                  {offerForm.discount_value
-                    ? `Clients will see: "${offerForm.discount_type === "percentage" ? offerForm.discount_value + "%" : "£" + offerForm.discount_value} off"`
-                    : "Enter a discount value"}
-                </div>
-              </div>
-
-              {/* Valid until */}
-              <div style={{ marginBottom: "12px" }}>
-                <label style={{ fontSize: "12px", fontWeight: 500, display: "block", marginBottom: "5px" }}>Valid Until <span style={{ color: "#94A3B8", fontWeight: 400 }}>(optional)</span></label>
-                <input type="date" value={offerForm.valid_until}
-                  onChange={e => setOfferForm({ ...offerForm, valid_until: e.target.value })}
-                  style={{ width: "100%", padding: "10px 12px", border: "0.5px solid #E8EAF0", borderRadius: "8px", fontSize: "14px", fontFamily: "inherit", outline: "none" }} />
-              </div>
-
-              {/* Active toggle */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 12px", background: "#F8F9FC", borderRadius: "8px", marginBottom: "20px" }}>
-                <div>
-                  <div style={{ fontSize: "13px", fontWeight: 500, color: "#0F172A" }}>Show on booking page</div>
-                  <div style={{ fontSize: "11px", color: "#94A3B8" }}>Clients can see this offer immediately</div>
-                </div>
-                <label className="toggle">
-                  <input type="checkbox" checked={offerForm.active} onChange={e => setOfferForm({ ...offerForm, active: e.target.checked })} />
-                  <span className="toggle-slider" />
-                </label>
-              </div>
-
-              <div style={{ display: "flex", gap: "10px" }}>
-                <button onClick={() => setShowOfferModal(false)}
-                  style={{ flex: 1, padding: "12px", border: "0.5px solid #E8EAF0", borderRadius: "8px", fontSize: "14px", cursor: "pointer", background: "#fff" }}>
-                  Cancel
-                </button>
-                <button onClick={handleAddOffer}
-                  style={{ flex: 1, padding: "12px", background: "#4F6EF7", color: "#fff", border: "none", borderRadius: "8px", fontSize: "14px", cursor: "pointer", fontWeight: 500, opacity: offerForm.title ? 1 : 0.5 }}>
-                  Save Offer
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        <button type="button" onClick={() => setShowModal(true)} style={{ border: "none", borderRadius: "12px", backgroundColor: "#4F6EF7", color: "#ffffff", padding: "12px 20px", fontSize: "14px", cursor: "pointer" }}>
+          + New Booking
+        </button>
       </div>
-    </>
+
+      {/* Stats */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px", marginBottom: "24px" }}>
+        {[
+          { label: "Today's bookings", value: todayAppointments.length },
+          { label: "Upcoming", value: upcomingAppointments.length },
+          { label: "Total bookings", value: appointments.length },
+          { label: "Revenue", value: `£${revenue.toFixed(2)}` },
+          { label: "Plan", value: salon?.plan || "Starter" },
+        ].map(stat => (
+          <div key={stat.label} style={{ backgroundColor: "#ffffff", borderRadius: "16px", padding: "20px", border: "0.5px solid #E8EAF0" }}>
+            <div style={{ fontSize: "11px", color: "#64748B", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "8px" }}>{stat.label}</div>
+            <div style={{ fontSize: "28px", color: "#0F172A", fontWeight: 700, textTransform: "capitalize" }}>{stat.value}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Quick actions */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px", marginBottom: "24px" }}>
+        {[
+          { label: "Bookings", path: "/dashboard/bookings", color: "#EEF2FF", textColor: "#4F6EF7" },
+          { label: "Clients", path: "/dashboard/clients", color: "#ECFDF5", textColor: "#059669" },
+          { label: "Staff", path: "/dashboard/staff", color: "#FFF7ED", textColor: "#D97706" },
+          { label: "Settings", path: "/dashboard/settings", color: "#F8F9FC", textColor: "#475569" },
+        ].map(item => (
+          <button key={item.label} onClick={() => router.push(item.path)} style={{ background: item.color, border: "none", borderRadius: "12px", padding: "16px", cursor: "pointer", textAlign: "left" }}>
+            <div style={{ fontSize: "13px", fontWeight: 600, color: item.textColor }}>Go to {item.label} →</div>
+          </button>
+        ))}
+      </div>
+
+      {/* New Booking Modal */}
+      {showModal && (
+        <div style={{ marginBottom: "24px", backgroundColor: "#ffffff", border: "0.5px solid #E8EAF0", borderRadius: "20px", padding: "28px", maxWidth: "780px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+            <h2 style={{ margin: 0, fontSize: "20px", color: "#0F172A" }}>Create appointment</h2>
+            <button type="button" onClick={() => { setShowModal(false); setError(""); }} style={{ border: "none", backgroundColor: "transparent", color: "#475569", cursor: "pointer", fontSize: "14px" }}>Close</button>
+          </div>
+          <form onSubmit={handleCreateBooking} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
+            {[
+              { label: "Client name", key: "client_name", type: "text", placeholder: "Sarah Jones", required: true },
+              { label: "Client email", key: "client_email", type: "email", placeholder: "client@example.com", required: false },
+              { label: "Phone number", key: "client_phone", type: "tel", placeholder: "07400 123456", required: false },
+            ].map(f => (
+              <div key={f.key} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "13px", color: "#0F172A", fontWeight: 600 }}>{f.label}</label>
+                <input type={f.type} value={(formData as any)[f.key]} onChange={e => setFormData({ ...formData, [f.key]: e.target.value })} placeholder={f.placeholder} required={f.required} style={{ border: "0.5px solid #E8EAF0", borderRadius: "10px", padding: "10px 14px", fontSize: "14px", color: "#0F172A" }} />
+              </div>
+            ))}
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "13px", color: "#0F172A", fontWeight: 600 }}>Service</label>
+              <select value={formData.service_id} onChange={e => setFormData({ ...formData, service_id: e.target.value })} required style={{ border: "0.5px solid #E8EAF0", borderRadius: "10px", padding: "10px 14px", fontSize: "14px", color: "#0F172A" }}>
+                <option value="">Select service</option>
+                {services.map(s => <option key={s.id} value={s.id}>{s.name} (£{s.price})</option>)}
+              </select>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "13px", color: "#0F172A", fontWeight: 600 }}>Staff member</label>
+              <select value={formData.staff_id} onChange={e => setFormData({ ...formData, staff_id: e.target.value })} style={{ border: "0.5px solid #E8EAF0", borderRadius: "10px", padding: "10px 14px", fontSize: "14px", color: "#0F172A" }}>
+                <option value="">Any available staff</option>
+                {staff.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </select>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "13px", color: "#0F172A", fontWeight: 600 }}>Date</label>
+              <input type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} required style={{ border: "0.5px solid #E8EAF0", borderRadius: "10px", padding: "10px 14px", fontSize: "14px", color: "#0F172A" }} />
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <label style={{ fontSize: "13px", color: "#0F172A", fontWeight: 600 }}>Time</label>
+              <select value={formData.time} onChange={e => setFormData({ ...formData, time: e.target.value })} required style={{ border: "0.5px solid #E8EAF0", borderRadius: "10px", padding: "10px 14px", fontSize: "14px", color: "#0F172A" }}>
+                <option value="">Select time</option>
+                {timeSlots.map(slot => <option key={slot} value={slot}>{slot}</option>)}
+              </select>
+            </div>
+            <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "8px" }}>
+              <button type="button" onClick={() => { setShowModal(false); setError(""); }} style={{ border: "1px solid #E8EAF0", backgroundColor: "#ffffff", color: "#475569", borderRadius: "10px", padding: "10px 18px", cursor: "pointer" }}>Cancel</button>
+              <button type="submit" style={{ border: "none", backgroundColor: "#4F6EF7", color: "#ffffff", borderRadius: "10px", padding: "10px 18px", cursor: "pointer" }}>Create booking</button>
+            </div>
+            {error && <div style={{ gridColumn: "1 / -1", color: "#DC2626", fontSize: "13px" }}>{error}</div>}
+          </form>
+        </div>
+      )}
+
+      {/* Appointments Table */}
+      <div style={{ backgroundColor: "#ffffff", borderRadius: "20px", overflow: "hidden", border: "0.5px solid #E8EAF0" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "12px", padding: "20px 24px", borderBottom: "0.5px solid #E8EAF0" }}>
+          <h2 style={{ margin: 0, fontSize: "16px", color: "#0F172A" }}>Recent bookings</h2>
+          <div style={{ display: "flex", gap: "8px" }}>
+            {["All", "Today", "Upcoming"].map(tab => (
+              <button key={tab} type="button" onClick={() => setActiveTab(tab)} style={{ border: "none", backgroundColor: activeTab === tab ? "#4F6EF7" : "#F8FAFC", color: activeTab === tab ? "#ffffff" : "#475569", borderRadius: "999px", padding: "8px 16px", cursor: "pointer", fontSize: "13px" }}>{tab}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "600px", backgroundColor: "#ffffff" }}>
+            <thead>
+              <tr style={{ textAlign: "left", borderBottom: "0.5px solid #E8EAF0" }}>
+                {["Status", "Client", "Service", "Staff", "Date & time", "Price"].map(h => (
+                  <th key={h} style={{ padding: "14px 18px", fontSize: "11px", color: "#94A3B8", textTransform: "uppercase", letterSpacing: "1px" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filteredAppointments.length === 0 ? (
+                <tr><td colSpan={6} style={{ padding: "32px 18px", color: "#64748B", fontSize: "14px", textAlign: "center" }}>No appointments found.</td></tr>
+              ) : (
+                filteredAppointments.map(a => (
+                  <tr key={a.id} style={{ borderBottom: "0.5px solid #F1F5F9" }}>
+                    <td style={{ padding: "13px 18px" }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", padding: "5px 10px", borderRadius: "999px", backgroundColor: a.status === "confirmed" ? "#ECFDF5" : "#EFF6FF", color: a.status === "confirmed" ? "#166534" : "#1D4ED8", fontSize: "11px", fontWeight: 600 }}>{a.status}</span>
+                    </td>
+                    <td style={{ padding: "13px 18px", fontSize: "13px", color: "#0F172A" }}>{a.client_name}</td>
+                    <td style={{ padding: "13px 18px", fontSize: "13px", color: "#0F172A" }}>{a.services?.name || "—"}</td>
+                    <td style={{ padding: "13px 18px", fontSize: "13px", color: "#64748B" }}>{a.staff?.name || "—"}</td>
+                    <td style={{ padding: "13px 18px", fontSize: "13px", color: "#0F172A" }}>{new Date(a.date_time).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}</td>
+                    <td style={{ padding: "13px 18px", fontSize: "13px", color: "#0F172A" }}>£{a.services?.price?.toFixed(2) || "0.00"}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   );
 }
