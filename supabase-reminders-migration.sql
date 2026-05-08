@@ -65,7 +65,7 @@ SELECT cron.schedule(
 
 -- Set the cron URL (update to your production URL):
 ALTER DATABASE postgres
-  SET app.cron_url = 'https://feature-saas.vercel.app/api/send-reminder?secret=salon123';
+  SET app.cron_url = 'https://feature-saas.vercel.app/api/send-reminder?secret=65361a5394edff6ecbce0e02c84b95c4a80a9a27adfef1a023bda8a2e914f354';
 
 -- ─────────────────────────────────────────
 -- 6. GDPR opt-out handler table
