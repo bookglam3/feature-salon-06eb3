@@ -14,22 +14,40 @@ const FROM_NUMBER = process.env.TWILIO_PHONE_NUMBER!; // e.g. +447700900000
 const GDPR_FOOTER = "\n\nReply STOP to opt out of reminders.";
 
 // ─────────────────────────────────────────────────────────
-// Normalise UK phone → E.164 (+44...)
-// Accepts: 07911 123456 / 447911123456 / +447911123456
+// normalisePhone — multi-country E.164 conversion
+// UK (+44), Pakistan (+92), UAE (+971), Saudi (+966),
+// or any raw E.164 starting with +
 // ─────────────────────────────────────────────────────────
-export function normaliseUKPhone(raw: string): string | null {
+export function normalisePhone(raw: string): string | null {
   if (!raw) return null;
   const digits = raw.replace(/\D/g, "");
 
+  // Already valid E.164
+  if (raw.startsWith("+") && digits.length >= 10 && digits.length <= 15) return `+${digits}`;
+
+  // UK: 07xxx or 447xxx
   if (digits.startsWith("44") && digits.length === 12) return `+${digits}`;
-  if (digits.startsWith("0") && digits.length === 11)   return `+44${digits.slice(1)}`;
-  if (digits.startsWith("7") && digits.length === 10)   return `+44${digits}`;
+  if (digits.startsWith("0") && digits.length === 11)  return `+44${digits.slice(1)}`;
+  if (digits.startsWith("7") && digits.length === 10)  return `+44${digits}`;
 
-  // Already has +44
-  if (raw.startsWith("+44") && digits.length === 12) return `+${digits}`;
+  // Pakistan: 923xxxxxxxxx or 03xxxxxxxxx
+  if (digits.startsWith("92") && digits.length === 12) return `+${digits}`;
+  if (digits.startsWith("03") && digits.length === 11) return `+92${digits.slice(1)}`;
 
-  return null; // unrecognised format — skip SMS
+  // UAE: 971xxxxxxxxx
+  if (digits.startsWith("971") && (digits.length === 12 || digits.length === 11)) return `+${digits}`;
+
+  // Saudi Arabia: 966xxxxxxxxx
+  if (digits.startsWith("966") && (digits.length === 12 || digits.length === 11)) return `+${digits}`;
+
+  // Fallback best-effort
+  if (digits.length >= 10 && digits.length <= 15) return `+${digits}`;
+
+  return null;
 }
+
+// Keep old name as alias for backward compat
+export const normaliseUKPhone = normalisePhone;
 
 // ─────────────────────────────────────────────────────────
 // UK time formatter (Europe/London — handles GMT/BST auto)
@@ -56,7 +74,7 @@ export function formatUKDate(dateTime: string): string {
 // Core SMS sender
 // ─────────────────────────────────────────────────────────
 async function sendSMS(to: string, body: string): Promise<void> {
-  const normalisedTo = normaliseUKPhone(to);
+  const normalisedTo = normalisePhone(to);
   if (!normalisedTo) {
     console.warn(`[SMS] Skipping — could not normalise phone: ${to}`);
     return;

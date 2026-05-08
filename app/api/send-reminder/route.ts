@@ -21,11 +21,11 @@ import {
 } from "@/app/lib/whatsapp";
 
 // ─────────────────────────────────────────────────────────
-// Use service-role key so RLS does not block cron reads
+// MUST use service-role key — anon key is blocked by RLS
 // ─────────────────────────────────────────────────────────
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!   // ← service role, not anon
 );
 
 // ─────────────────────────────────────────────────────────
@@ -54,9 +54,28 @@ async function isOptedOut(phone: string | null): Promise<boolean> {
 export async function GET(req: Request) {
   // ── Security ──────────────────────────────────────
   const { searchParams } = new URL(req.url);
-  if (searchParams.get("secret") !== process.env.CRON_SECRET) {
+  const secret = searchParams.get("secret");
+  if (!process.env.CRON_SECRET) {
+    console.error("[Reminder] ❌ CRON_SECRET env var is not set!");
+    return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
+  }
+  if (secret !== process.env.CRON_SECRET) {
+    console.warn(`[Reminder] ❌ Unauthorised attempt. Got: ${secret?.slice(0,8)}...`);
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   }
+
+  // ── Env check ─────────────────────────────────────
+  const envCheck = {
+    supabaseUrl:      !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+    serviceRoleKey:   !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    resendKey:        !!process.env.RESEND_API_KEY,
+    twilioSid:        !!process.env.TWILIO_ACCOUNT_SID,
+    twilioToken:      !!process.env.TWILIO_AUTH_TOKEN,
+    twilioPhone:      !!process.env.TWILIO_PHONE_NUMBER,
+    twilioWhatsApp:   !!process.env.TWILIO_WHATSAPP_FROM,
+    appUrl:           !!process.env.NEXT_PUBLIC_APP_URL,
+  };
+  console.log("[Reminder] Env check:", JSON.stringify(envCheck));
 
   const now = new Date();
   let sent = 0;
@@ -68,10 +87,13 @@ export async function GET(req: Request) {
   const w1hAgo = window15(now.getTime() -  1 * 60 * 60 * 1000);
   const w6wkAgo = window15(now.getTime() - 42 * 24 * 60 * 60 * 1000);
 
+  console.log(`[Reminder] ⏰ Running at ${now.toISOString()}`);
+  console.log(`[Reminder] 24h window: ${w24h.start} → ${w24h.end}`);
+
   // ════════════════════════════════════════════════════════
   // 1. 24h BEFORE — Appointment Reminder
   // ════════════════════════════════════════════════════════
-  const { data: appts24 } = await supabase
+  const { data: appts24, error: err24 } = await supabase
     .from("appointments")
     .select("*, services(name,price), staff(name), salons(name,slug,reminders_enabled,whatsapp_enabled,review_link)")
     .eq("status", "confirmed")
@@ -79,8 +101,16 @@ export async function GET(req: Request) {
     .gte("date_time", w24h.start)
     .lte("date_time", w24h.end);
 
+  if (err24) console.error("[Reminder] 24h query error:", err24);
+  console.log(`[Reminder] 24h appointments found: ${appts24?.length ?? 0}`);
+
   for (const a of appts24 || []) {
-    if (!a.salons?.reminders_enabled) continue;
+    // reminders_enabled defaults TRUE — only skip if explicitly false
+    if (a.salons?.reminders_enabled === false) {
+      console.log(`[Reminder] Skipping ${a.id} — reminders disabled`);
+      continue;
+    }
+    console.log(`[Reminder] Processing 24h for appointment ${a.id} (${a.client_name})`);
 
     const ukTime = formatUKTime(a.date_time);
 
@@ -138,7 +168,7 @@ export async function GET(req: Request) {
   // ════════════════════════════════════════════════════════
   // 2. 2h BEFORE — Appointment Reminder
   // ════════════════════════════════════════════════════════
-  const { data: appts2h } = await supabase
+  const { data: appts2h, error: err2h } = await supabase
     .from("appointments")
     .select("*, services(name,price), staff(name), salons(name,slug,reminders_enabled,whatsapp_enabled)")
     .eq("status", "confirmed")
@@ -146,8 +176,12 @@ export async function GET(req: Request) {
     .gte("date_time", w2h.start)
     .lte("date_time", w2h.end);
 
+  if (err2h) console.error("[Reminder] 2h query error:", err2h);
+  console.log(`[Reminder] 2h appointments found: ${appts2h?.length ?? 0}`);
+
   for (const a of appts2h || []) {
-    if (!a.salons?.reminders_enabled) continue;
+    if (a.salons?.reminders_enabled === false) continue;
+    console.log(`[Reminder] Processing 2h for appointment ${a.id} (${a.client_name})`);
 
     const ukTime = formatUKTime(a.date_time);
 
@@ -203,7 +237,7 @@ export async function GET(req: Request) {
   // ════════════════════════════════════════════════════════
   // 3. 1h AFTER — Thank You + Review Request
   // ════════════════════════════════════════════════════════
-  const { data: appts1hAgo } = await supabase
+  const { data: appts1hAgo, error: err1h } = await supabase
     .from("appointments")
     .select("*, services(name), salons(name,slug,reminders_enabled,review_link)")
     .eq("status", "confirmed")
@@ -211,8 +245,12 @@ export async function GET(req: Request) {
     .gte("date_time", w1hAgo.start)
     .lte("date_time", w1hAgo.end);
 
+  if (err1h) console.error("[Reminder] 1h-ago query error:", err1h);
+  console.log(`[Reminder] 1h-ago appointments found: ${appts1hAgo?.length ?? 0}`);
+
   for (const a of appts1hAgo || []) {
-    if (!a.salons?.reminders_enabled) continue;
+    if (a.salons?.reminders_enabled === false) continue;
+    console.log(`[Reminder] Processing thankyou for appointment ${a.id} (${a.client_name})`);
 
     const reviewLink = a.salons?.review_link || undefined;
 
@@ -251,7 +289,7 @@ export async function GET(req: Request) {
   // ════════════════════════════════════════════════════════
   // 4. 6 WEEKS AFTER — Win-back
   // ════════════════════════════════════════════════════════
-  const { data: appts6wk } = await supabase
+  const { data: appts6wk, error: err6wk } = await supabase
     .from("appointments")
     .select("*, services(name), salons(name,slug,reminders_enabled,whatsapp_enabled)")
     .eq("status", "confirmed")
@@ -259,8 +297,12 @@ export async function GET(req: Request) {
     .gte("date_time", w6wkAgo.start)
     .lte("date_time", w6wkAgo.end);
 
+  if (err6wk) console.error("[Reminder] winback query error:", err6wk);
+  console.log(`[Reminder] Winback appointments found: ${appts6wk?.length ?? 0}`);
+
   for (const a of appts6wk || []) {
-    if (!a.salons?.reminders_enabled) continue;
+    if (a.salons?.reminders_enabled === false) continue;
+    console.log(`[Reminder] Processing winback for appointment ${a.id} (${a.client_name})`);
 
     const bookingLink = `${process.env.NEXT_PUBLIC_APP_URL}/book/${a.salons?.slug}`;
 
@@ -313,6 +355,7 @@ export async function GET(req: Request) {
     sent++;
   }
 
+  console.log(`[Reminder] ✅ Done. sent=${sent} errors=${errors.length}`);
   return NextResponse.json({
     success: true,
     sent,
