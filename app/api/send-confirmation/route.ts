@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendBookingEmails } from "@/app/lib/email";
+import { sendWhatsAppConfirmation } from "@/app/lib/whatsapp";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
         *,
         services(name, price),
         staff(name),
-        salons(id, name, slug, address, owner_email, owner_id, reminders_enabled)
+        salons(id, name, slug, address, owner_email, owner_id, reminders_enabled, whatsapp_enabled)
       `)
       .eq("id", appointmentId)
       .single();
@@ -78,8 +79,34 @@ export async function POST(req: NextRequest) {
       depositOnly:     appt.payment_status === "deposit_paid",
     });
 
+    // ── WhatsApp Confirmation ────────────────────────────────
+    let whatsappSent = false;
+    if (appt.client_phone && salon?.whatsapp_enabled) {
+      try {
+        await sendWhatsAppConfirmation({
+          to:           appt.client_phone,
+          clientName:   appt.client_name,
+          serviceName:  appt.services?.name || "Appointment",
+          staffName:    appt.staff?.name,
+          salonName:    salon?.name || "The Salon",
+          salonAddress: salon?.address,
+          dateTime:     appt.date_time,
+          price:        appt.services?.price,
+          cancelLink:   `${appUrl}/book/${salon?.slug}`,
+        });
+        await supabase
+          .from("appointments")
+          .update({ whatsapp_confirmation_sent: true })
+          .eq("id", appointmentId);
+        whatsappSent = true;
+        console.log(`[send-confirmation] ✅ WhatsApp sent for appointment ${appointmentId}`);
+      } catch (waErr) {
+        console.error("[send-confirmation] WhatsApp error (non-fatal):", waErr);
+      }
+    }
+
     console.log(`[send-confirmation] ✅ Emails sent for appointment ${appointmentId}`);
-    return NextResponse.json({ success: true, clientEmail, ownerEmail });
+    return NextResponse.json({ success: true, clientEmail, ownerEmail, whatsappSent });
 
   } catch (err) {
     console.error("[send-confirmation] Error:", err);

@@ -13,6 +13,12 @@ import {
   sendWinbackSMS,
   formatUKTime,
 } from "@/app/lib/sms";
+import {
+  send24hWhatsApp,
+  send2hWhatsApp,
+  sendWinbackWhatsApp,
+  formatWATime,
+} from "@/app/lib/whatsapp";
 
 // ─────────────────────────────────────────────────────────
 // Use service-role key so RLS does not block cron reads
@@ -67,7 +73,7 @@ export async function GET(req: Request) {
   // ════════════════════════════════════════════════════════
   const { data: appts24 } = await supabase
     .from("appointments")
-    .select("*, services(name,price), staff(name), salons(name,slug,reminders_enabled,review_link)")
+    .select("*, services(name,price), staff(name), salons(name,slug,reminders_enabled,whatsapp_enabled,review_link)")
     .eq("status", "confirmed")
     .eq("reminder_24h_sent", false)
     .gte("date_time", w24h.start)
@@ -105,6 +111,23 @@ export async function GET(req: Request) {
       } catch (e) { errors.push(`24h SMS ${a.id}: ${e}`); }
     }
 
+    // WhatsApp
+    if (a.client_phone && a.salons?.whatsapp_enabled && !(await isOptedOut(a.client_phone))) {
+      try {
+        await send24hWhatsApp({
+          to:          a.client_phone,
+          clientName:  a.client_name,
+          time:        formatWATime(a.date_time),
+          salonName:   a.salons?.name || "Your Salon",
+          serviceName: a.services?.name,
+        });
+        await supabase
+          .from("appointments")
+          .update({ whatsapp_24h_sent: true })
+          .eq("id", a.id);
+      } catch (e) { errors.push(`24h WhatsApp ${a.id}: ${e}`); }
+    }
+
     await supabase
       .from("appointments")
       .update({ reminder_24h_sent: true })
@@ -117,7 +140,7 @@ export async function GET(req: Request) {
   // ════════════════════════════════════════════════════════
   const { data: appts2h } = await supabase
     .from("appointments")
-    .select("*, services(name,price), staff(name), salons(name,slug,reminders_enabled)")
+    .select("*, services(name,price), staff(name), salons(name,slug,reminders_enabled,whatsapp_enabled)")
     .eq("status", "confirmed")
     .eq("reminder_2h_sent", false)
     .gte("date_time", w2h.start)
@@ -152,6 +175,22 @@ export async function GET(req: Request) {
           time: ukTime,
         });
       } catch (e) { errors.push(`2h SMS ${a.id}: ${e}`); }
+    }
+
+    // WhatsApp
+    if (a.client_phone && a.salons?.whatsapp_enabled && !(await isOptedOut(a.client_phone))) {
+      try {
+        await send2hWhatsApp({
+          to:         a.client_phone,
+          clientName: a.client_name,
+          time:       formatWATime(a.date_time),
+          salonName:  a.salons?.name || "Your Salon",
+        });
+        await supabase
+          .from("appointments")
+          .update({ whatsapp_2h_sent: true })
+          .eq("id", a.id);
+      } catch (e) { errors.push(`2h WhatsApp ${a.id}: ${e}`); }
     }
 
     await supabase
@@ -214,7 +253,7 @@ export async function GET(req: Request) {
   // ════════════════════════════════════════════════════════
   const { data: appts6wk } = await supabase
     .from("appointments")
-    .select("*, services(name), salons(name,slug,reminders_enabled)")
+    .select("*, services(name), salons(name,slug,reminders_enabled,whatsapp_enabled)")
     .eq("status", "confirmed")
     .eq("winback_sent", false)
     .gte("date_time", w6wkAgo.start)
@@ -248,6 +287,23 @@ export async function GET(req: Request) {
           bookingLink,
         });
       } catch (e) { errors.push(`winback SMS ${a.id}: ${e}`); }
+    }
+
+    // WhatsApp
+    if (a.client_phone && a.salons?.whatsapp_enabled && !(await isOptedOut(a.client_phone))) {
+      try {
+        await sendWinbackWhatsApp({
+          to:              a.client_phone,
+          clientName:      a.client_name,
+          salonName:       a.salons?.name || "Your Salon",
+          bookingLink,
+          lastServiceName: a.services?.name,
+        });
+        await supabase
+          .from("appointments")
+          .update({ whatsapp_winback_sent: true })
+          .eq("id", a.id);
+      } catch (e) { errors.push(`winback WhatsApp ${a.id}: ${e}`); }
     }
 
     await supabase

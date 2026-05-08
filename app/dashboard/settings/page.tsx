@@ -145,6 +145,11 @@ export default function SettingsPage() {
   const [reminderSaving, setReminderSaving] = useState(false);
   const [reminderSaved, setReminderSaved] = useState(false);
 
+  // WhatsApp settings
+  const [whatsappEnabled, setWhatsappEnabled] = useState(false);
+  const [waSaving, setWaSaving] = useState(false);
+  const [waSaved, setWaSaved] = useState(false);
+
   // Payment methods
   const [pm, setPm] = useState<PaymentMethods>(DEFAULT_PAYMENT_METHODS);
   const [pmSaving, setPmSaving] = useState(false);
@@ -162,6 +167,7 @@ export default function SettingsPage() {
       setSalonName(salonData?.name || "");
       setRemindersEnabled(salonData?.reminders_enabled ?? true);
       setReviewLink(salonData?.review_link || "");
+      setWhatsappEnabled(salonData?.whatsapp_enabled ?? false);
 
       // Load payment methods — fall back to defaults if column missing
       if (salonData?.payment_methods) {
@@ -217,6 +223,15 @@ export default function SettingsPage() {
     }).eq("id", salon.id);
     setReminderSaved(true); setReminderSaving(false);
     setTimeout(() => setReminderSaved(false), 2000);
+  };
+
+  const handleToggleWhatsApp = async (value: boolean) => {
+    setWhatsappEnabled(value);
+    if (!salon) return;
+    setWaSaving(true);
+    await supabase.from("salons").update({ whatsapp_enabled: value }).eq("id", salon.id);
+    setWaSaved(true); setWaSaving(false);
+    setTimeout(() => setWaSaved(false), 1500);
   };
 
   const handleSavePaymentMethods = async () => {
@@ -446,6 +461,88 @@ export default function SettingsPage() {
           </div>
         </div>
         <button id="save-reminders-btn" onClick={handleSaveReminders} disabled={reminderSaving} {...saveBtn(reminderSaved, reminderSaving, "Save Reminder Settings")} />
+      </div>
+
+      {/* ── WhatsApp Reminders ── */}
+      <div style={cardStyle}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 20 }}>💚</span>
+            <div style={{ fontSize: "14px", fontWeight: 600, color: "#0F172A" }}>WhatsApp Reminders</div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: "12px", color: whatsappEnabled ? "#059669" : "#94A3B8", fontWeight: 600 }}>
+              {waSaved ? "Saved ✓" : whatsappEnabled ? "On" : "Off"}
+            </span>
+            <Toggle id="whatsapp-toggle" checked={whatsappEnabled} onChange={handleToggleWhatsApp} />
+          </div>
+        </div>
+        <p style={{ fontSize: "13px", color: "#64748B", margin: "6px 0 20px" }}>
+          Send automated WhatsApp messages via Twilio. Clients must have WhatsApp and their number must be active.
+          Messages are sent in <strong>English</strong> with GDPR opt-out included.
+        </p>
+
+        {/* Sandbox notice */}
+        <div style={{ background: "#FFFBEB", border: "0.5px solid #FDE68A", borderRadius: 10, padding: "12px 14px", marginBottom: 18 }}>
+          <div style={{ fontSize: "12px", fontWeight: 700, color: "#92400E", marginBottom: 4 }}>🧪 Testing (Sandbox Mode)</div>
+          <div style={{ fontSize: "12px", color: "#78350F", lineHeight: 1.7 }}>
+            Using Twilio WhatsApp Sandbox: <strong>+1 415 523 8886</strong>.<br />
+            Clients must join the sandbox first by sending <code style={{ background: "#FEF3C7", padding: "1px 5px", borderRadius: 4 }}>join &lt;your-code&gt;</code> to that number.<br />
+            For production, <a href="https://www.twilio.com/whatsapp" target="_blank" rel="noopener noreferrer" style={{ color: "#4F6EF7" }}>register a WhatsApp Business number</a>.
+          </div>
+        </div>
+
+        {/* Message schedule */}
+        <div style={{ background: "#F0FDF4", border: "0.5px solid #BBF7D0", borderRadius: 10, padding: "16px", marginBottom: 18 }}>
+          <div style={{ fontSize: "12px", fontWeight: 700, color: "#15803D", letterSpacing: "0.8px", textTransform: "uppercase", marginBottom: 12 }}>
+            WhatsApp Message Schedule
+          </div>
+          {[
+            { icon: "✅", time: "Instantly",       msg: "Booking confirmation with date, time, service & cancel link" },
+            { icon: "📅", time: "24 hours before", msg: "\"Your appointment is tomorrow at [time]\"" },
+            { icon: "⏰", time: "2 hours before",  msg: "\"Your appointment is in 2 hours at [time]\"" },
+            { icon: "🔄", time: "6 weeks after",   msg: "\"Time for your next appointment! Book now: [link]\"" },
+          ].map((row, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 0", borderBottom: i < 3 ? "0.5px solid #D1FAE5" : "none" }}>
+              <span style={{ fontSize: 18, lineHeight: 1, marginTop: 1 }}>{row.icon}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: "13px", fontWeight: 600, color: "#0F172A" }}>{row.time}</div>
+                <div style={{ fontSize: "12px", color: "#64748B", margin: "2px 0" }}>{row.msg}</div>
+                <span style={{ display: "inline-block", fontSize: "11px", fontWeight: 600, color: "#059669", background: "#D1FAE5", padding: "2px 8px", borderRadius: 6, marginTop: 4 }}>WhatsApp</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Country support */}
+        <div style={{ background: "#F8FAFF", border: "0.5px solid #E0E7FF", borderRadius: 10, padding: "12px 14px", marginBottom: 18 }}>
+          <div style={{ fontSize: "12px", fontWeight: 700, color: "#4F6EF7", marginBottom: 6 }}>🌍 Supported Countries (Auto-detected)</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {[
+              { flag: "🇬🇧", label: "UK", fmt: "+44" },
+              { flag: "🇵🇰", label: "Pakistan", fmt: "+92" },
+              { flag: "🇦🇪", label: "UAE", fmt: "+971" },
+              { flag: "🇸🇦", label: "Saudi Arabia", fmt: "+966" },
+            ].map(c => (
+              <span key={c.label} style={{ fontSize: "12px", background: "#EEF2FF", color: "#4338CA", padding: "4px 10px", borderRadius: 20, fontWeight: 500 }}>
+                {c.flag} {c.label} <span style={{ color: "#6366F1", fontWeight: 400 }}>({c.fmt})</span>
+              </span>
+            ))}
+          </div>
+          <div style={{ fontSize: "11.5px", color: "#94A3B8", marginTop: 8 }}>
+            Country code is auto-detected from the phone number entered at booking.
+          </div>
+        </div>
+
+        {/* GDPR */}
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, background: "#F0FDF4", border: "0.5px solid #BBF7D0", borderRadius: "8px", padding: "12px 14px" }}>
+          <span style={{ fontSize: 16 }}>🛡️</span>
+          <div style={{ fontSize: "12px", color: "#15803D", lineHeight: 1.6 }}>
+            <strong>GDPR Compliant</strong> — Every WhatsApp message includes a STOP opt-out link.
+            Configure the webhook in Twilio Console → Messaging → Senders → WhatsApp sandbox →
+            <code style={{ background: "#D1FAE5", padding: "1px 6px", borderRadius: 4, marginLeft: 4 }}>https://feature-saas.vercel.app/api/whatsapp-optout</code>
+          </div>
+        </div>
       </div>
 
       {/* ── Services ── */}
