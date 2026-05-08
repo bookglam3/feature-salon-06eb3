@@ -159,8 +159,38 @@ export default function DashboardPage() {
 
   const greeting = useMemo(()=>{ const h=now.getHours(); return h<12?"Good morning":h<17?"Good afternoon":"Good evening"; },[]);
   const bookingLink = `${origin}/book/${salon?.slug}`;
-  const plan = salon?.plan||"Starter";
-  const planInfo = PLAN_FEATURES[plan]||PLAN_FEATURES.Starter;
+  const plan = salon?.plan || "Starter";
+  const planInfo = PLAN_FEATURES[plan] || PLAN_FEATURES.Starter;
+
+  // Subscription live state
+  const salonAny  = salon as unknown as Record<string,unknown>;
+  const subStatus = salonAny?.subscription_status as string || "trial";
+  const subPlan   = salonAny?.subscription_plan   as string || "starter";
+  const trialEnd  = salonAny?.trial_ends_at       as string | null || null;
+  const periodEnd = salonAny?.current_period_end  as string | null || null;
+  const hasCustId = !!(salonAny?.stripe_customer_id);
+
+  const trialDaysLeft = trialEnd ? Math.max(0, Math.ceil((new Date(trialEnd).getTime() - Date.now()) / 86400000)) : 0;
+
+  const SUB_STATUS_MAP: Record<string,{label:string;color:string;bg:string}> = {
+    trial:     { label:"Free Trial",  color:"#6366F1", bg:"#EEF2FF" },
+    trialing:  { label:"Trial",       color:"#8B5CF6", bg:"#F5F3FF" },
+    active:    { label:"Active",      color:"#059669", bg:"#D1FAE5" },
+    past_due:  { label:"Past Due",    color:"#D97706", bg:"#FEF3C7" },
+    cancelled: { label:"Cancelled",   color:"#DC2626", bg:"#FEE2E2" },
+    unpaid:    { label:"Unpaid",      color:"#DC2626", bg:"#FEE2E2" },
+  };
+  const statusBadge = SUB_STATUS_MAP[subStatus] || SUB_STATUS_MAP.trial;
+
+  const PLAN_PRICE: Record<string,string> = { starter:"£29", pro:"£59", business:"£99" };
+
+  const handleManageSub = async () => {
+    if (!hasCustId) { router.push("/subscribe"); return; }
+    const res = await fetch("/api/subscription/portal", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ salonId:salon?.id }) });
+    const data = await res.json();
+    if (data.url) window.location.href = data.url;
+    else toast.error("Could not open billing portal");
+  };
 
   if (loading) return (
     <DashboardShell salonName="" topbar={<header style={{background:"#fff",borderBottom:"1px solid var(--border)",height:58,display:"flex",alignItems:"center",padding:"0 20px",gap:14}}><div style={{width:36,height:12,borderRadius:6}} className="skeleton"/><div style={{width:140,height:12,borderRadius:6}} className="skeleton"/></header>}>
@@ -327,29 +357,41 @@ export default function DashboardPage() {
             {/* RIGHT column */}
             <div style={{display:"flex",flexDirection:"column",gap:20}}>
 
-              {/* Subscription Plan Card */}
-              <div style={{background:`linear-gradient(135deg,${planInfo.bg} 0%,#fff 100%)`,border:`2px solid ${planInfo.border}`,borderRadius:"var(--r-lg)",overflow:"hidden"}}>
-                <div style={{padding:"16px 18px",borderBottom:`1px solid ${planInfo.border}`}}>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:4}}>
-                    <div style={{fontSize:10,fontWeight:800,letterSpacing:"1.5px",color:planInfo.color,textTransform:"uppercase"}}>Current Plan</div>
-                    <div style={{padding:"3px 10px",borderRadius:99,background:planInfo.color,color:"#fff",fontSize:9.5,fontWeight:800,letterSpacing:"1px"}}>{planInfo.badge}</div>
+              {/* Subscription Plan Card (live) */}
+              <div style={{background:"#fff",border:`2px solid ${statusBadge.color}22`,borderRadius:"var(--r-lg)",overflow:"hidden"}}>
+                <div style={{padding:"16px 18px",borderBottom:"1px solid var(--border)",background:`linear-gradient(135deg,${statusBadge.bg} 0%,#fff 100%)`}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+                    <div style={{fontSize:10,fontWeight:800,letterSpacing:"1.5px",color:statusBadge.color,textTransform:"uppercase"}}>Current Plan</div>
+                    <div style={{padding:"3px 10px",borderRadius:99,background:statusBadge.bg,color:statusBadge.color,fontSize:9.5,fontWeight:800,letterSpacing:"1px",border:`1px solid ${statusBadge.color}44`}}>{statusBadge.label}</div>
                   </div>
-                  <div style={{fontSize:20,fontWeight:800,color:"var(--text-1)",letterSpacing:"-0.5px"}}>{plan} Plan</div>
-                  <div style={{fontSize:12,color:"var(--text-3)",marginTop:2}}>{planInfo.limit}</div>
+                  <div style={{fontSize:20,fontWeight:800,color:"var(--text-1)",letterSpacing:"-0.5px",textTransform:"capitalize"}}>{subPlan} Plan</div>
+                  <div style={{fontSize:13,color:"var(--text-3)",marginTop:2}}>
+                    {PLAN_PRICE[subPlan] || "£29"}/month
+                  </div>
                 </div>
                 <div style={{padding:"14px 18px"}}>
-                  <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>
-                    {planInfo.features.map((f:string,i:number)=>(
-                      <div key={i} style={{display:"flex",alignItems:"center",gap:8,fontSize:12.5,color:"var(--text-2)"}}>
-                        <span style={{width:18,height:18,borderRadius:"50%",background:planInfo.color,color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:800,flexShrink:0}}>✓</span>
-                        {f}
+                  {(subStatus==="trial"||subStatus==="trialing") && (
+                    <div style={{background:trialDaysLeft<=3?"#FEF2F2":"#EEF2FF",border:`1px solid ${trialDaysLeft<=3?"#FECACA":"#C7D2FE"}`,borderRadius:"var(--r-sm)",padding:"10px 14px",marginBottom:14}}>
+                      <div style={{fontSize:12,fontWeight:700,color:trialDaysLeft<=3?"#DC2626":"#4F46E5"}}>
+                        {trialDaysLeft===0 ? "⚠️ Trial ended — subscribe to continue" : `🎁 ${trialDaysLeft} day${trialDaysLeft===1?"":"s"} left in free trial`}
                       </div>
-                    ))}
-                  </div>
-                  {plan!=="Enterprise"&&(
-                    <a href="/dashboard/settings" style={{display:"block",textAlign:"center",padding:"10px",background:"linear-gradient(135deg,var(--indigo) 0%,var(--indigo-dark) 100%)",color:"#fff",borderRadius:"var(--r-sm)",fontSize:13,fontWeight:700,textDecoration:"none",letterSpacing:"-0.2px",boxShadow:"var(--shadow-indigo)"}}>
-                      Upgrade Plan ↗
-                    </a>
+                    </div>
+                  )}
+                  {subStatus==="active" && periodEnd && (
+                    <div style={{background:"#ECFDF5",border:"1px solid #A7F3D0",borderRadius:"var(--r-sm)",padding:"10px 14px",marginBottom:14}}>
+                      <div style={{fontSize:12,fontWeight:700,color:"#059669"}}>✅ Next billing: {new Date(periodEnd).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}</div>
+                    </div>
+                  )}
+                  {subStatus==="past_due" && (
+                    <div style={{background:"#FEF3C7",border:"1px solid #FDE68A",borderRadius:"var(--r-sm)",padding:"10px 14px",marginBottom:14}}>
+                      <div style={{fontSize:12,fontWeight:700,color:"#D97706"}}>⚠️ Payment failed — update your card</div>
+                    </div>
+                  )}
+                  <button onClick={handleManageSub} style={{width:"100%",textAlign:"center",padding:"10px",background:`linear-gradient(135deg,${statusBadge.color} 0%,${statusBadge.color}cc 100%)`,color:"#fff",borderRadius:"var(--r-sm)",fontSize:13,fontWeight:700,border:"none",cursor:"pointer",letterSpacing:"-0.2px"}}>
+                    {subStatus==="active"||subStatus==="trialing" ? "Manage Subscription →" : hasCustId ? "Reactivate / Upgrade →" : "Choose a Plan →"}
+                  </button>
+                  {subStatus!=="active" && (
+                    <div style={{textAlign:"center",fontSize:11,color:"var(--text-3)",marginTop:8}}>Plans from £29/month · Cancel anytime</div>
                   )}
                 </div>
               </div>

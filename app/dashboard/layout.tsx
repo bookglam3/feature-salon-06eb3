@@ -1,3 +1,143 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import { supabase } from "../lib/supabase";
+
+type SubStatus = "trial" | "trialing" | "active" | "past_due" | "cancelled" | "unpaid" | null;
+
+interface SalonSub {
+  id:                  string;
+  subscription_status: SubStatus;
+  subscription_plan:   string | null;
+  trial_ends_at:       string | null;
+  current_period_end:  string | null;
+  stripe_customer_id:  string | null;
+}
+
+function daysLeft(dateStr: string | null): number {
+  if (!dateStr) return 0;
+  const diff = new Date(dateStr).getTime() - Date.now();
+  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+}
+
+function TrialBanner({ salon }: { salon: SalonSub }) {
+  const days = daysLeft(salon.trial_ends_at);
+  const urgent = days <= 3;
+  const openPortal = async () => {
+    if (!salon.stripe_customer_id) { window.location.href = "/subscribe"; return; }
+    const res = await fetch("/api/subscription/portal", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ salonId: salon.id }) });
+    const data = await res.json();
+    if (data.url) window.location.href = data.url;
+  };
+  return (
+    <div style={{
+      background: urgent ? "linear-gradient(90deg,#991B1B,#DC2626)" : "linear-gradient(90deg,#1E40AF,#6366F1)",
+      color:"#fff", padding:"10px 20px", fontSize:13, fontWeight:600,
+      display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap",
+    }}>
+      <span>
+        {urgent ? "⚠️" : "🎁"}{" "}
+        {days === 0
+          ? "Your free trial has ended — subscribe to keep access"
+          : `Free trial: ${days} day${days === 1 ? "" : "s"} remaining`}
+        {salon.subscription_plan && ` · ${salon.subscription_plan.charAt(0).toUpperCase() + salon.subscription_plan.slice(1)} plan`}
+      </span>
+      <button onClick={openPortal} style={{ background:"rgba(255,255,255,0.2)", border:"1px solid rgba(255,255,255,0.3)", color:"#fff", borderRadius:99, padding:"5px 14px", fontSize:12, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>
+        {salon.stripe_customer_id ? "Manage Subscription →" : "Upgrade Now →"}
+      </button>
+    </div>
+  );
+}
+
+function PastDueBanner({ salon }: { salon: SalonSub }) {
+  const openPortal = async () => {
+    const res = await fetch("/api/subscription/portal", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ salonId: salon.id }) });
+    const data = await res.json();
+    if (data.url) window.location.href = data.url;
+  };
+  return (
+    <div style={{ background:"linear-gradient(90deg,#78350F,#D97706)", color:"#fff", padding:"10px 20px", fontSize:13, fontWeight:600, display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap" }}>
+      <span>⚠️ Payment failed — please update your payment method to avoid losing access</span>
+      <button onClick={openPortal} style={{ background:"rgba(255,255,255,0.2)", border:"1px solid rgba(255,255,255,0.3)", color:"#fff", borderRadius:99, padding:"5px 14px", fontSize:12, fontWeight:700, cursor:"pointer" }}>
+        Fix Payment →
+      </button>
+    </div>
+  );
+}
+
+function LockedOverlay({ salon }: { salon: SalonSub }) {
+  const reactivate = () => window.location.href = "/subscribe";
+  const openPortal = async () => {
+    if (!salon.stripe_customer_id) { reactivate(); return; }
+    const res = await fetch("/api/subscription/portal", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ salonId: salon.id }) });
+    const data = await res.json();
+    if (data.url) window.location.href = data.url;
+  };
+
+  return (
+    <div style={{ position:"fixed", inset:0, zIndex:9999, background:"rgba(2,6,23,0.96)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:24, backdropFilter:"blur(8px)" }}>
+      <div style={{ maxWidth:480, width:"100%", textAlign:"center" }}>
+        <div style={{ fontSize:64, marginBottom:20 }}>🔒</div>
+        <h1 style={{ fontSize:28, fontWeight:900, color:"#fff", letterSpacing:"-1px", marginBottom:12 }}>
+          Dashboard Locked
+        </h1>
+        <p style={{ color:"rgba(255,255,255,0.6)", fontSize:15, lineHeight:1.7, marginBottom:32 }}>
+          {salon.subscription_status === "cancelled"
+            ? "Your subscription has been cancelled. Reactivate to access your dashboard."
+            : "Your subscription has expired. Please renew to continue managing your salon."}
+        </p>
+        <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+          <button
+            onClick={openPortal}
+            style={{ background:"linear-gradient(135deg,#6366F1 0%,#8B5CF6 100%)", color:"#fff", border:"none", borderRadius:12, padding:"16px 32px", fontSize:16, fontWeight:800, cursor:"pointer", boxShadow:"0 8px 32px rgba(99,102,241,0.4)" }}
+          >
+            {salon.stripe_customer_id ? "Reactivate Subscription →" : "Choose a Plan →"}
+          </button>
+          <div style={{ fontSize:13, color:"rgba(255,255,255,0.4)" }}>
+            Plans from £29/month · Cancel anytime
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  const router   = useRouter();
+  const pathname = usePathname();
+  const [salon,  setSalon]  = useState<SalonSub | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    const check = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { router.push("/login"); return; }
+      const { data } = await supabase
+        .from("salons")
+        .select("id,subscription_status,subscription_plan,trial_ends_at,current_period_end,stripe_customer_id")
+        .eq("owner_id", user.id)
+        .single();
+      setSalon(data as SalonSub | null);
+      setLoaded(true);
+    };
+    check();
+  }, [router, pathname]);
+
+  if (!loaded) return <>{children}</>;
+
+  const status       = salon?.subscription_status ?? "trial";
+  const trialDays    = daysLeft(salon?.trial_ends_at ?? null);
+  const isLocked     = status === "cancelled" || (status === "trial" && trialDays === 0);
+  const showTrial    = status === "trial" || status === "trialing";
+  const showPastDue  = status === "past_due";
+
+  return (
+    <>
+      {isLocked && salon  && <LockedOverlay salon={salon} />}
+      {showTrial && salon  && <TrialBanner   salon={salon} />}
+      {showPastDue && salon && <PastDueBanner salon={salon} />}
+      {children}
+    </>
+  );
 }

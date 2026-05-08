@@ -28,14 +28,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 
-  const pi = event.data.object as Stripe.PaymentIntent;
+  // ── Appointment Payment Events ───────────────────────────────
 
   if (event.type === "payment_intent.succeeded") {
-    const bookingId = pi.metadata?.booking_id;
+    const pi = event.data.object as Stripe.PaymentIntent;
+    const bookingId  = pi.metadata?.booking_id;
     const depositOnly = pi.metadata?.deposit_only === "true";
     const amount = pi.amount / 100;
 
-    // Save payment record
     await supabase.from("payments").insert({
       appointment_id: bookingId || null,
       stripe_payment_intent_id: pi.id,
@@ -47,7 +47,6 @@ export async function POST(req: NextRequest) {
       created_at: new Date().toISOString(),
     });
 
-    // Update appointment status
     if (bookingId) {
       await supabase.from("appointments").update({
         status: "confirmed",
@@ -55,7 +54,6 @@ export async function POST(req: NextRequest) {
         payment_intent_id: pi.id,
       }).eq("id", bookingId);
 
-      // ── Fire booking confirmation email via dedicated route ──
       try {
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://featuresalon.co.uk";
         const emailRes = await fetch(`${appUrl}/api/send-confirmation`, {
@@ -64,18 +62,16 @@ export async function POST(req: NextRequest) {
           body: JSON.stringify({ appointmentId: bookingId }),
         });
         const emailJson = await emailRes.json();
-        if (!emailRes.ok) {
-          console.error("[Webhook] send-confirmation failed:", emailJson);
-        } else {
-          console.log("[Webhook] Confirmation emails sent:", emailJson);
-        }
+        if (!emailRes.ok) console.error("[Webhook] send-confirmation failed:", emailJson);
+        else console.log("[Webhook] Confirmation emails sent:", emailJson);
       } catch (emailErr) {
         console.error("[Webhook] send-confirmation exception:", emailErr);
       }
     }
-  } // end payment_intent.succeeded
+  }
 
   if (event.type === "payment_intent.payment_failed") {
+    const pi = event.data.object as Stripe.PaymentIntent;
     const bookingId = pi.metadata?.booking_id;
 
     await supabase.from("payments").insert({
@@ -90,9 +86,54 @@ export async function POST(req: NextRequest) {
     });
 
     if (bookingId) {
-      await supabase.from("appointments").update({
-        payment_status: "failed",
-      }).eq("id", bookingId);
+      await supabase.from("appointments").update({ payment_status: "failed" }).eq("id", bookingId);
+    }
+  }
+
+  // ── Subscription Events ──────────────────────────────────────
+
+  if (event.type === "customer.subscription.created" || event.type === "customer.subscription.updated") {
+    const sub = event.data.object as Stripe.Subscription;
+    const salonId = sub.metadata?.salon_id;
+    const plan    = sub.metadata?.plan || "starter";
+    if (salonId) {
+      const customerId = typeof sub.customer === "string" ? sub.customer : (sub.customer as Stripe.Customer).id;
+      await supabase.from("salons").update({
+        subscription_id:     sub.id,
+        subscription_status: sub.status,
+        subscription_plan:   plan,
+        stripe_customer_id:  customerId,
+        trial_ends_at:       sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
+        // current_period_end varies by Stripe SDK version — cast to any for safety
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        current_period_end:  (sub as any).current_period_end
+          ? new Date((sub as any).current_period_end * 1000).toISOString()
+          : (sub as any).current_period?.end
+          ? new Date((sub as any).current_period.end * 1000).toISOString()
+          : null,
+      }).eq("id", salonId);
+      console.log(`[Webhook] ${event.type} salon=${salonId} status=${sub.status} plan=${plan}`);
+    }
+  }
+
+  if (event.type === "customer.subscription.deleted") {
+    const sub = event.data.object as Stripe.Subscription;
+    const salonId = sub.metadata?.salon_id;
+    if (salonId) {
+      await supabase.from("salons").update({
+        subscription_status: "cancelled",
+        subscription_id:     null,
+      }).eq("id", salonId);
+      console.log(`[Webhook] subscription.deleted salon=${salonId}`);
+    }
+  }
+
+  if (event.type === "invoice.payment_failed") {
+    const inv = event.data.object as Stripe.Invoice;
+    const customerId = typeof inv.customer === "string" ? inv.customer : (inv.customer as Stripe.Customer)?.id;
+    if (customerId) {
+      await supabase.from("salons").update({ subscription_status: "past_due" }).eq("stripe_customer_id", customerId);
+      console.log(`[Webhook] invoice.payment_failed customer=${customerId}`);
     }
   }
 

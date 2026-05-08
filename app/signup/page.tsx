@@ -33,7 +33,7 @@ export default function SignupPage() {
       if (salonError) { setError("Failed to create salon: " + salonError.message); setLoading(false); return; }
       setSuccess(true);
       setLoading(false);
-      setTimeout(() => router.push("/dashboard"), 500);
+      setTimeout(() => router.push("/subscribe"), 500);
     }
   };
 
