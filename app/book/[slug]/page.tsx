@@ -44,14 +44,22 @@ function isValidPhone(phone: string): boolean {
   return /^(\+44|0)[\d]{10,11}$/.test(cleaned);
 }
 
+/* ── Payment method types ── */
+interface PaymentMethods {
+  full_online: boolean;
+  deposit_online: boolean;
+  pay_at_salon: boolean;
+  custom_deposit: boolean;
+  deposit_percent: number;
+}
+const DEFAULT_PM: PaymentMethods = { full_online: true, deposit_online: true, pay_at_salon: false, custom_deposit: false, deposit_percent: 50 };
+
 /* ── Stripe Payment Form ── */
-function CheckoutForm({ amount, depositOnly, bookingId, onSuccess, onError, slug, service, date, time, name, salon }:
-  { amount: number; depositOnly: boolean; bookingId: string; onSuccess: ()=>void; onError:(msg:string)=>void; slug:string; service:string; date:string; time:string; name:string; salon:string }) {
+function CheckoutForm({ amount, chargeAmount, methodLabel, bookingId, onSuccess, onError, slug, service, date, time, name, salon }:
+  { amount: number; chargeAmount: number; methodLabel: string; bookingId: string; onSuccess: ()=>void; onError:(msg:string)=>void; slug:string; service:string; date:string; time:string; name:string; salon:string }) {
   const stripe = useStripe();
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
-
-  const chargeAmount = depositOnly ? amount * 0.5 : amount;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : "");
 
   const handlePay = async (e: React.FormEvent) => {
@@ -61,20 +69,17 @@ function CheckoutForm({ amount, depositOnly, bookingId, onSuccess, onError, slug
     const { error } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: `${appUrl}/payment/success?service=${encodeURIComponent(service)}&date=${encodeURIComponent(date)}&time=${encodeURIComponent(time)}&name=${encodeURIComponent(name)}&amount=${chargeAmount.toFixed(2)}&deposit=${depositOnly}&salon=${encodeURIComponent(salon)}`,
+        return_url: `${appUrl}/payment/success?service=${encodeURIComponent(service)}&date=${encodeURIComponent(date)}&time=${encodeURIComponent(time)}&name=${encodeURIComponent(name)}&amount=${chargeAmount.toFixed(2)}&deposit=${chargeAmount < amount}&salon=${encodeURIComponent(salon)}`,
       },
     });
-    if (error) {
-      onError(error.message || "Payment failed");
-      setProcessing(false);
-    }
+    if (error) { onError(error.message || "Payment failed"); setProcessing(false); }
   };
 
   return (
     <form onSubmit={handlePay}>
       <PaymentElement options={{ layout: "tabs" }} />
       <button type="submit" disabled={!stripe || processing} className="btn" style={{ marginTop: 24 }}>
-        {processing ? "Processing..." : `Pay £${chargeAmount.toFixed(2)}${depositOnly ? " (50% Deposit)" : ""}`}
+        {processing ? "Processing..." : `Pay £${chargeAmount.toFixed(2)} — ${methodLabel}`}
       </button>
       <p style={{ textAlign:"center",fontSize:12,color:"#94A3B8",marginTop:12,display:"flex",alignItems:"center",justifyContent:"center",gap:4 }}>
         <span>🔒</span> Secured by Stripe · SSL Encrypted
@@ -102,7 +107,7 @@ export default function BookingPage() {
   const [errors, setErrors] = useState({ email:"", phone:"" });
 
   // Payment state
-  const [depositOnly, setDepositOnly] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<string>(""); // 'full_online'|'deposit_online'|'custom_deposit'|'pay_at_salon'
   const [clientSecret, setClientSecret] = useState("");
   const [bookingId, setBookingId] = useState("");
   const [paymentError, setPaymentError] = useState("");
@@ -131,7 +136,24 @@ export default function BookingPage() {
     return !newErrors.email && !newErrors.phone;
   }, [form]);
 
-  // Step 3 -> Step 4: Save appointment + create PaymentIntent
+  // Derive available payment options from salon.payment_methods
+  const salonPm: PaymentMethods = salon?.payment_methods
+    ? { ...DEFAULT_PM, ...salon.payment_methods }
+    : DEFAULT_PM;
+
+  const paymentOptions = [
+    salonPm.full_online    && { id: "full_online",    label: "Pay Full Amount",           sub: "Pay 100% now — nothing due at the salon", pct: 100,                      color: "#667eea" },
+    salonPm.deposit_online && { id: "deposit_online",  label: "50% Deposit",               sub: "Pay half now, remainder at salon",         pct: 50,                       color: "#10B981" },
+    salonPm.custom_deposit && { id: "custom_deposit",  label: `${salonPm.deposit_percent}% Deposit`, sub: `Pay ${salonPm.deposit_percent}% now, remainder at salon`, pct: salonPm.deposit_percent, color: "#F59E0B" },
+    salonPm.pay_at_salon   && { id: "pay_at_salon",   label: "Pay at Salon",               sub: "No payment required now",                  pct: 0,                        color: "#94A3B8" },
+  ].filter(Boolean) as { id: string; label: string; sub: string; pct: number; color: string }[];
+
+  // Auto-select first available option
+  const selectedOption = paymentOptions.find(o => o.id === paymentMethod) || paymentOptions[0];
+  const chargeAmount = selectedOption ? (selectedService?.price || 0) * selectedOption.pct / 100 : 0;
+  const isPayAtSalon = selectedOption?.id === "pay_at_salon";
+
+  // Step 3 -> Step 4: Save appointment + conditionally create PaymentIntent
   const handleProceedToPayment = useCallback(async () => {
     if (!salon || !selectedService || !selDate || !selTime || !form.name.trim()) return;
     if (!validateForm()) return;
@@ -142,65 +164,52 @@ export default function BookingPage() {
     bookingDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
     const iso = bookingDateTime.toISOString();
 
-    // Check slot availability (use .is() for null staff_id — PostgREST requires is.null not eq.null)
     let availQuery = supabase.from("appointments").select("id")
-      .eq("salon_id", salon.id)
-      .eq("date_time", iso);
-    if (selectedStaff?.id) {
-      availQuery = availQuery.eq("staff_id", selectedStaff.id);
-    } else {
-      availQuery = availQuery.is("staff_id", null);
-    }
+      .eq("salon_id", salon.id).eq("date_time", iso);
+    if (selectedStaff?.id) { availQuery = availQuery.eq("staff_id", selectedStaff.id); }
+    else { availQuery = availQuery.is("staff_id", null); }
     const { data: existing } = await availQuery.maybeSingle();
     if (existing) { alert("This time slot is already booked. Please choose another time."); setSubmitting(false); return; }
 
-    // Insert appointment with pending_payment status
+    const pm = selectedOption?.id || "full_online";
     const { data: appt, error } = await supabase.from("appointments").insert({
-      salon_id: salon.id,
-      client_name: form.name,
-      client_email: form.email,
-      client_phone: form.phone,
-      service_id: selectedService.id,
-      staff_id: selectedStaff?.id || null,
-      date_time: iso,
-      status: "pending",
-      payment_status: "pending",
+      salon_id: salon.id, client_name: form.name, client_email: form.email,
+      client_phone: form.phone, service_id: selectedService.id,
+      staff_id: selectedStaff?.id || null, date_time: iso,
+      status: isPayAtSalon ? "confirmed" : "pending",
+      payment_status: isPayAtSalon ? "pay_at_salon" : "pending",
+      payment_method: pm,
     }).select().single();
 
-    if (error || !appt) {
-      console.error("Appointment insert error:", error);
-      alert("Booking failed: " + (error?.message || "Unknown error. Please try again."));
-      setSubmitting(false);
+    if (error || !appt) { alert("Booking failed: " + (error?.message || "Unknown error.")); setSubmitting(false); return; }
+    setBookingId(appt.id);
+
+    // Pay at salon — skip Stripe, go straight to success
+    if (isPayAtSalon) {
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+      window.location.href = `${appUrl}/payment/success?service=${encodeURIComponent(selectedService.name)}&date=${encodeURIComponent(selDate?.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})||"")} &time=${encodeURIComponent(selTime)}&name=${encodeURIComponent(form.name)}&amount=0&deposit=false&salon=${encodeURIComponent(salon.name)}`;
       return;
     }
 
-    setBookingId(appt.id);
-
-    // Create Stripe PaymentIntent
+    // Online payment — create Stripe PaymentIntent
     const res = await fetch("/api/create-payment-intent", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        amount: selectedService.price,
-        email: form.email,
-        booking_id: appt.id,
-        salon_name: salon.name,
-        service_name: selectedService.name,
-        deposit_only: depositOnly,
+        amount: selectedService.price, charge_amount: chargeAmount,
+        email: form.email, booking_id: appt.id,
+        salon_name: salon.name, service_name: selectedService.name,
+        deposit_only: pm !== "full_online",
       }),
     });
     const data = await res.json();
     if (data.error || !data.clientSecret) {
-      console.error("Payment intent error:", data.error);
-      alert("Payment setup failed: " + (data.error || "Could not connect to payment provider. Please check Stripe configuration."));
-      setSubmitting(false);
-      return;
+      alert("Payment setup failed: " + (data.error || "Could not connect to payment provider."));
+      setSubmitting(false); return;
     }
-
     setClientSecret(data.clientSecret);
     setSubmitting(false);
     setStep(4);
-  }, [salon, selectedService, selectedStaff, selDate, selTime, form, depositOnly, validateForm]);
+  }, [salon, selectedService, selectedStaff, selDate, selTime, form, selectedOption, isPayAtSalon, chargeAmount, validateForm]);
 
   const canNext0 = !!selectedService;
   const canNext1 = staffConfirmed;
@@ -386,38 +395,38 @@ export default function BookingPage() {
                   {errors.phone && <span className="error-text">{errors.phone}</span>}
                 </div>
 
-                {/* Payment option */}
-                <div style={{marginTop:24}}>
-                  <div className="input-label" style={{marginBottom:12}}>Payment Option</div>
-                  <div className={`deposit-option ${!depositOnly?"selected":""}`} onClick={()=>setDepositOnly(false)}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                      <div>
-                        <div style={{fontSize:15,fontWeight:700,color:"#0F172A"}}>Pay Full Amount</div>
-                        <div style={{fontSize:13,color:"#64748B",marginTop:2}}>Pay 100% now — nothing due at the salon</div>
-                      </div>
-                      <div style={{fontSize:18,fontWeight:800,color:"#667eea"}}>£{selectedService?.price}</div>
-                    </div>
+                {/* Dynamic payment options from salon settings */}
+                {paymentOptions.length > 0 && (
+                  <div style={{marginTop:24}}>
+                    <div className="input-label" style={{marginBottom:12}}>Payment Option</div>
+                    {paymentOptions.map(opt => {
+                      const amt = (selectedService?.price || 0) * opt.pct / 100;
+                      const isSelected = (paymentMethod || paymentOptions[0]?.id) === opt.id;
+                      return (
+                        <div key={opt.id} className={`deposit-option ${isSelected ? "selected" : ""}`} onClick={() => setPaymentMethod(opt.id)}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                            <div>
+                              <div style={{fontSize:15,fontWeight:700,color:"#0F172A"}}>{opt.label}</div>
+                              <div style={{fontSize:13,color:"#64748B",marginTop:2}}>{opt.sub}</div>
+                            </div>
+                            <div style={{textAlign:"right"}}>
+                              <div style={{fontSize:18,fontWeight:800,color:opt.color}}>£{amt.toFixed(2)}</div>
+                              {opt.pct < 100 && opt.pct > 0 && <div style={{fontSize:11,color:"#94A3B8"}}>today</div>}
+                              {opt.pct === 0 && <div style={{fontSize:11,color:"#94A3B8"}}>at salon</div>}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <div className={`deposit-option ${depositOnly?"selected":""}`} onClick={()=>setDepositOnly(true)}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                      <div>
-                        <div style={{fontSize:15,fontWeight:700,color:"#0F172A"}}>50% Deposit</div>
-                        <div style={{fontSize:13,color:"#64748B",marginTop:2}}>Pay half now, remainder at salon</div>
-                      </div>
-                      <div style={{textAlign:"right"}}>
-                        <div style={{fontSize:18,fontWeight:800,color:"#10B981"}}>£{((selectedService?.price||0)*0.5).toFixed(2)}</div>
-                        <div style={{fontSize:11,color:"#94A3B8"}}>today</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                )}
 
                 <div className="summary">
                   <div className="summary-row"><span className="summary-label">Service</span><span className="summary-value">{selectedService?.name}</span></div>
                   <div className="summary-row"><span className="summary-label">Stylist</span><span className="summary-value">{selectedStaff?.name||"Any available"}</span></div>
                   <div className="summary-row"><span className="summary-label">Date</span><span className="summary-value">{selDate?.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}</span></div>
                   <div className="summary-row"><span className="summary-label">Time</span><span className="summary-value">{selTime}</span></div>
-                  <div className="summary-row"><span className="summary-label">{depositOnly?"Deposit Due":"Total"}</span><span className="summary-value" style={{color:"#667eea",fontSize:18}}>£{depositOnly?((selectedService?.price||0)*0.5).toFixed(2):selectedService?.price}</span></div>
+                  <div className="summary-row"><span className="summary-label">{isPayAtSalon ? "Due Now" : selectedOption?.pct === 100 ? "Total" : "Deposit Due"}</span><span className="summary-value" style={{color:"#667eea",fontSize:18}}>£{chargeAmount.toFixed(2)}{isPayAtSalon ? " (pay at salon)" : ""}</span></div>
                 </div>
 
                 <button className="btn" disabled={!canSubmit||submitting} onClick={handleProceedToPayment}>
@@ -434,16 +443,17 @@ export default function BookingPage() {
                 <div style={{padding:"14px 16px",background:"#F8FAFC",borderRadius:12,border:"1px solid #E2E8F0",marginBottom:20}}>
                   <div style={{fontSize:12,color:"#64748B",fontWeight:600,marginBottom:4}}>Paying for</div>
                   <div style={{fontSize:15,fontWeight:700,color:"#0F172A"}}>{selectedService?.name} at {salon?.name}</div>
-                  <div style={{fontSize:13,color:"#667eea",fontWeight:700,marginTop:2}}>
-                    £{depositOnly?((selectedService?.price||0)*0.5).toFixed(2):selectedService?.price}
-                    {depositOnly?" (50% Deposit)":""}
-                  </div>
+                   <div style={{fontSize:13,color:"#667eea",fontWeight:700,marginTop:2}}>
+                    £{chargeAmount.toFixed(2)}
+                    {selectedOption && selectedOption.pct < 100 ? ` (${selectedOption.label})` : ""}
+                   </div>
                 </div>
                 {paymentError && <div style={{padding:"12px 14px",background:"#FEF2F2",borderRadius:10,border:"1px solid #FECACA",color:"#EF4444",fontSize:13,fontWeight:600,marginBottom:16}}>⚠️ {paymentError}</div>}
                 <Elements stripe={stripePromise} options={{ clientSecret, appearance:{ theme:"stripe", variables:{ colorPrimary:"#667eea", borderRadius:"12px", fontFamily:"'Plus Jakarta Sans', system-ui, sans-serif" } } }}>
                   <CheckoutForm
                     amount={selectedService?.price||0}
-                    depositOnly={depositOnly}
+                    chargeAmount={chargeAmount}
+                    methodLabel={selectedOption?.label||"Pay"}
                     bookingId={bookingId}
                     onSuccess={()=>setStep(5)}
                     onError={msg=>setPaymentError(msg)}

@@ -5,13 +5,17 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
 
 export async function POST(req: NextRequest) {
   try {
-    const { amount, email, booking_id, salon_name, service_name, deposit_only } = await req.json();
+    const { amount, charge_amount, email, booking_id, salon_name, service_name, deposit_only } = await req.json();
 
     if (!amount || !email) {
       return NextResponse.json({ error: "Missing amount or email" }, { status: 400 });
     }
 
-    const chargeAmount = deposit_only ? Math.round(amount * 0.5 * 100) : Math.round(amount * 100);
+    // charge_amount is the exact amount to charge (supports any deposit %)
+    // Falls back to 50% if deposit_only is set but no charge_amount given
+    const chargeAmount = charge_amount
+      ? Math.round(charge_amount * 100)
+      : deposit_only ? Math.round(amount * 0.5 * 100) : Math.round(amount * 100);
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: chargeAmount,
