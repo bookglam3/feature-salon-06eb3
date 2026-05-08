@@ -172,22 +172,34 @@ export default function BookingPage() {
     if (existing) { alert("This time slot is already booked. Please choose another time."); setSubmitting(false); return; }
 
     const pm = selectedOption?.id || "full_online";
-    const { data: appt, error } = await supabase.from("appointments").insert({
-      salon_id: salon.id, client_name: form.name, client_email: form.email,
-      client_phone: form.phone, service_id: selectedService.id,
-      staff_id: selectedStaff?.id || null, date_time: iso,
-      status: isPayAtSalon ? "confirmed" : "pending",
-      payment_status: isPayAtSalon ? "pay_at_salon" : "pending",
-      payment_method: pm,
-    }).select().single();
 
-    if (error || !appt) { alert("Booking failed: " + (error?.message || "Unknown error.")); setSubmitting(false); return; }
+    // Build insert — payment_method column only exists after migration
+    // salon.payment_methods being set is the proxy for whether migration has run
+    const hasMigration = !!salon?.payment_methods;
+    const { data: appt, error } = await supabase
+      .from("appointments")
+      .insert({
+        salon_id: salon.id, client_name: form.name, client_email: form.email,
+        client_phone: form.phone, service_id: selectedService.id,
+        staff_id: selectedStaff?.id || null, date_time: iso,
+        status: isPayAtSalon ? "confirmed" : "pending",
+        payment_status: isPayAtSalon ? "pay_at_salon" : "pending",
+        ...(hasMigration ? { payment_method: pm } : {}),
+      })
+      .select().single();
+
+    if (error || !appt) {
+      console.error("[Booking] Insert error:", JSON.stringify(error));
+      alert("Booking failed: " + (error?.message || "Unknown error."));
+      setSubmitting(false); return;
+    }
     setBookingId(appt.id);
 
     // Pay at salon — skip Stripe, go straight to success
     if (isPayAtSalon) {
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
-      window.location.href = `${appUrl}/payment/success?service=${encodeURIComponent(selectedService.name)}&date=${encodeURIComponent(selDate?.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})||"")} &time=${encodeURIComponent(selTime)}&name=${encodeURIComponent(form.name)}&amount=0&deposit=false&salon=${encodeURIComponent(salon.name)}`;
+      const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+      const date = selDate?.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) || "";
+      window.location.href = `${baseUrl}/payment/success?service=${encodeURIComponent(selectedService.name)}&date=${encodeURIComponent(date)}&time=${encodeURIComponent(selTime)}&name=${encodeURIComponent(form.name)}&amount=0&deposit=false&salon=${encodeURIComponent(salon.name)}`;
       return;
     }
 
@@ -202,7 +214,9 @@ export default function BookingPage() {
       }),
     });
     const data = await res.json();
+    console.log("[PaymentIntent] response:", data);
     if (data.error || !data.clientSecret) {
+      console.error("[PaymentIntent] error:", data.error);
       alert("Payment setup failed: " + (data.error || "Could not connect to payment provider."));
       setSubmitting(false); return;
     }
