@@ -16,6 +16,12 @@ export async function POST(request: NextRequest) {
       salonName,
       salonOwnerEmail,
       price,
+      // New fields
+      salonAddress,
+      cancelLink,
+      dashboardUrl,
+      paymentStatus,
+      depositOnly,
     } = await request.json();
 
     await sendBookingEmails({
@@ -28,6 +34,11 @@ export async function POST(request: NextRequest) {
       salonName,
       salonOwnerEmail,
       price,
+      salonAddress,
+      cancelLink,
+      dashboardUrl,
+      paymentStatus,
+      depositOnly,
     });
 
     return NextResponse.json({ success: true });

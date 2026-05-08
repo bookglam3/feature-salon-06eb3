@@ -11,9 +11,11 @@ function formatDate(dateTime: string) {
   return {
     formattedDate: date.toLocaleDateString("en-GB", {
       weekday: "long", day: "numeric", month: "long", year: "numeric",
+      timeZone: "Europe/London",
     }),
     formattedTime: date.toLocaleTimeString("en-GB", {
       hour: "2-digit", minute: "2-digit", hour12: false,
+      timeZone: "Europe/London",
     }),
   };
 }
@@ -24,13 +26,14 @@ function formatDate(dateTime: string) {
 function emailTemplate({
   title, clientName, message, serviceName,
   formattedDate, formattedTime, staffName, salonName,
-  color, price, extra,
+  color, price, extra, unsubLink,
 }: {
   title: string; clientName: string; message: string;
   serviceName?: string; formattedDate?: string; formattedTime?: string;
   staffName?: string; salonName: string; color: string;
-  price?: number; extra?: string;
+  price?: number; extra?: string; unsubLink?: string;
 }) {
+  unsubLink = unsubLink ?? `${process.env.NEXT_PUBLIC_APP_URL}/unsubscribe`;
   return `
   <!DOCTYPE html>
   <html lang="en-GB">
@@ -71,7 +74,8 @@ function emailTemplate({
       <div style="background:#F9F9F9;border-top:1px solid #EFEFEF;padding:16px 28px;text-align:center;">
         <p style="font-size:12px;color:#ccc;margin:0;line-height:1.7;">
           ${salonName} &bull; United Kingdom<br/>
-          This is an automated message — please do not reply directly to this email.
+          This is an automated message — please do not reply directly to this email.<br/>
+          <a href="${unsubLink}" style="color:#bbb;text-decoration:underline;font-size:11px;">Unsubscribe from reminders</a>
         </p>
       </div>
 
@@ -86,30 +90,168 @@ function emailTemplate({
 export async function sendBookingEmails({
   clientEmail, clientName, clientPhone, serviceName,
   dateTime, staffName, salonName, salonOwnerEmail, price,
+  salonAddress, cancelLink, dashboardUrl, paymentStatus, depositOnly,
 }: {
   clientEmail: string; clientName: string; clientPhone: string;
   serviceName: string; dateTime: string; staffName?: string;
   salonName: string; salonOwnerEmail: string; price?: number;
+  salonAddress?: string; cancelLink?: string; dashboardUrl?: string;
+  paymentStatus?: string; depositOnly?: boolean;
 }) {
   const { formattedDate, formattedTime } = formatDate(dateTime);
+
+  // ── Payment status badge for owner email ──
+  const paymentBadge = (() => {
+    if (paymentStatus === "paid")         return { label: "Paid in Full",     color: "#059669", bg: "#D1FAE5" };
+    if (paymentStatus === "deposit_paid") return { label: "Deposit Paid (50%)", color: "#D97706", bg: "#FEF3C7" };
+    return                                       { label: "Unpaid",             color: "#DC2626", bg: "#FEE2E2" };
+  })();
+
+  const amountPaid = depositOnly && price ? (price * 0.5).toFixed(2) : price?.toFixed(2);
+  const amountDue  = depositOnly && price ? (price * 0.5).toFixed(2) : undefined;
+
+  // ── CLIENT EMAIL ──────────────────────────────────────────
+  const clientHtml = `
+  <!DOCTYPE html>
+  <html lang="en-GB">
+  <head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/></head>
+  <body style="margin:0;padding:0;background:#F4F4F5;">
+    <div style="max-width:540px;margin:32px auto;font-family:'Helvetica Neue',Arial,sans-serif;color:#1a1a1a;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.10);">
+
+      <!-- Header -->
+      <div style="background:linear-gradient(135deg,#C2185B 0%,#7B2D52 100%);padding:36px 28px;text-align:center;">
+        <div style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,0.2);display:inline-flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:14px;">✅</div>
+        <p style="color:rgba(255,255,255,0.75);margin:0 0 4px;font-size:11px;letter-spacing:2px;text-transform:uppercase;">${salonName}</p>
+        <h1 style="color:#fff;margin:0;font-size:24px;font-weight:700;">Booking Confirmed! ✂️</h1>
+      </div>
+
+      <!-- Greeting -->
+      <div style="background:#fff;padding:28px 28px 0;">
+        <p style="font-size:16px;margin:0 0 6px;color:#111;">Hi <strong>${clientName}</strong> 👋</p>
+        <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 24px;">Your appointment at <strong>${salonName}</strong> is confirmed. We can't wait to see you!</p>
+
+        <!-- Appointment Card -->
+        <div style="background:#FDF5F8;border:1.5px solid #F0C4D4;border-radius:12px;padding:20px 22px;margin-bottom:22px;">
+          <div style="font-size:11px;font-weight:700;color:#C2185B;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Appointment Details</div>
+          <table style="width:100%;font-size:14px;border-collapse:collapse;">
+            <tr><td style="color:#999;padding:7px 0;width:130px;">✂️ Service</td><td style="font-weight:600;color:#0F172A;">${serviceName}</td></tr>
+            ${staffName ? `<tr><td style="color:#999;padding:7px 0;">👩 Stylist</td><td style="font-weight:600;color:#0F172A;">${staffName}</td></tr>` : ""}
+            <tr><td style="color:#999;padding:7px 0;">📅 Date</td><td style="font-weight:600;color:#0F172A;">${formattedDate}</td></tr>
+            <tr><td style="color:#999;padding:7px 0;">🕐 Time</td><td style="font-weight:700;color:#C2185B;font-size:16px;">${formattedTime}</td></tr>
+            ${price ? `<tr><td style="color:#999;padding:7px 0;">💷 Price</td><td style="font-weight:700;color:#0F172A;">£${amountPaid}${depositOnly ? " <span style='color:#D97706;font-size:12px;'>(deposit — £${amountDue} due at salon)</span>" : ""}</td></tr>` : ""}
+          </table>
+        </div>
+
+        ${salonAddress ? `
+        <!-- Location -->
+        <div style="background:#F8FAFF;border:1px solid #E0E7FF;border-radius:12px;padding:16px 20px;margin-bottom:22px;display:flex;align-items:flex-start;gap:12px;">
+          <span style="font-size:20px;">📍</span>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:#4F6EF7;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">Location</div>
+            <div style="font-size:14px;color:#334155;font-weight:500;line-height:1.5;">${salonAddress}</div>
+            <a href="https://maps.google.com/?q=${encodeURIComponent(salonAddress)}" style="font-size:12px;color:#4F6EF7;font-weight:600;text-decoration:none;margin-top:6px;display:inline-block;">Open in Google Maps →</a>
+          </div>
+        </div>` : ""}
+
+        <!-- Need to change? -->
+        <div style="background:#FFFBF0;border:1px solid #FDE68A;border-radius:12px;padding:16px 20px;margin-bottom:24px;">
+          <div style="font-size:13px;color:#78350F;line-height:1.6;">
+            <strong>Need to reschedule or cancel?</strong><br/>
+            Please give us at least 24 hours notice. Contact us directly or
+            ${cancelLink ? `<a href="${cancelLink}" style="color:#C2185B;font-weight:600;"> click here to manage your booking</a>.` : " get in touch as soon as possible."}
+          </div>
+        </div>
+
+        <p style="font-size:13px;color:#94A3B8;margin:0 0 4px;line-height:1.6;">We look forward to welcoming you.</p>
+        <p style="font-size:13px;color:#94A3B8;margin:0;line-height:1.6;">— The ${salonName} Team</p>
+      </div>
+
+      <!-- Footer -->
+      <div style="background:#F9F9F9;border-top:1px solid #EFEFEF;padding:18px 28px;text-align:center;margin-top:28px;">
+        <p style="font-size:12px;color:#bbb;margin:0;line-height:1.8;">
+          ${salonName} &bull; United Kingdom<br/>
+          This is an automated confirmation — please do not reply to this email.<br/>
+          <a href="${process.env.NEXT_PUBLIC_APP_URL}/unsubscribe" style="color:#bbb;text-decoration:underline;font-size:11px;">Unsubscribe from reminders</a>
+        </p>
+      </div>
+    </div>
+  </body>
+  </html>`;
+
+  // ── OWNER EMAIL ───────────────────────────────────────────
+  const ownerHtml = `
+  <!DOCTYPE html>
+  <html lang="en-GB">
+  <head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/></head>
+  <body style="margin:0;padding:0;background:#F4F4F5;">
+    <div style="max-width:540px;margin:32px auto;font-family:'Helvetica Neue',Arial,sans-serif;color:#1a1a1a;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.10);">
+
+      <!-- Header -->
+      <div style="background:linear-gradient(135deg,#1E3A8A 0%,#3730A3 100%);padding:36px 28px;text-align:center;">
+        <div style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,0.2);display:inline-flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:14px;">🎉</div>
+        <p style="color:rgba(255,255,255,0.75);margin:0 0 4px;font-size:11px;letter-spacing:2px;text-transform:uppercase;">${salonName}</p>
+        <h1 style="color:#fff;margin:0;font-size:22px;font-weight:700;">New Booking!</h1>
+      </div>
+
+      <div style="background:#fff;padding:28px;">
+
+        <!-- Payment badge -->
+        <div style="text-align:center;margin-bottom:22px;">
+          <span style="display:inline-block;background:${paymentBadge.bg};color:${paymentBadge.color};font-size:13px;font-weight:700;padding:6px 18px;border-radius:999px;border:1.5px solid ${paymentBadge.color};">
+            💳 ${paymentBadge.label}
+          </span>
+        </div>
+
+        <!-- Client Details -->
+        <div style="background:#F8FAFF;border:1.5px solid #E0E7FF;border-radius:12px;padding:20px 22px;margin-bottom:20px;">
+          <div style="font-size:11px;font-weight:700;color:#3730A3;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Client Details</div>
+          <table style="width:100%;font-size:14px;border-collapse:collapse;">
+            <tr><td style="color:#999;padding:7px 0;width:110px;">👤 Name</td><td style="font-weight:700;color:#0F172A;font-size:16px;">${clientName}</td></tr>
+            <tr><td style="color:#999;padding:7px 0;">📱 Phone</td><td style="font-weight:600;color:#0F172A;"><a href="tel:${clientPhone}" style="color:#3730A3;text-decoration:none;">${clientPhone}</a></td></tr>
+            <tr><td style="color:#999;padding:7px 0;">📧 Email</td><td style="font-weight:600;color:#0F172A;"><a href="mailto:${clientEmail}" style="color:#3730A3;text-decoration:none;">${clientEmail}</a></td></tr>
+          </table>
+        </div>
+
+        <!-- Appointment Details -->
+        <div style="background:#FDF5F8;border:1.5px solid #F0C4D4;border-radius:12px;padding:20px 22px;margin-bottom:20px;">
+          <div style="font-size:11px;font-weight:700;color:#C2185B;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Appointment</div>
+          <table style="width:100%;font-size:14px;border-collapse:collapse;">
+            <tr><td style="color:#999;padding:7px 0;width:110px;">✂️ Service</td><td style="font-weight:600;color:#0F172A;">${serviceName}</td></tr>
+            ${staffName ? `<tr><td style="color:#999;padding:7px 0;">👩 Stylist</td><td style="font-weight:600;color:#0F172A;">${staffName}</td></tr>` : ""}
+            <tr><td style="color:#999;padding:7px 0;">📅 Date</td><td style="font-weight:600;color:#0F172A;">${formattedDate}</td></tr>
+            <tr><td style="color:#999;padding:7px 0;">🕐 Time</td><td style="font-weight:700;color:#C2185B;font-size:16px;">${formattedTime}</td></tr>
+            ${price ? `<tr><td style="color:#999;padding:7px 0;">💷 Amount</td><td style="font-weight:700;color:#059669;">£${amountPaid} ${depositOnly ? "<span style='color:#D97706;font-size:12px;'>(deposit — £${amountDue} due at salon)</span>" : "received"}</td></tr>` : ""}
+          </table>
+        </div>
+
+        <!-- Dashboard CTA -->
+        ${dashboardUrl ? `
+        <div style="text-align:center;margin-bottom:8px;">
+          <a href="${dashboardUrl}" style="display:inline-block;background:linear-gradient(135deg,#1E3A8A 0%,#3730A3 100%);color:#fff;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px;box-shadow:0 4px 12px rgba(55,48,163,0.3);">View in Dashboard →</a>
+        </div>` : ""}
+      </div>
+
+      <!-- Footer -->
+      <div style="background:#F9F9F9;border-top:1px solid #EFEFEF;padding:16px 28px;text-align:center;">
+        <p style="font-size:12px;color:#bbb;margin:0;line-height:1.8;">
+          ${salonName} &bull; Powered by feature &bull; United Kingdom<br/>
+          This is an automated notification from your booking system.
+        </p>
+      </div>
+    </div>
+  </body>
+  </html>`;
+
   await Promise.all([
     resend.emails.send({
       from: FROM, to: clientEmail,
-      subject: `Booking Confirmed — ${salonName}`,
-      html: emailTemplate({
-        title: "Your Booking is Confirmed ✓", clientName,
-        message: "Thank you for booking with us. Your appointment has been confirmed and we look forward to welcoming you.",
-        serviceName, formattedDate, formattedTime, staffName, salonName, color: "#C2185B", price,
-      }),
+      subject: `Booking Confirmed! ✂️ ${salonName}`,
+      html: clientHtml,
     }),
     resend.emails.send({
       from: FROM, to: salonOwnerEmail,
-      subject: `New Booking — ${clientName} on ${formattedDate}`,
-      html: emailTemplate({
-        title: "New Booking Received", clientName,
-        message: `A new appointment has been booked by <strong>${clientName}</strong>.<br/>Phone: ${clientPhone}`,
-        serviceName, formattedDate, formattedTime, staffName, salonName, color: "#1565C0", price,
-      }),
+      subject: `New Booking! ${clientName} — ${formattedDate} at ${formattedTime}`,
+      html: ownerHtml,
     }),
   ]);
 }
@@ -186,7 +328,35 @@ export async function sendWinbackEmail({
 }
 
 // ═══════════════════════════════════════════════
-// 5. OFFER EMAIL — When Owner Adds an Offer
+// 5. THANK YOU — 1 Hour After Appointment
+// ═══════════════════════════════════════════════
+export async function sendThankyouEmail({
+  to, clientName, salonName, serviceName, reviewLink,
+}: {
+  to: string; clientName: string; salonName: string;
+  serviceName?: string; reviewLink?: string;
+}) {
+  await resend.emails.send({
+    from: FROM, to,
+    subject: `Thank you for visiting ${salonName} today! 💕`,
+    html: emailTemplate({
+      title: "Thank You for Your Visit! 🌟", clientName,
+      message: `It was wonderful to have you with us today${serviceName ? ` for your <strong>${serviceName}</strong>` : ""}. We hope you love the results!`,
+      salonName, color: "#C2185B",
+      extra: reviewLink ? `
+        <div style="background:linear-gradient(135deg,#FDE8F0,#F3E8FD);border:1.5px solid #C2185B;border-radius:12px;padding:22px;margin-bottom:20px;text-align:center;">
+          <p style="font-size:15px;font-weight:600;color:#1a1a1a;margin:0 0 8px;">Share Your Experience</p>
+          <p style="font-size:13px;color:#555;margin:0 0 18px;">Your feedback means the world to us and helps other clients find us.</p>
+          <a href="${reviewLink}" style="display:inline-block;background:#C2185B;color:#fff;padding:13px 30px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;">Leave a Review ⭐</a>
+        </div>
+        <p style="font-size:12px;color:#bbb;text-align:center;margin:0;">Takes less than 60 seconds — and it makes a huge difference. Thank you! 🙏</p>
+      ` : undefined,
+    }),
+  });
+}
+
+// ═══════════════════════════════════════════════
+// 6. OFFER EMAIL — When Owner Adds an Offer
 // ═══════════════════════════════════════════════
 export async function sendOfferEmail({
   to, clientName, salonName, offerTitle, offerDescription,
