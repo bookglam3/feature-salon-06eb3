@@ -35,13 +35,39 @@ function getInitials(name: string): string {
   return name.split(" ").map((w) => w[0]).join("").slice(0,2).toUpperCase();
 }
 
+// ── Country definitions ───────────────────────────────────────
+const COUNTRIES = [
+  { code: "GB", flag: "🇬🇧", name: "UK",           dial: "+44",  pattern: /^(07\d{9}|\+447\d{9})$/,     placeholder: "07911 123456",  hint: "07xxx — 10 digits" },
+  { code: "PK", flag: "🇵🇰", name: "Pakistan",     dial: "+92",  pattern: /^(03\d{9}|\+923\d{9})$/,     placeholder: "03464 503668", hint: "03xxx — 10 digits" },
+  { code: "AE", flag: "🇦🇪", name: "UAE",           dial: "+971", pattern: /^(05\d{8}|\+9715\d{8})$/,    placeholder: "050 123 4567",  hint: "05xxx — 9 digits"  },
+  { code: "SA", flag: "🇸🇦", name: "Saudi Arabia", dial: "+966", pattern: /^(05\d{8}|\+9665\d{8})$/,    placeholder: "050 123 4567",  hint: "05xxx — 9 digits"  },
+] as const;
+type CountryCode = typeof COUNTRIES[number]["code"];
+
+function getCountryByCode(code: CountryCode) {
+  return COUNTRIES.find(c => c.code === code) || COUNTRIES[0];
+}
+
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-function isValidPhone(phone: string): boolean {
-  const cleaned = phone.replace(/[\s\-\(\)]/g,"");
-  return /^(\+44|0)[\d]{10,11}$/.test(cleaned);
+function isValidPhoneForCountry(phone: string, countryCode: CountryCode): boolean {
+  const cleaned = phone.replace(/[\s\-\(\)]/g, "");
+  const country = getCountryByCode(countryCode);
+  return country.pattern.test(cleaned);
+}
+
+// Build E.164 from local number + country
+function toE164(local: string, countryCode: CountryCode): string {
+  const country = getCountryByCode(countryCode);
+  const digits = local.replace(/[\s\-\(\)]/g, "");
+  if (digits.startsWith("+")) return digits;
+  if (countryCode === "GB" && digits.startsWith("0")) return `+44${digits.slice(1)}`;
+  if (countryCode === "PK" && digits.startsWith("0")) return `+92${digits.slice(1)}`;
+  if (countryCode === "AE" && digits.startsWith("0")) return `+971${digits.slice(1)}`;
+  if (countryCode === "SA" && digits.startsWith("0")) return `+966${digits.slice(1)}`;
+  return `${country.dial}${digits}`;
 }
 
 /* ── Payment method types ── */
@@ -105,12 +131,39 @@ export default function BookingPage() {
   const [selTime, setSelTime] = useState("");
   const [form, setForm] = useState({ name:"", email:"", phone:"" });
   const [errors, setErrors] = useState({ email:"", phone:"" });
+  const [countryCode, setCountryCode] = useState<CountryCode>("GB");
+  const [phoneRaw, setPhoneRaw] = useState(""); // local format as typed
+  const [countryDropOpen, setCountryDropOpen] = useState(false);
 
   // Payment state
   const [paymentMethod, setPaymentMethod] = useState<string>(""); // 'full_online'|'deposit_online'|'custom_deposit'|'pay_at_salon'
   const [clientSecret, setClientSecret] = useState("");
   const [bookingId, setBookingId] = useState("");
   const [paymentError, setPaymentError] = useState("");
+
+  // Auto-detect country from IP
+  useEffect(() => {
+    fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(3000) })
+      .then(r => r.json())
+      .then(d => {
+        const map: Record<string, CountryCode> = { GB: "GB", PK: "PK", AE: "AE", SA: "SA" };
+        const detected = map[d.country_code];
+        if (detected) setCountryCode(detected);
+      })
+      .catch(() => {}); // silent fail — default stays GB
+  }, []);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!countryDropOpen) return;
+    const handler = (e: MouseEvent) => {
+      const btn = document.getElementById("phone-country-btn");
+      if (btn && !btn.contains(e.target as Node)) setCountryDropOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [countryDropOpen]);
+
 
   useEffect(() => {
     if (!slug) return;
@@ -131,10 +184,13 @@ export default function BookingPage() {
   const validateForm = useCallback(() => {
     const newErrors = { email:"", phone:"" };
     if (form.email && !isValidEmail(form.email)) newErrors.email = "Please enter a valid email address";
-    if (form.phone && !isValidPhone(form.phone)) newErrors.phone = "Please enter a valid UK phone number";
+    const country = getCountryByCode(countryCode);
+    if (phoneRaw && !isValidPhoneForCountry(phoneRaw, countryCode))
+      newErrors.phone = `Enter a valid ${country.name} number (${country.hint})`;
+    if (!phoneRaw) newErrors.phone = "Phone number is required";
     setErrors(newErrors);
     return !newErrors.email && !newErrors.phone;
-  }, [form]);
+  }, [form, phoneRaw, countryCode]);
 
   // Derive available payment options from salon.payment_methods
   const salonPm: PaymentMethods = salon?.payment_methods
@@ -412,8 +468,67 @@ export default function BookingPage() {
                 </div>
                 <div className="input-group">
                   <label className="input-label">Phone Number *</label>
-                  <input className={`input ${errors.phone?"error":""}`} placeholder="+44 1234 567890" value={form.phone} onChange={e=>{setForm({...form,phone:e.target.value});if(errors.phone)setErrors({...errors,phone:""});}} onBlur={validateForm}/>
-                  {errors.phone && <span className="error-text">{errors.phone}</span>}
+                  <div style={{ position: "relative" }}>
+                    <div style={{ display: "flex", border: `2px solid ${errors.phone ? "#EF4444" : "#E2E8F0"}`, borderRadius: 12, overflow: "visible", background: errors.phone ? "#FEF2F2" : "#F8FAFC", transition: "all 0.2s" }}>
+                      {/* Country dropdown trigger */}
+                      <button
+                        id="phone-country-btn"
+                        type="button"
+                        onClick={() => setCountryDropOpen(o => !o)}
+                        style={{ display: "flex", alignItems: "center", gap: 6, padding: "14px 12px", background: "transparent", border: "none", borderRight: "2px solid #E2E8F0", cursor: "pointer", flexShrink: 0, fontWeight: 700, fontSize: 14, color: "#334155", whiteSpace: "nowrap" }}
+                      >
+                        <span style={{ fontSize: 20, lineHeight: 1 }}>{getCountryByCode(countryCode).flag}</span>
+                        <span>{getCountryByCode(countryCode).dial}</span>
+                        <span style={{ fontSize: 10, color: "#94A3B8" }}>▼</span>
+                      </button>
+                      {/* Number input */}
+                      <input
+                        id="phone-number-input"
+                        type="tel"
+                        className={errors.phone ? "error" : ""}
+                        placeholder={getCountryByCode(countryCode).placeholder}
+                        value={phoneRaw}
+                        onChange={e => {
+                          const raw = e.target.value;
+                          setPhoneRaw(raw);
+                          const e164 = toE164(raw, countryCode);
+                          setForm({ ...form, phone: e164 });
+                          if (errors.phone) setErrors({ ...errors, phone: "" });
+                        }}
+                        onBlur={validateForm}
+                        style={{ flex: 1, padding: "14px 16px", border: "none", background: "transparent", fontSize: 15, fontWeight: 600, color: "#0F172A", outline: "none", minWidth: 0 }}
+                      />
+                    </div>
+                    {/* Dropdown */}
+                    {countryDropOpen && (
+                      <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 100, background: "white", border: "2px solid #E2E8F0", borderRadius: 14, boxShadow: "0 8px 24px rgba(0,0,0,0.12)", overflow: "hidden", minWidth: 220 }}>
+                        {COUNTRIES.map(c => (
+                          <button
+                            key={c.code}
+                            type="button"
+                            id={`country-opt-${c.code}`}
+                            onClick={() => {
+                              setCountryCode(c.code);
+                              setCountryDropOpen(false);
+                              // Re-compute E.164 with new country
+                              const e164 = toE164(phoneRaw, c.code);
+                              setForm({ ...form, phone: e164 });
+                              setErrors({ ...errors, phone: "" });
+                            }}
+                            style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", padding: "12px 16px", border: "none", background: countryCode === c.code ? "#F1F5FF" : "white", cursor: "pointer", fontSize: 14, fontWeight: countryCode === c.code ? 700 : 500, color: "#0F172A", textAlign: "left", transition: "background 0.15s" }}
+                          >
+                            <span style={{ fontSize: 20 }}>{c.flag}</span>
+                            <span style={{ flex: 1 }}>{c.name}</span>
+                            <span style={{ color: "#94A3B8", fontWeight: 600 }}>{c.dial}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {errors.phone
+                    ? <span className="error-text">{errors.phone}</span>
+                    : <span style={{ fontSize: 12, color: "#94A3B8", marginTop: 5, display: "block" }}>{getCountryByCode(countryCode).hint} · Auto-detected from your location</span>
+                  }
                 </div>
 
                 {/* Dynamic payment options from salon settings */}
