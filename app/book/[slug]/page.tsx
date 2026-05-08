@@ -197,6 +197,13 @@ export default function BookingPage() {
 
     // Pay at salon — skip Stripe, go straight to success
     if (isPayAtSalon) {
+      // Fire confirmation email immediately (no Stripe webhook for pay-at-salon)
+      fetch("/api/send-confirmation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ appointmentId: appt.id }),
+      }).catch(e => console.error("[send-confirmation] failed:", e));
+
       const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
       const date = selDate?.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) || "";
       window.location.href = `${baseUrl}/payment/success?service=${encodeURIComponent(selectedService.name)}&date=${encodeURIComponent(date)}&time=${encodeURIComponent(selTime)}&name=${encodeURIComponent(form.name)}&amount=0&deposit=false&salon=${encodeURIComponent(salon.name)}`;
