@@ -1,113 +1,358 @@
 "use client";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import { getCurrentUserProfile } from "@/app/lib/auth";
+import DashboardShell, { HamburgerBtn } from "../components/DashboardShell";
+import FeatureGate from "../components/FeatureGate";
 
-export default function ReportsPage() {
-  const router = useRouter();
-  const [appointments, setAppointments] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [range, setRange] = useState("30");
+interface Appointment {
+  id: string;
+  client_name: string;
+  date_time: string;
+  status: string;
+  services?: { name: string; price: number } | null;
+  staff?: { name: string } | null;
+}
 
-  useEffect(() => {
-    const loadData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push("/login"); return; }
-      const { data: salonData } = await supabase.from("salons").select("*").eq("owner_id", user.id).single();
-      if (salonData) {
-        const { data: appts } = await supabase.from("appointments").select("*, services(name, price), staff(name)").eq("salon_id", salonData.id).order("date_time", { ascending: false });
-        setAppointments(appts || []);
-      }
-      setLoading(false);
-    };
-    loadData();
-  }, [router]);
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
-  const daysAgo = (n: number) => { const d = new Date(); d.setDate(d.getDate() - n); return d; };
-  const inRange = appointments.filter(a => new Date(a.date_time) >= daysAgo(Number(range)));
-
-  const totalRevenue = inRange.reduce((sum, a) => sum + (a.services?.price || 0), 0);
-  const confirmed = inRange.filter(a => a.status === "confirmed").length;
-  const cancelled = inRange.filter(a => a.status === "cancelled").length;
-  const completionRate = inRange.length > 0 ? Math.round((confirmed / inRange.length) * 100) : 0;
-
-  const clientMap = new Map<string, number>();
-  inRange.forEach(a => { if (a.client_name) clientMap.set(a.client_name, (clientMap.get(a.client_name) || 0) + 1); });
-  const topClients = Array.from(clientMap.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5);
-
-  const serviceMap = new Map<string, { count: number; revenue: number }>();
-  inRange.forEach(a => {
-    const name = a.services?.name || "Unknown";
-    const prev = serviceMap.get(name) || { count: 0, revenue: 0 };
-    serviceMap.set(name, { count: prev.count + 1, revenue: prev.revenue + (a.services?.price || 0) });
-  });
-  const topServices = Array.from(serviceMap.entries()).sort((a, b) => b[1].count - a[1].count).slice(0, 5);
-
-  if (loading) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
-      <div style={{ fontFamily: "Georgia, serif", fontSize: "24px", color: "#4F6EF7" }}>feature</div>
-    </div>
-  );
-
+function BarChart({ data, color, label }: { data: number[]; color: string; label: string }) {
+  const max = Math.max(...data, 1);
   return (
-    <div style={{ backgroundColor: "#F2F4F7", minHeight: "100vh", padding: "28px 24px" }}>
-      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: "12px", marginBottom: "24px" }}>
-        <div>
-          <p style={{ margin: 0, fontSize: "14px", color: "#64748B" }}>Salon performance & trends</p>
-          <h1 style={{ margin: 0, fontSize: "28px", color: "#0F172A" }}>Reports</h1>
-        </div>
-        <select value={range} onChange={e => setRange(e.target.value)} style={{ padding: "8px 14px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "8px", background: "#fff" }}>
-          <option value="7">Last 7 days</option>
-          <option value="30">Last 30 days</option>
-          <option value="90">Last 90 days</option>
-          <option value="365">Last year</option>
-        </select>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "16px", marginBottom: "24px" }}>
-        {[
-          { label: "Bookings", value: inRange.length },
-          { label: "Completed", value: confirmed },
-          { label: "Completion rate", value: `${completionRate}%` },
-          { label: "Cancelled", value: cancelled },
-          { label: "Revenue", value: `£${totalRevenue.toFixed(2)}` },
-          { label: "New clients", value: clientMap.size },
-        ].map(stat => (
-          <div key={stat.label} style={{ backgroundColor: "#ffffff", borderRadius: "16px", padding: "20px", border: "0.5px solid #E8EAF0" }}>
-            <div style={{ fontSize: "11px", color: "#64748B", marginBottom: "8px" }}>{stat.label}</div>
-            <div style={{ fontSize: "26px", color: "#0F172A", fontWeight: 700 }}>{stat.value}</div>
+    <div>
+      <div style={{ fontSize: 11, fontWeight: 700, color: "#94A3B8", marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.8px" }}>{label}</div>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 120 }}>
+        {data.map((val, i) => (
+          <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+            <div title={`£${val}`}
+              style={{ width: "100%", borderRadius: "5px 5px 0 0", height: `${Math.max((val / max) * 100, 4)}px`, background: `linear-gradient(180deg,${color},${color}99)`, transition: "all 0.4s ease", cursor: "default", position: "relative" }}
+              onMouseEnter={e => {
+                const tip = document.createElement("div");
+                tip.id = "chart-tip";
+                tip.style.cssText = `position:absolute;top:-28px;left:50%;transform:translateX(-50%);background:#0F172A;color:#fff;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;white-space:nowrap;pointer-events:none;`;
+                tip.textContent = `£${val}`;
+                e.currentTarget.appendChild(tip);
+              }}
+              onMouseLeave={e => { document.getElementById("chart-tip")?.remove(); }}
+            />
+            <span style={{ fontSize: 9.5, color: "#94A3B8", fontWeight: 600 }}>{MONTHS[i % 12]}</span>
           </div>
         ))}
       </div>
+    </div>
+  );
+}
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
-        <div style={{ backgroundColor: "#ffffff", borderRadius: "16px", border: "0.5px solid #E8EAF0", overflow: "hidden" }}>
-          <div style={{ padding: "16px 20px", borderBottom: "0.5px solid #E8EAF0", fontSize: "14px", fontWeight: 500, color: "#0F172A" }}>Top Clients</div>
-          {topClients.length === 0 ? (
-            <div style={{ padding: "32px", textAlign: "center", color: "#94A3B8", fontSize: "13px" }}>No data</div>
-          ) : topClients.map(([name, count]) => (
-            <div key={name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 20px", borderBottom: "0.5px solid #F1F5F9" }}>
-              <span style={{ fontSize: "13px", color: "#0F172A" }}>{name}</span>
-              <span style={{ background: "#EEF2FF", color: "#4F6EF7", fontSize: "11px", padding: "3px 10px", borderRadius: "20px" }}>{count} bookings</span>
-            </div>
-          ))}
-        </div>
+function StatCard({ icon, label, value, sub, color }: { icon: string; label: string; value: string; sub?: string; color: string }) {
+  return (
+    <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 18, padding: "22px 20px", position: "relative", overflow: "hidden", transition: "all 0.18s", cursor: "default" }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 12px 32px ${color}20`; e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.borderColor = `${color}40`; }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "none"; e.currentTarget.style.borderColor = "#F1F5F9"; }}>
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg,${color},${color}66)`, borderRadius: "18px 18px 0 0" }} />
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+        <span style={{ fontSize: 10, fontWeight: 800, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.8px" }}>{label}</span>
+        <div style={{ width: 38, height: 38, borderRadius: 12, background: `${color}15`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>{icon}</div>
+      </div>
+      <div style={{ fontSize: 28, fontWeight: 900, color: "#0F172A", letterSpacing: "-1px", lineHeight: 1 }}>{value}</div>
+      {sub && <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 6 }}>{sub}</div>}
+    </div>
+  );
+}
 
-        <div style={{ backgroundColor: "#ffffff", borderRadius: "16px", border: "0.5px solid #E8EAF0", overflow: "hidden" }}>
-          <div style={{ padding: "16px 20px", borderBottom: "0.5px solid #E8EAF0", fontSize: "14px", fontWeight: 500, color: "#0F172A" }}>Top Services</div>
-          {topServices.length === 0 ? (
-            <div style={{ padding: "32px", textAlign: "center", color: "#94A3B8", fontSize: "13px" }}>No data</div>
-          ) : topServices.map(([name, data]) => (
-            <div key={name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 20px", borderBottom: "0.5px solid #F1F5F9" }}>
-              <div>
-                <div style={{ fontSize: "13px", color: "#0F172A" }}>{name}</div>
-                <div style={{ fontSize: "11px", color: "#94A3B8" }}>{data.count} bookings</div>
-              </div>
-              <span style={{ fontSize: "13px", fontWeight: 600, color: "#059669" }}>£{data.revenue.toFixed(2)}</span>
-            </div>
-          ))}
+function ReportsContent() {
+  const router = useRouter();
+  const [salonName, setSalonName] = useState("");
+  const [appointments, setAppts] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState<"week" | "month" | "year">("month");
+
+  useEffect(() => {
+    const load = async () => {
+      const profile = await getCurrentUserProfile();
+      if (!profile?.salon) { router.push("/login"); return; }
+      setSalonName(profile.salon.name);
+      const { data } = await supabase
+        .from("appointments")
+        .select("*, services(name,price), staff(name)")
+        .eq("salon_id", profile.salon.id)
+        .order("date_time", { ascending: true });
+      setAppts(data || []);
+      setLoading(false);
+    };
+    load();
+  }, [router]);
+
+  const now = new Date();
+
+  const confirmed = useMemo(() => appointments.filter(a => a.status === "confirmed"), [appointments]);
+
+  // Revenue by month (last 12 months)
+  const monthlyRevenue = useMemo(() => {
+    return Array.from({ length: 12 }, (_, i) => {
+      const mo = (now.getMonth() - 11 + i + 12) % 12;
+      const yr = now.getFullYear() - (now.getMonth() - 11 + i < 0 ? 1 : 0);
+      return confirmed.filter(a => {
+        const d = new Date(a.date_time);
+        return d.getMonth() === mo && d.getFullYear() === yr;
+      }).reduce((s, a) => s + (a.services?.price || 0), 0);
+    });
+  }, [confirmed]);
+
+  // Bookings by month (last 12)
+  const monthlyBookings = useMemo(() => {
+    return Array.from({ length: 12 }, (_, i) => {
+      const mo = (now.getMonth() - 11 + i + 12) % 12;
+      const yr = now.getFullYear() - (now.getMonth() - 11 + i < 0 ? 1 : 0);
+      return appointments.filter(a => {
+        const d = new Date(a.date_time);
+        return d.getMonth() === mo && d.getFullYear() === yr;
+      }).length;
+    });
+  }, [appointments]);
+
+  // Stats
+  const totalRevenue = useMemo(() => confirmed.reduce((s, a) => s + (a.services?.price || 0), 0), [confirmed]);
+  const thisMonthRevenue = useMemo(() => confirmed.filter(a => {
+    const d = new Date(a.date_time);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }).reduce((s, a) => s + (a.services?.price || 0), 0), [confirmed]);
+  const avgOrderValue = useMemo(() => confirmed.length ? (totalRevenue / confirmed.length).toFixed(2) : "0.00", [totalRevenue, confirmed]);
+
+  // Top services
+  const topServices = useMemo(() => {
+    const map: Record<string, { count: number; revenue: number }> = {};
+    confirmed.forEach(a => {
+      const name = a.services?.name || "Unknown";
+      if (!map[name]) map[name] = { count: 0, revenue: 0 };
+      map[name].count++;
+      map[name].revenue += a.services?.price || 0;
+    });
+    return Object.entries(map).sort((a, b) => b[1].revenue - a[1].revenue).slice(0, 5);
+  }, [confirmed]);
+
+  // Top staff
+  const topStaff = useMemo(() => {
+    const map: Record<string, { count: number; revenue: number }> = {};
+    confirmed.forEach(a => {
+      const name = a.staff?.name || "Unassigned";
+      if (!map[name]) map[name] = { count: 0, revenue: 0 };
+      map[name].count++;
+      map[name].revenue += a.services?.price || 0;
+    });
+    return Object.entries(map).sort((a, b) => b[1].revenue - a[1].revenue).slice(0, 5);
+  }, [confirmed]);
+
+  // Peak hours
+  const peakHours = useMemo(() => {
+    const map: Record<number, number> = {};
+    appointments.forEach(a => {
+      const h = new Date(a.date_time).getHours();
+      map[h] = (map[h] || 0) + 1;
+    });
+    return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  }, [appointments]);
+
+  // Conversion rate
+  const conversionRate = useMemo(() => {
+    if (!appointments.length) return "0";
+    return ((confirmed.length / appointments.length) * 100).toFixed(1);
+  }, [appointments, confirmed]);
+
+  const Topbar = (
+    <header style={{ background: "#fff", borderBottom: "1px solid #F1F5F9", padding: "0 24px", height: 66, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 30, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <HamburgerBtn onClick={() => {}} />
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "#0F172A", letterSpacing: "-0.4px" }}>📊 Revenue Analytics</div>
+          <div style={{ fontSize: 11.5, color: "#94A3B8", marginTop: 1 }}>Track your business growth</div>
         </div>
       </div>
-    </div>
+      <button
+        onClick={() => {
+          const rows = [["Month", "Revenue", "Bookings"]];
+          const labels = Array.from({ length: 12 }, (_, i) => MONTHS[(now.getMonth() - 11 + i + 12) % 12]);
+          labels.forEach((l, i) => rows.push([l, `£${monthlyRevenue[i]}`, String(monthlyBookings[i])]));
+          const csv = rows.map(r => r.join(",")).join("\n");
+          const blob = new Blob([csv], { type: "text/csv" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a"); a.href = url; a.download = "revenue-report.csv"; a.click();
+        }}
+        style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "linear-gradient(135deg,#6366F1,#4F46E5)", color: "#fff", border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 14px rgba(99,102,241,0.3)" }}>
+        📥 Export CSV
+      </button>
+    </header>
+  );
+
+  if (loading) return (
+    <DashboardShell salonName={salonName} topbar={Topbar}>
+      <div style={{ padding: 40, textAlign: "center", color: "#94A3B8" }}>Loading analytics…</div>
+    </DashboardShell>
+  );
+
+  const COLORS = ["#6366F1", "#10B981", "#F59E0B", "#EC4899", "#8B5CF6"];
+
+  return (
+    <DashboardShell salonName={salonName} topbar={Topbar}>
+      <div style={{ padding: "28px 24px", maxWidth: 1360, margin: "0 auto" }}>
+
+        {/* KPI Cards */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 14, marginBottom: 28 }}>
+          <StatCard icon="💰" label="Total Revenue" value={`£${totalRevenue}`} sub="All confirmed bookings" color="#10B981" />
+          <StatCard icon="📅" label="This Month" value={`£${thisMonthRevenue}`} sub={now.toLocaleDateString("en-GB", { month: "long", year: "numeric" })} color="#6366F1" />
+          <StatCard icon="🧾" label="Avg. Order Value" value={`£${avgOrderValue}`} sub="Per confirmed booking" color="#F59E0B" />
+          <StatCard icon="✅" label="Conversion Rate" value={`${conversionRate}%`} sub="Confirmed vs total" color="#EC4899" />
+          <StatCard icon="📋" label="Total Bookings" value={String(appointments.length)} sub={`${confirmed.length} confirmed`} color="#8B5CF6" />
+        </div>
+
+        {/* Charts row */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 28 }}>
+          <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, padding: "22px 24px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
+            <BarChart data={monthlyRevenue} color="#6366F1" label="Monthly Revenue (Last 12 Months)" />
+          </div>
+          <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, padding: "22px 24px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
+            <BarChart data={monthlyBookings} color="#10B981" label="Monthly Bookings (Last 12 Months)" />
+          </div>
+        </div>
+
+        {/* Top Services + Top Staff */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 28 }}>
+          {/* Top Services */}
+          <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid #F1F5F9" }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#0F172A" }}>🏆 Top Services</div>
+              <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 2 }}>By revenue generated</div>
+            </div>
+            <div style={{ padding: 16 }}>
+              {topServices.length === 0
+                ? <div style={{ textAlign: "center", padding: "30px 0", color: "#94A3B8" }}>No data yet</div>
+                : topServices.map(([name, data], i) => {
+                  const maxRev = topServices[0][1].revenue || 1;
+                  return (
+                    <div key={name} style={{ marginBottom: 14 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
+                        <div style={{ fontSize: 13.5, fontWeight: 700, color: "#0F172A", display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ width: 20, height: 20, borderRadius: 6, background: `${COLORS[i]}20`, color: COLORS[i], fontSize: 10, fontWeight: 900, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>{i + 1}</span>
+                          {name}
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ fontSize: 13, fontWeight: 800, color: "#10B981" }}>£{data.revenue}</div>
+                          <div style={{ fontSize: 10.5, color: "#94A3B8" }}>{data.count} bookings</div>
+                        </div>
+                      </div>
+                      <div style={{ height: 6, background: "#F1F5F9", borderRadius: 99 }}>
+                        <div style={{ height: "100%", borderRadius: 99, background: COLORS[i], width: `${(data.revenue / maxRev) * 100}%`, transition: "width 0.6s ease" }} />
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+
+          {/* Top Staff */}
+          <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid #F1F5F9" }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#0F172A" }}>✂️ Staff Performance</div>
+              <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 2 }}>By revenue generated</div>
+            </div>
+            <div style={{ padding: 16 }}>
+              {topStaff.length === 0
+                ? <div style={{ textAlign: "center", padding: "30px 0", color: "#94A3B8" }}>No data yet</div>
+                : topStaff.map(([name, data], i) => {
+                  const maxRev = topStaff[0][1].revenue || 1;
+                  const initials = name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+                  return (
+                    <div key={name} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 11, background: COLORS[i], display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: "#fff", flexShrink: 0 }}>{initials}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                          <div style={{ fontSize: 13.5, fontWeight: 700, color: "#0F172A" }}>{name}</div>
+                          <div style={{ fontSize: 13, fontWeight: 800, color: "#10B981" }}>£{data.revenue}</div>
+                        </div>
+                        <div style={{ height: 6, background: "#F1F5F9", borderRadius: 99 }}>
+                          <div style={{ height: "100%", borderRadius: 99, background: COLORS[i], width: `${(data.revenue / maxRev) * 100}%`, transition: "width 0.6s ease" }} />
+                        </div>
+                        <div style={{ fontSize: 10.5, color: "#94A3B8", marginTop: 3 }}>{data.count} bookings</div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        </div>
+
+        {/* Peak Hours + Status breakdown */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+          {/* Peak Hours */}
+          <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid #F1F5F9" }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#0F172A" }}>⏰ Peak Hours</div>
+              <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 2 }}>Busiest times of day</div>
+            </div>
+            <div style={{ padding: 16 }}>
+              {peakHours.length === 0
+                ? <div style={{ textAlign: "center", padding: "30px 0", color: "#94A3B8" }}>No data yet</div>
+                : peakHours.map(([hour, count], i) => {
+                  const maxCount = parseInt(peakHours[0][1] as unknown as string) || 1;
+                  const hNum = parseInt(hour);
+                  const label = `${hNum}:00 – ${hNum + 1}:00`;
+                  return (
+                    <div key={hour} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                      <div style={{ width: 80, fontSize: 12.5, fontWeight: 700, color: "#475569", flexShrink: 0 }}>{label}</div>
+                      <div style={{ flex: 1, height: 8, background: "#F1F5F9", borderRadius: 99 }}>
+                        <div style={{ height: "100%", borderRadius: 99, background: "#6366F1", width: `${(count / maxCount) * 100}%`, transition: "width 0.6s ease" }} />
+                      </div>
+                      <div style={{ width: 28, fontSize: 12.5, fontWeight: 800, color: "#6366F1", textAlign: "right" }}>{count}</div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+
+          {/* Status breakdown */}
+          <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid #F1F5F9" }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#0F172A" }}>📋 Booking Status</div>
+              <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 2 }}>Overview of all bookings</div>
+            </div>
+            <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+              {[
+                { label: "Confirmed", count: appointments.filter(a => a.status === "confirmed").length, color: "#10B981", bg: "#ECFDF5" },
+                { label: "Pending",   count: appointments.filter(a => a.status === "pending").length,   color: "#F59E0B", bg: "#FEF9C3" },
+                { label: "Cancelled", count: appointments.filter(a => a.status === "cancelled").length, color: "#EF4444", bg: "#FEF2F2" },
+              ].map(s => {
+                const pct = appointments.length ? (s.count / appointments.length) * 100 : 0;
+                return (
+                  <div key={s.label}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ width: 10, height: 10, borderRadius: "50%", background: s.color, display: "inline-block" }} />
+                        <span style={{ fontSize: 13.5, fontWeight: 700, color: "#0F172A" }}>{s.label}</span>
+                      </div>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <span style={{ fontSize: 12, fontWeight: 800, padding: "2px 10px", borderRadius: 99, background: s.bg, color: s.color }}>{s.count}</span>
+                        <span style={{ fontSize: 12, color: "#94A3B8" }}>{pct.toFixed(1)}%</span>
+                      </div>
+                    </div>
+                    <div style={{ height: 10, background: "#F1F5F9", borderRadius: 99 }}>
+                      <div style={{ height: "100%", borderRadius: 99, background: s.color, width: `${pct}%`, transition: "width 0.6s ease" }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </DashboardShell>
+  );
+}
+
+export default function ReportsPage() {
+  return (
+    <FeatureGate feature="analytics_basic">
+      <ReportsContent />
+    </FeatureGate>
   );
 }

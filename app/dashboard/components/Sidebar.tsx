@@ -6,23 +6,32 @@ const NAV = [
   {
     group: "Main",
     items: [
-      { label: "Dashboard", path: "/dashboard", emoji: "◻" },
-      { label: "Bookings",  path: "/dashboard/bookings", emoji: "📅" },
-      { label: "Clients",   path: "/dashboard/clients",  emoji: "👤" },
-      { label: "Staff",     path: "/dashboard/staff",    emoji: "✂️" },
+      { label: "Dashboard",    path: "/dashboard",              emoji: "◻" },
+      { label: "Calendar",     path: "/dashboard/calendar",     emoji: "🗓️" },
+      { label: "Bookings",     path: "/dashboard/bookings",     emoji: "📅" },
+      { label: "Clients",      path: "/dashboard/clients",      emoji: "👤" },
+      { label: "Staff",        path: "/dashboard/staff",        emoji: "✂️" },
     ],
   },
   {
     group: "Finance",
     items: [
-      { label: "Payments", path: "/dashboard/payments", emoji: "💳" },
-      { label: "Reports",  path: "/dashboard/reports",  emoji: "📊" },
+      { label: "Payments",     path: "/dashboard/payments",     emoji: "💳" },
+      { label: "Reports",      path: "/dashboard/reports",      emoji: "📊" },
+      { label: "Gift Cards",   path: "/dashboard/gift-cards",   emoji: "🎁" },
+    ],
+  },
+  {
+    group: "Engagement",
+    items: [
+      { label: "Reviews",      path: "/dashboard/reviews",      emoji: "⭐" },
+      { label: "Client Portal", path: "/dashboard/client-portal", emoji: "🔐" },
     ],
   },
   {
     group: "System",
     items: [
-      { label: "Settings", path: "/dashboard/settings", emoji: "⚙️" },
+      { label: "Settings",     path: "/dashboard/settings",     emoji: "⚙️" },
     ],
   },
 ];

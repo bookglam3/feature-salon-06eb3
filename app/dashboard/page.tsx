@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import { getCurrentUserProfile } from "@/app/lib/auth";
@@ -332,9 +332,6 @@ export default function DashboardPage() {
         @media(max-width:640px){
           .dash-wrap{padding:14px 12px!important}
           .dash-stats{grid-template-columns:repeat(2,1fr)!important;gap:10px!important}
-          .dash-status-bar{grid-template-columns:repeat(3,1fr)!important;gap:8px!important}
-          .dash-status-bar>div{padding:10px 10px!important}
-          .dash-status-bar .stat-num{font-size:18px!important}
           .dash-banner{padding:20px 18px!important;border-radius:16px!important}
           .dash-banner h1{font-size:22px!important;letter-spacing:-0.5px!important}
           .dash-banner-meta{font-size:12px!important}
@@ -354,6 +351,7 @@ export default function DashboardPage() {
         }
         @media(min-width:641px){
           .dash-appt-card{display:none!important}
+          .dash-cols{grid-template-columns:3fr 2fr!important}
         }
       `}</style>
       <div className="dash-wrap" style={{ padding: "28px 24px", maxWidth: 1360, margin: "0 auto" }}>
@@ -390,13 +388,11 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ── 6 Stat Cards ────────────────────────────────────────── */}
-        <div className="dash-stats" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, marginBottom: 20 }}>
-          <MiniStat label="Today Bookings" value={todayAppts.length} color="#6366F1" icon="📅" sub={`${confirmedAppts.filter(a => new Date(a.date_time).toDateString() === todayStr).length} confirmed`} />
-          <MiniStat label="Revenue Today" value={`£${revenue}`} color="#10B981" icon="💷" sub="confirmed only" />
-          <MiniStat label="Upcoming" value={upcomingAppts.length} color="#8B5CF6" icon="⏰" sub="scheduled ahead" />
-          <MiniStat label="Total Revenue" value={`£${totalRevenue}`} color="#F59E0B" icon="💰" sub="all confirmed" />
-          <MiniStat label="Total Bookings" value={appointments.length} color="#06B6D4" icon="📋" sub={`${pendingAppts.length} pending`} />
+        {/* ── 4 Stat Cards ─────────────────────────────────────────── */}
+        <div className="dash-stats" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 20 }}>
+          <MiniStat label="Upcoming" value={upcomingAppts.length} color="#6366F1" icon="⏰" sub={`${confirmedAppts.length} confirmed`} />
+          <MiniStat label="Total Revenue" value={`£${totalRevenue}`} color="#10B981" icon="💰" sub="all confirmed" />
+          <MiniStat label="Total Bookings" value={appointments.length} color="#8B5CF6" icon="📋" sub={`${pendingAppts.length} pending`} />
           <MiniStat label="Staff Members" value={staff.length} color="#EC4899" icon="✂️" sub="active team" />
         </div>
 
@@ -413,72 +409,13 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ── Status Summary Bar ────────────────────────────────── */}
-        <div className="dash-status-bar" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 20 }}>
-          {[
-            { label: "Confirmed", count: confirmedAppts.length, color: "#10B981", bg: "#ECFDF5", border: "#A7F3D0", icon: "✅" },
-            { label: "Pending", count: pendingAppts.length, color: "#F59E0B", bg: "#FEF9C3", border: "#FDE68A", icon: "⏳" },
-            { label: "Cancelled", count: appointments.filter(a => a.status === "cancelled").length, color: "#EF4444", bg: "#FEF2F2", border: "#FECACA", icon: "❌" },
-          ].map(s => (
-            <div key={s.label} onClick={() => setActiveTab(s.label)} style={{ background: s.bg, border: `1.5px solid ${s.border}`, borderRadius: 14, padding: "14px 16px", cursor: "pointer", transition: "all 0.15s", display: "flex", alignItems: "center", gap: 12 }}
-              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 8px 20px ${s.color}20`; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "none"; }}
-            >
-              <span style={{ fontSize: 22 }}>{s.icon}</span>
-              <div>
-                <div className="stat-num" style={{ fontSize: 22, fontWeight: 900, color: s.color, letterSpacing: "-1px" }}>{s.count}</div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: s.color, opacity: 0.8 }}>{s.label}</div>
-              </div>
-            </div>
-          ))}
-        </div>
 
         {/* ── Two-Column Layout ─────────────────────────────────── */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 20 }}>
-          <style>{`@media(min-width:900px){.dash-cols{grid-template-columns:3fr 2fr!important}}`}</style>
-          <div className="dash-cols" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 20 }}>
+        <div className="dash-cols" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 20 }}>
 
             {/* LEFT ────────────────────────────────────────────── */}
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
-              {/* Upcoming Appointments */}
-              <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid #F1F5F9" }}>
-                  <div>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: "#0F172A", letterSpacing: "-0.3px" }}>Upcoming Appointments</div>
-                    <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 2 }}>{upcomingAppts.length} scheduled</div>
-                  </div>
-                  <a href="/dashboard/bookings" style={{ fontSize: 12.5, fontWeight: 700, color: "#6366F1", textDecoration: "none", padding: "6px 14px", background: "#EEF2FF", borderRadius: 8 }}>View all →</a>
-                </div>
-                {upcomingAppts.length === 0 ? (
-                  <EmptyState icon="📅" title="No upcoming appointments" description="Share your booking link to get clients" action={{ label: "Copy Link", onClick: handleCopyLink }} />
-                ) : (
-                  <div>
-                    {upcomingAppts.slice(0, 6).map((a, i) => (
-                      <div key={a.id}
-                        style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 22px", borderBottom: i < Math.min(upcomingAppts.length, 6) - 1 ? "1px solid #F8FAFC" : "none", transition: "background 0.1s" }}
-                        onMouseEnter={e => { e.currentTarget.style.background = "#F8FAFC"; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
-                      >
-                        {/* Date mini-card */}
-                        <div style={{ width: 50, height: 50, borderRadius: 14, background: "linear-gradient(135deg,#EEF2FF,#E0E7FF)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flexShrink: 0, border: "1.5px solid #C7D2FE" }}>
-                          <div style={{ fontSize: 16, fontWeight: 900, color: "#4F46E5", lineHeight: 1 }}>{new Date(a.date_time).getDate()}</div>
-                          <div style={{ fontSize: 9, fontWeight: 800, color: "#6366F1", textTransform: "uppercase", letterSpacing: "0.5px" }}>{new Date(a.date_time).toLocaleDateString("en-GB", { month: "short" })}</div>
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 14, fontWeight: 800, color: "#0F172A", letterSpacing: "-0.2px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.client_name}</div>
-                          <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 2 }}>{a.services?.name || "No service"}{a.staff?.name ? ` · ${a.staff.name}` : ""}</div>
-                        </div>
-                        <div style={{ textAlign: "right", flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
-                          <div style={{ fontSize: 13, fontWeight: 800, color: "#1E293B" }}>{new Date(a.date_time).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</div>
-                          {a.services?.price ? <div style={{ fontSize: 12, color: "#10B981", fontWeight: 800 }}>£{a.services.price}</div> : null}
-                          <StatusPill status={a.status} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
 
               {/* All Appointments Table */}
               <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
@@ -510,7 +447,7 @@ export default function DashboardPage() {
                       </thead>
                       <tbody>
                         {filteredAppts.map(a => (
-                          <>
+                          <React.Fragment key={a.id}>
                             {/* Desktop row */}
                             <tr key={`row-${a.id}`} className="dash-appt-row" style={{ transition: "background 0.1s" }}
                               onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = "#F8FAFC"; }}
@@ -560,7 +497,7 @@ export default function DashboardPage() {
                                 </div>
                               </td>
                             </tr>
-                          </>
+                          </React.Fragment>
                         ))}
                       </tbody>
                     </table>
@@ -709,7 +646,6 @@ export default function DashboardPage() {
                 )}
               </div>
             </div>
-
           </div>
         </div>
       </div>
