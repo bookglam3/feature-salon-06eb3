@@ -267,3 +267,85 @@ details[open] .faq-question::after { transform: rotate(45deg); }
 .footer-links { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
 .footer-links a { font-size: 13px; color: #64748B; text-decoration: none; transition: color 0.15s; }
 .footer-links a:hover { color: #94A3B8; }
+
+/* ─────────────── DASHBOARD MOBILE POLISH ─────────────── */
+
+/* Prevent horizontal overflow on all dashboard pages */
+.ds-content > * { max-width: 100%; }
+.ds-content { -webkit-overflow-scrolling: touch; }
+
+/* Dashboard main wrap */
+@media (max-width: 767px) {
+  /* Welcome banner */
+  .dash-banner {
+    padding: 22px 20px !important;
+    border-radius: 18px !important;
+    margin-bottom: 16px !important;
+  }
+  .dash-banner h1 {
+    font-size: 20px !important;
+    letter-spacing: -0.5px !important;
+    line-height: 1.2 !important;
+  }
+  .dash-banner-meta { font-size: 12px !important; }
+  .dash-banner-btns {
+    gap: 8px !important;
+    margin-top: 14px !important;
+  }
+  .dash-banner-btns button,
+  .dash-banner-btns a {
+    padding: 8px 13px !important;
+    font-size: 12px !important;
+    border-radius: 10px !important;
+  }
+
+  /* Stat cards — 2 col grid */
+  .dash-stats {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    margin-bottom: 16px !important;
+  }
+
+  /* Main wrap padding */
+  .dash-wrap {
+    padding: 14px 14px !important;
+  }
+
+  /* Topbar */
+  .dash-topbar-badge { display: none !important; }
+  .dash-topbar-export { display: none !important; }
+  .dash-topbar-newbtn {
+    padding: 9px 14px !important;
+    font-size: 12.5px !important;
+  }
+  .dash-greeting-date { display: none !important; }
+
+  /* Quick actions horizontal scroll */
+  .dash-quick-scroll {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 4px !important;
+  }
+  .dash-quick-scroll::-webkit-scrollbar { display: none; }
+  .dash-quick-scroll > button {
+    min-width: 72px !important;
+    padding: 12px 8px !important;
+  }
+
+  /* Appointment table → cards on mobile */
+  .dash-appt-row { display: none !important; }
+  .dash-appt-card { display: flex !important; }
+  .dash-table-head { display: none !important; }
+  .dash-table-footer { display: none !important; }
+
+  /* Two-col layout stacks on mobile */
+  .dash-cols {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Desktop: restore two-col layout */
+@media (min-width: 768px) {
+  .dash-appt-card { display: none !important; }
+  .dash-cols { grid-template-columns: 3fr 2fr !important; }
+}

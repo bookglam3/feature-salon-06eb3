@@ -328,33 +328,8 @@ export default function DashboardPage() {
   /* ─────────────────────────────────────────────────────────────── */
   return (
     <DashboardShell salonName={salon?.name} topbar={Topbar}>
-      <style>{`
-        @media(max-width:640px){
-          .dash-wrap{padding:14px 12px!important}
-          .dash-stats{grid-template-columns:repeat(2,1fr)!important;gap:10px!important}
-          .dash-banner{padding:20px 18px!important;border-radius:16px!important}
-          .dash-banner h1{font-size:22px!important;letter-spacing:-0.5px!important}
-          .dash-banner-meta{font-size:12px!important}
-          .dash-banner-btns{gap:8px!important}
-          .dash-banner-btns button,.dash-banner-btns a{padding:8px 12px!important;font-size:12px!important}
-          .dash-topbar-badge{display:none!important}
-          .dash-topbar-export{display:none!important}
-          .dash-topbar-newbtn{padding:9px 14px!important;font-size:13px!important}
-          .dash-greeting-date{display:none!important}
-          .dash-quick-scroll{-webkit-overflow-scrolling:touch;scrollbar-width:none}
-          .dash-quick-scroll::-webkit-scrollbar{display:none}
-          .dash-quick-scroll>button{min-width:70px!important;padding:12px 8px!important}
-          .dash-appt-row{display:none!important}
-          .dash-appt-card{display:flex!important}
-          .dash-table-head{display:none!important}
-          .dash-table-footer{display:none!important}
-        }
-        @media(min-width:641px){
-          .dash-appt-card{display:none!important}
-          .dash-cols{grid-template-columns:3fr 2fr!important}
-        }
-      `}</style>
       <div className="dash-wrap" style={{ padding: "28px 24px", maxWidth: 1360, margin: "0 auto" }}>
+
 
         {/* ── Welcome Banner ────────────────────────────────────── */}
         <div className="dash-banner" style={{ background: "linear-gradient(135deg,#0F0B2D 0%,#1E1B4B 35%,#3730A3 65%,#6366F1 100%)", borderRadius: 24, padding: "32px 36px", marginBottom: 24, position: "relative", overflow: "hidden", boxShadow: "0 16px 48px rgba(99,102,241,0.3)" }}>
