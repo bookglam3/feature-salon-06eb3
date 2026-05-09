@@ -155,7 +155,7 @@ export default function BookingPage() {
   const [selTime, setSelTime] = useState("");
   const [form, setForm] = useState({ name:"", email:"", phone:"" });
   const [errors, setErrors] = useState({ email:"", phone:"" });
-  const [countryCode, setCountryCode] = useState<CountryCode>("GB");
+  const [countryCode, setCountryCode] = useState<CountryCode>("PK"); // default Pakistan
   const [phoneRaw, setPhoneRaw] = useState(""); // local format as typed
   const [countryDropOpen, setCountryDropOpen] = useState(false);
 
@@ -165,24 +165,38 @@ export default function BookingPage() {
   const [bookingId, setBookingId] = useState("");
   const [paymentError, setPaymentError] = useState("");
 
-  // Auto-detect country from IP
+  // Auto-detect country from IP — tries two services, falls back to PK
   useEffect(() => {
-    fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(3000) })
-      .then(r => r.json())
-      .then(d => {
-        const map: Record<string, CountryCode> = { GB: "GB", PK: "PK", AE: "AE", SA: "SA" };
-        const detected = map[d.country_code];
-        if (detected) setCountryCode(detected);
-      })
-      .catch(() => {}); // silent fail — default stays GB
+    const SUPPORTED: Record<string, CountryCode> = { GB: "GB", PK: "PK", AE: "AE", SA: "SA" };
+
+    const tryDetect = async () => {
+      // Primary: ipapi.co
+      try {
+        const r = await fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(3000) });
+        const d = await r.json();
+        const detected = SUPPORTED[d.country_code];
+        if (detected) { setCountryCode(detected); return; }
+      } catch { /* try backup */ }
+
+      // Backup: ip-api.com (different provider, higher rate limit)
+      try {
+        const r = await fetch("https://ip-api.com/json/?fields=countryCode", { signal: AbortSignal.timeout(3000) });
+        const d = await r.json();
+        const detected = SUPPORTED[d.countryCode];
+        if (detected) { setCountryCode(detected); return; }
+      } catch { /* both failed — keep default PK */ }
+    };
+
+    tryDetect();
   }, []);
 
-  // Close dropdown on outside click
+  // Close dropdown on outside click — must check the FULL wrapper, not just the trigger
+  // (checking only the trigger causes the dropdown to close before the option click fires)
   useEffect(() => {
     if (!countryDropOpen) return;
     const handler = (e: MouseEvent) => {
-      const btn = document.getElementById("phone-country-btn");
-      if (btn && !btn.contains(e.target as Node)) setCountryDropOpen(false);
+      const wrapper = document.getElementById("phone-picker-wrapper");
+      if (wrapper && !wrapper.contains(e.target as Node)) setCountryDropOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -500,7 +514,7 @@ export default function BookingPage() {
                 </div>
                 <div className="input-group">
                   <label className="input-label">Phone Number *</label>
-                  <div style={{ position: "relative" }}>
+                  <div id="phone-picker-wrapper" style={{ position: "relative" }}>
                     <div style={{ display: "flex", border: `2px solid ${errors.phone ? "#EF4444" : "#E2E8F0"}`, borderRadius: 12, overflow: "visible", background: errors.phone ? "#FEF2F2" : "#F8FAFC", transition: "all 0.2s" }}>
                       {/* Country dropdown trigger */}
                       <button
