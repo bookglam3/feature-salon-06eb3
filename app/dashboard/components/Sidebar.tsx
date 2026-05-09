@@ -55,6 +55,7 @@ interface SidebarProps {
   salonName?: string;
   onClose?: () => void;
   onLogout: () => void;
+  onMenuClick?: () => void;
 }
 
 export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) {
@@ -91,7 +92,7 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
       </div>
 
       {/* Nav */}
-      <nav style={{ flex: 1, overflowY: "auto", padding: "8px 8px" }}>
+      <nav style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "8px 8px", maxHeight: "calc(100vh - 120px)" }}>
         {NAV.map(group => (
           <div key={group.group}>
             <div style={{ fontSize: 9.5, fontWeight: 700, color: "var(--text-3)", letterSpacing: "1.2px", textTransform: "uppercase", padding: "12px 10px 4px" }}>

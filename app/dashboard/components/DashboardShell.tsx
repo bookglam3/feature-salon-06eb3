@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
 import Sidebar from "./Sidebar";
@@ -20,6 +20,12 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
     await supabase.auth.signOut();
     router.push("/login");
   }, [router]);
+
+  useEffect(() => {
+    const handler = () => setSidebarOpen(true);
+    document.addEventListener("open-sidebar", handler);
+    return () => document.removeEventListener("open-sidebar", handler);
+  }, []);
 
   return (
     <ToastProvider>
@@ -57,12 +63,13 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
 
         {/* Sidebar */}
         <div className={`ds-sidebar-wrap ${sidebarOpen ? "open" : ""}`}>
-          <Sidebar salonName={salonName} onClose={() => setSidebarOpen(false)} onLogout={handleLogout} />
+          <Sidebar salonName={salonName} onClose={() => setSidebarOpen(false)} onLogout={handleLogout} onMenuClick={() => setSidebarOpen(true)} />
         </div>
 
         {/* Main area */}
         <div className="ds-main">
           {/* Topbar slot — passed from page or default */}
+          <div onClick={() => setSidebarOpen(true)} id="sidebar-trigger" style={{display:'none'}} />
           {topbar ? topbar : (
             <DefaultTopBar onMenuClick={() => setSidebarOpen(true)} />
           )}
@@ -106,13 +113,18 @@ function DefaultTopBar({ onMenuClick }: { onMenuClick: () => void }) {
   );
 }
 
-export function HamburgerBtn({ onClick }: { onClick: () => void }) {
+export function HamburgerBtn({ onClick }: { onClick?: () => void }) {
+  const handleClick = () => {
+    if (onClick) { onClick(); return; }
+    // Fallback: trigger sidebar via custom event
+    document.dispatchEvent(new CustomEvent("open-sidebar"));
+  };
   return (
     <>
       <style>{`@media(min-width:768px){.hbtn{display:none!important}}`}</style>
       <button
         className="hbtn"
-        onClick={onClick}
+        onClick={handleClick}
         style={{ background: "none", border: "none", cursor: "pointer", padding: 6, borderRadius: "var(--r-sm)", display: "flex", flexDirection: "column", gap: 4.5, transition: "background 0.12s" }}
         onMouseEnter={e => { e.currentTarget.style.background = "var(--slate-100)"; }}
         onMouseLeave={e => { e.currentTarget.style.background = "none"; }}
@@ -124,3 +136,4 @@ export function HamburgerBtn({ onClick }: { onClick: () => void }) {
     </>
   );
 }
+
