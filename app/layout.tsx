@@ -18,7 +18,7 @@ const BASE_URL = "https://www.featuresalon.co.uk";
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   verification: {
-    google: "CIqk72hycnLUIX0l",
+    google: "CIqk72hycnLUlX0LS-M6tuB2wbeCD6dwf8jColbtyp4",
   },
   title: {
     default: "Feature Salon | UK's #1 Salon Management Software",
