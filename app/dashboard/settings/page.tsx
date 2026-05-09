@@ -136,6 +136,8 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [salonName, setSalonName] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
+  const [description, setDescription] = useState("");
   const [services, setServices] = useState<any[]>([]);
   const [newService, setNewService] = useState({ name: "", price: "", duration: "" });
 
@@ -165,6 +167,8 @@ export default function SettingsPage() {
 
       setSalon(salonData);
       setSalonName(salonData?.name || "");
+      setLogoUrl(salonData?.logo_url || "");
+      setDescription(salonData?.description || "");
       setRemindersEnabled(salonData?.reminders_enabled ?? true);
       setReviewLink(salonData?.review_link || "");
       setWhatsappEnabled(salonData?.whatsapp_enabled ?? false);
@@ -187,7 +191,11 @@ export default function SettingsPage() {
   const handleSaveBrand = async () => {
     if (!salon) return;
     setSaving(true);
-    await supabase.from("salons").update({ name: salonName }).eq("id", salon.id);
+    await supabase.from("salons").update({
+      name: salonName,
+      logo_url: logoUrl || null,
+      description: description || null,
+    }).eq("id", salon.id);
     setSaved(true); setSaving(false);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -293,14 +301,56 @@ export default function SettingsPage() {
 
       {/* ── Salon Brand ── */}
       <div style={cardStyle}>
-        <div style={{ fontSize: "14px", fontWeight: 600, color: "#0F172A", marginBottom: "4px" }}>Salon Brand</div>
-        <p style={{ fontSize: "13px", color: "#64748B", marginBottom: "16px" }}>
+        <div style={{ fontSize: "14px", fontWeight: 600, color: "#0F172A", marginBottom: "4px" }}>🎨 Salon Brand</div>
+        <p style={{ fontSize: "13px", color: "#64748B", marginBottom: "20px" }}>
           This will appear on your booking page and in all client communications.
         </p>
-        <div style={{ marginBottom: "12px" }}>
+
+        {/* Logo preview */}
+        <div style={{ marginBottom: 20, display: "flex", alignItems: "center", gap: 18 }}>
+          <div style={{ width: 80, height: 80, borderRadius: 20, overflow: "hidden", border: "2px solid #E2E8F0", flexShrink: 0, background: "linear-gradient(135deg,#667eea,#764ba2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            {logoUrl
+              ? <img src={logoUrl} alt="Logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              : <span style={{ fontSize: 28, fontWeight: 900, color: "#fff" }}>{(salonName || "S").slice(0, 1).toUpperCase()}</span>
+            }
+          </div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#0F172A", marginBottom: 4 }}>{salonName || "Your Salon"}</div>
+            <div style={{ fontSize: 11.5, color: "#94A3B8" }}>This is how clients see your salon on the booking page</div>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: "14px" }}>
           <label htmlFor="salon-name" style={labelStyle}>Salon Name</label>
           <input id="salon-name" value={salonName} onChange={e => setSalonName(e.target.value)} style={inputStyle} />
         </div>
+
+        <div style={{ marginBottom: "14px" }}>
+          <label htmlFor="salon-logo" style={labelStyle}>Logo URL <span style={{ color: "#94A3B8", fontWeight: 400 }}>(paste image link)</span></label>
+          <input
+            id="salon-logo"
+            type="url"
+            value={logoUrl}
+            onChange={e => setLogoUrl(e.target.value)}
+            placeholder="https://example.com/your-logo.png"
+            style={{ ...inputStyle, maxWidth: "420px" }}
+          />
+          <p style={{ fontSize: "11.5px", color: "#94A3B8", margin: "6px 0 0" }}>
+            💡 Upload to <a href="https://imgbb.com" target="_blank" rel="noopener" style={{ color: "#4F6EF7" }}>imgbb.com</a> or <a href="https://imgur.com" target="_blank" rel="noopener" style={{ color: "#4F6EF7" }}>imgur.com</a> and paste the direct image link here.
+          </p>
+        </div>
+
+        <div style={{ marginBottom: "16px" }}>
+          <label htmlFor="salon-desc" style={labelStyle}>Description <span style={{ color: "#94A3B8", fontWeight: 400 }}>(optional)</span></label>
+          <input
+            id="salon-desc"
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            placeholder="e.g. Premium hair salon in Manchester city centre"
+            style={{ ...inputStyle, maxWidth: "420px" }}
+          />
+        </div>
+
         <button onClick={handleSaveBrand} disabled={saving} {...saveBtn(saved, saving, "Save Brand")} />
       </div>
 
