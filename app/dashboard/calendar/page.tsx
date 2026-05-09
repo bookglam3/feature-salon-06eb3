@@ -169,7 +169,7 @@ function CalendarContent() {
                 onMouseEnter={e => { if (!isToday) e.currentTarget.style.borderColor = "#C7D2FE"; }}
                 onMouseLeave={e => { if (!isToday) e.currentTarget.style.borderColor = "#F1F5F9"; }}
               >
-                <div style={{ fontSize: 12, fontWeight: isToday ? 900 : 600, color: isToday ? "#4F46E5" : "#0F172A", marginBottom: 5, display: "inline-flex", alignItems: "center", justifyContent: "center", width: 22, height: 22, borderRadius: "50%", background: isToday ? "#6366F1" : "transparent", color: isToday ? "#fff" : "#0F172A" }}>{day.getDate()}</div>
+                <div style={{ fontSize: 12, fontWeight: isToday ? 900 : 600, marginBottom: 5, display: "inline-flex", alignItems: "center", justifyContent: "center", width: 22, height: 22, borderRadius: "50%", background: isToday ? "#6366F1" : "transparent", color: isToday ? "#fff" : "#0F172A" }}>{day.getDate()}</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   {dayAppts.slice(0, 3).map(a => {
                     const sc = STATUS_COLORS[a.status] || STATUS_COLORS.pending;
