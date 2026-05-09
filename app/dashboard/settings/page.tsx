@@ -137,8 +137,10 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [salonName, setSalonName] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
+  const [logoUrlInput, setLogoUrlInput] = useState("");
   const [description, setDescription] = useState("");
   const [logoUploading, setLogoUploading] = useState(false);
+  const [logoError, setLogoError] = useState("");
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [services, setServices] = useState<any[]>([]);
   const [newService, setNewService] = useState({ name: "", price: "", duration: "" });
@@ -170,6 +172,7 @@ export default function SettingsPage() {
       setSalon(salonData);
       setSalonName(salonData?.name || "");
       setLogoUrl(salonData?.logo_url || "");
+      setLogoUrlInput(salonData?.logo_url || "");
       setDescription(salonData?.description || "");
       setRemindersEnabled(salonData?.reminders_enabled ?? true);
       setReviewLink(salonData?.review_link || "");
@@ -193,33 +196,37 @@ export default function SettingsPage() {
   const handleSaveBrand = async () => {
     if (!salon) return;
     setSaving(true);
+    // Use storage URL first, then manual URL input, then null
+    const finalLogoUrl = (logoUrl && !logoUrl.startsWith("data:")) ? logoUrl
+      : (logoUrlInput.trim() || null);
     await supabase.from("salons").update({
       name: salonName,
-      logo_url: logoUrl || null,
+      logo_url: finalLogoUrl,
       description: description || null,
     }).eq("id", salon.id);
+    if (finalLogoUrl) setLogoUrl(finalLogoUrl);
     setSaved(true); setSaving(false);
     setTimeout(() => setSaved(false), 2000);
   };
 
   const handleLogoUpload = async (file: File) => {
     if (!salon) return;
-    if (!file.type.startsWith("image/")) { alert("Please select an image file."); return; }
-    if (file.size > 5 * 1024 * 1024) { alert("Image must be less than 5MB."); return; }
+    if (!file.type.startsWith("image/")) { setLogoError("Please select an image file."); return; }
+    if (file.size > 5 * 1024 * 1024) { setLogoError("Image must be less than 5MB."); return; }
+    setLogoError("");
     setLogoUploading(true);
     const ext = file.name.split(".").pop();
     const path = `salon-logos/${salon.id}/logo.${ext}`;
     const { error: upErr } = await supabase.storage.from("salon-assets").upload(path, file, { upsert: true, contentType: file.type });
     if (upErr) {
-      // If bucket doesn't exist, fall back to base64 preview
-      const reader = new FileReader();
-      reader.onload = e => { setLogoUrl(e.target?.result as string); };
-      reader.readAsDataURL(file);
       setLogoUploading(false);
+      setLogoError("Storage upload failed. Please create the 'salon-assets' bucket in Supabase Storage, or paste your logo URL below.");
       return;
     }
     const { data: urlData } = supabase.storage.from("salon-assets").getPublicUrl(path);
-    setLogoUrl(urlData.publicUrl + "?t=" + Date.now());
+    const publicUrl = urlData.publicUrl + "?t=" + Date.now();
+    setLogoUrl(publicUrl);
+    setLogoUrlInput(publicUrl);
     setLogoUploading(false);
   };
 
@@ -378,7 +385,7 @@ export default function SettingsPage() {
                 {logoUploading ? "⏳ Uploading..." : "📤 Upload Logo"}
               </button>
               {logoUrl && (
-                <button type="button" onClick={() => setLogoUrl("")} style={{ fontSize: 12, color: "#EF4444", background: "none", border: "none", cursor: "pointer", padding: 0 }}>✕ Remove logo</button>
+                <button type="button" onClick={() => { setLogoUrl(""); setLogoUrlInput(""); }} style={{ fontSize: 12, color: "#EF4444", background: "none", border: "none", cursor: "pointer", padding: 0 }}>✕ Remove logo</button>
               )}
               <p style={{ fontSize: 11, color: "#94A3B8", margin: "8px 0 0", lineHeight: 1.5 }}>PNG, JPG, WEBP · Max 5MB<br />Click or drag & drop on the circle</p>
             </div>
@@ -392,7 +399,33 @@ export default function SettingsPage() {
             style={{ display: "none" }}
             onChange={e => { const f = e.target.files?.[0]; if (f) handleLogoUpload(f); e.target.value = ""; }}
           />
+
+          {/* Error message */}
+          {logoError && (
+            <div style={{ marginTop: 10, padding: "10px 14px", background: "#FEF2F2", border: "1.5px solid #FECACA", borderRadius: 10, fontSize: 12.5, color: "#DC2626", lineHeight: 1.6 }}>
+              ⚠️ {logoError}
+            </div>
+          )}
+
+          {/* Fallback: paste logo URL directly */}
+          <div style={{ marginTop: 14 }}>
+            <label style={{ ...labelStyle, marginBottom: 4 }}>
+              Or paste logo URL directly <span style={{ color: "#94A3B8", fontWeight: 400 }}>(if upload doesn't work)</span>
+            </label>
+            <input
+              id="logo-url-input"
+              type="url"
+              placeholder="https://example.com/your-logo.png"
+              value={logoUrlInput}
+              onChange={e => {
+                setLogoUrlInput(e.target.value);
+                if (e.target.value.trim()) setLogoUrl(e.target.value.trim());
+              }}
+              style={{ ...inputStyle, maxWidth: "420px" }}
+            />
+          </div>
         </div>
+
 
         <div style={{ marginBottom: "14px" }}>
           <label htmlFor="salon-name" style={labelStyle}>Salon Name</label>
