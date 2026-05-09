@@ -66,7 +66,9 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
 
   return (
     <aside style={{
-      width: "var(--sidebar-w)", background: "#fff",
+      width: "100%",
+      maxWidth: "var(--sidebar-w)",
+      background: "#fff",
       borderRight: "1px solid var(--border)",
       display: "flex", flexDirection: "column",
       height: "100%", overflow: "hidden",
@@ -86,10 +88,19 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
         {onClose && (
           <button
             onClick={onClose}
-            style={{ background: "var(--slate-100)", border: "none", cursor: "pointer", width: 26, height: 26, borderRadius: "50%", fontSize: 12, color: "var(--text-2)", display: "flex", alignItems: "center", justifyContent: "center" }}
+            style={{
+              background: "var(--slate-100)", border: "none", cursor: "pointer",
+              width: 32, height: 32, borderRadius: "50%",
+              fontSize: 14, color: "var(--text-2)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              transition: "background 0.12s",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "var(--slate-200)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "var(--slate-100)"; }}
           >✕</button>
         )}
       </div>
+
 
       {/* Nav */}
       <nav style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "8px 8px", maxHeight: "calc(100vh - 120px)" }}>

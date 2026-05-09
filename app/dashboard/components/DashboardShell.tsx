@@ -32,28 +32,39 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
       <style>{`
         :root { --sidebar-w: 240px; }
         .ds-layout { display: flex; min-height: 100vh; background: var(--bg); }
+
+        /* ── Sidebar ── */
         .ds-sidebar-wrap {
           position: fixed; top: 0; left: 0; bottom: 0;
-          width: var(--sidebar-w); z-index: 50;
+          width: 100vw;
+          max-width: 100vw;
+          z-index: 50;
           transform: translateX(-100%);
-          transition: transform 0.24s cubic-bezier(0.4,0,0.2,1);
+          transition: transform 0.26s cubic-bezier(0.4,0,0.2,1);
           will-change: transform;
         }
         .ds-sidebar-wrap.open { transform: translateX(0); }
+
+        /* ── Overlay ── */
         .ds-overlay {
-          display: none; position: fixed; inset: 0;
-          background: rgba(15,23,42,0.4); backdrop-filter: blur(4px);
+          display: none;
+          position: fixed; inset: 0;
+          background: rgba(15,23,42,0.5);
+          backdrop-filter: blur(4px);
           -webkit-backdrop-filter: blur(4px);
           z-index: 49;
-          animation: fadeOverlay 0.2s ease;
         }
-        @keyframes fadeOverlay { from { opacity: 0; } to { opacity: 1; } }
-        .ds-overlay.open { display: block; }
-        .ds-main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
-        .ds-content { flex: 1; overflow-y: auto; padding-bottom: 70px; }
+        .ds-overlay.open { display: block; animation: fadeOverlay 0.2s ease; }
+        @keyframes fadeOverlay { from { opacity:0; } to { opacity:1; } }
 
+        /* ── Main ── */
+        .ds-main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+        .ds-content { flex: 1; overflow-y: auto; padding-bottom: 70px; -webkit-overflow-scrolling: touch; }
+
+        /* ── Desktop ── */
         @media (min-width: 768px) {
           .ds-sidebar-wrap {
+            width: var(--sidebar-w);
             position: sticky; top: 0; height: 100vh;
             transform: none !important; flex-shrink: 0;
           }
