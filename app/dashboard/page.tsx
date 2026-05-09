@@ -303,20 +303,20 @@ export default function DashboardPage() {
         <HamburgerBtn onClick={() => { }} />
         <div>
           <div style={{ fontSize: 14.5, fontWeight: 800, color: "#0F172A", letterSpacing: "-0.4px" }}>{greeting}, {salon?.name?.split(" ")[0]}</div>
-          <div style={{ fontSize: 11.5, color: "#94A3B8", marginTop: 1 }}>{now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
+          <div className="dash-greeting-date" style={{ fontSize: 11.5, color: "#94A3B8", marginTop: 1 }}>{now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         {/* Plan badge */}
-        <div style={{ padding: "5px 14px", borderRadius: 99, background: planInfo.bg, border: `1.5px solid ${planInfo.border}`, fontSize: 10.5, fontWeight: 900, color: planInfo.color, letterSpacing: "1px" }}>{planInfo.badge}</div>
+        <div className="dash-topbar-badge" style={{ padding: "5px 14px", borderRadius: 99, background: planInfo.bg, border: `1.5px solid ${planInfo.border}`, fontSize: 10.5, fontWeight: 900, color: planInfo.color, letterSpacing: "1px" }}>{planInfo.badge}</div>
         {/* Export */}
-        <button onClick={handleExportCSV} title="Export CSV"
+        <button onClick={handleExportCSV} title="Export CSV" className="dash-topbar-export"
           style={{ width: 38, height: 38, borderRadius: 10, background: "#F8FAFC", border: "1.5px solid #E2E8F0", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 17, transition: "all 0.15s" }}
           onMouseEnter={e => { e.currentTarget.style.background = "#EEF2FF"; e.currentTarget.style.borderColor = "#6366F1"; }}
           onMouseLeave={e => { e.currentTarget.style.background = "#F8FAFC"; e.currentTarget.style.borderColor = "#E2E8F0"; }}
         >📥</button>
         {/* New Booking */}
-        <button onClick={() => setShowModal(true)}
+        <button onClick={() => setShowModal(true)} className="dash-topbar-newbtn"
           style={{ display: "flex", alignItems: "center", gap: 6, background: "linear-gradient(135deg,#6366F1 0%,#4F46E5 100%)", color: "#fff", fontSize: 13.5, fontWeight: 800, padding: "10px 22px", borderRadius: 12, border: "none", cursor: "pointer", boxShadow: "0 4px 14px rgba(99,102,241,0.35)", whiteSpace: "nowrap", letterSpacing: "-0.2px", transition: "all 0.18s" }}
           onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(99,102,241,0.45)"; }}
           onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 4px 14px rgba(99,102,241,0.35)"; }}
@@ -328,10 +328,38 @@ export default function DashboardPage() {
   /* ─────────────────────────────────────────────────────────────── */
   return (
     <DashboardShell salonName={salon?.name} topbar={Topbar}>
-      <div style={{ padding: "28px 24px", maxWidth: 1360, margin: "0 auto" }}>
+      <style>{`
+        @media(max-width:640px){
+          .dash-wrap{padding:14px 12px!important}
+          .dash-stats{grid-template-columns:repeat(2,1fr)!important;gap:10px!important}
+          .dash-status-bar{grid-template-columns:repeat(3,1fr)!important;gap:8px!important}
+          .dash-status-bar>div{padding:10px 10px!important}
+          .dash-status-bar .stat-num{font-size:18px!important}
+          .dash-banner{padding:20px 18px!important;border-radius:16px!important}
+          .dash-banner h1{font-size:22px!important;letter-spacing:-0.5px!important}
+          .dash-banner-meta{font-size:12px!important}
+          .dash-banner-btns{gap:8px!important}
+          .dash-banner-btns button,.dash-banner-btns a{padding:8px 12px!important;font-size:12px!important}
+          .dash-topbar-badge{display:none!important}
+          .dash-topbar-export{display:none!important}
+          .dash-topbar-newbtn{padding:9px 14px!important;font-size:13px!important}
+          .dash-greeting-date{display:none!important}
+          .dash-quick-scroll{-webkit-overflow-scrolling:touch;scrollbar-width:none}
+          .dash-quick-scroll::-webkit-scrollbar{display:none}
+          .dash-quick-scroll>button{min-width:70px!important;padding:12px 8px!important}
+          .dash-appt-row{display:none!important}
+          .dash-appt-card{display:flex!important}
+          .dash-table-head{display:none!important}
+          .dash-table-footer{display:none!important}
+        }
+        @media(min-width:641px){
+          .dash-appt-card{display:none!important}
+        }
+      `}</style>
+      <div className="dash-wrap" style={{ padding: "28px 24px", maxWidth: 1360, margin: "0 auto" }}>
 
         {/* ── Welcome Banner ────────────────────────────────────── */}
-        <div style={{ background: "linear-gradient(135deg,#0F0B2D 0%,#1E1B4B 35%,#3730A3 65%,#6366F1 100%)", borderRadius: 24, padding: "32px 36px", marginBottom: 24, position: "relative", overflow: "hidden", boxShadow: "0 16px 48px rgba(99,102,241,0.3)" }}>
+        <div className="dash-banner" style={{ background: "linear-gradient(135deg,#0F0B2D 0%,#1E1B4B 35%,#3730A3 65%,#6366F1 100%)", borderRadius: 24, padding: "32px 36px", marginBottom: 24, position: "relative", overflow: "hidden", boxShadow: "0 16px 48px rgba(99,102,241,0.3)" }}>
           {/* decorative circles */}
           <div style={{ position: "absolute", top: -50, right: -50, width: 220, height: 220, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
           <div style={{ position: "absolute", bottom: -80, right: 100, width: 280, height: 280, borderRadius: "50%", background: "rgba(255,255,255,0.03)" }} />
@@ -341,11 +369,11 @@ export default function DashboardPage() {
             <div>
               <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.4)", letterSpacing: "3px", textTransform: "uppercase", marginBottom: 8 }}>Salon Dashboard</div>
               <h1 style={{ fontSize: 30, fontWeight: 900, color: "#fff", letterSpacing: "-1px", margin: 0, lineHeight: 1.1 }}>{salon?.name}</h1>
-              <p style={{ fontSize: 13.5, color: "rgba(255,255,255,0.55)", margin: 0, marginTop: 8 }}>
+              <p className="dash-banner-meta" style={{ fontSize: 13.5, color: "rgba(255,255,255,0.55)", margin: 0, marginTop: 8 }}>
                 {todayAppts.length} appointment{todayAppts.length !== 1 ? "s" : ""} today · £{revenue} earned so far
               </p>
             </div>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <div className="dash-banner-btns" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <button onClick={handleCopyLink}
                 style={{ padding: "10px 20px", background: copied ? "rgba(16,185,129,0.25)" : "rgba(255,255,255,0.1)", color: "#fff", border: `1.5px solid ${copied ? "rgba(16,185,129,0.6)" : "rgba(255,255,255,0.2)"}`, borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.15s", backdropFilter: "blur(8px)" }}>
                 {copied ? "✓ Copied!" : "🔗 Copy Link"}
@@ -363,7 +391,7 @@ export default function DashboardPage() {
         </div>
 
         {/* ── 6 Stat Cards ────────────────────────────────────────── */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, marginBottom: 20 }}>
+        <div className="dash-stats" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, marginBottom: 20 }}>
           <MiniStat label="Today Bookings" value={todayAppts.length} color="#6366F1" icon="📅" sub={`${confirmedAppts.filter(a => new Date(a.date_time).toDateString() === todayStr).length} confirmed`} />
           <MiniStat label="Revenue Today" value={`£${revenue}`} color="#10B981" icon="💷" sub="confirmed only" />
           <MiniStat label="Upcoming" value={upcomingAppts.length} color="#8B5CF6" icon="⏰" sub="scheduled ahead" />
@@ -375,7 +403,7 @@ export default function DashboardPage() {
         {/* ── Quick Actions ──────────────────────────────────────── */}
         <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, padding: "20px 22px", marginBottom: 20, boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
           <div style={{ fontSize: 11, fontWeight: 900, color: "#94A3B8", letterSpacing: "1.2px", textTransform: "uppercase", marginBottom: 16 }}>Quick Actions</div>
-          <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 2 }}>
+          <div className="dash-quick-scroll" style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 2 }}>
             <QuickAction icon="📅" label="New Booking" color="#6366F1" onClick={() => setShowModal(true)} />
             <QuickAction icon="🎁" label="Add Offer" color="#10B981" onClick={() => setShowOfferModal(true)} />
             <QuickAction icon="👤" label="Add Client" color="#8B5CF6" onClick={() => router.push("/dashboard/clients")} />
@@ -386,7 +414,7 @@ export default function DashboardPage() {
         </div>
 
         {/* ── Status Summary Bar ────────────────────────────────── */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 20 }}>
+        <div className="dash-status-bar" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, marginBottom: 20 }}>
           {[
             { label: "Confirmed", count: confirmedAppts.length, color: "#10B981", bg: "#ECFDF5", border: "#A7F3D0", icon: "✅" },
             { label: "Pending", count: pendingAppts.length, color: "#F59E0B", bg: "#FEF9C3", border: "#FDE68A", icon: "⏳" },
@@ -398,7 +426,7 @@ export default function DashboardPage() {
             >
               <span style={{ fontSize: 22 }}>{s.icon}</span>
               <div>
-                <div style={{ fontSize: 22, fontWeight: 900, color: s.color, letterSpacing: "-1px" }}>{s.count}</div>
+                <div className="stat-num" style={{ fontSize: 22, fontWeight: 900, color: s.color, letterSpacing: "-1px" }}>{s.count}</div>
                 <div style={{ fontSize: 11, fontWeight: 700, color: s.color, opacity: 0.8 }}>{s.label}</div>
               </div>
             </div>
@@ -471,8 +499,9 @@ export default function DashboardPage() {
                   <EmptyState icon="📋" title="No appointments found" description={searchQuery ? "Try a different search term" : "No appointments match this filter"} />
                 ) : (
                   <div style={{ overflowX: "auto" }}>
+                    {/* Desktop table */}
                     <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 600 }}>
-                      <thead>
+                      <thead className="dash-table-head">
                         <tr style={{ background: "#F8FAFC" }}>
                           {["Status", "Client", "Service", "Staff", "Date & Time", "Amount", "Actions"].map(h => (
                             <th key={h} style={{ fontSize: 10, fontWeight: 900, color: "#94A3B8", textAlign: "left", padding: "11px 16px", letterSpacing: "0.8px", textTransform: "uppercase", borderBottom: "1px solid #F1F5F9" }}>{h}</th>
@@ -481,38 +510,61 @@ export default function DashboardPage() {
                       </thead>
                       <tbody>
                         {filteredAppts.map(a => (
-                          <tr key={a.id} style={{ transition: "background 0.1s" }}
-                            onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = "#F8FAFC"; }}
-                            onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = "transparent"; }}
-                          >
-                            <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9" }}><StatusPill status={a.status} /></td>
-                            <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9", fontSize: 13.5, fontWeight: 800, color: "#0F172A" }}>{a.client_name}</td>
-                            <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9", fontSize: 13, color: "#475569" }}>{a.services?.name || "—"}</td>
-                            <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9", fontSize: 13, color: "#94A3B8" }}>{a.staff?.name || "—"}</td>
-                            <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9", fontSize: 12.5, color: "#475569", whiteSpace: "nowrap" }}>{new Date(a.date_time).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</td>
-                            <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9", fontSize: 13, fontWeight: 800, color: "#10B981" }}>{a.services?.price ? `£${a.services.price}` : "—"}</td>
-                            <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9" }}>
-                              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                                {a.status !== "confirmed" && (
-                                  <button onClick={() => handleUpdateStatus(a.id, "confirmed")} disabled={updatingId === a.id}
-                                    style={{ fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 7, border: "1.5px solid #A7F3D0", background: "#ECFDF5", color: "#059669", cursor: "pointer", transition: "all 0.12s", opacity: updatingId === a.id ? 0.5 : 1 }}>✓</button>
-                                )}
-                                {a.status !== "cancelled" && (
-                                  <button onClick={() => handleUpdateStatus(a.id, "cancelled")} disabled={updatingId === a.id}
-                                    style={{ fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 7, border: "1.5px solid #FECACA", background: "#FEF2F2", color: "#DC2626", cursor: "pointer", transition: "all 0.12s", opacity: updatingId === a.id ? 0.5 : 1 }}>✕</button>
-                                )}
-                                <button onClick={() => handleDeleteAppt(a.id)}
-                                  style={{ fontSize: 13, padding: "4px 7px", borderRadius: 7, border: "1.5px solid #E2E8F0", background: "#F8FAFC", color: "#94A3B8", cursor: "pointer", transition: "all 0.12s" }}
-                                  onMouseEnter={e => { e.currentTarget.style.borderColor = "#FECACA"; e.currentTarget.style.color = "#EF4444"; }}
-                                  onMouseLeave={e => { e.currentTarget.style.borderColor = "#E2E8F0"; e.currentTarget.style.color = "#94A3B8"; }}
-                                >🗑</button>
-                              </div>
-                            </td>
-                          </tr>
+                          <>
+                            {/* Desktop row */}
+                            <tr key={`row-${a.id}`} className="dash-appt-row" style={{ transition: "background 0.1s" }}
+                              onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = "#F8FAFC"; }}
+                              onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = "transparent"; }}
+                            >
+                              <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9" }}><StatusPill status={a.status} /></td>
+                              <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9", fontSize: 13.5, fontWeight: 800, color: "#0F172A" }}>{a.client_name}</td>
+                              <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9", fontSize: 13, color: "#475569" }}>{a.services?.name || "—"}</td>
+                              <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9", fontSize: 13, color: "#94A3B8" }}>{a.staff?.name || "—"}</td>
+                              <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9", fontSize: 12.5, color: "#475569", whiteSpace: "nowrap" }}>{new Date(a.date_time).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</td>
+                              <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9", fontSize: 13, fontWeight: 800, color: "#10B981" }}>{a.services?.price ? `£${a.services.price}` : "—"}</td>
+                              <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9" }}>
+                                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                                  {a.status !== "confirmed" && (
+                                    <button onClick={() => handleUpdateStatus(a.id, "confirmed")} disabled={updatingId === a.id}
+                                      style={{ fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 7, border: "1.5px solid #A7F3D0", background: "#ECFDF5", color: "#059669", cursor: "pointer", opacity: updatingId === a.id ? 0.5 : 1 }}>✓</button>
+                                  )}
+                                  {a.status !== "cancelled" && (
+                                    <button onClick={() => handleUpdateStatus(a.id, "cancelled")} disabled={updatingId === a.id}
+                                      style={{ fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 7, border: "1.5px solid #FECACA", background: "#FEF2F2", color: "#DC2626", cursor: "pointer", opacity: updatingId === a.id ? 0.5 : 1 }}>✕</button>
+                                  )}
+                                  <button onClick={() => handleDeleteAppt(a.id)}
+                                    style={{ fontSize: 13, padding: "4px 7px", borderRadius: 7, border: "1.5px solid #E2E8F0", background: "#F8FAFC", color: "#94A3B8", cursor: "pointer" }}
+                                    onMouseEnter={e => { e.currentTarget.style.borderColor = "#FECACA"; e.currentTarget.style.color = "#EF4444"; }}
+                                    onMouseLeave={e => { e.currentTarget.style.borderColor = "#E2E8F0"; e.currentTarget.style.color = "#94A3B8"; }}
+                                  >🗑</button>
+                                </div>
+                              </td>
+                            </tr>
+                            {/* Mobile card */}
+                            <tr key={`card-${a.id}`} className="dash-appt-card" style={{ display: "none" }}>
+                              <td colSpan={7} style={{ padding: "10px 16px", borderBottom: "1px solid #F1F5F9" }}>
+                                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontSize: 14, fontWeight: 800, color: "#0F172A", marginBottom: 2 }}>{a.client_name}</div>
+                                    <div style={{ fontSize: 12, color: "#64748B" }}>{a.services?.name || "No service"}{a.staff?.name ? ` · ${a.staff.name}` : ""}</div>
+                                    <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 2 }}>{new Date(a.date_time).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}{a.services?.price ? ` · £${a.services.price}` : ""}</div>
+                                  </div>
+                                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+                                    <StatusPill status={a.status} />
+                                    <div style={{ display: "flex", gap: 5 }}>
+                                      {a.status !== "confirmed" && <button onClick={() => handleUpdateStatus(a.id, "confirmed")} style={{ fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 7, border: "1.5px solid #A7F3D0", background: "#ECFDF5", color: "#059669", cursor: "pointer" }}>✓</button>}
+                                      {a.status !== "cancelled" && <button onClick={() => handleUpdateStatus(a.id, "cancelled")} style={{ fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 7, border: "1.5px solid #FECACA", background: "#FEF2F2", color: "#DC2626", cursor: "pointer" }}>✕</button>}
+                                      <button onClick={() => handleDeleteAppt(a.id)} style={{ fontSize: 13, padding: "4px 7px", borderRadius: 7, border: "1.5px solid #E2E8F0", background: "#F8FAFC", color: "#94A3B8", cursor: "pointer" }}>🗑</button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          </>
                         ))}
                       </tbody>
                     </table>
-                    <div style={{ padding: "12px 22px", fontSize: 12, color: "#94A3B8", borderTop: "1px solid #F1F5F9" }}>
+                    <div className="dash-table-footer" style={{ padding: "12px 22px", fontSize: 12, color: "#94A3B8", borderTop: "1px solid #F1F5F9" }}>
                       Showing {filteredAppts.length} of {appointments.length} total appointments
                     </div>
                   </div>
