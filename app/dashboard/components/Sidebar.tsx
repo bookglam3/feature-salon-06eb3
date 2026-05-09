@@ -9,6 +9,7 @@ const NAV = [
       { label: "Dashboard",    path: "/dashboard",              emoji: "◻" },
       { label: "Calendar",     path: "/dashboard/calendar",     emoji: "🗓️" },
       { label: "Bookings",     path: "/dashboard/bookings",     emoji: "📅" },
+      { label: "Waitlist",     path: "/dashboard/waitlist",     emoji: "⏳" },
       { label: "Clients",      path: "/dashboard/clients",      emoji: "👤" },
       { label: "Staff",        path: "/dashboard/staff",        emoji: "✂️" },
     ],
@@ -17,7 +18,8 @@ const NAV = [
     group: "Finance",
     items: [
       { label: "Payments",     path: "/dashboard/payments",     emoji: "💳" },
-      { label: "Invoices",     path: "/dashboard/invoices",     emoji: "🧭" },
+      { label: "Tips",         path: "/dashboard/tips",         emoji: "💸" },
+      { label: "Invoices",     path: "/dashboard/invoices",     emoji: "🧾" },
       { label: "Reports",      path: "/dashboard/reports",      emoji: "📊" },
       { label: "Gift Cards",   path: "/dashboard/gift-cards",   emoji: "🎁" },
     ],
@@ -27,8 +29,16 @@ const NAV = [
     items: [
       { label: "Reviews",      path: "/dashboard/reviews",      emoji: "⭐" },
       { label: "Loyalty",      path: "/dashboard/loyalty",      emoji: "🏆" },
+      { label: "Referrals",    path: "/dashboard/referrals",    emoji: "🔗" },
       { label: "Broadcast",    path: "/dashboard/broadcast",    emoji: "📢" },
+      { label: "Automations",  path: "/dashboard/automations",  emoji: "🤖" },
       { label: "Client Portal", path: "/dashboard/client-portal", emoji: "🔐" },
+    ],
+  },
+  {
+    group: "Content",
+    items: [
+      { label: "Gallery",      path: "/dashboard/gallery",      emoji: "📸" },
     ],
   },
   {
@@ -39,6 +49,7 @@ const NAV = [
     ],
   },
 ];
+
 
 interface SidebarProps {
   salonName?: string;
