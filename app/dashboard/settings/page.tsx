@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
@@ -138,6 +138,8 @@ export default function SettingsPage() {
   const [salonName, setSalonName] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [description, setDescription] = useState("");
+  const [logoUploading, setLogoUploading] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const [services, setServices] = useState<any[]>([]);
   const [newService, setNewService] = useState({ name: "", price: "", duration: "" });
 
@@ -198,6 +200,27 @@ export default function SettingsPage() {
     }).eq("id", salon.id);
     setSaved(true); setSaving(false);
     setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handleLogoUpload = async (file: File) => {
+    if (!salon) return;
+    if (!file.type.startsWith("image/")) { alert("Please select an image file."); return; }
+    if (file.size > 5 * 1024 * 1024) { alert("Image must be less than 5MB."); return; }
+    setLogoUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `salon-logos/${salon.id}/logo.${ext}`;
+    const { error: upErr } = await supabase.storage.from("salon-assets").upload(path, file, { upsert: true, contentType: file.type });
+    if (upErr) {
+      // If bucket doesn't exist, fall back to base64 preview
+      const reader = new FileReader();
+      reader.onload = e => { setLogoUrl(e.target?.result as string); };
+      reader.readAsDataURL(file);
+      setLogoUploading(false);
+      return;
+    }
+    const { data: urlData } = supabase.storage.from("salon-assets").getPublicUrl(path);
+    setLogoUrl(urlData.publicUrl + "?t=" + Date.now());
+    setLogoUploading(false);
   };
 
   const handleAddService = async (e: React.FormEvent) => {
@@ -303,21 +326,72 @@ export default function SettingsPage() {
       <div style={cardStyle}>
         <div style={{ fontSize: "14px", fontWeight: 600, color: "#0F172A", marginBottom: "4px" }}>🎨 Salon Brand</div>
         <p style={{ fontSize: "13px", color: "#64748B", marginBottom: "20px" }}>
-          This will appear on your booking page and in all client communications.
+          Your logo and name appear on the public booking page.
         </p>
 
-        {/* Logo preview */}
-        <div style={{ marginBottom: 20, display: "flex", alignItems: "center", gap: 18 }}>
-          <div style={{ width: 80, height: 80, borderRadius: 20, overflow: "hidden", border: "2px solid #E2E8F0", flexShrink: 0, background: "linear-gradient(135deg,#667eea,#764ba2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            {logoUrl
-              ? <img src={logoUrl} alt="Logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-              : <span style={{ fontSize: 28, fontWeight: 900, color: "#fff" }}>{(salonName || "S").slice(0, 1).toUpperCase()}</span>
-            }
+        {/* Logo upload area */}
+        <div style={{ marginBottom: 24 }}>
+          <label style={labelStyle}>Salon Logo</label>
+          <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
+
+            {/* Logo preview circle */}
+            <div
+              onClick={() => logoInputRef.current?.click()}
+              style={{ width: 96, height: 96, borderRadius: 22, overflow: "hidden", border: "2.5px dashed #CBD5E1", flexShrink: 0, background: "linear-gradient(135deg,#667eea,#764ba2)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative", transition: "border-color 0.2s" }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "#4F6EF7"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "#CBD5E1"; }}
+              onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = "#4F6EF7"; }}
+              onDragLeave={e => { e.currentTarget.style.borderColor = "#CBD5E1"; }}
+              onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleLogoUpload(f); }}
+            >
+              {logoUploading ? (
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ width: 24, height: 24, border: "3px solid rgba(255,255,255,0.3)", borderTop: "3px solid white", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 4px" }} />
+                  <span style={{ fontSize: 10, color: "#fff", fontWeight: 700 }}>Uploading...</span>
+                </div>
+              ) : logoUrl ? (
+                <img src={logoUrl} alt="Logo" style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  onError={e => { (e.target as HTMLImageElement).src = ""; }} />
+              ) : (
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: 28 }}>📸</div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.8)", marginTop: 4, fontWeight: 600 }}>Upload</div>
+                </div>
+              )}
+              {logoUrl && !logoUploading && (
+                <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, transition: "opacity 0.2s" }}
+                  onMouseEnter={e => { e.currentTarget.style.opacity = "1"; }}
+                  onMouseLeave={e => { e.currentTarget.style.opacity = "0"; }}>
+                  <span style={{ color: "#fff", fontSize: 22 }}>✏️</span>
+                </div>
+              )}
+            </div>
+
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#0F172A", marginBottom: 8 }}>{salonName || "Your Salon"}</div>
+              <button
+                type="button"
+                onClick={() => logoInputRef.current?.click()}
+                disabled={logoUploading}
+                style={{ padding: "9px 18px", background: "#EEF2FF", border: "1.5px solid #C7D2FE", borderRadius: 10, fontSize: 13, fontWeight: 700, color: "#4F46E5", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}
+              >
+                {logoUploading ? "⏳ Uploading..." : "📤 Upload Logo"}
+              </button>
+              {logoUrl && (
+                <button type="button" onClick={() => setLogoUrl("")} style={{ fontSize: 12, color: "#EF4444", background: "none", border: "none", cursor: "pointer", padding: 0 }}>✕ Remove logo</button>
+              )}
+              <p style={{ fontSize: 11, color: "#94A3B8", margin: "8px 0 0", lineHeight: 1.5 }}>PNG, JPG, WEBP · Max 5MB<br />Click or drag & drop on the circle</p>
+            </div>
           </div>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#0F172A", marginBottom: 4 }}>{salonName || "Your Salon"}</div>
-            <div style={{ fontSize: 11.5, color: "#94A3B8" }}>This is how clients see your salon on the booking page</div>
-          </div>
+
+          {/* Hidden file input */}
+          <input
+            ref={logoInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={e => { const f = e.target.files?.[0]; if (f) handleLogoUpload(f); e.target.value = ""; }}
+          />
         </div>
 
         <div style={{ marginBottom: "14px" }}>
@@ -325,23 +399,8 @@ export default function SettingsPage() {
           <input id="salon-name" value={salonName} onChange={e => setSalonName(e.target.value)} style={inputStyle} />
         </div>
 
-        <div style={{ marginBottom: "14px" }}>
-          <label htmlFor="salon-logo" style={labelStyle}>Logo URL <span style={{ color: "#94A3B8", fontWeight: 400 }}>(paste image link)</span></label>
-          <input
-            id="salon-logo"
-            type="url"
-            value={logoUrl}
-            onChange={e => setLogoUrl(e.target.value)}
-            placeholder="https://example.com/your-logo.png"
-            style={{ ...inputStyle, maxWidth: "420px" }}
-          />
-          <p style={{ fontSize: "11.5px", color: "#94A3B8", margin: "6px 0 0" }}>
-            💡 Upload to <a href="https://imgbb.com" target="_blank" rel="noopener" style={{ color: "#4F6EF7" }}>imgbb.com</a> or <a href="https://imgur.com" target="_blank" rel="noopener" style={{ color: "#4F6EF7" }}>imgur.com</a> and paste the direct image link here.
-          </p>
-        </div>
-
         <div style={{ marginBottom: "16px" }}>
-          <label htmlFor="salon-desc" style={labelStyle}>Description <span style={{ color: "#94A3B8", fontWeight: 400 }}>(optional)</span></label>
+          <label htmlFor="salon-desc" style={labelStyle}>Description <span style={{ color: "#94A3B8", fontWeight: 400 }}>(shows under salon name on booking page)</span></label>
           <input
             id="salon-desc"
             value={description}
@@ -351,7 +410,8 @@ export default function SettingsPage() {
           />
         </div>
 
-        <button onClick={handleSaveBrand} disabled={saving} {...saveBtn(saved, saving, "Save Brand")} />
+        <style>{`@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}`}</style>
+        <button onClick={handleSaveBrand} disabled={saving || logoUploading} {...saveBtn(saved, saving, "Save Brand")} />
       </div>
 
       {/* ── Payment Methods ── */}
