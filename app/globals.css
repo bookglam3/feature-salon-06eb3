@@ -215,4 +215,55 @@ input, select, textarea { font-family: var(--font); }
   .reviews-summary { flex-direction: column; gap: 4px; text-align: center; }
   .footer { padding: 24px 20px; flex-direction: column; text-align: center; }
   .fresha-badge { font-size: 12px; padding: 8px 14px; text-align: center; }
+  .compare-table-wrap { overflow-x: auto; }
+  .compare-table th, .compare-table td { padding: 10px 8px; font-size: 12px; }
+  .locations-grid { grid-template-columns: 1fr; }
+  .footer-links { display: none; }
 }
+
+/* ── Section subtitle ── */
+.section-sub { font-size: 16px; color: #64748B; text-align: center; max-width: 520px; margin: -28px auto 40px; line-height: 1.7; }
+
+/* ── Comparison table ── */
+.compare-table-wrap { max-width: 860px; margin: 0 auto 40px; overflow-x: auto; border-radius: 14px; border: 0.5px solid #E8EAF0; box-shadow: 0 2px 12px rgba(15,23,42,0.06); }
+.compare-table { width: 100%; border-collapse: collapse; background: #fff; font-size: 14px; }
+.compare-table thead { background: #F8FAFC; }
+.compare-table th { padding: 16px 20px; text-align: left; font-size: 12px; font-weight: 700; color: #64748B; letter-spacing: 0.5px; text-transform: uppercase; border-bottom: 0.5px solid #E8EAF0; }
+.compare-table td { padding: 14px 20px; border-bottom: 0.5px solid #F1F5F9; color: #334155; font-size: 13.5px; }
+.compare-table tr:last-child td { border-bottom: none; }
+.compare-table tr:hover td { background: #FAFBFF; }
+.compare-col-feature { background: #EEF2FF; }
+.compare-col-other { color: #64748B; }
+.compare-cell-feature { background: #EEF2FF; text-align: center; }
+.compare-cell-other { text-align: center; }
+.compare-badge-our { display: inline-block; background: #4F6EF7; color: #fff; font-size: 11px; font-weight: 800; padding: 4px 14px; border-radius: 20px; letter-spacing: 0.5px; }
+.compare-check { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: #ECFDF5; color: #059669; font-size: 13px; font-weight: 700; }
+.compare-cross { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: #FEF2F2; color: #DC2626; font-size: 11px; font-weight: 700; }
+.compare-cta { text-align: center; }
+
+/* ── Location cards ── */
+.locations-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 860px; margin: 0 auto; }
+.location-card { background: #fff; border: 0.5px solid #E8EAF0; border-radius: 14px; padding: 32px 28px; text-decoration: none; color: inherit; display: flex; flex-direction: column; gap: 10px; transition: box-shadow 0.2s, transform 0.2s; }
+.location-card:hover { box-shadow: 0 8px 24px rgba(79,110,247,0.12); transform: translateY(-2px); border-color: #C7D2FE; }
+.location-icon { font-size: 32px; }
+.location-card h3 { font-size: 17px; font-weight: 600; color: #0F172A; margin: 0; }
+.location-card p { font-size: 13px; color: #64748B; line-height: 1.6; margin: 0; flex: 1; }
+.location-link { font-size: 13px; font-weight: 600; color: #4F6EF7; }
+
+/* ── FAQ accordion ── */
+.faq-list { max-width: 680px; margin: 0 auto 48px; border: 0.5px solid #E8EAF0; border-radius: 14px; overflow: hidden; background: #fff; }
+.faq-item { border-bottom: 0.5px solid #F1F5F9; }
+.faq-item:last-child { border-bottom: none; }
+.faq-question { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 20px 24px; cursor: pointer; font-size: 15px; font-weight: 500; color: #0F172A; list-style: none; gap: 16px; }
+.faq-question::-webkit-details-marker { display: none; }
+.faq-question::after { content: '+'; font-size: 20px; color: #4F6EF7; flex-shrink: 0; transition: transform 0.2s; }
+details[open] .faq-question::after { transform: rotate(45deg); }
+.faq-answer { padding: 0 24px 20px; font-size: 14px; color: #64748B; line-height: 1.75; }
+.faq-answer p { margin: 0; }
+.faq-cta { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+.faq-cta p { font-size: 15px; color: #64748B; }
+
+/* ── Footer nav links ── */
+.footer-links { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+.footer-links a { font-size: 13px; color: #64748B; text-decoration: none; transition: color 0.15s; }
+.footer-links a:hover { color: #94A3B8; }
