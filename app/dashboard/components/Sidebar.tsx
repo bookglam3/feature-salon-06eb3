@@ -17,6 +17,7 @@ const NAV = [
     group: "Finance",
     items: [
       { label: "Payments",     path: "/dashboard/payments",     emoji: "💳" },
+      { label: "Invoices",     path: "/dashboard/invoices",     emoji: "🧭" },
       { label: "Reports",      path: "/dashboard/reports",      emoji: "📊" },
       { label: "Gift Cards",   path: "/dashboard/gift-cards",   emoji: "🎁" },
     ],
@@ -25,12 +26,15 @@ const NAV = [
     group: "Engagement",
     items: [
       { label: "Reviews",      path: "/dashboard/reviews",      emoji: "⭐" },
+      { label: "Loyalty",      path: "/dashboard/loyalty",      emoji: "🏆" },
+      { label: "Broadcast",    path: "/dashboard/broadcast",    emoji: "📢" },
       { label: "Client Portal", path: "/dashboard/client-portal", emoji: "🔐" },
     ],
   },
   {
     group: "System",
     items: [
+      { label: "Closed Dates", path: "/dashboard/closed-dates", emoji: "🚫" },
       { label: "Settings",     path: "/dashboard/settings",     emoji: "⚙️" },
     ],
   },
