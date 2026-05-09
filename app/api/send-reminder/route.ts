@@ -53,14 +53,23 @@ async function isOptedOut(phone: string | null): Promise<boolean> {
 
 export async function GET(req: Request) {
   // ── Security ──────────────────────────────────────
+  // Accept:
+  //  1. Vercel cron (Authorization: Bearer <CRON_SECRET> header) — auto-added by Vercel
+  //  2. Manual test via ?secret=YOUR_CRON_SECRET query param
   const { searchParams } = new URL(req.url);
-  const secret = searchParams.get("secret");
-  if (!process.env.CRON_SECRET) {
+  const querySecret = searchParams.get("secret");
+  const authHeader  = req.headers.get("authorization");
+  const bearerSecret = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
     console.error("[Reminder] ❌ CRON_SECRET env var is not set!");
-    return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
+    return NextResponse.json({ error: "Server misconfiguration: CRON_SECRET missing" }, { status: 500 });
   }
-  if (secret !== process.env.CRON_SECRET) {
-    console.warn(`[Reminder] ❌ Unauthorised attempt. Got: ${secret?.slice(0,8)}...`);
+
+  const isAuthorised = querySecret === cronSecret || bearerSecret === cronSecret;
+  if (!isAuthorised) {
+    console.warn(`[Reminder] ❌ Unauthorised. query=${querySecret?.slice(0,8)} bearer=${bearerSecret?.slice(0,8)}`);
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   }
 
