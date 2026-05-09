@@ -647,8 +647,6 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
       {/* ── New Booking Modal ─────────────────────────────────────── */}
       <Modal open={showModal} onClose={() => setShowModal(false)} title="New Booking">
@@ -689,6 +687,7 @@ export default function DashboardPage() {
         </div>
         <ModalActions><BtnSecondary onClick={() => setShowOfferModal(false)}>Cancel</BtnSecondary><BtnPrimary onClick={handleAddOffer} disabled={!offerForm.title}>Save Offer</BtnPrimary></ModalActions>
       </Modal>
+      </div>
     </DashboardShell>
   );
 }
