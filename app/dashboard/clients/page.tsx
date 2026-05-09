@@ -1,209 +1,324 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { getCurrentUserProfile } from "../../lib/auth";
+
+type SortKey = "name" | "bookings" | "spent" | "lastVisit";
 
 export default function ClientsPage() {
   const router = useRouter();
   const [salon, setSalon] = useState<any>(null);
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedClient, setSelectedClient] = useState<any>(null);
-  const [clientHistory, setClientHistory] = useState<any[]>([]);
-  const [historyLoading, setHistoryLoading] = useState(false);
+  const [search, setSearch] = useState("");
+  const [sortKey, setSortKey] = useState<SortKey>("lastVisit");
+  const [selected, setSelected] = useState<any>(null);
+  const [history, setHistory] = useState<any[]>([]);
+  const [histLoading, setHistLoading] = useState(false);
+  const [note, setNote] = useState("");
+  const [noteSaving, setNoteSaving] = useState(false);
+  const [noteMsg, setNoteMsg] = useState("");
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const profile = await getCurrentUserProfile();
-        if (!profile) { router.push("/login"); return; }
-        setSalon(profile.salon);
+    (async () => {
+      const profile = await getCurrentUserProfile();
+      if (!profile) { router.push("/login"); return; }
+      setSalon(profile.salon);
+      const { data: appts } = await supabase
+        .from("appointments")
+        .select("client_name,client_email,client_phone,id,date_time,status,services(name,price)")
+        .eq("salon_id", profile.salon.id)
+        .order("date_time", { ascending: false });
 
-        const { data: appts } = await supabase
-          .from("appointments")
-          .select("client_name, client_email, client_phone, id, date_time, status, services(name, price)")
-          .eq("salon_id", profile.salon.id)
-          .order("date_time", { ascending: false });
-
-        const clientMap = new Map();
-        (appts || []).forEach((apt: any) => {
-          const key = apt.client_email || apt.client_name;
-          const servicePrice = Array.isArray(apt.services)
-            ? apt.services.reduce((sum: number, s: any) => sum + (Number(s?.price ?? 0)), 0)
-            : Number(apt.services?.price ?? 0);
-
-          if (!clientMap.has(key)) {
-            clientMap.set(key, {
-              client_name: apt.client_name,
-              client_email: apt.client_email,
-              client_phone: apt.client_phone,
-              lastBooking: new Date(apt.date_time),
-              totalBookings: 1,
-              totalSpent: servicePrice,
-            });
-          } else {
-            const client = clientMap.get(key);
-            client.totalBookings += 1;
-            client.totalSpent += servicePrice;
-          }
-        });
-
-        setClients(Array.from(clientMap.values()));
-      } catch (error) {
-        console.error("Error loading clients data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadData();
+      const map = new Map<string, any>();
+      (appts || []).forEach((a: any) => {
+        const key = a.client_email || a.client_name;
+        const price = Array.isArray(a.services)
+          ? a.services.reduce((s: number, x: any) => s + Number(x?.price ?? 0), 0)
+          : Number(a.services?.price ?? 0);
+        const svcName = Array.isArray(a.services) ? a.services[0]?.name : a.services?.name;
+        if (!map.has(key)) {
+          map.set(key, {
+            name: a.client_name, email: a.client_email, phone: a.client_phone,
+            lastVisit: new Date(a.date_time), bookings: 1, spent: price,
+            services: svcName ? { [svcName]: 1 } : {},
+          });
+        } else {
+          const c = map.get(key)!;
+          c.bookings += 1;
+          c.spent += price;
+          if (svcName) c.services[svcName] = (c.services[svcName] || 0) + 1;
+        }
+      });
+      setClients(Array.from(map.values()));
+      setLoading(false);
+    })();
   }, [router]);
 
-  const handleClientClick = async (client: any) => {
-    setSelectedClient(client);
-    setHistoryLoading(true);
-    const { data: history } = await supabase
+  const openClient = async (c: any) => {
+    setSelected(c);
+    setNote(c.note || "");
+    setHistLoading(true);
+    const { data } = await supabase
       .from("appointments")
-      .select("*, services(name, price), staff(name)")
+      .select("*,services(name,price),staff(name)")
       .eq("salon_id", salon.id)
-      .eq("client_email", client.client_email)
+      .eq("client_email", c.email)
       .order("date_time", { ascending: false });
-    setClientHistory(history || []);
-    setHistoryLoading(false);
+    setHistory(data || []);
+    setHistLoading(false);
   };
 
-  const filteredClients = clients.filter(c =>
-    c.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.client_email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const saveNote = async () => {
+    if (!selected) return;
+    setNoteSaving(true);
+    // store note in a client_notes table or just keep in state for now
+    setClients(p => p.map(c => c.email === selected.email ? { ...c, note } : c));
+    setSelected((p: any) => ({ ...p, note }));
+    setNoteMsg("✓ Saved");
+    setTimeout(() => setNoteMsg(""), 2000);
+    setNoteSaving(false);
+  };
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return clients
+      .filter(c => c.name?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q) || c.phone?.includes(q))
+      .sort((a, b) => {
+        if (sortKey === "name") return (a.name || "").localeCompare(b.name || "");
+        if (sortKey === "bookings") return b.bookings - a.bookings;
+        if (sortKey === "spent") return b.spent - a.spent;
+        return new Date(b.lastVisit).getTime() - new Date(a.lastVisit).getTime();
+      });
+  }, [clients, search, sortKey]);
+
+  const topSpender = clients.reduce((max, c) => c.spent > (max?.spent || 0) ? c : max, null);
+  const newThisMonth = clients.filter(c => {
+    const d = new Date(c.lastVisit);
+    const now = new Date();
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }).length;
+  const avgSpend = clients.length ? Math.round(clients.reduce((s, c) => s + c.spent, 0) / clients.length) : 0;
+
+  const favService = (c: any) => {
+    if (!c.services || Object.keys(c.services).length === 0) return null;
+    return Object.entries(c.services).sort((a: any, b: any) => b[1] - a[1])[0][0];
+  };
+
+  const daysSince = (d: Date) => Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
+
+  const statusColor = (s: string) =>
+    s === "confirmed" ? { bg: "#ECFDF5", color: "#059669" }
+    : s === "cancelled" ? { bg: "#FEF2F2", color: "#DC2626" }
+    : { bg: "#FFF7ED", color: "#D97706" };
 
   if (loading) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
-      <div style={{ fontFamily: "Georgia, serif", fontSize: "24px", color: "#4F6EF7" }}>feature</div>
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"60vh" }}>
+      <div style={{ fontSize:24, color:"var(--indigo)", fontWeight:800 }}>feature</div>
     </div>
   );
 
   return (
-    <div style={{ minHeight: "100vh", background: "#F2F4F7" }}>
-      {/* Topbar */}
-      <div style={{ background: "#fff", borderBottom: "0.5px solid #E8EAF0", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div>
-          <div style={{ fontSize: "17px", fontWeight: 500, color: "#0F172A" }}>Clients</div>
-          <div style={{ fontSize: "12px", color: "#94A3B8", marginTop: "2px" }}>{clients.length} total clients</div>
-        </div>
-        <input
-          type="text" placeholder="Search clients..." value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ padding: "8px 12px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "6px", width: "200px", fontFamily: "inherit" }}
-        />
+    <div style={{ padding:"24px", maxWidth:1400, margin:"0 auto" }}>
+
+      {/* Stats */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))", gap:14, marginBottom:24 }}>
+        {[
+          { label:"Total Clients", value:clients.length, icon:"👤", color:"#6366F1" },
+          { label:"New This Month", value:newThisMonth, icon:"✨", color:"#10B981" },
+          { label:"Avg Spend", value:`£${avgSpend}`, icon:"💷", color:"#F59E0B" },
+          { label:"Top Spender", value:topSpender ? `£${topSpender.spent}` : "—", icon:"🏆", color:"#EF4444" },
+        ].map(s => (
+          <div key={s.label} style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:"var(--r-lg)", padding:"18px 20px", boxShadow:"var(--shadow-sm)" }}>
+            <div style={{ fontSize:22, marginBottom:6 }}>{s.icon}</div>
+            <div style={{ fontSize:24, fontWeight:800, color:s.color, letterSpacing:"-0.5px" }}>{s.value}</div>
+            <div style={{ fontSize:11.5, color:"var(--text-3)", marginTop:2, fontWeight:600 }}>{s.label}</div>
+          </div>
+        ))}
       </div>
 
-      <div style={{ padding: "24px", display: "flex", gap: "20px" }}>
-        {/* Clients Table */}
-        <div style={{ flex: selectedClient ? "0 0 55%" : "1", background: "#fff", border: "0.5px solid #E8EAF0", borderRadius: "10px", overflow: "hidden" }}>
-          {filteredClients.length === 0 ? (
-            <div style={{ padding: "48px", textAlign: "center", color: "#94A3B8", fontSize: "14px" }}>
-              {searchTerm ? "No clients found" : "No clients yet — bookings will appear here"}
+      <div style={{ display:"flex", gap:20, alignItems:"flex-start" }}>
+
+        {/* Client List */}
+        <div style={{ flex: selected ? "0 0 52%" : "1", minWidth:0, background:"var(--surface)", border:"1px solid var(--border)", borderRadius:"var(--r-lg)", overflow:"hidden", boxShadow:"var(--shadow-sm)" }}>
+          {/* Header */}
+          <div style={{ padding:"16px 20px", borderBottom:"1px solid var(--border)", display:"flex", gap:12, alignItems:"center", flexWrap:"wrap" }}>
+            <input type="text" placeholder="🔍 Search clients..." value={search} onChange={e=>setSearch(e.target.value)}
+              style={{ flex:1, minWidth:140, padding:"9px 14px", border:"1px solid var(--border)", borderRadius:"var(--r-sm)", fontSize:13, fontFamily:"inherit", outline:"none", background:"var(--surface-2)" }}/>
+            <select value={sortKey} onChange={e=>setSortKey(e.target.value as SortKey)}
+              style={{ padding:"9px 12px", border:"1px solid var(--border)", borderRadius:"var(--r-sm)", fontSize:13, fontFamily:"inherit", background:"var(--surface-2)", cursor:"pointer", outline:"none" }}>
+              <option value="lastVisit">Latest Visit</option>
+              <option value="spent">Most Spent</option>
+              <option value="bookings">Most Bookings</option>
+              <option value="name">Name A–Z</option>
+            </select>
+            <span style={{ fontSize:12, color:"var(--text-3)", whiteSpace:"nowrap" }}>{filtered.length} clients</span>
+          </div>
+
+          {filtered.length === 0 ? (
+            <div style={{ padding:"60px 24px", textAlign:"center", color:"var(--text-3)" }}>
+              <div style={{ fontSize:36, marginBottom:12 }}>👤</div>
+              <div style={{ fontSize:14, fontWeight:600 }}>{search ? "No clients found" : "No clients yet"}</div>
+              <div style={{ fontSize:12, marginTop:4 }}>Clients appear here after their first booking</div>
             </div>
           ) : (
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "500px" }}>
+            <div style={{ overflowX:"auto" }}>
+              <table style={{ width:"100%", borderCollapse:"collapse", minWidth:520 }}>
                 <thead>
-                  <tr style={{ background: "#F8F9FC" }}>
-                    {["Name", "Email", "Phone", "Bookings", "Spent", "Last Visit"].map((h) => (
-                      <th key={h} style={{ fontSize: "11px", color: "#94A3B8", textAlign: "left", padding: "10px 18px", fontWeight: 500, borderBottom: "0.5px solid #E8EAF0" }}>{h}</th>
+                  <tr style={{ background:"var(--surface-2)" }}>
+                    {["Client","Contact","Bookings","Spent","Last Visit",""].map(h=>(
+                      <th key={h} style={{ fontSize:11, color:"var(--text-3)", textAlign:"left", padding:"10px 16px", fontWeight:700, borderBottom:"1px solid var(--border)", letterSpacing:"0.5px" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredClients.map((c, idx) => (
-                    <tr key={idx} onClick={() => handleClientClick(c)} style={{ cursor: "pointer", background: selectedClient?.client_email === c.client_email ? "#F5F7FF" : "transparent" }}>
-                      <td style={{ padding: "11px 18px", borderBottom: "0.5px solid #F1F5F9" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                          <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "#EEF2FF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", fontWeight: 600, color: "#4F6EF7", flexShrink: 0 }}>
-                            {c.client_name?.charAt(0).toUpperCase()}
+                  {filtered.map((c, i) => {
+                    const ds = daysSince(c.lastVisit);
+                    const isActive = selected?.email === c.email;
+                    return (
+                      <tr key={i} onClick={()=>openClient(c)}
+                        style={{ cursor:"pointer", background: isActive ? "var(--indigo-light)" : "transparent", transition:"background 0.1s" }}
+                        onMouseEnter={e=>{ if(!isActive) (e.currentTarget as HTMLElement).style.background="var(--slate-50)"; }}
+                        onMouseLeave={e=>{ if(!isActive) (e.currentTarget as HTMLElement).style.background="transparent"; }}
+                      >
+                        <td style={{ padding:"12px 16px", borderBottom:"1px solid var(--border)" }}>
+                          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                            <div style={{ width:34, height:34, borderRadius:"50%", background:"var(--indigo-light)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:700, color:"var(--indigo)", flexShrink:0 }}>
+                              {c.name?.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <div style={{ fontSize:13, fontWeight:600, color:"var(--text-1)" }}>{c.name}</div>
+                              {favService(c) && <div style={{ fontSize:10.5, color:"var(--text-3)", marginTop:1 }}>⭐ {favService(c)}</div>}
+                            </div>
                           </div>
-                          <span style={{ fontSize: "13px", color: "#0F172A", fontWeight: 500 }}>{c.client_name}</span>
-                        </div>
-                      </td>
-                      <td style={{ padding: "11px 18px", fontSize: "13px", color: "#64748B", borderBottom: "0.5px solid #F1F5F9" }}>{c.client_email || "—"}</td>
-                      <td style={{ padding: "11px 18px", fontSize: "13px", color: "#64748B", borderBottom: "0.5px solid #F1F5F9" }}>{c.client_phone || "—"}</td>
-                      <td style={{ padding: "11px 18px", borderBottom: "0.5px solid #F1F5F9" }}>
-                        <span style={{ background: "#EEF2FF", color: "#4F6EF7", fontSize: "12px", padding: "4px 10px", borderRadius: "20px" }}>{c.totalBookings}</span>
-                      </td>
-                      <td style={{ padding: "11px 18px", fontSize: "13px", color: "#0F172A", fontWeight: 500, borderBottom: "0.5px solid #F1F5F9" }}>£{c.totalSpent}</td>
-                      <td style={{ padding: "11px 18px", fontSize: "13px", color: "#64748B", borderBottom: "0.5px solid #F1F5F9" }}>
-                        {c.lastBooking ? new Date(c.lastBooking).toLocaleDateString("en-GB") : "—"}
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td style={{ padding:"12px 16px", borderBottom:"1px solid var(--border)" }}>
+                          <div style={{ fontSize:12, color:"var(--text-2)" }}>{c.email || "—"}</div>
+                          <div style={{ fontSize:11, color:"var(--text-3)", marginTop:1 }}>{c.phone || "—"}</div>
+                        </td>
+                        <td style={{ padding:"12px 16px", borderBottom:"1px solid var(--border)" }}>
+                          <span style={{ background:"var(--indigo-light)", color:"var(--indigo)", fontSize:12, padding:"4px 10px", borderRadius:"var(--r-full)", fontWeight:700 }}>{c.bookings}</span>
+                        </td>
+                        <td style={{ padding:"12px 16px", fontSize:13, fontWeight:700, color:"var(--text-1)", borderBottom:"1px solid var(--border)" }}>£{c.spent.toFixed(0)}</td>
+                        <td style={{ padding:"12px 16px", borderBottom:"1px solid var(--border)" }}>
+                          <div style={{ fontSize:12, color:"var(--text-2)" }}>{new Date(c.lastVisit).toLocaleDateString("en-GB")}</div>
+                          <div style={{ fontSize:10.5, color: ds > 60 ? "var(--red)" : ds > 30 ? "var(--amber)" : "var(--green)", marginTop:1, fontWeight:600 }}>
+                            {ds === 0 ? "Today" : `${ds}d ago`}
+                          </div>
+                        </td>
+                        <td style={{ padding:"12px 16px", borderBottom:"1px solid var(--border)" }}>
+                          <span style={{ fontSize:11, color:"var(--indigo)", fontWeight:600 }}>View →</span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           )}
         </div>
 
-        {/* Client Detail Panel */}
-        {selectedClient && (
-          <div style={{ flex: "0 0 43%", background: "#fff", border: "0.5px solid #E8EAF0", borderRadius: "10px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            <div style={{ padding: "16px 20px", borderBottom: "0.5px solid #E8EAF0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: "#EEF2FF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontWeight: 700, color: "#4F6EF7" }}>
-                  {selectedClient.client_name?.charAt(0).toUpperCase()}
+        {/* Detail Panel */}
+        {selected && (
+          <div style={{ flex:"0 0 46%", minWidth:0, background:"var(--surface)", border:"1px solid var(--border)", borderRadius:"var(--r-lg)", overflow:"hidden", boxShadow:"var(--shadow-md)", display:"flex", flexDirection:"column", maxHeight:"80vh" }}>
+
+            {/* Header */}
+            <div style={{ padding:"18px 20px", borderBottom:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                <div style={{ width:44, height:44, borderRadius:"50%", background:"linear-gradient(135deg,var(--indigo),var(--indigo-dark))", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, fontWeight:800, color:"#fff" }}>
+                  {selected.name?.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <div style={{ fontSize: "14px", fontWeight: 600, color: "#0F172A" }}>{selectedClient.client_name}</div>
-                  <div style={{ fontSize: "12px", color: "#94A3B8" }}>{selectedClient.client_email}</div>
+                  <div style={{ fontSize:15, fontWeight:700, color:"var(--text-1)" }}>{selected.name}</div>
+                  <div style={{ fontSize:12, color:"var(--text-3)" }}>{selected.email}</div>
                 </div>
               </div>
-              <button onClick={() => setSelectedClient(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#94A3B8", fontSize: "18px" }}>×</button>
+              <button onClick={()=>setSelected(null)} style={{ background:"var(--slate-100)", border:"none", cursor:"pointer", width:28, height:28, borderRadius:"50%", fontSize:14, color:"var(--text-2)", display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1px", background: "#E8EAF0" }}>
+            {/* Quick Actions */}
+            <div style={{ padding:"12px 20px", borderBottom:"1px solid var(--border)", display:"flex", gap:8, flexShrink:0 }}>
+              {selected.phone && (
+                <a href={`https://wa.me/${selected.phone.replace(/\D/g,"")}`} target="_blank" rel="noopener"
+                  style={{ flex:1, background:"#ECFDF5", color:"#059669", border:"1px solid #A7F3D0", borderRadius:"var(--r-sm)", padding:"8px", fontSize:12, fontWeight:700, textAlign:"center", textDecoration:"none", display:"block" }}>
+                  💬 WhatsApp
+                </a>
+              )}
+              {selected.phone && (
+                <a href={`tel:${selected.phone}`}
+                  style={{ flex:1, background:"var(--indigo-light)", color:"var(--indigo)", border:"1px solid var(--indigo-pale)", borderRadius:"var(--r-sm)", padding:"8px", fontSize:12, fontWeight:700, textAlign:"center", textDecoration:"none", display:"block" }}>
+                  📞 Call
+                </a>
+              )}
+              {salon?.slug && (
+                <a href={`/book/${salon.slug}`} target="_blank" rel="noopener"
+                  style={{ flex:1, background:"var(--slate-100)", color:"var(--text-2)", border:"1px solid var(--border)", borderRadius:"var(--r-sm)", padding:"8px", fontSize:12, fontWeight:700, textAlign:"center", textDecoration:"none", display:"block" }}>
+                  📅 Book Again
+                </a>
+              )}
+            </div>
+
+            {/* Stats */}
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:1, background:"var(--border)", flexShrink:0 }}>
               {[
-                { label: "Total Visits", value: selectedClient.totalBookings },
-                { label: "Total Spent", value: `£${selectedClient.totalSpent}` },
-                { label: "Last Visit", value: selectedClient.lastBooking ? new Date(selectedClient.lastBooking).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "—" },
-              ].map((s) => (
-                <div key={s.label} style={{ background: "#FAFAFA", padding: "14px 16px", textAlign: "center" }}>
-                  <div style={{ fontSize: "18px", fontWeight: 600, color: "#0F172A" }}>{s.value}</div>
-                  <div style={{ fontSize: "11px", color: "#94A3B8", marginTop: "2px" }}>{s.label}</div>
+                { label:"Visits", value:selected.bookings },
+                { label:"Total Spent", value:`£${selected.spent.toFixed(0)}` },
+                { label:"Fav Service", value:favService(selected) || "—" },
+              ].map(s=>(
+                <div key={s.label} style={{ background:"var(--surface-2)", padding:"12px 14px", textAlign:"center" }}>
+                  <div style={{ fontSize:16, fontWeight:800, color:"var(--text-1)", letterSpacing:"-0.3px" }}>{s.value}</div>
+                  <div style={{ fontSize:10.5, color:"var(--text-3)", marginTop:2, fontWeight:600 }}>{s.label}</div>
                 </div>
               ))}
             </div>
 
-            <div style={{ padding: "14px 20px", borderBottom: "0.5px solid #E8EAF0" }}>
-              <div style={{ fontSize: "12px", fontWeight: 500, color: "#0F172A" }}>Booking History</div>
+            {/* Notes */}
+            <div style={{ padding:"14px 20px", borderBottom:"1px solid var(--border)", flexShrink:0 }}>
+              <div style={{ fontSize:11.5, fontWeight:700, color:"var(--text-2)", marginBottom:6, letterSpacing:"0.5px" }}>NOTES</div>
+              <textarea value={note} onChange={e=>setNote(e.target.value)} rows={2}
+                placeholder="Add notes about this client..."
+                style={{ width:"100%", padding:"8px 10px", border:"1px solid var(--border)", borderRadius:"var(--r-sm)", fontSize:12.5, fontFamily:"inherit", resize:"none", outline:"none", background:"var(--surface-2)", color:"var(--text-1)", boxSizing:"border-box" }}/>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:6 }}>
+                <span style={{ fontSize:11, color:"var(--green)" }}>{noteMsg}</span>
+                <button onClick={saveNote} disabled={noteSaving}
+                  style={{ padding:"5px 14px", background:"var(--indigo)", color:"#fff", border:"none", borderRadius:"var(--r-sm)", fontSize:12, fontWeight:600, cursor:"pointer" }}>
+                  Save Note
+                </button>
+              </div>
             </div>
-            <div style={{ flex: 1, overflow: "auto" }}>
-              {historyLoading ? (
-                <div style={{ padding: "32px", textAlign: "center", color: "#94A3B8", fontSize: "13px" }}>Loading...</div>
-              ) : clientHistory.length === 0 ? (
-                <div style={{ padding: "32px", textAlign: "center", color: "#94A3B8", fontSize: "13px" }}>No bookings found</div>
-              ) : (
-                clientHistory.map((b) => (
-                  <div key={b.id} style={{ padding: "14px 20px", borderBottom: "0.5px solid #F1F5F9", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+
+            {/* Booking History */}
+            <div style={{ padding:"12px 20px 8px", flexShrink:0 }}>
+              <div style={{ fontSize:11.5, fontWeight:700, color:"var(--text-2)", letterSpacing:"0.5px" }}>BOOKING HISTORY</div>
+            </div>
+            <div style={{ flex:1, overflowY:"auto" }}>
+              {histLoading ? (
+                <div style={{ padding:32, textAlign:"center", color:"var(--text-3)", fontSize:13 }}>Loading...</div>
+              ) : history.length === 0 ? (
+                <div style={{ padding:32, textAlign:"center", color:"var(--text-3)", fontSize:13 }}>No bookings found</div>
+              ) : history.map(b => {
+                const sc = statusColor(b.status);
+                return (
+                  <div key={b.id} style={{ padding:"12px 20px", borderBottom:"1px solid var(--border)", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                     <div>
-                      <div style={{ fontSize: "13px", color: "#0F172A", fontWeight: 500, marginBottom: "3px" }}>
+                      <div style={{ fontSize:13, fontWeight:600, color:"var(--text-1)", marginBottom:2 }}>
                         {Array.isArray(b.services) ? b.services[0]?.name : b.services?.name || "Service"}
                       </div>
-                      <div style={{ fontSize: "11px", color: "#94A3B8" }}>
-                        {new Date(b.date_time).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
+                      <div style={{ fontSize:11, color:"var(--text-3)" }}>
+                        {new Date(b.date_time).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"})}
                         {b.staff?.name && ` · ${b.staff.name}`}
                       </div>
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}>
-                      <span style={{ fontSize: "13px", fontWeight: 500, color: "#0F172A" }}>
-                        £{Array.isArray(b.services) ? b.services[0]?.price : b.services?.price || "—"}
-                      </span>
-                      <span style={{ background: b.status === "confirmed" ? "#ECFDF5" : b.status === "cancelled" ? "#FEF2F2" : "#FFF7ED", color: b.status === "confirmed" ? "#166634" : b.status === "cancelled" ? "#DC2626" : "#92400E", fontSize: "10px", padding: "2px 8px", borderRadius: "20px" }}>
-                        {b.status}
-                      </span>
+                    <div style={{ textAlign:"right" }}>
+                      <div style={{ fontSize:13, fontWeight:700, color:"var(--text-1)", marginBottom:3 }}>
+                        £{Array.isArray(b.services) ? b.services[0]?.price : b.services?.price || 0}
+                      </div>
+                      <span style={{ background:sc.bg, color:sc.color, fontSize:10, padding:"2px 8px", borderRadius:"var(--r-full)", fontWeight:700 }}>{b.status}</span>
                     </div>
                   </div>
-                ))
-              )}
+                );
+              })}
             </div>
           </div>
         )}
