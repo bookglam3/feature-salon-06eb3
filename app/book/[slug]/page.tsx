@@ -37,6 +37,26 @@ function getInitials(name: string): string {
   return name.split(" ").map((w) => w[0]).join("").slice(0,2).toUpperCase();
 }
 
+// Day of week label matching staff working_hours keys
+const DAY_KEYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+// Filter TIME_SLOTS to only those within staff working hours for the selected date
+function getAvailableSlots(allSlots: string[], staff: any | null, date: Date): { slot: string; offDay: boolean } {
+  if (!staff || !staff.working_hours) return { slot: "", offDay: false }; // no filtering
+  const dayKey = DAY_KEYS[date.getDay()];
+  const hours = staff.working_hours[dayKey];
+  if (!hours?.enabled) return { slot: "", offDay: true }; // staff off this day
+  return { slot: `${hours.start}–${hours.end}`, offDay: false };
+}
+
+function isSlotInRange(slot: string, staff: any | null, date: Date): boolean {
+  if (!staff || !staff.working_hours) return true;
+  const dayKey = DAY_KEYS[date.getDay()];
+  const hours = staff.working_hours[dayKey];
+  if (!hours?.enabled) return false;
+  return slot >= hours.start && slot <= hours.end;
+}
+
 // ── Country definitions ───────────────────────────────────────
 const COUNTRIES = [
   {
@@ -485,22 +505,43 @@ export default function BookingPage() {
                 <h2>Pick Date & Time</h2>
                 <div className="input-group">
                   <label className="input-label">Select Date</label>
-                  <input type="date" className="input" min={todayStr} onChange={e=>setSelDate(new Date(e.target.value))}/>
+                  <input type="date" className="input" min={todayStr} onChange={e=>{
+                    setSelDate(new Date(e.target.value));
+                    setSelTime(""); // reset time on date change
+                  }}/>
                 </div>
-                {selDate && (
-                  <>
-                    <label className="input-label">Available Times</label>
-                    <div className="time-grid">
-                      {TIME_SLOTS.map(t => {
-                        const now = new Date();
-                        const dt = new Date(`${selDate.getFullYear()}-${String(selDate.getMonth()+1).padStart(2,"0")}-${String(selDate.getDate()).padStart(2,"0")}T${t}`);
-                        const disabled = dt < now && selDate.toDateString()===now.toDateString();
-                        return <button key={t} disabled={disabled} className={`time-btn ${selTime===t?"selected":""}`} onClick={()=>!disabled&&setSelTime(t)}>{t}</button>;
-                      })}
+                {selDate && (() => {
+                  const { offDay, slot: hoursLabel } = getAvailableSlots(TIME_SLOTS, selectedStaff, selDate);
+                  if (offDay) return (
+                    <div style={{ padding:"16px",background:"#FFF7ED",borderRadius:14,border:"1.5px solid #FED7AA",textAlign:"center" }}>
+                      <div style={{ fontSize:28,marginBottom:8 }}>😴</div>
+                      <div style={{ fontSize:15,fontWeight:700,color:"#9A3412" }}>{selectedStaff?.name} is off on this day</div>
+                      <div style={{ fontSize:13,color:"#C2410C",marginTop:4 }}>Please choose a different date or select "Any Available Staff"</div>
                     </div>
-                    <button className="btn" disabled={!canNext2} onClick={()=>setStep(3)}>Continue →</button>
-                  </>
-                )}
+                  );
+                  const filteredSlots = TIME_SLOTS.filter(t => isSlotInRange(t, selectedStaff, selDate));
+                  return (
+                    <>
+                      <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8 }}>
+                        <label className="input-label" style={{margin:0}}>Available Times</label>
+                        {selectedStaff && hoursLabel && (
+                          <span style={{ fontSize:11.5,color:"#64748B",background:"#F1F5F9",padding:"3px 10px",borderRadius:20,fontWeight:600 }}>
+                            {selectedStaff.name}: {hoursLabel}
+                          </span>
+                        )}
+                      </div>
+                      <div className="time-grid">
+                        {filteredSlots.map(t => {
+                          const now = new Date();
+                          const dt = new Date(`${selDate.getFullYear()}-${String(selDate.getMonth()+1).padStart(2,"0")}-${String(selDate.getDate()).padStart(2,"0")}T${t}`);
+                          const disabled = dt < now && selDate.toDateString()===now.toDateString();
+                          return <button key={t} disabled={disabled} className={`time-btn ${selTime===t?"selected":""}`} onClick={()=>!disabled&&setSelTime(t)}>{t}</button>;
+                        })}
+                      </div>
+                      <button className="btn" disabled={!canNext2} onClick={()=>setStep(3)}>Continue →</button>
+                    </>
+                  );
+                })()}
               </>
             )}
 

@@ -678,13 +678,30 @@ export default function SettingsPage() {
           Messages are sent in <strong>English</strong> with GDPR opt-out included.
         </p>
 
-        {/* Sandbox notice */}
-        <div style={{ background: "#FFFBEB", border: "0.5px solid #FDE68A", borderRadius: 10, padding: "12px 14px", marginBottom: 18 }}>
-          <div style={{ fontSize: "12px", fontWeight: 700, color: "#92400E", marginBottom: 4 }}>🧪 Testing (Sandbox Mode)</div>
-          <div style={{ fontSize: "12px", color: "#78350F", lineHeight: 1.7 }}>
-            Using Twilio WhatsApp Sandbox: <strong>+1 415 523 8886</strong>.<br />
-            Clients must join the sandbox first by sending <code style={{ background: "#FEF3C7", padding: "1px 5px", borderRadius: 4 }}>join &lt;your-code&gt;</code> to that number.<br />
-            For production, <a href="https://www.twilio.com/whatsapp" target="_blank" rel="noopener noreferrer" style={{ color: "#4F6EF7" }}>register a WhatsApp Business number</a>.
+        {/* Setup guide: Sandbox + Production */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 18 }}>
+
+          {/* Sandbox panel */}
+          <div style={{ background: "#FFFBEB", border: "1.5px solid #FDE68A", borderRadius: 12, padding: "14px 16px" }}>
+            <div style={{ fontSize: "11px", fontWeight: 800, color: "#92400E", letterSpacing: "0.8px", textTransform: "uppercase", marginBottom: 8 }}>🧪 Testing (Sandbox)</div>
+            <div style={{ fontSize: "12px", color: "#78350F", lineHeight: 1.8 }}>
+              <div>1. Go to <a href="https://console.twilio.com" target="_blank" rel="noopener noreferrer" style={{ color: "#4F6EF7" }}>Twilio Console</a></div>
+              <div>2. Messaging → Try it Out → WhatsApp</div>
+              <div>3. Your client texts <code style={{ background: "#FEF3C7", padding: "1px 5px", borderRadius: 4, fontWeight: 700 }}>join &lt;code&gt;</code> to <strong>+1 415 523 8886</strong></div>
+              <div style={{ marginTop: 6, color: "#B45309", fontStyle: "italic" }}>⚠️ Only pre-joined numbers receive messages</div>
+            </div>
+          </div>
+
+          {/* Production panel */}
+          <div style={{ background: "#F0FDF4", border: "1.5px solid #BBF7D0", borderRadius: 12, padding: "14px 16px" }}>
+            <div style={{ fontSize: "11px", fontWeight: 800, color: "#14532D", letterSpacing: "0.8px", textTransform: "uppercase", marginBottom: 8 }}>🚀 Production (All Clients)</div>
+            <div style={{ fontSize: "12px", color: "#15803D", lineHeight: 1.8 }}>
+              <div>1. <a href="https://www.twilio.com/en-us/whatsapp/request-access" target="_blank" rel="noopener noreferrer" style={{ color: "#4F6EF7" }}>Apply for WhatsApp Business</a></div>
+              <div>2. Verify your Meta Business Account</div>
+              <div>3. Set your Twilio WhatsApp sender</div>
+              <div>4. Update <code style={{ background: "#DCFCE7", padding: "1px 5px", borderRadius: 4 }}>TWILIO_WHATSAPP_FROM</code> in Vercel env</div>
+              <div style={{ marginTop: 6, color: "#059669", fontWeight: 600 }}>✅ Then ALL clients get messages</div>
+            </div>
           </div>
         </div>
 
