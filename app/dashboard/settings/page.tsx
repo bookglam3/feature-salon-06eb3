@@ -198,9 +198,11 @@ export default function SettingsPage() {
       }
 
       if (salonData) {
-        const { data: servicesData } = await supabase
-          .from("services").select("*").eq("salon_id", salonData.id);
-        setServices(servicesData || []);
+        // Use API route (service-role) to bypass any RLS issues
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token || "";
+        const res = await fetch("/api/services", { headers: { Authorization: `Bearer ${token}` } });
+        if (res.ok) { const json = await res.json(); setServices(json.services || []); }
       }
       setLoading(false);
     };
@@ -249,6 +251,18 @@ export default function SettingsPage() {
     setLogoUploading(false);
   };
 
+  // Helper: get current user JWT for API calls
+  const getToken = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token || "";
+  };
+
+  const reloadServices = async () => {
+    const token = await getToken();
+    const res = await fetch("/api/services", { headers: { Authorization: `Bearer ${token}` } });
+    if (res.ok) { const json = await res.json(); setServices(json.services || []); }
+  };
+
   const handleAddService = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!salon) return;
@@ -256,19 +270,16 @@ export default function SettingsPage() {
     if (!newService.name.trim()) { setServiceError("Service name is required."); return; }
     if (isNaN(price) || price <= 0) { setServiceError("Price must be greater than 0."); return; }
     setServiceError("");
-    // Build payload — only include description if the column exists in your DB
-    const payload: Record<string, unknown> = {
-      salon_id: salon.id,
-      name: newService.name.trim(),
-      price,
-      duration_minutes: parseInt(newService.duration_minutes) || null,
-    };
-    if (newService.description.trim()) payload.description = newService.description.trim();
-    const { error } = await supabase.from("services").insert(payload);
-    if (error) { setServiceError("Failed to add: " + error.message); return; }
+    const token = await getToken();
+    const res = await fetch("/api/services", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ name: newService.name, price: newService.price, duration_minutes: newService.duration_minutes, description: newService.description }),
+    });
+    const json = await res.json();
+    if (!res.ok) { setServiceError("Failed to add: " + (json.error || res.statusText)); return; }
     setNewService({ name: "", price: "", duration_minutes: "", description: "" });
-    const { data } = await supabase.from("services").select("*").eq("salon_id", salon.id);
-    setServices(data || []);
+    await reloadServices();
   };
 
   const handleUpdateService = async (e: React.FormEvent) => {
@@ -278,29 +289,33 @@ export default function SettingsPage() {
     if (!editServiceForm.name.trim()) { setServiceError("Service name is required."); return; }
     if (isNaN(price) || price <= 0) { setServiceError("Price must be greater than 0."); return; }
     setServiceError("");
-    const payload: Record<string, unknown> = {
-      name: editServiceForm.name.trim(),
-      price,
-      duration_minutes: parseInt(editServiceForm.duration_minutes) || null,
-    };
-    if (editServiceForm.description?.trim()) payload.description = editServiceForm.description.trim();
-    const { error } = await supabase.from("services").update(payload).eq("id", editingService.id);
-    if (error) { setServiceError("Failed to update: " + error.message); return; }
+    const token = await getToken();
+    const res = await fetch("/api/services", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id: editingService.id, name: editServiceForm.name, price: editServiceForm.price, duration_minutes: editServiceForm.duration_minutes, description: editServiceForm.description }),
+    });
+    const json = await res.json();
+    if (!res.ok) { setServiceError("Failed to update: " + (json.error || res.statusText)); return; }
     setEditingService(null);
-    const { data } = await supabase.from("services").select("*").eq("salon_id", salon?.id);
-    setServices(data || []);
+    await reloadServices();
   };
 
   const handleDeleteService = async (id: string) => {
-    // Check for linked appointments first
     const { data: linked } = await supabase.from("appointments").select("id").eq("service_id", id).limit(1);
     const hasBookings = linked && linked.length > 0;
     const msg = hasBookings
       ? "This service has existing bookings. Deleting it will not remove those bookings, but they will show no service. Continue?"
       : "Delete this service? This cannot be undone.";
     if (!window.confirm(msg)) return;
-    const { error } = await supabase.from("services").delete().eq("id", id);
-    if (error) { setServiceError("Delete failed: " + error.message); return; }
+    const token = await getToken();
+    const res = await fetch("/api/services", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id }),
+    });
+    const json = await res.json();
+    if (!res.ok) { setServiceError("Delete failed: " + (json.error || res.statusText)); return; }
     setServices(prev => prev.filter(s => s.id !== id));
   };
 
