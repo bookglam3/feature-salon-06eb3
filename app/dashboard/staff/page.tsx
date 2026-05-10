@@ -11,7 +11,7 @@ import { useToast } from "../components/Toast";
 import type { StaffMember } from "../../types";
 
 const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-const SERVICES_LIST = ["Haircut","Hair Color","Blowout","Makeup","Facial","Manicure","Pedicure","Waxing","Massage"];
+// Services now loaded from DB — no longer hardcoded
 
 const EMPTY_FORM = {
   name: "", email: "", role: "stylist", active: true, services: [] as string[],
@@ -36,6 +36,7 @@ export default function StaffPage() {
   const [formTab, setFormTab] = useState<"info"|"services"|"hours">("info");
   const [searchTerm, setSearchTerm] = useState("");
   const [formData, setFormData] = useState(EMPTY_FORM);
+  const [salonServices, setSalonServices] = useState<string[]>([]);
 
   const loadStaff = useCallback(async (salonId: string) => {
     const { data } = await supabase.from("staff").select("*").eq("salon_id", salonId);
@@ -49,6 +50,9 @@ export default function StaffPage() {
         if (!profile) { router.push("/login"); return; }
         setSalon(profile.salon);
         await loadStaff(profile.salon.id);
+        // Load real services from DB
+        const { data: svcs } = await supabase.from("services").select("name").eq("salon_id", profile.salon.id);
+        if (svcs && svcs.length > 0) setSalonServices(svcs.map((s: { name: string }) => s.name));
       } catch (e) { console.error(e); } finally { setLoading(false); }
     };
     load();
@@ -226,7 +230,7 @@ export default function StaffPage() {
             <div>
               <p style={{ fontSize: 12.5, color: "var(--text-3)", marginBottom: 14 }}>Select services this staff member provides:</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {SERVICES_LIST.map(svc => {
+              {(salonServices.length > 0 ? salonServices : ["Haircut","Hair Color","Blowout","Makeup","Facial","Manicure","Pedicure","Waxing","Massage"]).map(svc => {
                   const sel = formData.services.includes(svc);
                   return (
                     <button key={svc} type="button" onClick={() => toggleService(svc)} style={{ padding: "7px 14px", fontSize: 13, borderRadius: 99, border: `1px solid ${sel ? "var(--indigo)" : "var(--border)"}`, background: sel ? "var(--indigo-light)" : "#fff", color: sel ? "var(--indigo)" : "var(--text-2)", cursor: "pointer", fontWeight: sel ? 600 : 400, transition: "all 0.12s", fontFamily: "var(--font)" }}>

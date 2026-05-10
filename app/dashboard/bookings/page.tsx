@@ -114,6 +114,7 @@ export default function BookingsPage() {
   }, []);
 
   const handleDelete = useCallback(async (id: string) => {
+    if (!window.confirm("Delete this booking? This cannot be undone.")) return;
     const { error } = await supabase.from("appointments").delete().eq("id", id);
     if (error) { toast.error("Failed to delete"); return; }
     toast.success("Booking deleted");

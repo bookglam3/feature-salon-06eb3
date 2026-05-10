@@ -142,7 +142,7 @@ export default function DashboardPage() {
       const today = new Date().toISOString().slice(0, 10);
       const [{ data: appts }, { data: staffData }, { data: svcs }, { data: ofrs }] = await Promise.all([
         supabase.from("appointments").select("*, services(name,price), staff(name)").eq("salon_id", id).order("date_time", { ascending: true }),
-        supabase.from("staff").select("id,name").eq("salon_id", id),
+        supabase.from("staff").select("id,name").eq("salon_id", id).eq("active", true),
         supabase.from("services").select("*").eq("salon_id", id),
         supabase.from("offers").select("*").eq("salon_id", id).eq("active", true).or(`valid_until.is.null,valid_until.gte.${today}`).order("created_at", { ascending: false }),
       ]);
@@ -181,16 +181,32 @@ export default function DashboardPage() {
   const handleNewBooking = useCallback(async () => {
     if (!salon || !formData.client_name || !formData.date || !formData.time) { toast.error("Fill required fields"); return; }
     const date_time = new Date(formData.date + "T" + formData.time).toISOString();
-    const { error } = await supabase.from("appointments").insert({ salon_id: salon.id, client_name: formData.client_name, client_email: formData.client_email, client_phone: formData.client_phone, service_id: formData.service_id || null, staff_id: formData.staff_id || null, date_time, status: "confirmed" });
+    const { data: inserted, error } = await supabase.from("appointments").insert({
+      salon_id: salon.id,
+      client_name: formData.client_name,
+      client_email: formData.client_email,
+      client_phone: formData.client_phone,
+      service_id: formData.service_id || null,
+      staff_id: formData.staff_id || null,
+      date_time,
+      status: "confirmed",
+    }).select("id").single();
     if (error) { toast.error("Failed to create booking"); return; }
-    const svc = services.find(s => s.id === formData.service_id);
-    const stf = staff.find(s => s.id === formData.staff_id);
-    await fetch("/api/send-booking-emails", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ clientEmail: formData.client_email, clientName: formData.client_name, clientPhone: formData.client_phone, serviceName: svc?.name || "Service", dateTime: date_time, staffName: stf?.name, salonName: salon.name, salonOwnerEmail: salon.owner_email }) });
-    toast.success("Booking created successfully!");
+    // Send email + WhatsApp via the same route as online bookings
+    if (formData.client_email && inserted?.id) {
+      try {
+        await fetch("/api/send-confirmation", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ appointmentId: inserted.id }),
+        });
+      } catch { /* non-fatal */ }
+    }
+    toast.success("Booking created! Confirmation sent to client.");
     setShowModal(false);
     setFormData({ client_name: "", client_email: "", client_phone: "", service_id: "", staff_id: "", date: "", time: "" });
     await reloadAppts();
-  }, [salon, formData, services, staff, toast, reloadAppts]);
+  }, [salon, formData, toast, reloadAppts]);
 
   const handleAddOffer = useCallback(async () => {
     if (!salon || !offerForm.title) { toast.error("Title required"); return; }
@@ -239,7 +255,7 @@ export default function DashboardPage() {
   const now = new Date();
   const todayStr = now.toDateString();
   const todayAppts = useMemo(() => appointments.filter(a => new Date(a.date_time).toDateString() === todayStr), [appointments, todayStr]);
-  const upcomingAppts = useMemo(() => appointments.filter(a => new Date(a.date_time) > now), [appointments]);
+  const upcomingAppts = useMemo(() => appointments.filter(a => new Date(a.date_time) > now && a.status !== "cancelled" && a.status !== "completed" && a.status !== "no_show"), [appointments]);
   const confirmedAppts = useMemo(() => appointments.filter(a => a.status === "confirmed"), [appointments]);
   const pendingAppts = useMemo(() => appointments.filter(a => a.status === "pending"), [appointments]);
   const revenue = useMemo(() => todayAppts.reduce((s, a) => s + (a.services?.price || 0), 0), [todayAppts]);
@@ -247,10 +263,13 @@ export default function DashboardPage() {
 
   const filteredAppts = useMemo(() => {
     let list = appointments;
-    if (activeTab === "Today") list = todayAppts;
-    if (activeTab === "Upcoming") list = upcomingAppts;
+    if (activeTab === "Today")     list = todayAppts;
+    if (activeTab === "Upcoming")  list = upcomingAppts;
     if (activeTab === "Confirmed") list = confirmedAppts;
-    if (activeTab === "Pending") list = pendingAppts;
+    if (activeTab === "Pending")   list = pendingAppts;
+    if (activeTab === "Completed") list = appointments.filter(a => a.status === "completed");
+    if (activeTab === "Cancelled") list = appointments.filter(a => a.status === "cancelled");
+    if (activeTab === "No-show")   list = appointments.filter(a => a.status === "no_show");
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = list.filter(a => a.client_name?.toLowerCase().includes(q) || a.services?.name?.toLowerCase().includes(q) || a.staff?.name?.toLowerCase().includes(q));
@@ -300,7 +319,7 @@ export default function DashboardPage() {
   const Topbar = (
     <header style={{ background: "#fff", borderBottom: "1px solid #F1F5F9", padding: "0 24px", height: 66, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 30, gap: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        <HamburgerBtn onClick={() => { }} />
+        <HamburgerBtn />
         <div>
           <div style={{ fontSize: 14.5, fontWeight: 800, color: "#0F172A", letterSpacing: "-0.4px" }}>{greeting}, {salon?.name?.split(" ")[0]}</div>
           <div className="dash-greeting-date" style={{ fontSize: 11.5, color: "#94A3B8", marginTop: 1 }}>{now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
@@ -431,7 +450,7 @@ export default function DashboardPage() {
                   <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                     <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Search client, service..." />
                     <div style={{ display: "flex", gap: 2, background: "#F1F5F9", padding: 3, borderRadius: 10 }}>
-                      {["All", "Today", "Upcoming", "Confirmed", "Pending"].map(t => (
+                      {["All", "Today", "Upcoming", "Confirmed", "Pending", "Completed", "Cancelled", "No-show"].map(t => (
                         <button key={t} onClick={() => setActiveTab(t)}
                           style={{ fontSize: 11.5, padding: "5px 12px", borderRadius: 8, border: "none", background: activeTab === t ? "#fff" : "transparent", color: activeTab === t ? "#6366F1" : "#64748B", cursor: "pointer", fontWeight: activeTab === t ? 800 : 500, boxShadow: activeTab === t ? "0 1px 4px rgba(0,0,0,0.08)" : "none", transition: "all 0.12s", whiteSpace: "nowrap" }}>{t}</button>
                       ))}
