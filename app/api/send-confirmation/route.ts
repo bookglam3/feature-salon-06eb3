@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
       salonOwnerEmail: ownerEmail || clientEmail, // fallback: send owner copy to client
       price:           appt.services?.price,
       salonAddress:    salon?.address,
-      cancelLink:      `${appUrl}/book/${salon?.slug}`,
+      cancelLink:      `${appUrl}/reschedule/${appointmentId}`,
       dashboardUrl:    `${appUrl}/dashboard/bookings`,
       paymentStatus:   appt.payment_status,
       depositOnly:     appt.payment_status === "deposit_paid",

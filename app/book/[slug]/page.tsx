@@ -7,11 +7,13 @@ import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "");
+const STRIPE_KEY_MISSING = !process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 
 const TIME_SLOTS = [
   "09:00","09:30","10:00","10:30","11:00","11:30",
   "12:00","12:30","13:00","13:30","14:00","14:30",
   "15:00","15:30","16:00","16:30","17:00","17:30",
+  "18:00","18:30","19:00","19:30",
 ];
 
 const SERVICE_ICONS: Record<string, string> = {
@@ -166,7 +168,7 @@ export default function BookingPage() {
   const [paymentError, setPaymentError] = useState("");
 
   // Confirmation screen state (for pay_at_salon)
-  const [confirmedBooking, setConfirmedBooking] = useState<{ service: string; date: string; time: string; name: string; salon: string } | null>(null);
+  const [confirmedBooking, setConfirmedBooking] = useState<{ service: string; date: string; time: string; name: string; salon: string; apptId: string } | null>(null);
 
   // Auto-detect country from IP — tries two services, falls back to PK
   useEffect(() => {
@@ -310,7 +312,7 @@ export default function BookingPage() {
       }).catch(e => console.error("[send-confirmation] failed:", e));
 
       const dateStr = selDate?.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}) || "";
-      setConfirmedBooking({ service: selectedService.name, date: dateStr, time: selTime, name: form.name, salon: salon.name });
+      setConfirmedBooking({ service: selectedService.name, date: dateStr, time: selTime, name: form.name, salon: salon.name, apptId: appt.id });
       setSubmitting(false);
       setStep(5);
       return;
@@ -620,6 +622,11 @@ export default function BookingPage() {
             {step===4 && clientSecret && (
               <>
                 <button onClick={()=>setStep(3)} className="back-btn">← Back to Details</button>
+                {STRIPE_KEY_MISSING && (
+                  <div style={{ padding:"14px 16px",background:"#FEF2F2",borderRadius:12,border:"1px solid #FECACA",marginBottom:16,fontSize:13,color:"#DC2626",fontWeight:600 }}>
+                    ⚠️ Online payments are not configured. Please contact the salon to pay in person.
+                  </div>
+                )}
                 <h2>Secure Payment</h2>
                 <div style={{padding:"14px 16px",background:"#F8FAFC",borderRadius:12,border:"1px solid #E2E8F0",marginBottom:20}}>
                   <div style={{fontSize:12,color:"#64748B",fontWeight:600,marginBottom:4}}>Paying for</div>
@@ -702,6 +709,14 @@ export default function BookingPage() {
 
                 {/* Confirmation note */}
                 <p style={{ fontSize: 13, color: "#94A3B8", fontWeight: 500, lineHeight: 1.6 }}>A confirmation has been sent to your email and phone. Please arrive a few minutes early.</p>
+
+                {/* Manage / Reschedule link */}
+                {confirmedBooking?.apptId && (
+                  <a href={`/reschedule/${confirmedBooking.apptId}`}
+                    style={{ display: "inline-block", marginTop: 20, padding: "12px 24px", background: "#F1F5F9", color: "#475569", borderRadius: 12, textDecoration: "none", fontSize: 13, fontWeight: 700, border: "1.5px solid #E2E8F0" }}>
+                    📅 Manage / Reschedule Appointment
+                  </a>
+                )}
               </div>
             )}
           </div>

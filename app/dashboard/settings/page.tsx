@@ -144,6 +144,8 @@ export default function SettingsPage() {
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [services, setServices] = useState<any[]>([]);
   const [newService, setNewService] = useState({ name: "", price: "", duration_minutes: "" });
+  const [editingService, setEditingService] = useState<any | null>(null);
+  const [editServiceForm, setEditServiceForm] = useState({ name: "", price: "", duration_minutes: "" });
 
   // Booking link copy
   const [copied, setCopied] = useState(false);
@@ -210,12 +212,17 @@ export default function SettingsPage() {
     // Use storage URL first, then manual URL input, then null
     const finalLogoUrl = (logoUrl && !logoUrl.startsWith("data:")) ? logoUrl
       : (logoUrlInput.trim() || null);
+    // Auto-update slug when name changes
+    const newSlug = salonName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+    const slugChanged = newSlug !== salon.slug && salonName !== salon.name;
     await supabase.from("salons").update({
       name: salonName,
       logo_url: finalLogoUrl,
       description: description || null,
+      ...(slugChanged ? { slug: newSlug } : {}),
     }).eq("id", salon.id);
     if (finalLogoUrl) setLogoUrl(finalLogoUrl);
+    if (slugChanged) setSalon((prev: any) => ({ ...prev, slug: newSlug }));
     setSaved(true); setSaving(false);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -251,6 +258,19 @@ export default function SettingsPage() {
     });
     setNewService({ name: "", price: "", duration_minutes: "" });
     const { data } = await supabase.from("services").select("*").eq("salon_id", salon.id);
+    setServices(data || []);
+  };
+
+  const handleUpdateService = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingService) return;
+    await supabase.from("services").update({
+      name: editServiceForm.name,
+      price: parseFloat(editServiceForm.price),
+      duration_minutes: parseInt(editServiceForm.duration_minutes) || null,
+    }).eq("id", editingService.id);
+    setEditingService(null);
+    const { data } = await supabase.from("services").select("*").eq("salon_id", salon?.id);
     setServices(data || []);
   };
 
@@ -726,19 +746,36 @@ export default function SettingsPage() {
         <div style={{ fontSize: "14px", fontWeight: 600, color: "#0F172A", marginBottom: "4px" }}>Services</div>
         <div style={{ fontSize: "12px", color: "#94A3B8", marginBottom: "16px" }}>{services.length} service{services.length !== 1 ? "s" : ""}</div>
         {services.map(s => (
-          <div key={s.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "0.5px solid #F1F5F9" }}>
-            <div>
-              <div style={{ fontSize: "13px", color: "#0F172A" }}>{s.name}</div>
-              <div style={{ fontSize: "12px", color: "#94A3B8" }}>{s.duration_minutes ?? s.duration ?? "—"} min · £{s.price}</div>
-            </div>
-            <button onClick={() => handleDeleteService(s.id)} style={{ color: "#EF4444", background: "none", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 500 }}>Delete</button>
+          <div key={s.id}>
+            {editingService?.id === s.id ? (
+              /* Inline edit form */
+              <form onSubmit={handleUpdateService} style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "10px 0", borderBottom: "0.5px solid #E0E7FF", alignItems: "center" }}>
+                <input value={editServiceForm.name} onChange={e => setEditServiceForm({ ...editServiceForm, name: e.target.value })} required placeholder="Service name" style={{ padding: "7px 10px", fontSize: "13px", border: "1.5px solid #4F6EF7", borderRadius: "8px", flex: "1 1 120px", color: "#0F172A", outline: "none" }} />
+                <input type="number" value={editServiceForm.price} onChange={e => setEditServiceForm({ ...editServiceForm, price: e.target.value })} required placeholder="Price" style={{ padding: "7px 10px", fontSize: "13px", border: "1.5px solid #4F6EF7", borderRadius: "8px", width: 90, color: "#0F172A", outline: "none" }} />
+                <input type="number" value={editServiceForm.duration_minutes} onChange={e => setEditServiceForm({ ...editServiceForm, duration_minutes: e.target.value })} placeholder="Mins" style={{ padding: "7px 10px", fontSize: "13px", border: "1.5px solid #4F6EF7", borderRadius: "8px", width: 80, color: "#0F172A", outline: "none" }} />
+                <button type="submit" style={{ padding: "7px 14px", background: "#4F6EF7", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>✓ Save</button>
+                <button type="button" onClick={() => setEditingService(null)} style={{ padding: "7px 12px", background: "#F1F5F9", color: "#64748B", border: "none", borderRadius: "8px", fontSize: "12px", cursor: "pointer" }}>Cancel</button>
+              </form>
+            ) : (
+              /* Normal row */
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "0.5px solid #F1F5F9" }}>
+                <div>
+                  <div style={{ fontSize: "13px", color: "#0F172A", fontWeight: 600 }}>{s.name}</div>
+                  <div style={{ fontSize: "12px", color: "#94A3B8" }}>{s.duration_minutes ?? s.duration ?? "—"} min · £{s.price}</div>
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => { setEditingService(s); setEditServiceForm({ name: s.name, price: String(s.price), duration_minutes: String(s.duration_minutes ?? s.duration ?? "") }); }} style={{ color: "#4F6EF7", background: "none", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>✏️ Edit</button>
+                  <button onClick={() => handleDeleteService(s.id)} style={{ color: "#EF4444", background: "none", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 500 }}>Delete</button>
+                </div>
+              </div>
+            )}
           </div>
         ))}
         <form onSubmit={handleAddService} style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "16px" }}>
           <input placeholder="Service name" value={newService.name} onChange={e => setNewService({ ...newService, name: e.target.value })} required style={{ padding: "8px 12px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "8px", flex: "1 1 140px", color: "#0F172A" }} />
           <input placeholder="Price (£)" type="number" value={newService.price} onChange={e => setNewService({ ...newService, price: e.target.value })} required style={{ padding: "8px 12px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "8px", width: "100px", color: "#0F172A" }} />
           <input placeholder="Duration (min)" type="number" value={newService.duration_minutes} onChange={e => setNewService({ ...newService, duration_minutes: e.target.value })} style={{ padding: "8px 12px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "8px", width: "120px", color: "#0F172A" }} />
-          <button type="submit" style={{ padding: "8px 16px", background: "#4F6EF7", color: "#fff", border: "none", borderRadius: "8px", fontSize: "13px", cursor: "pointer", fontWeight: 600 }}>Add</button>
+          <button type="submit" style={{ padding: "8px 16px", background: "#4F6EF7", color: "#fff", border: "none", borderRadius: "8px", fontSize: "13px", cursor: "pointer", fontWeight: 600 }}>+ Add</button>
         </form>
       </div>
 
