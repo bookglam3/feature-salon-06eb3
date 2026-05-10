@@ -498,7 +498,8 @@ export default function BookingPage() {
                     <div className="item-content">
                       <h3>{s.name}</h3>
                       <p>£{s.price}</p>
-                      {s.duration_minutes && <span className="item-meta">{s.duration_minutes} mins</span>}
+                      {(s.duration_minutes > 0 || s.duration > 0) && <span className="item-meta">{s.duration_minutes || s.duration} mins</span>}
+                      {s.description && <span style={{display:"block",fontSize:12,color:"#94A3B8",fontStyle:"italic",marginTop:2}}>{s.description}</span>}
                     </div>
                   </div>
                   ))
