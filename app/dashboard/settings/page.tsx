@@ -256,13 +256,15 @@ export default function SettingsPage() {
     if (!newService.name.trim()) { setServiceError("Service name is required."); return; }
     if (isNaN(price) || price <= 0) { setServiceError("Price must be greater than 0."); return; }
     setServiceError("");
-    const { error } = await supabase.from("services").insert({
+    // Build payload — only include description if the column exists in your DB
+    const payload: Record<string, unknown> = {
       salon_id: salon.id,
       name: newService.name.trim(),
       price,
       duration_minutes: parseInt(newService.duration_minutes) || null,
-      description: newService.description.trim() || null,
-    });
+    };
+    if (newService.description.trim()) payload.description = newService.description.trim();
+    const { error } = await supabase.from("services").insert(payload);
     if (error) { setServiceError("Failed to add: " + error.message); return; }
     setNewService({ name: "", price: "", duration_minutes: "", description: "" });
     const { data } = await supabase.from("services").select("*").eq("salon_id", salon.id);
@@ -276,12 +278,13 @@ export default function SettingsPage() {
     if (!editServiceForm.name.trim()) { setServiceError("Service name is required."); return; }
     if (isNaN(price) || price <= 0) { setServiceError("Price must be greater than 0."); return; }
     setServiceError("");
-    const { error } = await supabase.from("services").update({
+    const payload: Record<string, unknown> = {
       name: editServiceForm.name.trim(),
       price,
       duration_minutes: parseInt(editServiceForm.duration_minutes) || null,
-      description: editServiceForm.description?.trim() || null,
-    }).eq("id", editingService.id);
+    };
+    if (editServiceForm.description?.trim()) payload.description = editServiceForm.description.trim();
+    const { error } = await supabase.from("services").update(payload).eq("id", editingService.id);
     if (error) { setServiceError("Failed to update: " + error.message); return; }
     setEditingService(null);
     const { data } = await supabase.from("services").select("*").eq("salon_id", salon?.id);
