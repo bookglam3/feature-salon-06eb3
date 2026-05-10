@@ -190,6 +190,22 @@ export default function BookingPage() {
   // Confirmation screen state (for pay_at_salon)
   const [confirmedBooking, setConfirmedBooking] = useState<{ service: string; date: string; time: string; name: string; salon: string; apptId: string } | null>(null);
 
+  // Track already-booked time slots for selected date/staff
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+
+  const loadBookedSlots = useCallback(async (date: Date, staffId: string | null, salonId: string) => {
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+    let q = supabase.from("appointments")
+      .select("date_time")
+      .eq("salon_id", salonId)
+      .gte("date_time", `${dateStr}T00:00:00`)
+      .lte("date_time", `${dateStr}T23:59:59`)
+      .not("status", "eq", "cancelled");
+    if (staffId) q = q.eq("staff_id", staffId);
+    const { data } = await q;
+    setBookedSlots((data || []).map(a => new Date(a.date_time).toTimeString().slice(0,5)));
+  }, []);
+
   // Auto-detect country from IP — tries two services, falls back to PK
   useEffect(() => {
     const SUPPORTED: Record<string, CountryCode> = { GB: "GB", PK: "PK", AE: "AE", SA: "SA" };
@@ -242,7 +258,7 @@ export default function BookingPage() {
       setSalon(s);
       const [{ data: sv },{ data: st }] = await Promise.all([
         supabase.from("services").select("*").eq("salon_id", s.id).order("price"),
-        supabase.from("staff").select("*").eq("salon_id", s.id),
+        supabase.from("staff").select("*").eq("salon_id", s.id).eq("active", true),
       ]);
       setServices(sv||[]);
       setStaffList(st||[]);
@@ -518,8 +534,10 @@ export default function BookingPage() {
                 <div className="input-group">
                   <label className="input-label">Select Date</label>
                   <input type="date" className="input" min={todayStr} onChange={e=>{
-                    setSelDate(new Date(e.target.value));
+                    const d = new Date(e.target.value);
+                    setSelDate(d);
                     setSelTime(""); // reset time on date change
+                    if (salon) loadBookedSlots(d, selectedStaff?.id || null, salon.id);
                   }}/>
                 </div>
                 {selDate && (() => {
@@ -528,10 +546,16 @@ export default function BookingPage() {
                     <div style={{ padding:"16px",background:"#FFF7ED",borderRadius:14,border:"1.5px solid #FED7AA",textAlign:"center" }}>
                       <div style={{ fontSize:28,marginBottom:8 }}>😴</div>
                       <div style={{ fontSize:15,fontWeight:700,color:"#9A3412" }}>{selectedStaff?.name} is off on this day</div>
-                      <div style={{ fontSize:13,color:"#C2410C",marginTop:4 }}>Please choose a different date or select "Any Available Staff"</div>
+                      <div style={{ fontSize:13,color:"#C2410C",marginTop:4 }}>Please choose a different date or select &quot;Any Available Staff&quot;</div>
                     </div>
                   );
+                  const now = new Date();
                   const filteredSlots = TIME_SLOTS.filter(t => isSlotInRange(t, selectedStaff, selDate));
+                  const availableCount = filteredSlots.filter(t => {
+                    const dt = new Date(`${selDate.getFullYear()}-${String(selDate.getMonth()+1).padStart(2,"0")}-${String(selDate.getDate()).padStart(2,"0")}T${t}`);
+                    const isPast = dt < now && selDate.toDateString()===now.toDateString();
+                    return !isPast && !bookedSlots.includes(t);
+                  }).length;
                   return (
                     <>
                       <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8 }}>
@@ -542,14 +566,31 @@ export default function BookingPage() {
                           </span>
                         )}
                       </div>
-                      <div className="time-grid">
-                        {filteredSlots.map(t => {
-                          const now = new Date();
-                          const dt = new Date(`${selDate.getFullYear()}-${String(selDate.getMonth()+1).padStart(2,"0")}-${String(selDate.getDate()).padStart(2,"0")}T${t}`);
-                          const disabled = dt < now && selDate.toDateString()===now.toDateString();
-                          return <button key={t} disabled={disabled} className={`time-btn ${selTime===t?"selected":""}`} onClick={()=>!disabled&&setSelTime(t)}>{t}</button>;
-                        })}
-                      </div>
+                      {availableCount === 0 ? (
+                        <div style={{ padding:"20px",background:"#FEF2F2",borderRadius:14,border:"1.5px solid #FECACA",textAlign:"center",marginBottom:12 }}>
+                          <div style={{ fontSize:28,marginBottom:8 }}>📵</div>
+                          <div style={{ fontSize:15,fontWeight:700,color:"#991B1B" }}>Fully Booked</div>
+                          <div style={{ fontSize:13,color:"#B91C1C",marginTop:4 }}>No slots left for this day. Please pick a different date.</div>
+                        </div>
+                      ) : (
+                        <div className="time-grid">
+                          {filteredSlots.map(t => {
+                            const dt = new Date(`${selDate.getFullYear()}-${String(selDate.getMonth()+1).padStart(2,"0")}-${String(selDate.getDate()).padStart(2,"0")}T${t}`);
+                            const isPast = dt < now && selDate.toDateString()===now.toDateString();
+                            const isTaken = bookedSlots.includes(t);
+                            const disabled = isPast || isTaken;
+                            return (
+                              <button key={t} disabled={disabled}
+                                className={`time-btn ${selTime===t?"selected":""}`}
+                                onClick={()=>!disabled&&setSelTime(t)}
+                                title={isTaken ? "This slot is already booked" : ""}
+                                style={isTaken ? { textDecoration:"line-through",opacity:0.45,cursor:"not-allowed",fontSize:12 } : {}}>
+                                {t}{isTaken ? <span style={{display:"block",fontSize:9,color:"#EF4444",fontWeight:700}}>Taken</span> : null}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
                       <button className="btn" disabled={!canNext2} onClick={()=>setStep(3)}>Continue →</button>
                     </>
                   );

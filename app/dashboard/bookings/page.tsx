@@ -41,6 +41,7 @@ export default function BookingsPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [weekOffset, setWeekOffset] = useState(0);
   const [search, setSearch] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -77,9 +78,28 @@ export default function BookingsPage() {
       if (error) { toast.error("Failed to update booking"); return; }
       toast.success("Booking updated!");
     } else {
-      const { error } = await supabase.from("appointments").insert({ salon_id: salon.id, client_name: formData.client_name, client_email: formData.client_email, client_phone: formData.client_phone, staff_id: formData.staff_id || null, service_id: formData.service_id, date_time: formData.date_time, status: formData.status });
+      // Insert and get the new row's ID
+      const { data: inserted, error } = await supabase
+        .from("appointments")
+        .insert({ salon_id: salon.id, client_name: formData.client_name, client_email: formData.client_email, client_phone: formData.client_phone, staff_id: formData.staff_id || null, service_id: formData.service_id, date_time: formData.date_time, status: formData.status })
+        .select("id")
+        .single();
       if (error) { toast.error("Failed to create booking"); return; }
-      toast.success("Booking created!");
+
+      // Send confirmation email + WhatsApp to client (if email provided)
+      if (formData.client_email && inserted?.id) {
+        setSendingEmail(true);
+        try {
+          const appUrl = window.location.origin;
+          await fetch(`${appUrl}/api/send-confirmation`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ appointmentId: inserted.id }),
+          });
+        } catch { /* non-fatal */ }
+        setSendingEmail(false);
+      }
+      toast.success("Booking created! Confirmation sent to client.");
     }
     setFormData(EMPTY_FORM);
     setShowForm(false);
@@ -103,9 +123,11 @@ export default function BookingsPage() {
   const now = new Date();
   const filtered = useMemo(() => {
     let list = appointments;
-    if (activeTab === "Today") list = list.filter(a => new Date(a.date_time).toDateString() === now.toDateString());
-    else if (activeTab === "Upcoming") list = list.filter(a => new Date(a.date_time) > now);
-    if (search) list = list.filter(a => a.client_name?.toLowerCase().includes(search.toLowerCase()) || a.services?.name?.toLowerCase().includes(search.toLowerCase()));
+    if (activeTab === "Today")     list = list.filter(a => new Date(a.date_time).toDateString() === now.toDateString());
+    else if (activeTab === "Upcoming")  list = list.filter(a => new Date(a.date_time) > now && a.status !== "cancelled" && a.status !== "completed" && a.status !== "no_show");
+    else if (activeTab === "Completed") list = list.filter(a => a.status === "completed");
+    else if (activeTab === "Cancelled") list = list.filter(a => a.status === "cancelled" || a.status === "no_show");
+    if (search) list = list.filter(a => a.client_name?.toLowerCase().includes(search.toLowerCase()) || (a.services as any)?.name?.toLowerCase().includes(search.toLowerCase()));
     return list;
   }, [appointments, activeTab, search, now]);
 
@@ -153,9 +175,9 @@ export default function BookingsPage() {
             onFocus={e => { e.currentTarget.style.borderColor = "var(--indigo)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.12)"; }}
             onBlur={e => { e.currentTarget.style.borderColor = "var(--border-2)"; e.currentTarget.style.boxShadow = "none"; }}
           />
-          <div style={{ display: "flex", gap: 2, background: "var(--slate-100)", padding: 3, borderRadius: 8 }}>
-            {["All","Today","Upcoming"].map(t => (
-              <button key={t} onClick={() => setActiveTab(t)} style={{ fontSize: 12, padding: "5px 12px", borderRadius: 6, border: "none", background: activeTab === t ? "#fff" : "transparent", color: activeTab === t ? "var(--indigo)" : "var(--text-3)", cursor: "pointer", fontWeight: activeTab === t ? 700 : 500, boxShadow: activeTab === t ? "var(--shadow-xs)" : "none", transition: "all 0.12s" }}>{t}</button>
+          <div style={{ display: "flex", gap: 2, background: "var(--slate-100)", padding: 3, borderRadius: 8, flexWrap: "wrap" }}>
+            {["All","Today","Upcoming","Completed","Cancelled"].map(t => (
+              <button key={t} onClick={() => setActiveTab(t)} style={{ fontSize: 12, padding: "5px 10px", borderRadius: 6, border: "none", background: activeTab === t ? "#fff" : "transparent", color: activeTab === t ? "var(--indigo)" : "var(--text-3)", cursor: "pointer", fontWeight: activeTab === t ? 700 : 500, boxShadow: activeTab === t ? "var(--shadow-xs)" : "none", transition: "all 0.12s" }}>{t}</button>
             ))}
           </div>
         </div>
@@ -170,7 +192,7 @@ export default function BookingsPage() {
                   <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 600 }}>
                     <thead>
                       <tr style={{ background: "var(--slate-50)" }}>
-                        {["Status","Client","Service","Staff","Date & Time","Amount","Actions"].map(h => (
+                        {["Status","Client","Service","Staff","Date & Time","Amount","Notes","Actions"].map(h => (
                           <th key={h} style={{ fontSize: 10.5, fontWeight: 700, color: "var(--text-3)", textAlign: "left", padding: "10px 18px", letterSpacing: "0.5px", textTransform: "uppercase", borderBottom: "1px solid var(--border)" }}>{h}</th>
                         ))}
                       </tr>
@@ -184,10 +206,15 @@ export default function BookingsPage() {
                         >
                           <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)" }}><StatusPill status={a.status} /></td>
                           <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", fontSize: 13, fontWeight: 600, color: "var(--text-1)" }}>{a.client_name}</td>
-                          <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", fontSize: 13, color: "var(--text-2)" }}>{a.services?.name || "�"}</td>
-                          <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", fontSize: 13, color: "var(--text-3)" }}>{a.staff?.name || "�"}</td>
+                          <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", fontSize: 13, color: "var(--text-2)" }}>{(a as any).services?.name || <span style={{color:"var(--text-3)",opacity:.5}}>—</span>}</td>
+                          <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", fontSize: 13, color: "var(--text-3)" }}>{(a as any).staff?.name || <span style={{fontSize:11,color:"var(--text-3)",opacity:.5}}>Any</span>}</td>
                           <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", fontSize: 13, color: "var(--text-2)" }}>{new Date(a.date_time).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</td>
-                          <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", fontSize: 13, fontWeight: 700, color: "var(--green)" }}>{a.services?.price ? `�${a.services.price}` : "�"}</td>
+                          <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", fontSize: 13, fontWeight: 700, color: "var(--green)" }}>{(a as any).services?.price ? `£${(a as any).services.price}` : <span style={{color:"var(--text-3)",opacity:.5}}>—</span>}</td>
+                          <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", fontSize: 12, color: "var(--text-3)", maxWidth: 130 }}>
+                            {(a as any).notes
+                              ? <span title={(a as any).notes} style={{ display:"block",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:120,cursor:"help" }}>{(a as any).notes}</span>
+                              : <span style={{opacity:.3}}>—</span>}
+                          </td>
                           <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", whiteSpace: "nowrap" }}>
                             <button onClick={() => handleEdit(a)} style={{ color: "var(--indigo)", background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, marginRight: 8, fontFamily: "var(--font)" }}>Edit</button>
                             {a.status !== "completed" && a.status !== "cancelled" && (
@@ -272,12 +299,16 @@ export default function BookingsPage() {
           <FormGroup label="Email"><Input type="email" placeholder="sarah@email.com" value={formData.client_email} onChange={e => setFormData({ ...formData, client_email: e.target.value })} /></FormGroup>
           <FormGroup label="Phone"><Input placeholder="+44 7700 900000" value={formData.client_phone} onChange={e => setFormData({ ...formData, client_phone: e.target.value })} /></FormGroup>
           <FormGroup label="Date & Time *"><Input type="datetime-local" value={formData.date_time} onChange={e => setFormData({ ...formData, date_time: e.target.value })} required /></FormGroup>
-          <FormGroup label="Service"><Select value={formData.service_id} onChange={e => setFormData({ ...formData, service_id: e.target.value })}><option value="">Select service</option>{services.map(s => <option key={s.id} value={s.id}>{s.name} � �{s.price}</option>)}</Select></FormGroup>
-          <FormGroup label="Staff"><Select value={formData.staff_id} onChange={e => setFormData({ ...formData, staff_id: e.target.value })}><option value="">Select staff</option>{staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</Select></FormGroup>
+          <FormGroup label="Service"><Select value={formData.service_id} onChange={e => setFormData({ ...formData, service_id: e.target.value })}><option value="">Select service</option>{services.map(s => <option key={s.id} value={s.id}>{s.name} - {s.price}</option>)}</Select></FormGroup>
+          <FormGroup label="Staff"><Select value={formData.staff_id} onChange={e => setFormData({ ...formData, staff_id: e.target.value })}><option value="">Any Available Staff</option>{staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</Select></FormGroup>
           <FormGroup label="Status"><Select value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}><option value="pending">Pending</option><option value="confirmed">Confirmed</option><option value="completed">✓ Completed</option><option value="no_show">💤 No-show</option><option value="cancelled">Cancelled</option></Select></FormGroup>
-          <ModalActions><BtnSecondary type="button" onClick={() => { setShowForm(false); setEditingId(null); }}>Cancel</BtnSecondary><BtnPrimary type="submit">{editingId ? "Update" : "Create"}</BtnPrimary></ModalActions>
+          {!editingId && formData.client_email && (
+            <p style={{ fontSize: 12, color: "#059669", margin: "0 0 12px", fontWeight: 500 }}>✉️ Confirmation email will be sent to {formData.client_email}</p>
+          )}
+          <ModalActions><BtnSecondary type="button" onClick={() => { setShowForm(false); setEditingId(null); }}>Cancel</BtnSecondary><BtnPrimary type="submit" disabled={sendingEmail}>{sendingEmail ? "Sending confirmation…" : editingId ? "Update" : "Create Booking"}</BtnPrimary></ModalActions>
         </form>
       </Modal>
     </DashboardShell>
   );
 }
+
