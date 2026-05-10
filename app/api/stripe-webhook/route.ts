@@ -4,12 +4,12 @@ import { createClient } from "@supabase/supabase-js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 export async function POST(req: NextRequest) {
+  // Use service role key to bypass RLS on all DB operations in this webhook
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
   const body = await req.text();
   const sig = req.headers.get("stripe-signature") || "";
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
@@ -86,7 +86,10 @@ export async function POST(req: NextRequest) {
     });
 
     if (bookingId) {
-      await supabase.from("appointments").update({ payment_status: "failed" }).eq("id", bookingId);
+      await supabase.from("appointments").update({
+        payment_status: "failed",
+        notes: `⚠️ Payment failed on ${new Date().toLocaleDateString("en-GB")}. Client may need to rebook.`,
+      }).eq("id", bookingId);
     }
   }
 

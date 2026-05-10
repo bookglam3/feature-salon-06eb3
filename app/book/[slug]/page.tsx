@@ -141,7 +141,7 @@ function CheckoutForm({ amount, chargeAmount, methodLabel, bookingId, onSuccess,
     const { error } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: `${appUrl}/payment/success?service=${encodeURIComponent(service)}&date=${encodeURIComponent(date)}&time=${encodeURIComponent(time)}&name=${encodeURIComponent(name)}&amount=${chargeAmount.toFixed(2)}&deposit=${chargeAmount < amount}&salon=${encodeURIComponent(salon)}`,
+        return_url: `${appUrl}/payment/success?service=${encodeURIComponent(service)}&date=${encodeURIComponent(date)}&time=${encodeURIComponent(time)}&name=${encodeURIComponent(name)}&amount=${chargeAmount.toFixed(2)}&deposit=${chargeAmount < amount}&salon=${encodeURIComponent(salon)}&appt_id=${encodeURIComponent(bookingId)}&slug=${encodeURIComponent(slug)}`,
       },
     });
     if (error) { onError(error.message || "Payment failed"); setProcessing(false); }
@@ -292,10 +292,13 @@ export default function BookingPage() {
     const iso = bookingDateTime.toISOString();
 
     let availQuery = supabase.from("appointments").select("id")
-      .eq("salon_id", salon.id).eq("date_time", iso);
+      .eq("salon_id", salon.id)
+      .eq("date_time", iso)
+      .not("status", "eq", "cancelled");
+    // If specific staff selected, check only that staff's slot
+    // If "any available", check if ALL staff are fully booked (for now: any conflict blocks)
     if (selectedStaff?.id) { availQuery = availQuery.eq("staff_id", selectedStaff.id); }
-    else { availQuery = availQuery.is("staff_id", null); }
-    const { data: existing } = await availQuery.maybeSingle();
+    const { data: existing } = await availQuery.limit(1).maybeSingle();
     if (existing) { alert("This time slot is already booked. Please choose another time."); setSubmitting(false); return; }
 
     const pm = selectedOption?.id || "full_online";
@@ -465,7 +468,15 @@ export default function BookingPage() {
             {step===0 && (
               <>
                 <h2>Choose Your Service</h2>
-                {services.map(s => (
+                {services.length === 0 ? (
+                  <div style={{ textAlign:"center",padding:"32px 16px",background:"#F8FAFF",borderRadius:16,border:"1.5px dashed #C7D2FE" }}>
+                    <div style={{ fontSize:48,marginBottom:12 }}>✂️</div>
+                    <div style={{ fontSize:16,fontWeight:700,color:"#0F172A",marginBottom:8 }}>No services available yet</div>
+                    <div style={{ fontSize:13,color:"#64748B",lineHeight:1.6 }}>This salon hasn&apos;t set up their services yet.<br/>Please contact them directly to book.</div>
+                  </div>
+                ) : (
+                  services.map(s => (
+
                   <div key={s.id} className={`item-card ${selectedService?.id===s.id?"selected":""}`} onClick={()=>setSelectedService(s)}>
                     <div className="item-icon">{getServiceIcon(s.name)}</div>
                     <div className="item-content">
@@ -474,7 +485,8 @@ export default function BookingPage() {
                       {s.duration_minutes && <span className="item-meta">{s.duration_minutes} mins</span>}
                     </div>
                   </div>
-                ))}
+                  ))
+                )}
                 <button className="btn" disabled={!canNext0} onClick={()=>setStep(1)}>Continue →</button>
               </>
             )}

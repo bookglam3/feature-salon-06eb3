@@ -10,20 +10,39 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [resetMode, setResetMode] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetSent, setResetSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-
     if (error) {
       setError(error.message);
       setLoading(false);
     } else {
       window.location.href = "/dashboard";
     }
+  };
+
+  const handleReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setResetLoading(false);
+    if (error) { setError(error.message); return; }
+    setResetSent(true);
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%", padding: "10px 14px", border: "0.5px solid #E8EAF0",
+    borderRadius: "8px", fontSize: "14px", color: "#0F172A", outline: "none",
+    boxSizing: "border-box",
   };
 
   return (
@@ -34,7 +53,9 @@ export default function LoginPage() {
           <Link href="/" style={{ fontFamily: "Georgia, serif", fontSize: "28px", color: "#0F172A", letterSpacing: "-0.5px", textDecoration: "none" }}>
             feature
           </Link>
-          <p style={{ fontSize: "14px", color: "#64748B", marginTop: "8px" }}>Sign in to your salon</p>
+          <p style={{ fontSize: "14px", color: "#64748B", marginTop: "8px" }}>
+            {resetMode ? "Reset your password" : "Sign in to your salon"}
+          </p>
         </div>
 
         {error && (
@@ -43,47 +64,75 @@ export default function LoginPage() {
           </div>
         )}
 
-        <form onSubmit={handleLogin}>
-          <div style={{ marginBottom: "16px" }}>
-            <label style={{ fontSize: "13px", fontWeight: 500, color: "#0F172A", display: "block", marginBottom: "6px" }}>Email address</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="sarah@thecutstudio.co.uk"
-              required
-              style={{ width: "100%", padding: "10px 14px", border: "0.5px solid #E8EAF0", borderRadius: "8px", fontSize: "14px", color: "#0F172A", outline: "none", boxSizing: "border-box" }}
-            />
-          </div>
+        {/* ── Forgot Password Mode ── */}
+        {resetMode ? (
+          resetSent ? (
+            <div style={{ textAlign: "center", padding: "20px 0" }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>📧</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#0F172A", marginBottom: 8 }}>Check your inbox</div>
+              <div style={{ fontSize: 13, color: "#64748B", lineHeight: 1.6 }}>
+                We sent a password reset link to <strong>{resetEmail}</strong>.
+                Check your spam folder if it doesn&apos;t arrive.
+              </div>
+              <button onClick={() => { setResetMode(false); setResetSent(false); setError(""); }}
+                style={{ marginTop: 24, fontSize: 13, color: "#4F6EF7", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
+                Back to sign in
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleReset}>
+              <div style={{ marginBottom: "16px" }}>
+                <label style={{ fontSize: "13px", fontWeight: 500, color: "#0F172A", display: "block", marginBottom: "6px" }}>Email address</label>
+                <input type="email" value={resetEmail} onChange={e => setResetEmail(e.target.value)}
+                  placeholder="your@email.com" required style={inputStyle} />
+              </div>
+              <button type="submit" disabled={resetLoading}
+                style={{ width: "100%", padding: "12px", background: resetLoading ? "#94A3B8" : "#4F6EF7", color: "#fff", border: "none", borderRadius: "8px", fontSize: "14px", fontWeight: 500, cursor: resetLoading ? "not-allowed" : "pointer" }}>
+                {resetLoading ? "Sending…" : "Send Reset Link"}
+              </button>
+              <div style={{ textAlign: "center", marginTop: 16 }}>
+                <button type="button" onClick={() => { setResetMode(false); setError(""); }}
+                  style={{ fontSize: 13, color: "#64748B", background: "none", border: "none", cursor: "pointer" }}>
+                  ← Back to sign in
+                </button>
+              </div>
+            </form>
+          )
+        ) : (
+          /* ── Sign In Mode ── */
+          <>
+            <form onSubmit={handleLogin}>
+              <div style={{ marginBottom: "16px" }}>
+                <label style={{ fontSize: "13px", fontWeight: 500, color: "#0F172A", display: "block", marginBottom: "6px" }}>Email address</label>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                  placeholder="sarah@thecutstudio.co.uk" required style={inputStyle} />
+              </div>
+              <div style={{ marginBottom: "8px" }}>
+                <label style={{ fontSize: "13px", fontWeight: 500, color: "#0F172A", display: "block", marginBottom: "6px" }}>Password</label>
+                <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••" required style={inputStyle} />
+              </div>
+              {/* Forgot password link */}
+              <div style={{ textAlign: "right", marginBottom: "20px" }}>
+                <button type="button" onClick={() => { setResetMode(true); setResetEmail(email); setError(""); }}
+                  style={{ fontSize: "12px", color: "#4F6EF7", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
+                  Forgot password?
+                </button>
+              </div>
+              <button type="submit" disabled={loading}
+                style={{ width: "100%", padding: "12px", background: loading ? "#94A3B8" : "#4F6EF7", color: "#fff", border: "none", borderRadius: "8px", fontSize: "14px", fontWeight: 500, cursor: loading ? "not-allowed" : "pointer" }}>
+                {loading ? "Signing in..." : "Sign in"}
+              </button>
+            </form>
 
-          <div style={{ marginBottom: "24px" }}>
-            <label style={{ fontSize: "13px", fontWeight: 500, color: "#0F172A", display: "block", marginBottom: "6px" }}>Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-              style={{ width: "100%", padding: "10px 14px", border: "0.5px solid #E8EAF0", borderRadius: "8px", fontSize: "14px", color: "#0F172A", outline: "none", boxSizing: "border-box" }}
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            style={{ width: "100%", padding: "12px", background: loading ? "#94A3B8" : "#4F6EF7", color: "#fff", border: "none", borderRadius: "8px", fontSize: "14px", fontWeight: 500, cursor: loading ? "not-allowed" : "pointer" }}
-          >
-            {loading ? "Signing in..." : "Sign in"}
-          </button>
-        </form>
-
-        <div style={{ textAlign: "center", margin: "24px 0", fontSize: "13px", color: "#94A3B8" }}>
-          Don&apos;t have an account?{" "}
-          <Link href="/signup" style={{ color: "#4F6EF7", textDecoration: "none", fontWeight: 500 }}>
-            Start free trial
-          </Link>
-        </div>
-
+            <div style={{ textAlign: "center", margin: "24px 0", fontSize: "13px", color: "#94A3B8" }}>
+              Don&apos;t have an account?{" "}
+              <Link href="/signup" style={{ color: "#4F6EF7", textDecoration: "none", fontWeight: 500 }}>
+                Start free trial
+              </Link>
+            </div>
+          </>
+        )}
       </div>
     </main>
   );
