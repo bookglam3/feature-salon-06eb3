@@ -23,9 +23,20 @@ export default function SignupPage() {
     if (error) { setError(error.message); setLoading(false); return; }
 
     if (data.user) {
+      // Build a unique slug
+      const baseSlug = salonName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+      let slug = baseSlug;
+      let attempt = 1;
+      while (true) {
+        const { data: existing } = await supabase.from("salons").select("id").eq("slug", slug).maybeSingle();
+        if (!existing) break;
+        attempt++;
+        slug = `${baseSlug}-${attempt}`;
+      }
+
       const { error: salonError } = await supabase.from("salons").insert({
         name: salonName,
-        slug: salonName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""),
+        slug,
         owner_id: data.user.id,
         owner_email: email,
         plan: "starter",

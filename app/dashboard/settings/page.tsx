@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
@@ -143,7 +143,18 @@ export default function SettingsPage() {
   const [logoError, setLogoError] = useState("");
   const logoInputRef = useRef<HTMLInputElement>(null);
   const [services, setServices] = useState<any[]>([]);
-  const [newService, setNewService] = useState({ name: "", price: "", duration: "" });
+  const [newService, setNewService] = useState({ name: "", price: "", duration_minutes: "" });
+
+  // Booking link copy
+  const [copied, setCopied] = useState(false);
+  const [origin, setOrigin] = useState("");
+  useEffect(() => { setOrigin(window.location.origin); }, []);
+  const handleCopyLink = useCallback(() => {
+    if (!salon) return;
+    navigator.clipboard.writeText(`${origin}/book/${salon.slug}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  }, [origin, salon]);
 
   // Reminder settings
   const [remindersEnabled, setRemindersEnabled] = useState(true);
@@ -235,9 +246,10 @@ export default function SettingsPage() {
     if (!salon) return;
     await supabase.from("services").insert({
       salon_id: salon.id, name: newService.name,
-      price: parseFloat(newService.price), duration: parseInt(newService.duration),
+      price: parseFloat(newService.price),
+      duration_minutes: parseInt(newService.duration_minutes) || null,
     });
-    setNewService({ name: "", price: "", duration: "" });
+    setNewService({ name: "", price: "", duration_minutes: "" });
     const { data } = await supabase.from("services").select("*").eq("salon_id", salon.id);
     setServices(data || []);
   };
@@ -327,6 +339,27 @@ export default function SettingsPage() {
       <div style={{ marginBottom: "24px" }}>
         <p style={{ margin: 0, fontSize: "14px", color: "#64748B" }}>Manage your salon</p>
         <h1 style={{ margin: 0, fontSize: "28px", color: "#0F172A", fontWeight: 700 }}>Settings</h1>
+      </div>
+
+      {/* ── Booking Link ── */}
+      <div style={{ ...cardStyle, background: "linear-gradient(135deg,#0F0B2D 0%,#3730A3 60%,#6366F1 100%)", border: "none", marginBottom: 20 }}>
+        <div style={{ fontSize: "13px", fontWeight: 700, color: "rgba(255,255,255,0.6)", letterSpacing: "0.5px", textTransform: "uppercase", marginBottom: 6 }}>🔗 Your Booking Page</div>
+        <div style={{ fontSize: "15px", fontWeight: 700, color: "#fff", marginBottom: 4 }}>{salon?.name}</div>
+        <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.55)", marginBottom: 18, wordBreak: "break-all" }}>{origin}/book/{salon?.slug}</div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <button
+            onClick={handleCopyLink}
+            style={{ padding: "10px 20px", background: copied ? "rgba(16,185,129,0.25)" : "rgba(255,255,255,0.12)", color: "#fff", border: `1.5px solid ${copied ? "rgba(16,185,129,0.6)" : "rgba(255,255,255,0.25)"}`, borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.15s", backdropFilter: "blur(8px)" }}
+          >
+            {copied ? "✓ Copied!" : "📋 Copy Link"}
+          </button>
+          <button
+            onClick={() => window.open(`/book/${salon?.slug}`, "_blank")}
+            style={{ padding: "10px 20px", background: "rgba(255,255,255,0.08)", color: "#fff", border: "1.5px solid rgba(255,255,255,0.2)", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.15s" }}
+          >
+            Preview ↗
+          </button>
+        </div>
       </div>
 
       {/* ── Salon Brand ── */}
@@ -696,7 +729,7 @@ export default function SettingsPage() {
           <div key={s.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "0.5px solid #F1F5F9" }}>
             <div>
               <div style={{ fontSize: "13px", color: "#0F172A" }}>{s.name}</div>
-              <div style={{ fontSize: "12px", color: "#94A3B8" }}>{s.duration} min · £{s.price}</div>
+              <div style={{ fontSize: "12px", color: "#94A3B8" }}>{s.duration_minutes ?? s.duration ?? "—"} min · £{s.price}</div>
             </div>
             <button onClick={() => handleDeleteService(s.id)} style={{ color: "#EF4444", background: "none", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 500 }}>Delete</button>
           </div>
@@ -704,7 +737,7 @@ export default function SettingsPage() {
         <form onSubmit={handleAddService} style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "16px" }}>
           <input placeholder="Service name" value={newService.name} onChange={e => setNewService({ ...newService, name: e.target.value })} required style={{ padding: "8px 12px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "8px", flex: "1 1 140px", color: "#0F172A" }} />
           <input placeholder="Price (£)" type="number" value={newService.price} onChange={e => setNewService({ ...newService, price: e.target.value })} required style={{ padding: "8px 12px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "8px", width: "100px", color: "#0F172A" }} />
-          <input placeholder="Duration (min)" type="number" value={newService.duration} onChange={e => setNewService({ ...newService, duration: e.target.value })} required style={{ padding: "8px 12px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "8px", width: "120px", color: "#0F172A" }} />
+          <input placeholder="Duration (min)" type="number" value={newService.duration_minutes} onChange={e => setNewService({ ...newService, duration_minutes: e.target.value })} style={{ padding: "8px 12px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "8px", width: "120px", color: "#0F172A" }} />
           <button type="submit" style={{ padding: "8px 16px", background: "#4F6EF7", color: "#fff", border: "none", borderRadius: "8px", fontSize: "13px", cursor: "pointer", fontWeight: 600 }}>Add</button>
         </form>
       </div>
