@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
           salonAddress: salon?.address,
           dateTime:     appt.date_time,
           price:        appt.services?.price,
-          cancelLink:   `${appUrl}/book/${salon?.slug}`,
+          cancelLink:   `${appUrl}/reschedule/${appointmentId}`,
         });
         await supabase
           .from("appointments")

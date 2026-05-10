@@ -15,6 +15,7 @@ interface DashboardShellProps {
 export default function DashboardShell({ children, salonName, topbar }: DashboardShellProps) {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [subStatus, setSubStatus] = useState<string | null>(null);
 
   const handleLogout = useCallback(async () => {
     await supabase.auth.signOut();
@@ -25,6 +26,16 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
     const handler = () => setSidebarOpen(true);
     document.addEventListener("open-sidebar", handler);
     return () => document.removeEventListener("open-sidebar", handler);
+  }, []);
+
+  // Check subscription status for paywall banner
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: salon } = await supabase.from("salons").select("subscription_status").eq("owner_id", user.id).single();
+      if (salon) setSubStatus(salon.subscription_status);
+    })();
   }, []);
 
   return (
@@ -88,6 +99,16 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
           <div onClick={() => setSidebarOpen(true)} id="sidebar-trigger" style={{display:'none'}} />
           {topbar ? topbar : (
             <DefaultTopBar onMenuClick={() => setSidebarOpen(true)} />
+          )}
+
+          {/* Subscription warning banner */}
+          {(subStatus === "past_due" || subStatus === "cancelled") && (
+            <div style={{ background: subStatus === "cancelled" ? "#FEF2F2" : "#FFFBEB", borderBottom: `2px solid ${subStatus === "cancelled" ? "#FCA5A5" : "#FDE68A"}`, padding: "10px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: subStatus === "cancelled" ? "#DC2626" : "#92400E" }}>
+                {subStatus === "cancelled" ? "❌ Your subscription is cancelled — renew to keep accepting bookings." : "⚠️ Payment failed — your subscription is past due. Update your billing to avoid service interruption."}
+              </span>
+              <a href="/subscribe" style={{ fontSize: 12, fontWeight: 700, color: "#fff", background: subStatus === "cancelled" ? "#DC2626" : "#D97706", padding: "6px 16px", borderRadius: 8, textDecoration: "none", whiteSpace: "nowrap" }}>Renew Now →</a>
+            </div>
           )}
 
           <div className="ds-content fade-in">

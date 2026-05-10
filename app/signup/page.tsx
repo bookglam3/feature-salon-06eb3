@@ -44,17 +44,26 @@ export default function SignupPage() {
       if (salonError) { setError("Failed to create salon: " + salonError.message); setLoading(false); return; }
       setSuccess(true);
       setLoading(false);
-      setTimeout(() => router.push("/subscribe"), 500);
+      // Don't auto-redirect — user must verify email first
     }
   };
 
   if (success) {
     return (
       <main style={{ minHeight: "100vh", background: "#F2F4F7", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ background: "#fff", borderRadius: "16px", padding: "48px", textAlign: "center" }}>
-          <div style={{ fontSize: "48px" }}>🎉</div>
-          <h2 style={{ fontFamily: "Georgia, serif", fontSize: "24px", color: "#0F172A" }}>Welcome to Feature!</h2>
-          <p style={{ color: "#64748B" }}>Account created! Redirecting to dashboard...</p>
+        <div style={{ background: "#fff", borderRadius: "16px", padding: "48px", textAlign: "center", maxWidth: 420, width: "100%", border: "0.5px solid #E8EAF0" }}>
+          <div style={{ fontSize: "48px", marginBottom: 16 }}>📧</div>
+          <h2 style={{ fontFamily: "Georgia, serif", fontSize: "24px", color: "#0F172A", marginBottom: 12 }}>Check your email!</h2>
+          <p style={{ color: "#64748B", fontSize: 14, lineHeight: 1.7, marginBottom: 24 }}>
+            We&apos;ve sent a verification link to <strong style={{ color: "#0F172A" }}>{email}</strong>.<br />
+            Click the link to verify your account and then sign in.
+          </p>
+          <div style={{ background: "#EEF2FF", border: "0.5px solid #C7D2FE", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#4338CA", marginBottom: 20 }}>
+            💡 Check your <strong>spam folder</strong> if you don&apos;t see it within 2 minutes.
+          </div>
+          <a href="/login" style={{ display: "inline-block", padding: "10px 24px", background: "#4F6EF7", color: "#fff", borderRadius: 8, textDecoration: "none", fontSize: 13, fontWeight: 600 }}>
+            Go to Login →
+          </a>
         </div>
       </main>
     );

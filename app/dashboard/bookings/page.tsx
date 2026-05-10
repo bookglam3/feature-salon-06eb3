@@ -12,9 +12,11 @@ import type { Appointment, Service } from "../../types";
 type StaffItem = { id: string; name: string };
 
 const STATUS_COLORS: Record<string, { bg: string; color: string; border: string }> = {
-  confirmed: { bg: "var(--green-light)",  color: "var(--green)",  border: "var(--green-pale)" },
-  pending:   { bg: "var(--indigo-light)", color: "var(--indigo)", border: "var(--indigo-pale)" },
-  cancelled: { bg: "var(--red-light)",    color: "var(--red)",    border: "var(--red-pale)" },
+  confirmed:  { bg: "var(--green-light)",  color: "var(--green)",  border: "var(--green-pale)" },
+  pending:    { bg: "var(--indigo-light)", color: "var(--indigo)", border: "var(--indigo-pale)" },
+  cancelled:  { bg: "var(--red-light)",    color: "var(--red)",    border: "var(--red-pale)" },
+  completed:  { bg: "#F0FDF4",             color: "#059669",       border: "#A7F3D0" },
+  no_show:    { bg: "#FFF7ED",             color: "#D97706",       border: "#FDE68A" },
 };
 
 function StatusPill({ status }: { status: string }) {
@@ -161,7 +163,7 @@ export default function BookingsPage() {
         {view === "table" ? (
           <div style={{ background: "#fff", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", overflow: "hidden" }}>
             {filtered.length === 0 ? (
-              <EmptyState icon="??" title="No bookings found" description={search ? "Try a different search term" : "Create your first booking"} action={{ label: "+ New Booking", onClick: () => setShowForm(true) }} />
+              <EmptyState icon="📅" title="No bookings found" description={search ? "Try a different search term" : "Create your first booking"} action={{ label: "+ New Booking", onClick: () => setShowForm(true) }} />
             ) : (
               <>
                 <div style={{ overflowX: "auto" }}>
@@ -187,7 +189,21 @@ export default function BookingsPage() {
                           <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", fontSize: 13, color: "var(--text-2)" }}>{new Date(a.date_time).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</td>
                           <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", fontSize: 13, fontWeight: 700, color: "var(--green)" }}>{a.services?.price ? `�${a.services.price}` : "�"}</td>
                           <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", whiteSpace: "nowrap" }}>
-                            <button onClick={() => handleEdit(a)} style={{ color: "var(--indigo)", background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, marginRight: 10, fontFamily: "var(--font)" }}>Edit</button>
+                            <button onClick={() => handleEdit(a)} style={{ color: "var(--indigo)", background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, marginRight: 8, fontFamily: "var(--font)" }}>Edit</button>
+                            {a.status !== "completed" && a.status !== "cancelled" && (
+                              <button onClick={async () => {
+                                await supabase.from("appointments").update({ status: "completed" }).eq("id", a.id);
+                                await reloadAppts();
+                                toast.success("Marked as complete ✓");
+                              }} style={{ color: "#059669", background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, marginRight: 8, fontFamily: "var(--font)" }}>✓ Done</button>
+                            )}
+                            {a.status !== "no_show" && a.status !== "cancelled" && a.status !== "completed" && (
+                              <button onClick={async () => {
+                                await supabase.from("appointments").update({ status: "no_show" }).eq("id", a.id);
+                                await reloadAppts();
+                                toast.success("Marked as no-show");
+                              }} style={{ color: "#D97706", background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, marginRight: 8, fontFamily: "var(--font)" }}>No-show</button>
+                            )}
                             <button onClick={() => handleDelete(a.id)} style={{ color: "var(--red)", background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "var(--font)" }}>Delete</button>
                           </td>
                         </tr>
@@ -258,7 +274,7 @@ export default function BookingsPage() {
           <FormGroup label="Date & Time *"><Input type="datetime-local" value={formData.date_time} onChange={e => setFormData({ ...formData, date_time: e.target.value })} required /></FormGroup>
           <FormGroup label="Service"><Select value={formData.service_id} onChange={e => setFormData({ ...formData, service_id: e.target.value })}><option value="">Select service</option>{services.map(s => <option key={s.id} value={s.id}>{s.name} � �{s.price}</option>)}</Select></FormGroup>
           <FormGroup label="Staff"><Select value={formData.staff_id} onChange={e => setFormData({ ...formData, staff_id: e.target.value })}><option value="">Select staff</option>{staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</Select></FormGroup>
-          <FormGroup label="Status"><Select value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}><option value="pending">Pending</option><option value="confirmed">Confirmed</option><option value="cancelled">Cancelled</option></Select></FormGroup>
+          <FormGroup label="Status"><Select value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}><option value="pending">Pending</option><option value="confirmed">Confirmed</option><option value="completed">✓ Completed</option><option value="no_show">💤 No-show</option><option value="cancelled">Cancelled</option></Select></FormGroup>
           <ModalActions><BtnSecondary type="button" onClick={() => { setShowForm(false); setEditingId(null); }}>Cancel</BtnSecondary><BtnPrimary type="submit">{editingId ? "Update" : "Create"}</BtnPrimary></ModalActions>
         </form>
       </Modal>

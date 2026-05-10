@@ -5,12 +5,24 @@ export const dynamic = "force-dynamic";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.FROM_EMAIL || "onboarding@resend.dev";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://featuresalon.co.uk";
 
 /**
  * POST /api/notify-owner
  * Called by the reschedule page when a client reschedules or cancels.
+ * Secured: only accepts requests from same origin or with X-Internal-Secret.
  */
 export async function POST(req: NextRequest) {
+  // Basic origin guard — only allow same-origin or internal calls
+  const origin = req.headers.get("origin") || "";
+  const referer = req.headers.get("referer") || "";
+  const secret = req.headers.get("x-internal-secret");
+  const validOrigin = origin.startsWith(APP_URL) || referer.startsWith(APP_URL);
+  const validSecret = secret === (process.env.CRON_SECRET || "");
+  if (!validOrigin && !validSecret) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   try {
     const {
       ownerEmail, clientName, serviceName,

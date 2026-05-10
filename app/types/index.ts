@@ -17,7 +17,7 @@ export interface Appointment {
   service_id: string | null;
   staff_id: string | null;
   date_time: string;
-  status: 'confirmed' | 'pending' | 'cancelled';
+  status: 'confirmed' | 'pending' | 'cancelled' | 'completed' | 'no_show';
   created_at: string;
   services?: { name: string; price: number } | null;
   staff?: { name: string } | null;
@@ -56,4 +56,4 @@ export interface Offer {
   created_at: string;
 }
 
-export type AppointmentStatus = 'confirmed' | 'pending' | 'cancelled';
+export type AppointmentStatus = 'confirmed' | 'pending' | 'cancelled' | 'completed' | 'no_show';
