@@ -165,6 +165,9 @@ export default function BookingPage() {
   const [bookingId, setBookingId] = useState("");
   const [paymentError, setPaymentError] = useState("");
 
+  // Confirmation screen state (for pay_at_salon)
+  const [confirmedBooking, setConfirmedBooking] = useState<{ service: string; date: string; time: string; name: string; salon: string } | null>(null);
+
   // Auto-detect country from IP — tries two services, falls back to PK
   useEffect(() => {
     const SUPPORTED: Record<string, CountryCode> = { GB: "GB", PK: "PK", AE: "AE", SA: "SA" };
@@ -297,7 +300,7 @@ export default function BookingPage() {
     }
     setBookingId(appt.id);
 
-    // Pay at salon — skip Stripe, go straight to success
+    // Pay at salon — skip Stripe, show confirmation screen directly
     if (isPayAtSalon) {
       // Fire confirmation email immediately (no Stripe webhook for pay-at-salon)
       fetch("/api/send-confirmation", {
@@ -306,9 +309,10 @@ export default function BookingPage() {
         body: JSON.stringify({ appointmentId: appt.id }),
       }).catch(e => console.error("[send-confirmation] failed:", e));
 
-      const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-      const date = selDate?.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}) || "";
-      window.location.href = `${baseUrl}/payment/success?service=${encodeURIComponent(selectedService.name)}&date=${encodeURIComponent(date)}&time=${encodeURIComponent(selTime)}&name=${encodeURIComponent(form.name)}&amount=0&deposit=false&salon=${encodeURIComponent(salon.name)}`;
+      const dateStr = selDate?.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}) || "";
+      setConfirmedBooking({ service: selectedService.name, date: dateStr, time: selTime, name: form.name, salon: salon.name });
+      setSubmitting(false);
+      setStep(5);
       return;
     }
 
@@ -643,6 +647,62 @@ export default function BookingPage() {
                   />
                 </Elements>
               </>
+            )}
+
+            {/* Step 5: Booking Confirmed (pay_at_salon) */}
+            {step===5 && confirmedBooking && (
+              <div style={{ textAlign: "center", padding: "8px 0 16px" }}>
+                {/* Success icon */}
+                <div style={{ width: 88, height: 88, borderRadius: "50%", background: "linear-gradient(135deg,#10B981 0%,#059669 100%)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px", boxShadow: "0 12px 32px rgba(16,185,129,0.35)" }}>
+                  <span style={{ fontSize: 40 }}>✓</span>
+                </div>
+
+                <h2 style={{ fontSize: 28, fontWeight: 800, color: "#0F172A", letterSpacing: "-0.8px", marginBottom: 8 }}>Booking Confirmed!</h2>
+                <p style={{ fontSize: 15, color: "#64748B", fontWeight: 500, marginBottom: 28 }}>We look forward to seeing you, {confirmedBooking.name}.</p>
+
+                {/* Details card */}
+                <div style={{ background: "linear-gradient(135deg,#F8FAFC 0%,#F1F5F9 100%)", borderRadius: 20, border: "2px solid #E2E8F0", padding: "24px 20px", textAlign: "left", marginBottom: 20 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                    {/* Service */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 0", borderBottom: "1px solid #E2E8F0" }}>
+                      <div style={{ width: 40, height: 40, borderRadius: 10, background: "linear-gradient(135deg,#667eea,#764ba2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>✂️</div>
+                      <div>
+                        <div style={{ fontSize: 12, color: "#94A3B8", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Service</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: "#0F172A", marginTop: 2 }}>{confirmedBooking.service}</div>
+                      </div>
+                    </div>
+                    {/* Date */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 0", borderBottom: "1px solid #E2E8F0" }}>
+                      <div style={{ width: 40, height: 40, borderRadius: 10, background: "linear-gradient(135deg,#667eea,#764ba2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>📅</div>
+                      <div>
+                        <div style={{ fontSize: 12, color: "#94A3B8", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Date</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: "#0F172A", marginTop: 2 }}>{confirmedBooking.date}</div>
+                      </div>
+                    </div>
+                    {/* Time */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 0", borderBottom: "1px solid #E2E8F0" }}>
+                      <div style={{ width: 40, height: 40, borderRadius: 10, background: "linear-gradient(135deg,#667eea,#764ba2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>🕐</div>
+                      <div>
+                        <div style={{ fontSize: 12, color: "#94A3B8", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Time</div>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: "#0F172A", marginTop: 2 }}>{confirmedBooking.time}</div>
+                      </div>
+                    </div>
+                    {/* Payment */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 0" }}>
+                      <div style={{ width: 40, height: 40, borderRadius: 10, background: "linear-gradient(135deg,#10B981,#059669)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>💳</div>
+                      <div>
+                        <div style={{ fontSize: 12, color: "#94A3B8", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Payment</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: "#10B981", background: "rgba(16,185,129,0.1)", padding: "4px 10px", borderRadius: 20, border: "1px solid rgba(16,185,129,0.2)" }}>Pay at Salon</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Confirmation note */}
+                <p style={{ fontSize: 13, color: "#94A3B8", fontWeight: 500, lineHeight: 1.6 }}>A confirmation has been sent to your email and phone. Please arrive a few minutes early.</p>
+              </div>
             )}
           </div>
         </div>
