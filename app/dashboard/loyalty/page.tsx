@@ -66,10 +66,10 @@ function LoyaltyContent() {
         // Seed from appointments
         const { data: appts } = await supabase.from("appointments").select("client_name, client_email, status, services(price)").eq("salon_id", profile.salon.id).eq("status","confirmed");
         const map: Record<string, { name:string; pts:number }> = {};
-        (appts||[]).forEach((a:any) => {
+        (appts||[]).forEach((a: { client_email: string; client_name: string; services?: { price?: number }[] | null }) => {
           const key = a.client_email || a.client_name;
           if (!map[key]) map[key] = { name: a.client_name, pts: 0 };
-          map[key].pts += Math.floor((a.services?.price || 0) * 10);
+          map[key].pts += Math.floor(((a.services?.[0]?.price) || 0) * 10);
         });
         const inserts = Object.entries(map).map(([email, v]) => ({
           salon_id: profile.salon.id, client_email: email, client_name: v.name,

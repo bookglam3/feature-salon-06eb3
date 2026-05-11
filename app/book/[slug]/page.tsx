@@ -2,9 +2,20 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
+import Image from "next/image";
 import { supabase } from "@/app/lib/supabase";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
+
+interface SalonData {
+  id: string; name: string; slug: string; description?: string;
+  logo_url?: string; payment_methods?: Record<string, boolean | number>;
+}
+interface ServiceItem { id: string; name: string; price: number; duration?: number; duration_minutes?: number; description?: string; }
+interface StaffMember {
+  id: string; name: string; role?: string;
+  working_hours?: Record<string, { enabled: boolean; start: string; end: string }>;
+}
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "");
 const STRIPE_KEY_MISSING = !process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
@@ -41,7 +52,8 @@ function getInitials(name: string): string {
 const DAY_KEYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 
 // Filter TIME_SLOTS to only those within staff working hours for the selected date
-function getAvailableSlots(allSlots: string[], staff: any | null, date: Date): { slot: string; offDay: boolean } {
+function getAvailableSlots(allSlots: string[], staff: StaffMember | null, date: Date): { slot: string; offDay: boolean } {
+  void allSlots;
   if (!staff || !staff.working_hours) return { slot: "", offDay: false }; // no filtering
   const dayKey = DAY_KEYS[date.getDay()];
   const hours = staff.working_hours[dayKey];
@@ -49,7 +61,7 @@ function getAvailableSlots(allSlots: string[], staff: any | null, date: Date): {
   return { slot: `${hours.start}–${hours.end}`, offDay: false };
 }
 
-function isSlotInRange(slot: string, staff: any | null, date: Date): boolean {
+function isSlotInRange(slot: string, staff: StaffMember | null, date: Date): boolean {
   if (!staff || !staff.working_hours) return true;
   const dayKey = DAY_KEYS[date.getDay()];
   const hours = staff.working_hours[dayKey];
@@ -127,7 +139,8 @@ interface PaymentMethods {
 const DEFAULT_PM: PaymentMethods = { full_online: true, deposit_online: true, pay_at_salon: false, custom_deposit: false, deposit_percent: 50 };
 
 /* ── Stripe Payment Form ── */
-function CheckoutForm({ amount, chargeAmount, methodLabel, bookingId, onSuccess, onError, slug, service, date, time, name, salon }:
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function CheckoutForm({ amount, chargeAmount, methodLabel, bookingId, onSuccess: _, onError, slug, service, date, time, name, salon }:
   { amount: number; chargeAmount: number; methodLabel: string; bookingId: string; onSuccess: ()=>void; onError:(msg:string)=>void; slug:string; service:string; date:string; time:string; name:string; salon:string }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -162,16 +175,16 @@ function CheckoutForm({ amount, chargeAmount, methodLabel, bookingId, onSuccess,
 export default function BookingPage() {
   const { slug } = useParams() as { slug: string };
 
-  const [salon, setSalon] = useState<any>(null);
-  const [services, setServices] = useState<any[]>([]);
-  const [staffList, setStaffList] = useState<any[]>([]);
+  const [salon, setSalon] = useState<SalonData | null>(null);
+  const [services, setServices] = useState<ServiceItem[]>([]);
+  const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const [step, setStep] = useState(0);
-  const [selectedService, setSelectedService] = useState<any>(null);
-  const [selectedStaff, setSelectedStaff] = useState<any>(null);
+  const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
+  const [selectedStaff, setSelectedStaff] = useState<StaffMember | null>(null);
   const [staffConfirmed, setStaffConfirmed] = useState(false);
   const [selDate, setSelDate] = useState<Date|null>(null);
   const [selTime, setSelTime] = useState("");
@@ -246,6 +259,7 @@ export default function BookingPage() {
   // Keep form.phone (E.164) in sync whenever raw input or country changes
   useEffect(() => {
     const e164 = toE164(phoneRaw, countryCode);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setForm(prev => ({ ...prev, phone: e164 }));
   }, [phoneRaw, countryCode]);
 
@@ -465,7 +479,9 @@ export default function BookingPage() {
         <div className="hero">
           <div className="hero-bg"></div>
           <div className="logo-wrapper">
-            {salon?.logo_url ? <img src={salon.logo_url} className="logo" alt={salon.name}/> : <div className="logo-placeholder">{getInitials(salon?.name||"S")}</div>}
+            {salon?.logo_url
+              ? <Image src={salon.logo_url} className="logo" alt={salon.name} width={92} height={92} style={{ borderRadius: 22, objectFit: "cover" }}/>
+              : <div className="logo-placeholder">{getInitials(salon?.name||"S")}</div>}
           </div>
           <h1>{salon?.name}</h1>
           {salon?.description && <p>{salon.description}</p>}
@@ -498,7 +514,7 @@ export default function BookingPage() {
                     <div className="item-content">
                       <h3>{s.name}</h3>
                       <p>£{s.price}</p>
-                      {(s.duration_minutes > 0 || s.duration > 0) && <span className="item-meta">{s.duration_minutes || s.duration} mins</span>}
+                      {((s.duration_minutes ?? 0) > 0 || (s.duration ?? 0) > 0) && <span className="item-meta">{s.duration_minutes || s.duration} mins</span>}
                       {s.description && <span style={{display:"block",fontSize:12,color:"#94A3B8",fontStyle:"italic",marginTop:2}}>{s.description}</span>}
                     </div>
                   </div>

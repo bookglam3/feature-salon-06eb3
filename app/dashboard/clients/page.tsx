@@ -6,15 +6,36 @@ import { getCurrentUserProfile } from "../../lib/auth";
 
 type SortKey = "name" | "bookings" | "spent" | "lastVisit";
 
+interface ClientRecord {
+  name: string;
+  email: string;
+  phone: string;
+  lastVisit: Date;
+  bookings: number;
+  spent: number;
+  note?: string;
+  services: Record<string, number>;
+}
+
+interface HistoryItem {
+  id: string;
+  date_time: string;
+  status: string;
+  services?: { name?: string; price?: number }[] | { name?: string; price?: number } | null;
+  staff?: { name: string } | null;
+}
+
+type SalonData = { id: string; slug?: string };
+
 export default function ClientsPage() {
   const router = useRouter();
-  const [salon, setSalon] = useState<any>(null);
-  const [clients, setClients] = useState<any[]>([]);
+  const [salon, setSalon] = useState<SalonData | null>(null);
+  const [clients, setClients] = useState<ClientRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("lastVisit");
-  const [selected, setSelected] = useState<any>(null);
-  const [history, setHistory] = useState<any[]>([]);
+  const [selected, setSelected] = useState<ClientRecord | null>(null);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
   const [histLoading, setHistLoading] = useState(false);
   const [note, setNote] = useState("");
   const [noteSaving, setNoteSaving] = useState(false);
@@ -31,11 +52,15 @@ export default function ClientsPage() {
         .eq("salon_id", profile.salon.id)
         .order("date_time", { ascending: false });
 
-      const map = new Map<string, any>();
-      (appts || []).forEach((a: any) => {
+      const map = new Map<string, ClientRecord>();
+      (appts || []).forEach((a: {
+        client_name: string; client_email: string; client_phone: string;
+        id: string; date_time: string; status: string;
+        services?: { name?: string; price?: number }[] | { name?: string; price?: number } | null;
+      }) => {
         const key = a.client_email || a.client_name;
         const price = Array.isArray(a.services)
-          ? a.services.reduce((s: number, x: any) => s + Number(x?.price ?? 0), 0)
+          ? a.services.reduce((s: number, x: { price?: number }) => s + Number(x?.price ?? 0), 0)
           : Number(a.services?.price ?? 0);
         const svcName = Array.isArray(a.services) ? a.services[0]?.name : a.services?.name;
         if (!map.has(key)) {
@@ -56,14 +81,14 @@ export default function ClientsPage() {
     })();
   }, [router]);
 
-  const openClient = async (c: any) => {
+  const openClient = async (c: ClientRecord) => {
     setSelected(c);
     setNote(c.note || "");
     setHistLoading(true);
     const { data } = await supabase
       .from("appointments")
       .select("*,services(name,price),staff(name)")
-      .eq("salon_id", salon.id)
+      .eq("salon_id", salon?.id ?? "")
       .eq("client_email", c.email)
       .order("date_time", { ascending: false });
     setHistory(data || []);
@@ -75,7 +100,7 @@ export default function ClientsPage() {
     setNoteSaving(true);
     // store note in a client_notes table or just keep in state for now
     setClients(p => p.map(c => c.email === selected.email ? { ...c, note } : c));
-    setSelected((p: any) => ({ ...p, note }));
+    setSelected((p: ClientRecord | null) => p ? { ...p, note } : null);
     setNoteMsg("✓ Saved");
     setTimeout(() => setNoteMsg(""), 2000);
     setNoteSaving(false);
@@ -93,7 +118,7 @@ export default function ClientsPage() {
       });
   }, [clients, search, sortKey]);
 
-  const topSpender = clients.reduce((max, c) => c.spent > (max?.spent || 0) ? c : max, null);
+  const topSpender = clients.reduce<ClientRecord | null>((max, c) => c.spent > (max?.spent || 0) ? c : max, null);
   const newThisMonth = clients.filter(c => {
     const d = new Date(c.lastVisit);
     const now = new Date();
@@ -101,11 +126,12 @@ export default function ClientsPage() {
   }).length;
   const avgSpend = clients.length ? Math.round(clients.reduce((s, c) => s + c.spent, 0) / clients.length) : 0;
 
-  const favService = (c: any) => {
+  const favService = (c: ClientRecord) => {
     if (!c.services || Object.keys(c.services).length === 0) return null;
-    return Object.entries(c.services).sort((a: any, b: any) => b[1] - a[1])[0][0];
+    return Object.entries(c.services).sort((a, b) => (b[1] as number) - (a[1] as number))[0][0];
   };
 
+  // eslint-disable-next-line react-hooks/purity
   const daysSince = (d: Date) => Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
 
   const statusColor = (s: string) =>

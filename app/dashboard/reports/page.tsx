@@ -34,7 +34,7 @@ function BarChart({ data, color, label }: { data: number[]; color: string; label
                 tip.textContent = `£${val}`;
                 e.currentTarget.appendChild(tip);
               }}
-              onMouseLeave={e => { document.getElementById("chart-tip")?.remove(); }}
+              onMouseLeave={() => { document.getElementById("chart-tip")?.remove(); }}
             />
             <span style={{ fontSize: 9.5, color: "#94A3B8", fontWeight: 600 }}>{MONTHS[i % 12]}</span>
           </div>
@@ -65,7 +65,6 @@ function ReportsContent() {
   const [salonName, setSalonName] = useState("");
   const [appointments, setAppts] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState<"week" | "month" | "year">("month");
 
   useEffect(() => {
     const load = async () => {
@@ -83,15 +82,14 @@ function ReportsContent() {
     load();
   }, [router]);
 
-  const now = new Date();
-
   const confirmed = useMemo(() => appointments.filter(a => a.status === "confirmed"), [appointments]);
 
   // Revenue by month (last 12 months)
   const monthlyRevenue = useMemo(() => {
-    return Array.from({ length: 12 }, (_, i) => {
-      const mo = (now.getMonth() - 11 + i + 12) % 12;
-      const yr = now.getFullYear() - (now.getMonth() - 11 + i < 0 ? 1 : 0);
+    const n = new Date();
+    return Array.from({ length: 12 }, (_, idx) => {
+      const mo = (n.getMonth() - 11 + idx + 12) % 12;
+      const yr = n.getFullYear() - (n.getMonth() - 11 + idx < 0 ? 1 : 0);
       return confirmed.filter(a => {
         const d = new Date(a.date_time);
         return d.getMonth() === mo && d.getFullYear() === yr;
@@ -101,9 +99,10 @@ function ReportsContent() {
 
   // Bookings by month (last 12)
   const monthlyBookings = useMemo(() => {
-    return Array.from({ length: 12 }, (_, i) => {
-      const mo = (now.getMonth() - 11 + i + 12) % 12;
-      const yr = now.getFullYear() - (now.getMonth() - 11 + i < 0 ? 1 : 0);
+    const n = new Date();
+    return Array.from({ length: 12 }, (_, idx) => {
+      const mo = (n.getMonth() - 11 + idx + 12) % 12;
+      const yr = n.getFullYear() - (n.getMonth() - 11 + idx < 0 ? 1 : 0);
       return appointments.filter(a => {
         const d = new Date(a.date_time);
         return d.getMonth() === mo && d.getFullYear() === yr;
@@ -113,10 +112,13 @@ function ReportsContent() {
 
   // Stats
   const totalRevenue = useMemo(() => confirmed.reduce((s, a) => s + (a.services?.price || 0), 0), [confirmed]);
-  const thisMonthRevenue = useMemo(() => confirmed.filter(a => {
-    const d = new Date(a.date_time);
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  }).reduce((s, a) => s + (a.services?.price || 0), 0), [confirmed]);
+  const thisMonthRevenue = useMemo(() => {
+    const n = new Date();
+    return confirmed.filter(a => {
+      const d = new Date(a.date_time);
+      return d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear();
+    }).reduce((s, a) => s + (a.services?.price || 0), 0);
+  }, [confirmed]);
   const avgOrderValue = useMemo(() => confirmed.length ? (totalRevenue / confirmed.length).toFixed(2) : "0.00", [totalRevenue, confirmed]);
 
   // Top services
@@ -171,8 +173,8 @@ function ReportsContent() {
       <button
         onClick={() => {
           const rows = [["Month", "Revenue", "Bookings"]];
-          const labels = Array.from({ length: 12 }, (_, i) => MONTHS[(now.getMonth() - 11 + i + 12) % 12]);
-          labels.forEach((l, i) => rows.push([l, `£${monthlyRevenue[i]}`, String(monthlyBookings[i])]));
+          const labels = Array.from({ length: 12 }, (_, idx) => MONTHS[(new Date().getMonth() - 11 + idx + 12) % 12]);
+          labels.forEach((l, idx) => rows.push([l, `£${monthlyRevenue[idx]}`, String(monthlyBookings[idx])]));
           const csv = rows.map(r => r.join(",")).join("\n");
           const blob = new Blob([csv], { type: "text/csv" });
           const url = URL.createObjectURL(blob);
@@ -199,7 +201,7 @@ function ReportsContent() {
         {/* KPI Cards */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 14, marginBottom: 28 }}>
           <StatCard icon="💰" label="Total Revenue" value={`£${totalRevenue}`} sub="All confirmed bookings" color="#10B981" />
-          <StatCard icon="📅" label="This Month" value={`£${thisMonthRevenue}`} sub={now.toLocaleDateString("en-GB", { month: "long", year: "numeric" })} color="#6366F1" />
+          <StatCard icon="📅" label="This Month" value={`£${thisMonthRevenue}`} sub={new Date().toLocaleDateString("en-GB", { month: "long", year: "numeric" })} color="#6366F1" />
           <StatCard icon="🧾" label="Avg. Order Value" value={`£${avgOrderValue}`} sub="Per confirmed booking" color="#F59E0B" />
           <StatCard icon="✅" label="Conversion Rate" value={`${conversionRate}%`} sub="Confirmed vs total" color="#EC4899" />
           <StatCard icon="📋" label="Total Bookings" value={String(appointments.length)} sub={`${confirmed.length} confirmed`} color="#8B5CF6" />
@@ -292,7 +294,7 @@ function ReportsContent() {
             <div style={{ padding: 16 }}>
               {peakHours.length === 0
                 ? <div style={{ textAlign: "center", padding: "30px 0", color: "#94A3B8" }}>No data yet</div>
-                : peakHours.map(([hour, count], i) => {
+                : peakHours.map(([hour, count]) => {
                   const maxCount = parseInt(peakHours[0][1] as unknown as string) || 1;
                   const hNum = parseInt(hour);
                   const label = `${hNum}:00 – ${hNum + 1}:00`;

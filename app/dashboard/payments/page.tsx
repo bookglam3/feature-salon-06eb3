@@ -5,8 +5,11 @@ import { supabase } from "../../lib/supabase";
 
 export default function PaymentsPage() {
   const router = useRouter();
-  const [salon, setSalon] = useState<any>(null);
-  const [appointments, setAppointments] = useState<any[]>([]);
+  const [appointments, setAppointments] = useState<{
+    id: string; client_name: string; status: string; date_time: string;
+    services?: { name: string; price: number } | null;
+    staff?: { name: string } | null;
+  }[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("All");
   const [search, setSearch] = useState("");
@@ -15,8 +18,7 @@ export default function PaymentsPage() {
     const loadData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
-      const { data: salonData } = await supabase.from("salons").select("*").eq("owner_id", user.id).single();
-      setSalon(salonData);
+      const { data: salonData } = await supabase.from("salons").select("id").eq("owner_id", user.id).single();
       if (salonData) {
         const { data: appts } = await supabase.from("appointments").select("*, services(name, price), staff(name)").eq("salon_id", salonData.id).order("date_time", { ascending: false });
         setAppointments(appts || []);

@@ -137,9 +137,6 @@ function GiftCardsContent() {
 
   if (loading) return <DashboardShell salonName={salonName} topbar={Topbar}><div style={{ padding: 40, textAlign: "center", color: "#94A3B8" }}>Loading…</div></DashboardShell>;
 
-  const TabBtn = ({ id, label }: { id: "discount" | "gift"; label: string }) => (
-    <button onClick={() => setTab(id)} style={{ padding: "8px 20px", borderRadius: 10, border: "none", background: tab === id ? "#fff" : "transparent", color: tab === id ? "#6366F1" : "#64748B", fontWeight: tab === id ? 800 : 500, fontSize: 13, cursor: "pointer", boxShadow: tab === id ? "0 1px 4px rgba(0,0,0,0.08)" : "none", transition: "all 0.12s" }}>{label}</button>
-  );
 
   return (
     <DashboardShell salonName={salonName} topbar={Topbar}>
@@ -166,8 +163,11 @@ function GiftCardsContent() {
 
         {/* Tabs */}
         <div style={{ background: "#F1F5F9", borderRadius: 12, padding: 4, display: "inline-flex", gap: 2, marginBottom: 20 }}>
-          <TabBtn id="discount" label={`🏷️ Discount Codes (${codes.length})`} />
-          <TabBtn id="gift" label={`🎁 Gift Cards (${gifts.length})`} />
+          {(["discount", "gift"] as const).map(id => (
+            <button key={id} onClick={() => setTab(id)} style={{ padding: "8px 20px", borderRadius: 10, border: "none", background: tab === id ? "#fff" : "transparent", color: tab === id ? "#6366F1" : "#64748B", fontWeight: tab === id ? 800 : 500, fontSize: 13, cursor: "pointer", boxShadow: tab === id ? "0 1px 4px rgba(0,0,0,0.08)" : "none", transition: "all 0.12s" }}>
+              {id === "discount" ? `🏷️ Discount Codes (${codes.length})` : `🎁 Gift Cards (${gifts.length})`}
+            </button>
+          ))}
         </div>
 
         {/* Discount Codes */}

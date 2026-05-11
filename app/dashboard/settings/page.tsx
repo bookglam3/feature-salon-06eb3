@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useRef, useCallback } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
@@ -19,6 +20,18 @@ const DEFAULT_PAYMENT_METHODS: PaymentMethods = {
   custom_deposit: false,
   deposit_percent: 50,
 };
+
+interface SalonData {
+  id: string;
+  name: string;
+  slug: string;
+  logo_url?: string;
+  description?: string;
+  reminders_enabled?: boolean;
+  review_link?: string;
+  whatsapp_enabled?: boolean;
+  payment_methods?: Partial<PaymentMethods>;
+}
 
 // ─── Toggle switch ────────────────────────────────────────────
 function Toggle({
@@ -95,7 +108,7 @@ function BookingPreview({ pm, price = 65 }: { pm: PaymentMethods; price?: number
   if (!options.length) {
     return (
       <div style={{ padding: "16px", background: "#FEF2F2", borderRadius: 10, border: "1px solid #FECACA", fontSize: 12, color: "#DC2626" }}>
-        ⚠️ No payment methods enabled — clients won't be able to complete bookings.
+        ⚠️ No payment methods enabled &mdash; clients won&apos;t be able to complete bookings.
       </div>
     );
   }
@@ -131,7 +144,7 @@ function BookingPreview({ pm, price = 65 }: { pm: PaymentMethods; price?: number
 // ═════════════════════════════════════════════════════════════
 export default function SettingsPage() {
   const router = useRouter();
-  const [salon, setSalon] = useState<any>(null);
+  const [salon, setSalon] = useState<SalonData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -142,16 +155,17 @@ export default function SettingsPage() {
   const [logoUploading, setLogoUploading] = useState(false);
   const [logoError, setLogoError] = useState("");
   const logoInputRef = useRef<HTMLInputElement>(null);
-  const [services, setServices] = useState<any[]>([]);
+  const [services, setServices] = useState<{ id: string; name: string; price: number; duration_minutes?: number; duration?: number; description?: string }[]>([]);
   const [newService, setNewService] = useState({ name: "", price: "", duration_minutes: "", description: "" });
-  const [editingService, setEditingService] = useState<any | null>(null);
+  const [editingService, setEditingService] = useState<{ id: string; name: string; price: number; duration_minutes?: number; duration?: number; description?: string } | null>(null);
   const [editServiceForm, setEditServiceForm] = useState({ name: "", price: "", duration_minutes: "", description: "" });
   const [serviceError, setServiceError] = useState("");
 
   // Booking link copy
   const [copied, setCopied] = useState(false);
-  const [origin, setOrigin] = useState("");
-  useEffect(() => { setOrigin(window.location.origin); }, []);
+  const [origin] = useState(() =>
+    typeof window !== "undefined" ? window.location.origin : ""
+  );
   const handleCopyLink = useCallback(() => {
     if (!salon) return;
     navigator.clipboard.writeText(`${origin}/book/${salon.slug}`);
@@ -167,7 +181,6 @@ export default function SettingsPage() {
 
   // WhatsApp settings
   const [whatsappEnabled, setWhatsappEnabled] = useState(false);
-  const [waSaving, setWaSaving] = useState(false);
   const [waSaved, setWaSaved] = useState(false);
 
   // Payment methods
@@ -225,7 +238,7 @@ export default function SettingsPage() {
       ...(slugChanged ? { slug: newSlug } : {}),
     }).eq("id", salon.id);
     if (finalLogoUrl) setLogoUrl(finalLogoUrl);
-    if (slugChanged) setSalon((prev: any) => ({ ...prev, slug: newSlug }));
+    if (slugChanged) setSalon((prev: SalonData | null) => prev ? { ...prev, slug: newSlug } : prev);
     setSaved(true); setSaving(false);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -338,9 +351,8 @@ export default function SettingsPage() {
   const handleToggleWhatsApp = async (value: boolean) => {
     setWhatsappEnabled(value);
     if (!salon) return;
-    setWaSaving(true);
     await supabase.from("salons").update({ whatsapp_enabled: value }).eq("id", salon.id);
-    setWaSaved(true); setWaSaving(false);
+    setWaSaved(true);
     setTimeout(() => setWaSaved(false), 1500);
   };
 
@@ -450,8 +462,8 @@ export default function SettingsPage() {
                   <span style={{ fontSize: 10, color: "#fff", fontWeight: 700 }}>Uploading...</span>
                 </div>
               ) : logoUrl ? (
-                <img src={logoUrl} alt="Logo" style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                  onError={e => { (e.target as HTMLImageElement).src = ""; }} />
+                <Image src={logoUrl} alt="Logo" width={96} height={96} style={{ objectFit: "cover", width: "100%", height: "100%" }}
+                  onError={() => setLogoUrl("")} />
               ) : (
                 <div style={{ textAlign: "center" }}>
                   <div style={{ fontSize: 28 }}>📸</div>
@@ -503,7 +515,7 @@ export default function SettingsPage() {
           {/* Fallback: paste logo URL directly */}
           <div style={{ marginTop: 14 }}>
             <label style={{ ...labelStyle, marginBottom: 4 }}>
-              Or paste logo URL directly <span style={{ color: "#94A3B8", fontWeight: 400 }}>(if upload doesn't work)</span>
+              Or paste logo URL directly <span style={{ color: "#94A3B8", fontWeight: 400 }}>(if upload doesn&apos;t work)</span>
             </label>
             <input
               id="logo-url-input"
@@ -693,7 +705,7 @@ export default function SettingsPage() {
         <div style={{ display: "flex", alignItems: "flex-start", gap: 8, background: "#F0FDF4", border: "0.5px solid #BBF7D0", borderRadius: "8px", padding: "12px 14px", marginBottom: "20px" }}>
           <span style={{ fontSize: 16 }}>🛡️</span>
           <div style={{ fontSize: "12px", color: "#15803D", lineHeight: 1.6 }}>
-            <strong>GDPR Compliant</strong> — Every SMS includes "Reply STOP to opt out" and every email includes an unsubscribe link.
+            <strong>GDPR Compliant</strong> &mdash; Every SMS includes &ldquo;Reply STOP to opt out&rdquo; and every email includes an unsubscribe link.
           </div>
         </div>
         <button id="save-reminders-btn" onClick={handleSaveReminders} disabled={reminderSaving} {...saveBtn(reminderSaved, reminderSaving, "Save Reminder Settings")} />
@@ -831,7 +843,7 @@ export default function SettingsPage() {
                 <div>
                   <div style={{ fontSize: "13px", color: "#0F172A", fontWeight: 600 }}>{s.name}</div>
                   <div style={{ fontSize: "12px", color: "#94A3B8" }}>
-                    {(s.duration_minutes > 0 || s.duration > 0) ? `${s.duration_minutes || s.duration} min · ` : ""}£{s.price}
+                    {((s.duration_minutes ?? 0) > 0 || (s.duration ?? 0) > 0) ? `${s.duration_minutes ?? s.duration} min · ` : ""}£{s.price}
                   </div>
                   {s.description && (
                     <div style={{ fontSize: "11.5px", color: "#64748B", marginTop: 2, fontStyle: "italic" }}>{s.description}</div>

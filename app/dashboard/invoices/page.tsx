@@ -63,6 +63,7 @@ export default function InvoicesPage() {
 
   const handleCreate = async () => {
     if (!salonId || !form.client_name || items.every(i => !i.name)) { toast.error("Fill required fields"); return; }
+    // eslint-disable-next-line react-hooks/purity
     const num = `INV-${Date.now().toString().slice(-6)}`;
     const parsedItems = items.filter(i => i.name).map(i => ({ name: i.name, price: parseFloat(i.price) || 0, qty: i.qty }));
     const { data, error } = await supabase.from("invoices").insert({

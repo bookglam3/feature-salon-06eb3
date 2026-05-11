@@ -20,7 +20,6 @@ export default function FeatureGate({ feature, children }: FeatureGateProps) {
   const router = useRouter();
   const [status, setStatus] = useState<"loading" | "allowed" | "locked">("loading");
   const [plan, setPlan] = useState<string | null>(null);
-  const [subStatus, setSubStatus] = useState<string | null>(null);
   const [hasCustId, setHasCustId] = useState(false);
   const [salonId, setSalonId] = useState<string | null>(null);
 
@@ -39,7 +38,6 @@ export default function FeatureGate({ feature, children }: FeatureGateProps) {
 
       setSalonId(salon.id);
       setPlan(salon.subscription_plan);
-      setSubStatus(salon.subscription_status);
       setHasCustId(!!salon.stripe_customer_id);
 
       const allowed = hasFeatureAccess(feature, salon.subscription_plan, salon.subscription_status);

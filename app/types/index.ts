@@ -21,6 +21,7 @@ export interface Appointment {
   created_at: string;
   services?: { name: string; price: number } | null;
   staff?: { name: string } | null;
+  notes?: string | null;
 }
 
 export interface StaffMember {

@@ -38,10 +38,11 @@ export default function ReferralsPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ referrer_name: "", referrer_email: "", referee_name: "", referee_email: "" });
-  const [origin, setOrigin] = useState("");
+  const [origin] = useState(() =>
+    typeof window !== "undefined" ? window.location.origin : ""
+  );
 
   useEffect(() => {
-    setOrigin(window.location.origin);
     const load = async () => {
       const profile = await getCurrentUserProfile();
       if (!profile?.salon) { router.push("/login"); return; }

@@ -10,13 +10,21 @@ type Tab = "overview" | "salons" | "revenue" | "users" | "announcements" | "flag
 const PLAN_PRICE: Record<string,number> = { starter:29, pro:59, premium:99 };
 const PLAN_COLOR: Record<string,string> = { starter:"#6366F1", pro:"#10B981", premium:"#F59E0B" };
 
+interface SalonAdmin {
+  id: string; name: string; slug: string; plan: string; created_at: string;
+  owner_id: string; owner_email: string; appointmentCount: number;
+  subscription_status?: string; subscription_plan?: string;
+  trial_ends_at?: string; stripe_customer_id?: string;
+  [key: string]: unknown;
+}
+interface UserAdmin { id: string; email: string; salon: string; plan: string; created_at: string; }
+
 export default function AdminPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>("overview");
-  const [salons, setSalons] = useState<any[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
-  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [salons, setSalons] = useState<SalonAdmin[]>([]);
+  const [users, setUsers] = useState<UserAdmin[]>([]);
   const [totalBookings, setTotalBookings] = useState(0);
   const [error, setError] = useState("");
   const [maintenanceMode, setMaintenanceMode] = useState(false);
@@ -46,26 +54,19 @@ export default function AdminPage() {
         .select("id, salon_id, services(price)");
 
       const bookingsBySalon: Record<string, number> = {};
-      (appointmentData || []).forEach((a: any) => {
+      (appointmentData || []).forEach((a: { salon_id: string; services?: { price?: number }[] | { price?: number } | null }) => {
         bookingsBySalon[a.salon_id] = (bookingsBySalon[a.salon_id] || 0) + 1;
       });
 
-      const revenue = (appointmentData || []).reduce((sum: number, a: any) => {
-        return sum + (Array.isArray(a.services)
-          ? a.services.reduce((s: number, sv: any) => s + (Number(sv?.price ?? 0)), 0)
-          : Number(a.services?.price ?? 0));
-      }, 0);
-
-      const salonsWithCounts = (salonData || []).map((salon: any) => ({
+      const salonsWithCounts = (salonData || []).map(salon => ({
         ...salon,
         appointmentCount: bookingsBySalon[salon.id] || 0,
       }));
 
-      setSalons(salonsWithCounts);
-      setTotalRevenue(revenue);
+      setSalons(salonsWithCounts as SalonAdmin[]);
       setTotalBookings((appointmentData || []).length);
 
-      const userList = (salonData || []).map((s: any) => ({
+      const userList: UserAdmin[] = (salonData || []).map(s => ({
         id: s.owner_id,
         email: s.owner_email,
         salon: s.name,
@@ -111,11 +112,12 @@ export default function AdminPage() {
   const saveAnnouncement = async () => {
     setAnnSaving(true);
     // Store in a platform_settings table or use a simple approach
-    await supabase.from("salons").update({ announcement } as any).neq("id", "00000000-0000-0000-0000-000000000000");
+    // Broadcast announcement to all salons via a platform_settings pattern
+    await supabase.from("salons").update({ announcement } as Record<string, unknown>).neq("id", "00000000-0000-0000-0000-000000000000");
     setTimeout(() => setAnnSaving(false), 1000);
   };
 
-  const mrr = salons.filter(s => s.subscription_status === "active").reduce((sum: number, s: any) => sum + (PLAN_PRICE[s.subscription_plan || s.plan] || 0), 0);
+  const mrr = salons.filter(s => s.subscription_status === "active").reduce((sum: number, s: SalonAdmin) => sum + (PLAN_PRICE[s.subscription_plan || s.plan] || 0), 0);
   const trialCount = salons.filter(s => s.subscription_status === "trial" || s.subscription_status === "trialing").length;
   const activeCount = salons.filter(s => s.subscription_status === "active").length;
   const cancelledCount = salons.filter(s => s.subscription_status === "cancelled").length;
@@ -209,19 +211,19 @@ export default function AdminPage() {
           {activeTab === "overview" && (
             <div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "14px", marginBottom: "28px" }}>
-                {[
+                {([
                   { label: "MRR", value: `£${mrr}`, icon: "💰", sub: `ARR £${mrr*12}` },
                   { label: "Active Salons", value: activeCount, icon: "✅", sub: "paying" },
                   { label: "On Trial", value: trialCount, icon: "⏳", sub: "free trial" },
                   { label: "Cancelled", value: cancelledCount, icon: "❌", sub: "churned" },
                   { label: "Total Salons", value: salons.length, icon: "💈", sub: "all time" },
                   { label: "Total Bookings", value: totalBookings, icon: "📅", sub: "all salons" },
-                ].map((s) => (
+                ] satisfies { label: string; value: string | number; icon: string; sub: string }[]).map((s) => (
                   <div key={s.label} style={{ background: "#111", border: "0.5px solid #222", borderRadius: "12px", padding: "20px" }}>
                     <div style={{ fontSize: "24px", marginBottom: "8px" }}>{s.icon}</div>
                     <div style={{ fontSize: "28px", fontWeight: 700, color: "#fff", marginBottom: "4px" }}>{s.value}</div>
                     <div style={{ fontSize: "12px", color: "#555" }}>{s.label}</div>
-                    {"sub" in s && <div style={{ fontSize: "11px", color: "#444", marginTop: 2 }}>{(s as any).sub}</div>}
+                    {s.sub && <div style={{ fontSize: "11px", color: "#444", marginTop: 2 }}>{s.sub}</div>}
                   </div>
                 ))}
               </div>
@@ -405,7 +407,7 @@ export default function AdminPage() {
             <div style={{ maxWidth:600 }}>
               <div style={{ background:"#111", border:"0.5px solid #222", borderRadius:12, padding:24, marginBottom:16 }}>
                 <div style={{ fontSize:14, fontWeight:600, color:"#fff", marginBottom:4 }}>📣 Send Announcement to All Salons</div>
-                <div style={{ fontSize:12, color:"#555", marginBottom:16 }}>This message will appear as a banner on every salon's dashboard.</div>
+                <div style={{ fontSize:12, color:"#555", marginBottom:16 }}>This message will appear as a banner on every salon&apos;s dashboard.</div>
                 <textarea value={announcement} onChange={e => setAnnouncement(e.target.value)}
                   placeholder="e.g. We're rolling out a new feature next week..." rows={4}
                   style={{ width:"100%", padding:"12px 14px", background:"#0A0A0A", border:"0.5px solid #333", borderRadius:8, color:"#fff", fontSize:13, resize:"vertical", fontFamily:"inherit", boxSizing:"border-box", outline:"none", marginBottom:12 }}/>

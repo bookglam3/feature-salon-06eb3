@@ -21,6 +21,14 @@ const PLAN_FEATURES: Record<string, { color: string; bg: string; border: string;
   Enterprise: { color: "#F59E0B", bg: "#FFFBEB", border: "#FDE68A", badge: "ENTERPRISE", features: ["Unlimited everything", "Unlimited staff", "White-label option", "Dedicated support", "Custom integrations", "SLA 99.9%"], limit: "Unlimited everything" },
 };
 
+interface SalonExtended {
+  subscription_status?: string;
+  subscription_plan?: string;
+  trial_ends_at?: string | null;
+  current_period_end?: string | null;
+  stripe_customer_id?: string | null;
+}
+
 /* ─── STATUS PILL ─────────────────────────────────────────────── */
 function StatusPill({ status }: { status: string }) {
   const map: Record<string, { bg: string; color: string; border: string; dot: string }> = {
@@ -125,13 +133,13 @@ export default function DashboardPage() {
   const [showModal, setShowModal] = useState(false);
   const [showOfferModal, setShowOfferModal] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [origin, setOrigin] = useState("");
+  const [origin] = useState(() =>
+    typeof window !== "undefined" ? window.location.origin : ""
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ client_name: "", client_email: "", client_phone: "", service_id: "", staff_id: "", date: "", time: "" });
   const [offerForm, setOfferForm] = useState({ title: "", description: "", discount_type: "percentage", discount_value: "", valid_until: "", active: true });
-
-  useEffect(() => { setOrigin(window.location.origin); }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -228,7 +236,7 @@ export default function DashboardPage() {
     await supabase.from("offers").delete().eq("id", id);
     setOffers(p => p.filter(o => o.id !== id));
     toast.success("Offer removed");
-  }, []);
+  }, [toast]);
 
   const handleCopyLink = useCallback(() => {
     navigator.clipboard.writeText(`${origin}/book/${salon?.slug}`);
@@ -252,10 +260,14 @@ export default function DashboardPage() {
   }, [appointments, toast]);
 
   /* ── Computed values ── */
-  const now = new Date();
-  const todayStr = now.toDateString();
-  const todayAppts = useMemo(() => appointments.filter(a => new Date(a.date_time).toDateString() === todayStr), [appointments, todayStr]);
-  const upcomingAppts = useMemo(() => appointments.filter(a => new Date(a.date_time) > now && a.status !== "cancelled" && a.status !== "completed" && a.status !== "no_show"), [appointments]);
+  const todayAppts = useMemo(() => {
+    const t = new Date().toDateString();
+    return appointments.filter(a => new Date(a.date_time).toDateString() === t);
+  }, [appointments]);
+  const upcomingAppts = useMemo(() => {
+    const n = new Date();
+    return appointments.filter(a => new Date(a.date_time) > n && a.status !== "cancelled" && a.status !== "completed" && a.status !== "no_show");
+  }, [appointments]);
   const confirmedAppts = useMemo(() => appointments.filter(a => a.status === "confirmed"), [appointments]);
   const pendingAppts = useMemo(() => appointments.filter(a => a.status === "pending"), [appointments]);
   const revenue = useMemo(() => todayAppts.reduce((s, a) => s + (a.services?.price || 0), 0), [todayAppts]);
@@ -277,17 +289,20 @@ export default function DashboardPage() {
     return list;
   }, [activeTab, appointments, todayAppts, upcomingAppts, confirmedAppts, pendingAppts, searchQuery]);
 
-  const greeting = useMemo(() => { const h = now.getHours(); return h < 12 ? "Good morning ☀️" : h < 17 ? "Good afternoon 👋" : "Good evening 🌙"; }, []);
+  const greeting = useMemo(() => { const h = new Date().getHours(); return h < 12 ? "Good morning ☀️" : h < 17 ? "Good afternoon 👋" : "Good evening 🌙"; }, []);
   const plan = salon?.plan || "Starter";
   const planInfo = PLAN_FEATURES[plan] || PLAN_FEATURES.Starter;
 
-  const salonAny = salon as unknown as Record<string, unknown>;
-  const subStatus = salonAny?.subscription_status as string || "trial";
-  const subPlan = salonAny?.subscription_plan as string || "starter";
-  const trialEnd = salonAny?.trial_ends_at as string | null || null;
-  const periodEnd = salonAny?.current_period_end as string | null || null;
-  const hasCustId = !!(salonAny?.stripe_customer_id);
-  const trialDaysLeft = trialEnd ? Math.max(0, Math.ceil((new Date(trialEnd).getTime() - Date.now()) / 86400000)) : 0;
+  const salonExt = salon as unknown as SalonExtended;
+  const subStatus = salonExt?.subscription_status || "trial";
+  const subPlan = salonExt?.subscription_plan || "starter";
+  const trialEnd = salonExt?.trial_ends_at || null;
+  const periodEnd = salonExt?.current_period_end || null;
+  const hasCustId = !!(salonExt?.stripe_customer_id);
+  const trialDaysLeft = useMemo(() => {
+    // eslint-disable-next-line react-hooks/purity
+    return trialEnd ? Math.max(0, Math.ceil((new Date(trialEnd).getTime() - Date.now()) / 86400000)) : 0;
+  }, [trialEnd]);
 
   const SUB_STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
     trial: { label: "Free Trial", color: "#6366F1", bg: "#EEF2FF" },
@@ -322,7 +337,7 @@ export default function DashboardPage() {
         <HamburgerBtn />
         <div>
           <div style={{ fontSize: 14.5, fontWeight: 800, color: "#0F172A", letterSpacing: "-0.4px" }}>{greeting}, {salon?.name?.split(" ")[0]}</div>
-          <div className="dash-greeting-date" style={{ fontSize: 11.5, color: "#94A3B8", marginTop: 1 }}>{now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
+          <div className="dash-greeting-date" style={{ fontSize: 11.5, color: "#94A3B8", marginTop: 1 }}>{new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -356,7 +371,7 @@ export default function DashboardPage() {
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
               <div style={{ fontSize: 24 }}>🚀</div>
               <div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: "#0F172A", letterSpacing: "-0.4px" }}>Welcome! Let's get your salon ready</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: "#0F172A", letterSpacing: "-0.4px" }}>Welcome! Let&apos;s get your salon ready</div>
                 <div style={{ fontSize: 13, color: "#64748B", marginTop: 2 }}>Complete these steps to start accepting bookings</div>
               </div>
             </div>
@@ -540,7 +555,7 @@ export default function DashboardPage() {
 
               {/* Revenue Chart */}
               <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, overflow: "hidden", padding: "18px 22px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: "#0F172A", marginBottom: 4 }}>This Week's Revenue</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "#0F172A", marginBottom: 4 }}>This Week&apos;s Revenue</div>
                 <div style={{ fontSize: 12, color: "#94A3B8", marginBottom: 4 }}>Daily breakdown (confirmed)</div>
                 <RevenueMiniChart appointments={appointments} />
               </div>
@@ -650,7 +665,7 @@ export default function DashboardPage() {
                     {staff.slice(0, 5).map(s => {
                       const colors = ["#6366F1", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6"];
                       const bg = colors[s.name.charCodeAt(0) % colors.length];
-                      const initials = s.name.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase();
+                      const initials = s.name.split(" ").map((part: string) => part[0]).join("").slice(0, 2).toUpperCase();
                       const staffAppts = appointments.filter(a => a.staff_id === s.id && a.status === "confirmed");
                       return (
                         <div key={s.id}

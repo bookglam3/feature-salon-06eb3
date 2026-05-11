@@ -2,9 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 // Service-role client — bypasses RLS, trusted server-side only
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!SERVICE_ROLE_KEY || SERVICE_ROLE_KEY === "PASTE_SERVICE_ROLE_KEY_HERE") {
+  console.error(
+    "[/api/services] CRITICAL: SUPABASE_SERVICE_ROLE_KEY is not set or is a placeholder.\n" +
+    "Services will NOT save. Set this in Vercel → Project Settings → Environment Variables."
+  );
+}
+
 const adminSupabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  SERVICE_ROLE_KEY!
 );
 
 // Helper: verify the request comes from a logged-in salon owner
@@ -12,19 +20,30 @@ const adminSupabase = createClient(
 async function getOwnerSalon(req: NextRequest) {
   const authHeader = req.headers.get("authorization") || "";
   const token = authHeader.replace("Bearer ", "").trim();
-  if (!token) return null;
+  if (!token) {
+    console.error("[/api/services] No authorization token provided");
+    return null;
+  }
 
   // Verify JWT with Supabase
   const { data: { user }, error } = await adminSupabase.auth.getUser(token);
-  if (error || !user) return null;
+  if (error || !user) {
+    console.error("[/api/services] Token verification failed:", error?.message);
+    return null;
+  }
 
-  const { data: salon } = await adminSupabase
+  const { data: salon, error: salonErr } = await adminSupabase
     .from("salons")
     .select("id")
     .eq("owner_id", user.id)
     .single();
 
-  return salon ?? null;
+  if (salonErr || !salon) {
+    console.error("[/api/services] Salon lookup failed for user:", user.id, salonErr?.message);
+    return null;
+  }
+
+  return salon;
 }
 
 // ── GET /api/services — list services for authenticated owner
@@ -38,7 +57,10 @@ export async function GET(req: NextRequest) {
     .eq("salon_id", salon.id)
     .order("price", { ascending: true });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[/api/services] GET failed:", error.message);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
   return NextResponse.json({ services: data });
 }
 
@@ -62,7 +84,10 @@ export async function POST(req: NextRequest) {
   if (description?.trim()) payload.description = description.trim();
 
   const { data, error } = await adminSupabase.from("services").insert(payload).select().single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[/api/services] POST insert failed:", error.message, error.details, error.hint);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
   return NextResponse.json({ service: data });
 }
 
@@ -90,7 +115,10 @@ export async function PATCH(req: NextRequest) {
     .eq("id", id)
     .eq("salon_id", salon.id); // extra safety: can only update own salon's services
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[/api/services] PATCH update failed:", error.message, error.details, error.hint);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
   return NextResponse.json({ success: true });
 }
 
@@ -108,6 +136,9 @@ export async function DELETE(req: NextRequest) {
     .eq("id", id)
     .eq("salon_id", salon.id); // extra safety
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("[/api/services] DELETE failed:", error.message);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
   return NextResponse.json({ success: true });
 }

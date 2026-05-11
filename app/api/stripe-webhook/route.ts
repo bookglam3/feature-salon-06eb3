@@ -107,12 +107,11 @@ export async function POST(req: NextRequest) {
         subscription_plan:   plan,
         stripe_customer_id:  customerId,
         trial_ends_at:       sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
-        // current_period_end varies by Stripe SDK version — cast to any for safety
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        current_period_end:  (sub as any).current_period_end
-          ? new Date((sub as any).current_period_end * 1000).toISOString()
-          : (sub as any).current_period?.end
-          ? new Date((sub as any).current_period.end * 1000).toISOString()
+        // current_period_end varies by Stripe SDK version — use unknown cast for safety
+        current_period_end:  (sub as unknown as Record<string,number|{end:number}>).current_period_end
+          ? new Date((sub as unknown as Record<string,number>).current_period_end * 1000).toISOString()
+          : (sub as unknown as Record<string,{end:number}>).current_period?.end
+          ? new Date((sub as unknown as Record<string,{end:number}>).current_period.end * 1000).toISOString()
           : null,
       }).eq("id", salonId);
       console.log(`[Webhook] ${event.type} salon=${salonId} status=${sub.status} plan=${plan}`);

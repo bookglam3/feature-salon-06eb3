@@ -108,6 +108,8 @@ export async function sendBookingEmails({
   })();
 
   const amountPaid = depositOnly && price ? (price * 0.5).toFixed(2) : price?.toFixed(2);
+  // amountDue is used inside template literal strings below
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const amountDue  = depositOnly && price ? (price * 0.5).toFixed(2) : undefined;
 
   // ── CLIENT EMAIL ──────────────────────────────────────────

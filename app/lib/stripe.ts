@@ -2,7 +2,9 @@
 
 import { loadStripe } from "@stripe/stripe-js";
 
-let stripeInstance: any = null;
+import type { Stripe } from "@stripe/stripe-js";
+
+let stripeInstance: Stripe | null = null;
 
 export async function getStripe() {
   if (!stripeInstance) {

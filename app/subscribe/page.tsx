@@ -156,7 +156,7 @@ function SubscribeContent() {
     });
     const data = await res.json();
     if (data.url) {
-      window.location.href = data.url;
+      window.location.assign(data.url);
     } else {
       alert("Error: " + (data.error || "Could not start checkout"));
       setLoading(null);

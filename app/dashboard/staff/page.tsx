@@ -11,7 +11,6 @@ import { useToast } from "../components/Toast";
 import type { StaffMember } from "../../types";
 
 const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-// Services now loaded from DB — no longer hardcoded
 
 const EMPTY_FORM = {
   name: "", email: "", role: "stylist", active: true, services: [] as string[],
@@ -28,7 +27,7 @@ function Avatar({ name }: { name: string }) {
 export default function StaffPage() {
   const router = useRouter();
   const toast = useToast();
-  const [salon, setSalon] = useState<any>(null);
+  const [salon, setSalon] = useState<{ id: string; name: string } | null>(null);
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -37,11 +36,28 @@ export default function StaffPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [salonServices, setSalonServices] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
 
-  const loadStaff = useCallback(async (salonId: string) => {
-    const { data } = await supabase.from("staff").select("*").eq("salon_id", salonId);
-    setStaffList(data || []);
+  // Helper: get current user JWT for API calls
+  const getToken = useCallback(async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token || "";
   }, []);
+
+  const loadStaff = useCallback(async () => {
+    const token = await getToken();
+    if (!token) return;
+    const res = await fetch("/api/staff", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) {
+      const json = await res.json();
+      setStaffList(json.staff || []);
+    } else {
+      const json = await res.json().catch(() => ({}));
+      console.error("[StaffPage] loadStaff failed:", res.status, json.error);
+    }
+  }, [getToken]);
 
   useEffect(() => {
     const load = async () => {
@@ -49,31 +65,63 @@ export default function StaffPage() {
         const profile = await getCurrentUserProfile();
         if (!profile) { router.push("/login"); return; }
         setSalon(profile.salon);
-        await loadStaff(profile.salon.id);
-        // Load real services from DB
-        const { data: svcs } = await supabase.from("services").select("name").eq("salon_id", profile.salon.id);
-        if (svcs && svcs.length > 0) setSalonServices(svcs.map((s: { name: string }) => s.name));
-      } catch (e) { console.error(e); } finally { setLoading(false); }
+        await loadStaff();
+        // Load real services from DB for the staff services tab
+        const token = await getToken();
+        const res = await fetch("/api/services", { headers: { Authorization: `Bearer ${token}` } });
+        if (res.ok) {
+          const json = await res.json();
+          const names = (json.services || []).map((s: { name: string }) => s.name);
+          if (names.length > 0) setSalonServices(names);
+        }
+      } catch (e) { console.error("[StaffPage] load error:", e); } finally { setLoading(false); }
     };
     load();
-  }, [router, loadStaff]);
+  }, [router, loadStaff, getToken]);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!salon) return;
-    const payload = { salon_id: salon.id, name: formData.name, email: formData.email, role: formData.role, active: formData.active, services: formData.services, working_hours: formData.working_hours };
+    setSubmitting(true);
+
+    const token = await getToken();
+    const payload = {
+      name: formData.name,
+      email: formData.email,
+      role: formData.role,
+      active: formData.active,
+      services: formData.services,
+      working_hours: formData.working_hours,
+    };
+
+    let res: Response;
     if (editingStaff) {
-      const { error } = await supabase.from("staff").update(payload).eq("id", editingStaff.id);
-      if (error) { toast.error("Failed to update"); return; }
-      toast.success("Staff updated!");
+      res = await fetch("/api/staff", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id: editingStaff.id, ...payload }),
+      });
     } else {
-      const { error } = await supabase.from("staff").insert(payload);
-      if (error) { toast.error("Failed to add staff"); return; }
-      toast.success("Staff added!");
+      res = await fetch("/api/staff", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(payload),
+      });
     }
+
+    const json = await res.json().catch(() => ({}));
+    setSubmitting(false);
+
+    if (!res.ok) {
+      console.error("[StaffPage] handleSubmit failed:", res.status, json.error);
+      toast.error(editingStaff ? "Failed to update staff: " + (json.error || "Unknown error") : "Failed to add staff: " + (json.error || "Unknown error"));
+      return;
+    }
+
+    toast.success(editingStaff ? "Staff updated!" : "Staff added!");
     setFormData(EMPTY_FORM); setShowForm(false); setEditingStaff(null); setFormTab("info");
-    await loadStaff(salon.id);
-  }, [salon, editingStaff, formData, toast, loadStaff]);
+    await loadStaff();
+  }, [salon, editingStaff, formData, toast, loadStaff, getToken]);
 
   const handleEdit = useCallback((s: StaffMember) => {
     setEditingStaff(s);
@@ -82,17 +130,39 @@ export default function StaffPage() {
   }, []);
 
   const handleToggle = useCallback(async (id: string, active: boolean) => {
-    await supabase.from("staff").update({ active: !active }).eq("id", id);
+    const token = await getToken();
+    const res = await fetch("/api/staff", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id, active: !active }),
+    });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      console.error("[StaffPage] handleToggle failed:", json.error);
+      toast.error("Failed to update staff status");
+      return;
+    }
     toast.success(active ? "Staff deactivated" : "Staff activated");
-    await loadStaff(salon?.id);
-  }, [salon, toast, loadStaff]);
+    await loadStaff();
+  }, [getToken, toast, loadStaff]);
 
   const handleDelete = useCallback(async (id: string) => {
-    const { error } = await supabase.from("staff").delete().eq("id", id);
-    if (error) { toast.error("Failed to delete"); return; }
+    if (!confirm("Delete this staff member? This cannot be undone.")) return;
+    const token = await getToken();
+    const res = await fetch("/api/staff", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id }),
+    });
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      console.error("[StaffPage] handleDelete failed:", json.error);
+      toast.error("Failed to delete staff");
+      return;
+    }
     toast.success("Staff deleted");
-    await loadStaff(salon?.id);
-  }, [salon, toast, loadStaff]);
+    await loadStaff();
+  }, [getToken, toast, loadStaff]);
 
   const toggleService = useCallback((svc: string) => {
     setFormData(p => ({ ...p, services: p.services.includes(svc) ? p.services.filter(s => s !== svc) : [...p.services, svc] }));
@@ -188,7 +258,7 @@ export default function StaffPage() {
                     <button onClick={() => handleDelete(s.id)} style={{ padding: "7px 10px", borderRadius: "var(--r-sm)", border: "1px solid var(--border)", background: "#fff", color: "var(--text-3)", fontSize: 12.5, cursor: "pointer", transition: "all 0.12s", fontFamily: "var(--font)" }}
                       onMouseEnter={e => { e.currentTarget.style.color = "var(--red)"; e.currentTarget.style.borderColor = "var(--red-pale)"; }}
                       onMouseLeave={e => { e.currentTarget.style.color = "var(--text-3)"; e.currentTarget.style.borderColor = "var(--border)"; }}
-                    >??</button>
+                    >🗑</button>
                   </div>
                 </div>
               );
@@ -198,7 +268,7 @@ export default function StaffPage() {
       </div>
 
       {/* Staff Form Modal */}
-      <Modal open={showForm} onClose={() => { setShowForm(false); setEditingStaff(null); }} title={editingStaff ? `Edit � ${editingStaff.name}` : "Add New Staff Member"} maxWidth={520}>
+      <Modal open={showForm} onClose={() => { setShowForm(false); setEditingStaff(null); }} title={editingStaff ? `Edit ✏️ ${editingStaff.name}` : "Add New Staff Member"} maxWidth={520}>
         {/* Tabs */}
         <div style={{ display: "flex", gap: 2, background: "var(--slate-100)", padding: 3, borderRadius: 8, marginBottom: 20 }}>
           {(["info","services","hours"] as const).map(tab => (
@@ -221,7 +291,7 @@ export default function StaffPage() {
                     <span style={{ position: "absolute", width: 11, height: 11, left: formData.active ? 18 : 3, top: 3, background: "#fff", borderRadius: "50%", transition: "left 0.18s" }} />
                   </span>
                 </label>
-                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-1)" }}>Active � accepting bookings</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-1)" }}>Active — accepting bookings</span>
               </div>
             </>
           )}
@@ -272,7 +342,7 @@ export default function StaffPage() {
 
           <ModalActions>
             <BtnSecondary type="button" onClick={() => { setShowForm(false); setEditingStaff(null); setFormData(EMPTY_FORM); setFormTab("info"); }}>Cancel</BtnSecondary>
-            <BtnPrimary type="submit">{editingStaff ? "Save Changes" : "Add Staff"}</BtnPrimary>
+            <BtnPrimary type="submit" disabled={submitting}>{submitting ? "Saving…" : editingStaff ? "Save Changes" : "Add Staff"}</BtnPrimary>
           </ModalActions>
         </form>
       </Modal>

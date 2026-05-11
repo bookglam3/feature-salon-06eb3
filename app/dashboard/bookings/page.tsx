@@ -29,7 +29,7 @@ const EMPTY_FORM = { client_name: "", client_email: "", client_phone: "", staff_
 export default function BookingsPage() {
   const router = useRouter();
   const toast = useToast();
-  const [salon, setSalon] = useState<any>(null);
+  const [salon, setSalon] = useState<{ id: string; name: string } | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("All");
@@ -121,16 +121,16 @@ export default function BookingsPage() {
     await reloadAppts();
   }, [toast, reloadAppts]);
 
-  const now = new Date();
   const filtered = useMemo(() => {
+    const now = new Date();
     let list = appointments;
     if (activeTab === "Today")     list = list.filter(a => new Date(a.date_time).toDateString() === now.toDateString());
     else if (activeTab === "Upcoming")  list = list.filter(a => new Date(a.date_time) > now && a.status !== "cancelled" && a.status !== "completed" && a.status !== "no_show");
     else if (activeTab === "Completed") list = list.filter(a => a.status === "completed");
     else if (activeTab === "Cancelled") list = list.filter(a => a.status === "cancelled" || a.status === "no_show");
-    if (search) list = list.filter(a => a.client_name?.toLowerCase().includes(search.toLowerCase()) || (a.services as any)?.name?.toLowerCase().includes(search.toLowerCase()));
+    if (search) list = list.filter(a => a.client_name?.toLowerCase().includes(search.toLowerCase()) || a.services?.name?.toLowerCase().includes(search.toLowerCase()));
     return list;
-  }, [appointments, activeTab, search, now]);
+  }, [appointments, activeTab, search]);
 
   const getWeekDays = useCallback(() => {
     const d = new Date(); d.setDate(d.getDate() - d.getDay() + weekOffset * 7);
@@ -207,13 +207,13 @@ export default function BookingsPage() {
                         >
                           <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)" }}><StatusPill status={a.status} /></td>
                           <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", fontSize: 13, fontWeight: 600, color: "var(--text-1)" }}>{a.client_name}</td>
-                          <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", fontSize: 13, color: "var(--text-2)" }}>{(a as any).services?.name || <span style={{color:"var(--text-3)",opacity:.5}}>—</span>}</td>
-                          <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", fontSize: 13, color: "var(--text-3)" }}>{(a as any).staff?.name || <span style={{fontSize:11,color:"var(--text-3)",opacity:.5}}>Any</span>}</td>
+                          <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", fontSize: 13, color: "var(--text-2)" }}>{a.services?.name || <span style={{color:"var(--text-3)",opacity:.5}}>—</span>}</td>
+                          <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", fontSize: 13, color: "var(--text-3)" }}>{a.staff?.name || <span style={{fontSize:11,color:"var(--text-3)",opacity:.5}}>Any</span>}</td>
                           <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", fontSize: 13, color: "var(--text-2)" }}>{new Date(a.date_time).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</td>
-                          <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", fontSize: 13, fontWeight: 700, color: "var(--green)" }}>{(a as any).services?.price ? `£${(a as any).services.price}` : <span style={{color:"var(--text-3)",opacity:.5}}>—</span>}</td>
+                          <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", fontSize: 13, fontWeight: 700, color: "var(--green)" }}>{a.services?.price ? `£${a.services.price}` : <span style={{color:"var(--text-3)",opacity:.5}}>—</span>}</td>
                           <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", fontSize: 12, color: "var(--text-3)", maxWidth: 130 }}>
-                            {(a as any).notes
-                              ? <span title={(a as any).notes} style={{ display:"block",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:120,cursor:"help" }}>{(a as any).notes}</span>
+                            {a.notes
+                              ? <span title={a.notes} style={{ display:"block",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:120,cursor:"help" }}>{a.notes}</span>
                               : <span style={{opacity:.3}}>—</span>}
                           </td>
                           <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", whiteSpace: "nowrap" }}>

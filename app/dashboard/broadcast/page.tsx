@@ -7,6 +7,8 @@ import DashboardShell, { HamburgerBtn } from "../components/DashboardShell";
 import { useToast } from "../components/Toast";
 import FeatureGate from "../components/FeatureGate";
 
+interface ApptRow { client_name: string; client_email: string; client_phone: string; date_time: string; }
+
 interface BroadcastMsg {
   id: string;
   title: string;
@@ -36,7 +38,6 @@ function BroadcastContent() {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ title: "", message: "", channel: "whatsapp" as "whatsapp"|"sms"|"email", filter: "all" as "all"|"vip"|"new"|"inactive" });
   const [sending, setSending] = useState(false);
-  const [preview, setPreview] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -54,7 +55,7 @@ function BroadcastContent() {
 
       // Build unique clients
       const map: Record<string, { name: string; phone: string; email: string; count: number; last: string }> = {};
-      (appts || []).forEach((a: any) => {
+      (appts || [] as ApptRow[]).forEach((a: ApptRow) => {
         const key = a.client_email || a.client_name;
         if (!map[key]) map[key] = { name: a.client_name, phone: a.client_phone || "", email: a.client_email || "", count: 0, last: a.date_time };
         map[key].count++;
@@ -66,7 +67,7 @@ function BroadcastContent() {
     load();
   }, [router]);
 
-  const filteredClients = clients.filter(c => {
+  const filteredClients = clients.filter(() => {
     if (form.filter === "all") return true;
     return true; // could add vip/new/inactive filters
   });
@@ -165,7 +166,7 @@ function BroadcastContent() {
             {/* Preview */}
             {form.message && (
               <div style={{ marginBottom: 16, padding: "14px 16px", background: "#F8FAFC", borderRadius: 12, border: "1.5px solid #E2E8F0" }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#94A3B8", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.5px" }}>Preview (for "Sarah")</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#94A3B8", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.5px" }}>Preview (for &quot;Sarah&quot;)</div>
                 <div style={{ fontSize: 13.5, color: "#334155", lineHeight: 1.7 }}>
                   {form.message.replace(/{name}/g, "Sarah").replace(/{salon}/g, salonName).replace(/{link}/g, "featuresalon.com/book")}
                 </div>

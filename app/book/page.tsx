@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 
 export default function BookPage() {
-  const [salons, setSalons] = useState<any[]>([]);
+  const [salons, setSalons] = useState<{ id: string; name: string; slug: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 

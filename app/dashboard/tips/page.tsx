@@ -41,7 +41,7 @@ export default function TipsPage() {
   const staffTips = useMemo(() => {
     const map: Record<string, { name: string; total: number; count: number }> = {};
     tips.forEach(t => {
-      const n = (t.staff as any)?.name || "Unassigned";
+      const n = t.staff?.name || "Unassigned";
       if (!map[n]) map[n] = { name: n, total: 0, count: 0 };
       map[n].total += t.amount; map[n].count++;
     });
@@ -122,7 +122,7 @@ export default function TipsPage() {
                       onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = "transparent"; }}>
                       <td style={{ padding: "11px 16px", borderBottom: "1px solid #F1F5F9", fontSize: 12.5, color: "#64748B" }}>{new Date(tip.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}</td>
                       <td style={{ padding: "11px 16px", borderBottom: "1px solid #F1F5F9", fontSize: 13.5, fontWeight: 700, color: "#0F172A" }}>{tip.client_name}</td>
-                      <td style={{ padding: "11px 16px", borderBottom: "1px solid #F1F5F9", fontSize: 12.5, color: "#475569" }}>{(tip.staff as any)?.name || "—"}</td>
+                      <td style={{ padding: "11px 16px", borderBottom: "1px solid #F1F5F9", fontSize: 12.5, color: "#475569" }}>{tip.staff?.name || "—"}</td>
                       <td style={{ padding: "11px 16px", borderBottom: "1px solid #F1F5F9", fontSize: 16, fontWeight: 900, color: "#10B981" }}>£{tip.amount.toFixed(2)}</td>
                       <td style={{ padding: "11px 16px", borderBottom: "1px solid #F1F5F9" }}>
                         <span style={{ fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 99, background: `${methodColor[tip.method]}18`, color: methodColor[tip.method], textTransform: "capitalize" }}>{tip.method}</span>

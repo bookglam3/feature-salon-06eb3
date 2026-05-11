@@ -110,7 +110,7 @@ export default function AutomationsPage() {
     }
   };
 
-  const update = (type: string, field: string, value: any) => {
+  const update = (type: string, field: string, value: string | number | boolean) => {
     setAutomations(p => p.map(a => a.type === type ? { ...a, [field]: value } : a));
   };
 

@@ -10,6 +10,7 @@ interface Appointment {
   status: string;
   services: { name: string; price: number } | null;
   salon: { name: string; slug: string; owner_email?: string } | null;
+  notes?: string;
 }
 
 const TIME_SLOTS = [
@@ -50,7 +51,7 @@ export default function ReschedulePage({ params }: { params: { id: string } }) {
 
   // Notify owner via API
   const notifyOwner = async (action: "rescheduled" | "cancelled", newDT?: string) => {
-    const salon = (appt?.salon as any);
+    const salon = appt?.salon;
     if (!salon?.owner_email) return;
     const appUrl = window.location.origin;
     try {
@@ -60,7 +61,7 @@ export default function ReschedulePage({ params }: { params: { id: string } }) {
         body: JSON.stringify({
           ownerEmail: salon.owner_email,
           clientName: appt?.client_name,
-          serviceName: (appt?.services as any)?.name,
+          serviceName: appt?.services?.name,
           action,
           newDateTime: newDT,
           oldDateTime: appt?.date_time,
@@ -99,7 +100,7 @@ export default function ReschedulePage({ params }: { params: { id: string } }) {
     setStatus("cancelled");
   };
 
-  const salonName = (appt?.salon as any)?.name || "the salon";
+  const salonName = appt?.salon?.name || "the salon";
 
   if (loading) return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#F8FAFC", fontFamily: "system-ui,sans-serif" }}>
@@ -139,7 +140,7 @@ export default function ReschedulePage({ params }: { params: { id: string } }) {
         <div style={{ fontSize: 64, marginBottom: 16 }}>😢</div>
         <div style={{ fontSize: 22, fontWeight: 900, color: "#0F172A", marginBottom: 8 }}>Appointment Cancelled</div>
         <div style={{ fontSize: 14, color: "#64748B", lineHeight: 1.6 }}>Your appointment has been cancelled. The salon has been notified. We hope to see you again soon!</div>
-        <a href={`/book/${(appt?.salon as any)?.slug || ""}`}
+        <a href={`/book/${appt?.salon?.slug || ""}`}
           style={{ display: "block", marginTop: 20, padding: "12px", background: "linear-gradient(135deg,#6366F1,#4F46E5)", color: "#fff", borderRadius: 12, textDecoration: "none", fontWeight: 700, fontSize: 14 }}>
           Book Again →
         </a>
@@ -177,7 +178,7 @@ export default function ReschedulePage({ params }: { params: { id: string } }) {
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {[
               { label: "Client",  value: appt.client_name },
-              { label: "Service", value: (appt.services as any)?.name || "—" },
+              { label: "Service", value: appt.services?.name || "—" },
               { label: "Date",    value: apptDate.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "long" }) },
               { label: "Time",    value: apptDate.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) },
             ].map(({ label, value }) => (

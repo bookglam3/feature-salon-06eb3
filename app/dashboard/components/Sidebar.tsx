@@ -45,6 +45,7 @@ const NAV = [
     group: "System",
     items: [
       { label: "Closed Dates", path: "/dashboard/closed-dates", emoji: "🚫" },
+      { label: "Partners",     path: "/dashboard/partners",     emoji: "🤝" },
       { label: "Settings",     path: "/dashboard/settings",     emoji: "⚙️" },
     ],
   },

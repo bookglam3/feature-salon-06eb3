@@ -55,12 +55,13 @@ function ReviewsContent() {
   const [showAdd, setShowAdd] = useState(false);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
-  const [origin, setOrigin] = useState("");
+  const [origin] = useState(() =>
+    typeof window !== "undefined" ? window.location.origin : ""
+  );
 
   const [form, setForm] = useState({ client_name: "", client_email: "", rating: 5, comment: "" });
 
   useEffect(() => {
-    setOrigin(window.location.origin);
     const load = async () => {
       const profile = await getCurrentUserProfile();
       if (!profile?.salon) { router.push("/login"); return; }

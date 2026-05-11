@@ -5,7 +5,6 @@ import { supabase } from "../../lib/supabase";
 import { getCurrentUserProfile } from "@/app/lib/auth";
 import FeatureGate from "../components/FeatureGate";
 import DashboardShell, { HamburgerBtn } from "../components/DashboardShell";
-import { useToast } from "../components/Toast";
 
 interface Appointment {
   id: string;
@@ -48,10 +47,222 @@ function sameDay(a: Date, b: Date) {
 
 type ViewMode = "week" | "month" | "day";
 
+/* ─── MONTH VIEW ─────────────────────────────────── */
+interface MonthViewProps {
+  currentDate: Date;
+  monthDays: (Date | null)[];
+  getApptsByDay: (day: Date) => Appointment[];
+  today: Date;
+  setSelectedAppt: (a: Appointment) => void;
+}
+function MonthView({ currentDate, monthDays, getApptsByDay, today, setSelectedAppt }: MonthViewProps) {
+  const monthName = currentDate.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+  return (
+    <div style={{ padding: "24px 24px", maxWidth: 1360, margin: "0 auto" }}>
+      <div style={{ textAlign: "center", fontSize: 20, fontWeight: 900, color: "#0F172A", marginBottom: 20, letterSpacing: "-0.5px" }}>{monthName}</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2, marginBottom: 2 }}>
+        {DAYS.map(d => (
+          <div key={d} style={{ textAlign: "center", fontSize: 11, fontWeight: 800, color: "#94A3B8", padding: "8px 0", letterSpacing: "0.5px", textTransform: "uppercase" }}>{d}</div>
+        ))}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2 }}>
+        {monthDays.map((day, idx) => {
+          if (!day) return <div key={`e-${idx}`} style={{ minHeight: 90, background: "#FAFAFA", borderRadius: 10, border: "1.5px solid #F1F5F9" }} />;
+          const dayAppts = getApptsByDay(day);
+          const isToday = sameDay(day, today);
+          return (
+            <div key={day.toISOString()}
+              style={{ minHeight: 90, background: isToday ? "#EEF2FF" : "#fff", borderRadius: 10, border: `1.5px solid ${isToday ? "#C7D2FE" : "#F1F5F9"}`, padding: "8px 8px", cursor: "default", transition: "all 0.12s" }}
+              onMouseEnter={e => { if (!isToday) e.currentTarget.style.borderColor = "#C7D2FE"; }}
+              onMouseLeave={e => { if (!isToday) e.currentTarget.style.borderColor = "#F1F5F9"; }}
+            >
+              <div style={{ fontSize: 12, fontWeight: isToday ? 900 : 600, marginBottom: 5, display: "inline-flex", alignItems: "center", justifyContent: "center", width: 22, height: 22, borderRadius: "50%", background: isToday ? "#6366F1" : "transparent", color: isToday ? "#fff" : "#0F172A" }}>{day.getDate()}</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {dayAppts.slice(0, 3).map(a => {
+                  const sc = STATUS_COLORS[a.status] || STATUS_COLORS.pending;
+                  return (
+                    <div key={a.id} onClick={() => setSelectedAppt(a)}
+                      style={{ fontSize: 10.5, fontWeight: 700, padding: "2px 6px", borderRadius: 5, background: sc.bg, color: sc.text, border: `1px solid ${sc.border}`, cursor: "pointer", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", transition: "opacity 0.12s" }}
+                      onMouseEnter={e => { e.currentTarget.style.opacity = "0.8"; }}
+                      onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
+                    >
+                      {new Date(a.date_time).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} {a.client_name}
+                    </div>
+                  );
+                })}
+                {dayAppts.length > 3 && <div style={{ fontSize: 9.5, color: "#94A3B8", fontWeight: 600, paddingLeft: 4 }}>+{dayAppts.length - 3} more</div>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ─── WEEK VIEW ─────────────────────────────────── */
+interface WeekViewProps {
+  weekDays: Date[];
+  appointments: Appointment[];
+  today: Date;
+  setSelectedAppt: (a: Appointment) => void;
+}
+function WeekView({ weekDays, appointments, today, setSelectedAppt }: WeekViewProps) {
+  const label = `${weekDays[0].toLocaleDateString("en-GB", { day: "numeric", month: "short" })} – ${weekDays[6].toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`;
+  return (
+    <div style={{ padding: "24px 24px", maxWidth: 1360, margin: "0 auto", overflowX: "auto" }}>
+      <div style={{ textAlign: "center", fontSize: 18, fontWeight: 800, color: "#0F172A", marginBottom: 20, letterSpacing: "-0.4px" }}>{label}</div>
+      <div style={{ display: "grid", gridTemplateColumns: "60px repeat(7,1fr)", minWidth: 700 }}>
+        <div style={{ borderRight: "1px solid #F1F5F9", borderBottom: "1px solid #F1F5F9" }} />
+        {weekDays.map(day => {
+          const isToday = sameDay(day, today);
+          return (
+            <div key={day.toISOString()} style={{ textAlign: "center", padding: "10px 4px", borderRight: "1px solid #F1F5F9", borderBottom: "1px solid #F1F5F9", background: isToday ? "#EEF2FF" : "#FAFAFA" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.5px" }}>{DAYS[(weekDays.indexOf(day))]}</div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: isToday ? "#4F46E5" : "#0F172A", marginTop: 2 }}>{day.getDate()}</div>
+            </div>
+          );
+        })}
+        {HOURS.map(hour => (
+          <React.Fragment key={hour}>
+            <div style={{ padding: "6px 8px", fontSize: 10.5, color: "#CBD5E1", fontWeight: 600, borderRight: "1px solid #F1F5F9", borderBottom: "1px solid #F8FAFC", textAlign: "right" }}>
+              {hour}:00
+            </div>
+            {weekDays.map(day => {
+              const cellAppts = appointments.filter(a => {
+                const d = new Date(a.date_time);
+                return sameDay(d, day) && d.getHours() === hour;
+              });
+              return (
+                <div key={`${day.toISOString()}-${hour}`}
+                  style={{ minHeight: 56, borderRight: "1px solid #F1F5F9", borderBottom: "1px solid #F8FAFC", padding: "3px 4px", position: "relative", background: sameDay(day, today) ? "#FAFFFE" : "#fff" }}>
+                  {cellAppts.map(a => {
+                    const sc = STATUS_COLORS[a.status] || STATUS_COLORS.pending;
+                    return (
+                      <div key={a.id} onClick={() => setSelectedAppt(a)}
+                        style={{ fontSize: 10.5, fontWeight: 700, padding: "3px 6px", borderRadius: 6, background: sc.bg, color: sc.text, border: `1px solid ${sc.border}`, cursor: "pointer", marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", transition: "all 0.12s", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}
+                        onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.02)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.transform = "none"; }}
+                      >
+                        <span style={{ display: "inline-block", width: 5, height: 5, borderRadius: "50%", background: sc.dot, marginRight: 4, verticalAlign: "middle" }} />
+                        {a.client_name}
+                        {a.services && <span style={{ opacity: 0.7 }}> · {a.services.name}</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </React.Fragment>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── DAY VIEW ──────────────────────────────────── */
+interface DayViewProps {
+  currentDate: Date;
+  getApptsByDay: (day: Date) => Appointment[];
+  setSelectedAppt: (a: Appointment) => void;
+}
+function DayView({ currentDate, getApptsByDay, setSelectedAppt }: DayViewProps) {
+  const dayAppts = getApptsByDay(currentDate);
+  const label = currentDate.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  return (
+    <div style={{ padding: "24px 24px", maxWidth: 800, margin: "0 auto" }}>
+      <div style={{ textAlign: "center", fontSize: 18, fontWeight: 800, color: "#0F172A", marginBottom: 20, letterSpacing: "-0.4px" }}>{label}</div>
+      {HOURS.map(hour => {
+        const hourAppts = dayAppts.filter(a => new Date(a.date_time).getHours() === hour);
+        return (
+          <div key={hour} style={{ display: "flex", gap: 14, marginBottom: 4, alignItems: "flex-start" }}>
+            <div style={{ width: 50, fontSize: 11.5, color: "#CBD5E1", fontWeight: 700, textAlign: "right", paddingTop: 10, flexShrink: 0 }}>{hour}:00</div>
+            <div style={{ flex: 1, minHeight: 48, borderTop: "1px solid #F1F5F9", display: "flex", flexDirection: "column", gap: 4, paddingTop: 4 }}>
+              {hourAppts.map(a => {
+                const sc = STATUS_COLORS[a.status] || STATUS_COLORS.pending;
+                return (
+                  <div key={a.id} onClick={() => setSelectedAppt(a)}
+                    style={{ padding: "10px 16px", borderRadius: 12, background: sc.bg, border: `1.5px solid ${sc.border}`, cursor: "pointer", transition: "all 0.12s", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = "translateX(4px)"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.10)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.06)"; }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: sc.text }}>{a.client_name}</div>
+                        <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>{a.services?.name || "No service"}{a.staff ? ` · ${a.staff.name}` : ""}</div>
+                      </div>
+                      <div style={{ textAlign: "right" }}>
+                        {a.services?.price && <div style={{ fontSize: 14, fontWeight: 800, color: "#10B981" }}>£{a.services.price}</div>}
+                        <div style={{ fontSize: 11, color: "#94A3B8", textTransform: "capitalize" }}>{a.status}</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+      {dayAppts.length === 0 && (
+        <div style={{ textAlign: "center", padding: "60px 0", color: "#94A3B8", fontSize: 15 }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>📭</div>
+          <div style={{ fontWeight: 700 }}>No appointments on this day</div>
+          <div style={{ fontSize: 13, marginTop: 4 }}>Use the dashboard to add a new booking</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── APPOINTMENT DETAIL MODAL ───────────────────── */
+interface ApptModalProps {
+  selectedAppt: Appointment | null;
+  setSelectedAppt: (a: Appointment | null) => void;
+  onViewAll: () => void;
+}
+function ApptModal({ selectedAppt, setSelectedAppt, onViewAll }: ApptModalProps) {
+  if (!selectedAppt) return null;
+  const sc = STATUS_COLORS[selectedAppt.status] || STATUS_COLORS.pending;
+  return (
+    <div onClick={() => setSelectedAppt(null)} style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, backdropFilter: "blur(4px)" }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 20, padding: 28, width: "100%", maxWidth: 420, boxShadow: "0 32px 80px rgba(0,0,0,0.2)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <div style={{ fontSize: 18, fontWeight: 900, color: "#0F172A", letterSpacing: "-0.5px" }}>Appointment Details</div>
+          <button onClick={() => setSelectedAppt(null)} style={{ background: "#F1F5F9", border: "none", width: 32, height: 32, borderRadius: "50%", cursor: "pointer", fontSize: 16, color: "#64748B", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {[
+            { icon: "👤", label: "Client",   value: selectedAppt.client_name },
+            { icon: "💇", label: "Service",  value: selectedAppt.services?.name || "—" },
+            { icon: "✂️", label: "Staff",    value: selectedAppt.staff?.name || "—" },
+            { icon: "📅", label: "Date",     value: new Date(selectedAppt.date_time).toLocaleString("en-GB", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }) },
+            { icon: "💰", label: "Amount",   value: selectedAppt.services?.price ? `£${selectedAppt.services.price}` : "—" },
+          ].map(row => (
+            <div key={row.label} style={{ display: "flex", gap: 12, alignItems: "center" }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: "#F8FAFC", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }}>{row.icon}</div>
+              <div>
+                <div style={{ fontSize: 10.5, fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.5px" }}>{row.label}</div>
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: "#0F172A", marginTop: 1 }}>{row.value}</div>
+              </div>
+            </div>
+          ))}
+          <div style={{ padding: "10px 14px", borderRadius: 10, background: sc.bg, border: `1.5px solid ${sc.border}`, display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: sc.dot }} />
+            <span style={{ fontSize: 13, fontWeight: 800, color: sc.text, textTransform: "capitalize" }}>Status: {selectedAppt.status}</span>
+          </div>
+        </div>
+        <div style={{ marginTop: 20, display: "flex", gap: 8 }}>
+          <button onClick={() => setSelectedAppt(null)} style={{ flex: 1, padding: "11px", background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#475569", cursor: "pointer" }}>Close</button>
+          <button onClick={onViewAll} style={{ flex: 1, padding: "11px", background: "linear-gradient(135deg,#6366F1,#4F46E5)", border: "none", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#fff", cursor: "pointer", boxShadow: "0 4px 14px rgba(99,102,241,0.3)" }}>View All →</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── MAIN CALENDAR CONTENT ─────────────────────── */
 function CalendarContent() {
   const router = useRouter();
-  const toast = useToast();
-  const [salonId, setSalonId]       = useState<string | null>(null);
   const [salonName, setSalonName]   = useState("");
   const [appointments, setAppts]    = useState<Appointment[]>([]);
   const [loading, setLoading]       = useState(true);
@@ -63,7 +274,6 @@ function CalendarContent() {
     const load = async () => {
       const profile = await getCurrentUserProfile();
       if (!profile?.salon) { router.push("/login"); return; }
-      setSalonId(profile.salon.id);
       setSalonName(profile.salon.name);
       const { data } = await supabase
         .from("appointments")
@@ -84,7 +294,7 @@ function CalendarContent() {
     const month = currentDate.getMonth();
     const first = new Date(year, month, 1);
     const last  = new Date(year, month + 1, 0);
-    const startPad = (first.getDay() + 6) % 7; // Mon-indexed
+    const startPad = (first.getDay() + 6) % 7;
     const days: (Date | null)[] = [];
     for (let i = 0; i < startPad; i++) days.push(null);
     for (let d = 1; d <= last.getDate(); d++) days.push(new Date(year, month, d));
@@ -118,7 +328,6 @@ function CalendarContent() {
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        {/* View toggle */}
         <div style={{ display: "flex", background: "#F1F5F9", borderRadius: 10, padding: 3, gap: 2 }}>
           {(["day","week","month"] as ViewMode[]).map(v => (
             <button key={v} onClick={() => setView(v)}
@@ -127,7 +336,6 @@ function CalendarContent() {
             </button>
           ))}
         </div>
-        {/* Nav arrows */}
         {(["←","Today","→"] as const).map((lbl, i) => (
           <button key={lbl}
             onClick={() => i === 1 ? setCurrentDate(new Date()) : nav(i === 0 ? -1 : 1)}
@@ -145,204 +353,8 @@ function CalendarContent() {
     </DashboardShell>
   );
 
-  /* ─── MONTH VIEW ───────────────────────────────────── */
-  const MonthView = () => {
-    const monthName = currentDate.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
-    return (
-      <div style={{ padding: "24px 24px", maxWidth: 1360, margin: "0 auto" }}>
-        <div style={{ textAlign: "center", fontSize: 20, fontWeight: 900, color: "#0F172A", marginBottom: 20, letterSpacing: "-0.5px" }}>{monthName}</div>
-        {/* Day headers */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2, marginBottom: 2 }}>
-          {DAYS.map(d => (
-            <div key={d} style={{ textAlign: "center", fontSize: 11, fontWeight: 800, color: "#94A3B8", padding: "8px 0", letterSpacing: "0.5px", textTransform: "uppercase" }}>{d}</div>
-          ))}
-        </div>
-        {/* Cells */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2 }}>
-          {monthDays.map((day, idx) => {
-            if (!day) return <div key={`e-${idx}`} style={{ minHeight: 90, background: "#FAFAFA", borderRadius: 10, border: "1.5px solid #F1F5F9" }} />;
-            const dayAppts = getApptsByDay(day);
-            const isToday = sameDay(day, today);
-            return (
-              <div key={day.toISOString()}
-                style={{ minHeight: 90, background: isToday ? "#EEF2FF" : "#fff", borderRadius: 10, border: `1.5px solid ${isToday ? "#C7D2FE" : "#F1F5F9"}`, padding: "8px 8px", cursor: "default", transition: "all 0.12s" }}
-                onMouseEnter={e => { if (!isToday) e.currentTarget.style.borderColor = "#C7D2FE"; }}
-                onMouseLeave={e => { if (!isToday) e.currentTarget.style.borderColor = "#F1F5F9"; }}
-              >
-                <div style={{ fontSize: 12, fontWeight: isToday ? 900 : 600, marginBottom: 5, display: "inline-flex", alignItems: "center", justifyContent: "center", width: 22, height: 22, borderRadius: "50%", background: isToday ? "#6366F1" : "transparent", color: isToday ? "#fff" : "#0F172A" }}>{day.getDate()}</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  {dayAppts.slice(0, 3).map(a => {
-                    const sc = STATUS_COLORS[a.status] || STATUS_COLORS.pending;
-                    return (
-                      <div key={a.id} onClick={() => setSelectedAppt(a)}
-                        style={{ fontSize: 10.5, fontWeight: 700, padding: "2px 6px", borderRadius: 5, background: sc.bg, color: sc.text, border: `1px solid ${sc.border}`, cursor: "pointer", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", transition: "opacity 0.12s" }}
-                        onMouseEnter={e => { e.currentTarget.style.opacity = "0.8"; }}
-                        onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
-                      >
-                        {new Date(a.date_time).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} {a.client_name}
-                      </div>
-                    );
-                  })}
-                  {dayAppts.length > 3 && <div style={{ fontSize: 9.5, color: "#94A3B8", fontWeight: 600, paddingLeft: 4 }}>+{dayAppts.length - 3} more</div>}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
-  /* ─── WEEK VIEW ────────────────────────────────────── */
-  const WeekView = () => {
-    const label = `${weekDays[0].toLocaleDateString("en-GB", { day: "numeric", month: "short" })} – ${weekDays[6].toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`;
-    return (
-      <div style={{ padding: "24px 24px", maxWidth: 1360, margin: "0 auto", overflowX: "auto" }}>
-        <div style={{ textAlign: "center", fontSize: 18, fontWeight: 800, color: "#0F172A", marginBottom: 20, letterSpacing: "-0.4px" }}>{label}</div>
-        <div style={{ display: "grid", gridTemplateColumns: "60px repeat(7,1fr)", minWidth: 700 }}>
-          {/* Corner */}
-          <div style={{ borderRight: "1px solid #F1F5F9", borderBottom: "1px solid #F1F5F9" }} />
-          {/* Day headers */}
-          {weekDays.map(day => {
-            const isToday = sameDay(day, today);
-            return (
-              <div key={day.toISOString()} style={{ textAlign: "center", padding: "10px 4px", borderRight: "1px solid #F1F5F9", borderBottom: "1px solid #F1F5F9", background: isToday ? "#EEF2FF" : "#FAFAFA" }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.5px" }}>{DAYS[(weekDays.indexOf(day))]}</div>
-                <div style={{ fontSize: 18, fontWeight: 900, color: isToday ? "#4F46E5" : "#0F172A", marginTop: 2 }}>{day.getDate()}</div>
-              </div>
-            );
-          })}
-          {/* Time rows */}
-          {HOURS.map(hour => (
-            <React.Fragment key={hour}>
-              <div style={{ padding: "6px 8px", fontSize: 10.5, color: "#CBD5E1", fontWeight: 600, borderRight: "1px solid #F1F5F9", borderBottom: "1px solid #F8FAFC", textAlign: "right" }}>
-                {hour}:00
-              </div>
-              {weekDays.map(day => {
-                const cellAppts = appointments.filter(a => {
-                  const d = new Date(a.date_time);
-                  return sameDay(d, day) && d.getHours() === hour;
-                });
-                return (
-                  <div key={`${day.toISOString()}-${hour}`}
-                    style={{ minHeight: 56, borderRight: "1px solid #F1F5F9", borderBottom: "1px solid #F8FAFC", padding: "3px 4px", position: "relative", background: sameDay(day, today) ? "#FAFFFE" : "#fff" }}>
-                    {cellAppts.map(a => {
-                      const sc = STATUS_COLORS[a.status] || STATUS_COLORS.pending;
-                      return (
-                        <div key={a.id} onClick={() => setSelectedAppt(a)}
-                          style={{ fontSize: 10.5, fontWeight: 700, padding: "3px 6px", borderRadius: 6, background: sc.bg, color: sc.text, border: `1px solid ${sc.border}`, cursor: "pointer", marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", transition: "all 0.12s", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}
-                          onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.02)"; }}
-                          onMouseLeave={e => { e.currentTarget.style.transform = "none"; }}
-                        >
-                          <span style={{ display: "inline-block", width: 5, height: 5, borderRadius: "50%", background: sc.dot, marginRight: 4, verticalAlign: "middle" }} />
-                          {a.client_name}
-                          {a.services && <span style={{ opacity: 0.7 }}> · {a.services.name}</span>}
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </React.Fragment>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  /* ─── DAY VIEW ─────────────────────────────────────── */
-  const DayView = () => {
-    const dayAppts = getApptsByDay(currentDate);
-    const label = currentDate.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-    return (
-      <div style={{ padding: "24px 24px", maxWidth: 800, margin: "0 auto" }}>
-        <div style={{ textAlign: "center", fontSize: 18, fontWeight: 800, color: "#0F172A", marginBottom: 20, letterSpacing: "-0.4px" }}>{label}</div>
-        {HOURS.map(hour => {
-          const hourAppts = dayAppts.filter(a => new Date(a.date_time).getHours() === hour);
-          return (
-            <div key={hour} style={{ display: "flex", gap: 14, marginBottom: 4, alignItems: "flex-start" }}>
-              <div style={{ width: 50, fontSize: 11.5, color: "#CBD5E1", fontWeight: 700, textAlign: "right", paddingTop: 10, flexShrink: 0 }}>{hour}:00</div>
-              <div style={{ flex: 1, minHeight: 48, borderTop: "1px solid #F1F5F9", display: "flex", flexDirection: "column", gap: 4, paddingTop: 4 }}>
-                {hourAppts.map(a => {
-                  const sc = STATUS_COLORS[a.status] || STATUS_COLORS.pending;
-                  return (
-                    <div key={a.id} onClick={() => setSelectedAppt(a)}
-                      style={{ padding: "10px 16px", borderRadius: 12, background: sc.bg, border: `1.5px solid ${sc.border}`, cursor: "pointer", transition: "all 0.12s", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}
-                      onMouseEnter={e => { e.currentTarget.style.transform = "translateX(4px)"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.10)"; }}
-                      onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.06)"; }}
-                    >
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <div>
-                          <div style={{ fontSize: 14, fontWeight: 800, color: sc.text }}>{a.client_name}</div>
-                          <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>{a.services?.name || "No service"}{a.staff ? ` · ${a.staff.name}` : ""}</div>
-                        </div>
-                        <div style={{ textAlign: "right" }}>
-                          {a.services?.price && <div style={{ fontSize: 14, fontWeight: 800, color: "#10B981" }}>£{a.services.price}</div>}
-                          <div style={{ fontSize: 11, color: "#94A3B8", textTransform: "capitalize" }}>{a.status}</div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
-        {dayAppts.length === 0 && (
-          <div style={{ textAlign: "center", padding: "60px 0", color: "#94A3B8", fontSize: 15 }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>📭</div>
-            <div style={{ fontWeight: 700 }}>No appointments on this day</div>
-            <div style={{ fontSize: 13, marginTop: 4 }}>Use the dashboard to add a new booking</div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  /* ─── APPOINTMENT DETAIL MODAL ─────────────────────── */
-  const ApptModal = () => {
-    if (!selectedAppt) return null;
-    const sc = STATUS_COLORS[selectedAppt.status] || STATUS_COLORS.pending;
-    return (
-      <div onClick={() => setSelectedAppt(null)} style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, backdropFilter: "blur(4px)" }}>
-        <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 20, padding: 28, width: "100%", maxWidth: 420, boxShadow: "0 32px 80px rgba(0,0,0,0.2)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-            <div style={{ fontSize: 18, fontWeight: 900, color: "#0F172A", letterSpacing: "-0.5px" }}>Appointment Details</div>
-            <button onClick={() => setSelectedAppt(null)} style={{ background: "#F1F5F9", border: "none", width: 32, height: 32, borderRadius: "50%", cursor: "pointer", fontSize: 16, color: "#64748B", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            {[
-              { icon: "👤", label: "Client",   value: selectedAppt.client_name },
-              { icon: "💇", label: "Service",  value: selectedAppt.services?.name || "—" },
-              { icon: "✂️", label: "Staff",    value: selectedAppt.staff?.name || "—" },
-              { icon: "📅", label: "Date",     value: new Date(selectedAppt.date_time).toLocaleString("en-GB", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }) },
-              { icon: "💰", label: "Amount",   value: selectedAppt.services?.price ? `£${selectedAppt.services.price}` : "—" },
-            ].map(row => (
-              <div key={row.label} style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: "#F8FAFC", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }}>{row.icon}</div>
-                <div>
-                  <div style={{ fontSize: 10.5, fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.5px" }}>{row.label}</div>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, color: "#0F172A", marginTop: 1 }}>{row.value}</div>
-                </div>
-              </div>
-            ))}
-            <div style={{ padding: "10px 14px", borderRadius: 10, background: sc.bg, border: `1.5px solid ${sc.border}`, display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ width: 8, height: 8, borderRadius: "50%", background: sc.dot }} />
-              <span style={{ fontSize: 13, fontWeight: 800, color: sc.text, textTransform: "capitalize" }}>Status: {selectedAppt.status}</span>
-            </div>
-          </div>
-          <div style={{ marginTop: 20, display: "flex", gap: 8 }}>
-            <button onClick={() => setSelectedAppt(null)} style={{ flex: 1, padding: "11px", background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#475569", cursor: "pointer" }}>Close</button>
-            <button onClick={() => { router.push("/dashboard/bookings"); setSelectedAppt(null); }} style={{ flex: 1, padding: "11px", background: "linear-gradient(135deg,#6366F1,#4F46E5)", border: "none", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#fff", cursor: "pointer", boxShadow: "0 4px 14px rgba(99,102,241,0.3)" }}>View All →</button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <DashboardShell salonName={salonName} topbar={Topbar}>
-      {/* Summary bar */}
       <div style={{ background: "#fff", borderBottom: "1px solid #F1F5F9", padding: "12px 24px", display: "flex", gap: 24, alignItems: "center" }}>
         {[
           { label: "Total Appointments", value: appointments.length, color: "#6366F1" },
@@ -358,10 +370,10 @@ function CalendarContent() {
         ))}
       </div>
 
-      {view === "month" && <MonthView />}
-      {view === "week"  && <WeekView />}
-      {view === "day"   && <DayView />}
-      <ApptModal />
+      {view === "month" && <MonthView currentDate={currentDate} monthDays={monthDays} getApptsByDay={getApptsByDay} today={today} setSelectedAppt={setSelectedAppt} />}
+      {view === "week"  && <WeekView weekDays={weekDays} appointments={appointments} today={today} setSelectedAppt={setSelectedAppt} />}
+      {view === "day"   && <DayView currentDate={currentDate} getApptsByDay={getApptsByDay} setSelectedAppt={setSelectedAppt} />}
+      <ApptModal selectedAppt={selectedAppt} setSelectedAppt={setSelectedAppt} onViewAll={() => { router.push("/dashboard/bookings"); setSelectedAppt(null); }} />
     </DashboardShell>
   );
 }

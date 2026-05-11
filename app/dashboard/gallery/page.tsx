@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { supabase } from "../../lib/supabase";
 import { getCurrentUserProfile } from "@/app/lib/auth";
 import DashboardShell, { HamburgerBtn } from "../components/DashboardShell";
@@ -118,9 +119,9 @@ export default function GalleryPage() {
               <div key={photo.id} style={{ position: "relative", borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 16px rgba(0,0,0,0.08)", cursor: "pointer", transition: "transform 0.18s" }}
                 onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.02)"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = "none"; }}>
-                <img src={photo.url} alt={photo.caption} onClick={() => setLightbox(photo)}
-                  style={{ width: "100%", height: 200, objectFit: "cover", display: "block" }}
-                  onError={e => { (e.target as HTMLImageElement).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(photo.caption||"Photo")}&size=400&background=F1F5F9&color=94A3B8`; }} />
+                <Image src={photo.url} alt={photo.caption} onClick={() => setLightbox(photo)}
+                  fill style={{ objectFit: "cover", cursor: "pointer" }}
+                  onError={() => {}} />
                 {photo.is_featured && (
                   <div style={{ position: "absolute", top: 10, left: 10, background: "#F59E0B", color: "#fff", fontSize: 10, fontWeight: 800, padding: "3px 8px", borderRadius: 99 }}>⭐ Featured</div>
                 )}
@@ -142,7 +143,8 @@ export default function GalleryPage() {
       {/* Lightbox */}
       {lightbox && (
         <div onClick={() => setLightbox(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.9)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <img src={lightbox.url} alt={lightbox.caption} style={{ maxWidth: "90vw", maxHeight: "85vh", borderRadius: 16, objectFit: "contain" }} />
+          <Image src={lightbox.url} alt={lightbox.caption} width={900} height={700}
+            style={{ maxWidth: "90vw", maxHeight: "85vh", borderRadius: 16, objectFit: "contain", width: "auto", height: "auto" }} />
           {lightbox.caption && <div style={{ position: "absolute", bottom: 30, left: "50%", transform: "translateX(-50%)", color: "#fff", fontSize: 14, fontWeight: 600, textAlign: "center" }}>{lightbox.caption}</div>}
           <button onClick={() => setLightbox(null)} style={{ position: "absolute", top: 20, right: 20, background: "rgba(255,255,255,0.2)", border: "none", borderRadius: "50%", width: 40, height: 40, color: "#fff", fontSize: 18, cursor: "pointer" }}>✕</button>
         </div>
@@ -158,7 +160,7 @@ export default function GalleryPage() {
                 <label style={{ fontSize: 12, fontWeight: 700, color: "#475569", display: "block", marginBottom: 6 }}>Image URL *</label>
                 <input value={form.url} onChange={e => setForm(p => ({ ...p, url: e.target.value }))} placeholder="https://example.com/photo.jpg"
                   style={{ width: "100%", padding: "10px 13px", border: "1.5px solid #E2E8F0", borderRadius: 10, fontSize: 14, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
-                {form.url && <img src={form.url} alt="" style={{ marginTop: 8, width: "100%", height: 140, objectFit: "cover", borderRadius: 10 }} onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />}
+                {form.url && <Image src={form.url} alt="" width={400} height={140} style={{ marginTop: 8, width: "100%", height: 140, objectFit: "cover", borderRadius: 10 }} />}
               </div>
               <div>
                 <label style={{ fontSize: 12, fontWeight: 700, color: "#475569", display: "block", marginBottom: 6 }}>Caption</label>

@@ -17,24 +17,32 @@ interface ClientRecord {
   statuses: string[];
 }
 
+interface AppointmentRow {
+  client_name: string;
+  client_email: string;
+  client_phone: string;
+  status: string;
+  date_time: string;
+  services?: { price: number }[] | null;
+}
+
 function ClientPortalContent() {
   const router = useRouter();
   const toast = useToast();
-  const [salonId, setSalonId] = useState<string | null>(null);
   const [salonName, setSalonName] = useState("");
   const [salonSlug, setSalonSlug] = useState("");
   const [clients, setClients] = useState<ClientRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<ClientRecord | null>(null);
-  const [origin, setOrigin] = useState("");
+  const [origin] = useState(() =>
+    typeof window !== "undefined" ? window.location.origin : ""
+  );
 
   useEffect(() => {
-    setOrigin(window.location.origin);
     const load = async () => {
       const profile = await getCurrentUserProfile();
       if (!profile?.salon) { router.push("/login"); return; }
-      setSalonId(profile.salon.id);
       setSalonName(profile.salon.name);
       setSalonSlug(profile.salon.slug);
       const { data } = await supabase
@@ -45,13 +53,13 @@ function ClientPortalContent() {
 
       // Group by email
       const map: Record<string, ClientRecord> = {};
-      (data || []).forEach((a: any) => {
+      (data || [] as AppointmentRow[]).forEach((a: AppointmentRow) => {
         const key = a.client_email || a.client_name;
         if (!map[key]) {
           map[key] = { email: a.client_email, name: a.client_name, phone: a.client_phone, count: 0, revenue: 0, last_visit: a.date_time, statuses: [] };
         }
         map[key].count++;
-        map[key].revenue += a.services?.price || 0;
+        map[key].revenue += (a.services?.[0]?.price ?? 0);
         map[key].statuses.push(a.status);
         if (a.date_time > map[key].last_visit) map[key].last_visit = a.date_time;
       });

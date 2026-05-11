@@ -12,7 +12,6 @@ interface ClosedDate {
   reason: string;
 }
 
-const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 
 function getMonday(date: Date) {
