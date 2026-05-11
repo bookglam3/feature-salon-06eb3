@@ -51,14 +51,28 @@ export async function GET(req: NextRequest) {
 // ── POST — submit a new application (public)
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { full_name, phone, whatsapp, city, experience, own_vehicle, daily_availability, why_hire } = body;
+  const {
+    full_name, phone, whatsapp, city, experience, own_vehicle,
+    daily_availability, why_hire,
+    // Identity verification fields
+    id_card_number, id_issue_date, id_expiry_date,
+    id_card_photo_url, selfie_photo_url,
+    street_address, postcode, country,
+  } = body;
 
-  if (!full_name?.trim()) return NextResponse.json({ error: "Full name is required" }, { status: 400 });
-  if (!phone?.trim())     return NextResponse.json({ error: "Phone number is required" }, { status: 400 });
-  if (!city?.trim())      return NextResponse.json({ error: "City is required" }, { status: 400 });
-  if (!experience?.trim()) return NextResponse.json({ error: "Experience is required" }, { status: 400 });
+  if (!full_name?.trim())          return NextResponse.json({ error: "Full name is required" }, { status: 400 });
+  if (!phone?.trim())              return NextResponse.json({ error: "Phone number is required" }, { status: 400 });
+  if (!city?.trim())               return NextResponse.json({ error: "City is required" }, { status: 400 });
+  if (!street_address?.trim())     return NextResponse.json({ error: "Street address is required" }, { status: 400 });
+  if (!postcode?.trim())           return NextResponse.json({ error: "Postcode is required" }, { status: 400 });
+  if (!experience?.trim())         return NextResponse.json({ error: "Experience is required" }, { status: 400 });
   if (!daily_availability?.trim()) return NextResponse.json({ error: "Availability is required" }, { status: 400 });
-  if (!why_hire?.trim())  return NextResponse.json({ error: "Please tell us why you want to join" }, { status: 400 });
+  if (!why_hire?.trim())           return NextResponse.json({ error: "Please tell us why you want to join" }, { status: 400 });
+  if (!id_card_number?.trim())     return NextResponse.json({ error: "ID card number is required" }, { status: 400 });
+  if (!id_issue_date)              return NextResponse.json({ error: "ID issue date is required" }, { status: 400 });
+  if (!id_expiry_date)             return NextResponse.json({ error: "ID expiry date is required" }, { status: 400 });
+  if (!id_card_photo_url)          return NextResponse.json({ error: "ID card photo is required" }, { status: 400 });
+  if (!selfie_photo_url)           return NextResponse.json({ error: "Your photo is required" }, { status: 400 });
 
   const { data, error } = await adminSupabase
     .from("sales_agents")
@@ -71,6 +85,16 @@ export async function POST(req: NextRequest) {
       own_vehicle: !!own_vehicle,
       daily_availability: daily_availability.trim(),
       why_hire: why_hire.trim(),
+      // Address
+      street_address: street_address.trim(),
+      postcode: postcode.trim().toUpperCase(),
+      country: country || "GB",
+      // Identity
+      id_card_number: id_card_number.trim(),
+      id_issue_date: id_issue_date,
+      id_expiry_date: id_expiry_date,
+      id_card_photo_url: id_card_photo_url,
+      selfie_photo_url: selfie_photo_url,
       status: "pending",
     })
     .select()
