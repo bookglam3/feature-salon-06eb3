@@ -96,6 +96,7 @@ export default function Home() {
           <a href="#compare">vs Fresha</a>
           <a href="#pricing">Pricing</a>
           <a href="#reviews">Reviews</a>
+          <Link href="/partner" style={{ color: "#4F6EF7", fontWeight: 600 }}>Become a Partner</Link>
           <Link href="/login">Login</Link>
           <Link href="/signup" className="btn-primary">Start free trial</Link>
         </div>
@@ -372,6 +373,7 @@ export default function Home() {
         <span className="nav-logo footer-logo">feature</span>
         <nav className="footer-links" aria-label="Footer navigation">
           <Link href="/pricing">Pricing</Link>
+          <Link href="/partner">Become a Partner</Link>
           <Link href="/salons/london">London</Link>
           <Link href="/salons/manchester">Manchester</Link>
           <Link href="/salons/birmingham">Birmingham</Link>
