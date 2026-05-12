@@ -3,29 +3,35 @@ import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { getCurrentUserProfile } from "../../lib/auth";
+import DashboardShell, { HamburgerBtn } from "../components/DashboardShell";
+import { SkeletonDashboard } from "../components/SkeletonLoader";
+import StatCard from "../components/StatCard";
 
 type SortKey = "name" | "bookings" | "spent" | "lastVisit";
 
 interface ClientRecord {
-  name: string;
-  email: string;
-  phone: string;
-  lastVisit: Date;
-  bookings: number;
-  spent: number;
-  note?: string;
-  services: Record<string, number>;
+  name: string; email: string; phone: string;
+  lastVisit: Date; bookings: number; spent: number;
+  note?: string; services: Record<string, number>;
 }
-
 interface HistoryItem {
-  id: string;
-  date_time: string;
-  status: string;
+  id: string; date_time: string; status: string;
   services?: { name?: string; price?: number }[] | { name?: string; price?: number } | null;
   staff?: { name: string } | null;
 }
-
 type SalonData = { id: string; slug?: string };
+
+function Avatar({ name, size = 36 }: { name: string; size?: number }) {
+  const colors = ["#6366F1","#10B981","#F59E0B","#EF4444","#8B5CF6","#06B6D4","#EC4899"];
+  const bg = colors[(name?.charCodeAt(0) || 0) % colors.length];
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: "50%", background: bg,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: size * 0.36, fontWeight: 800, color: "#fff", flexShrink: 0, letterSpacing: -0.5,
+    }}>{name?.charAt(0).toUpperCase() || "?"}</div>
+  );
+}
 
 export default function ClientsPage() {
   const router = useRouter();
@@ -60,19 +66,14 @@ export default function ClientsPage() {
       }) => {
         const key = a.client_email || a.client_name;
         const price = Array.isArray(a.services)
-          ? a.services.reduce((s: number, x: { price?: number }) => s + Number(x?.price ?? 0), 0)
+          ? a.services.reduce((s, x) => s + Number(x?.price ?? 0), 0)
           : Number(a.services?.price ?? 0);
         const svcName = Array.isArray(a.services) ? a.services[0]?.name : a.services?.name;
         if (!map.has(key)) {
-          map.set(key, {
-            name: a.client_name, email: a.client_email, phone: a.client_phone,
-            lastVisit: new Date(a.date_time), bookings: 1, spent: price,
-            services: svcName ? { [svcName]: 1 } : {},
-          });
+          map.set(key, { name: a.client_name, email: a.client_email, phone: a.client_phone, lastVisit: new Date(a.date_time), bookings: 1, spent: price, services: svcName ? { [svcName]: 1 } : {} });
         } else {
           const c = map.get(key)!;
-          c.bookings += 1;
-          c.spent += price;
+          c.bookings += 1; c.spent += price;
           if (svcName) c.services[svcName] = (c.services[svcName] || 0) + 1;
         }
       });
@@ -82,27 +83,20 @@ export default function ClientsPage() {
   }, [router]);
 
   const openClient = async (c: ClientRecord) => {
-    setSelected(c);
-    setNote(c.note || "");
-    setHistLoading(true);
-    const { data } = await supabase
-      .from("appointments")
+    setSelected(c); setNote(c.note || ""); setHistLoading(true);
+    const { data } = await supabase.from("appointments")
       .select("*,services(name,price),staff(name)")
-      .eq("salon_id", salon?.id ?? "")
-      .eq("client_email", c.email)
+      .eq("salon_id", salon?.id ?? "").eq("client_email", c.email)
       .order("date_time", { ascending: false });
-    setHistory(data || []);
-    setHistLoading(false);
+    setHistory(data || []); setHistLoading(false);
   };
 
   const saveNote = async () => {
     if (!selected) return;
     setNoteSaving(true);
-    // store note in a client_notes table or just keep in state for now
     setClients(p => p.map(c => c.email === selected.email ? { ...c, note } : c));
     setSelected((p: ClientRecord | null) => p ? { ...p, note } : null);
-    setNoteMsg("✓ Saved");
-    setTimeout(() => setNoteMsg(""), 2000);
+    setNoteMsg("✓ Saved"); setTimeout(() => setNoteMsg(""), 2000);
     setNoteSaving(false);
   };
 
@@ -120,235 +114,236 @@ export default function ClientsPage() {
 
   const topSpender = clients.reduce<ClientRecord | null>((max, c) => c.spent > (max?.spent || 0) ? c : max, null);
   const newThisMonth = clients.filter(c => {
-    const d = new Date(c.lastVisit);
-    const now = new Date();
+    const d = new Date(c.lastVisit); const now = new Date();
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }).length;
   const avgSpend = clients.length ? Math.round(clients.reduce((s, c) => s + c.spent, 0) / clients.length) : 0;
-
   const favService = (c: ClientRecord) => {
     if (!c.services || Object.keys(c.services).length === 0) return null;
     return Object.entries(c.services).sort((a, b) => (b[1] as number) - (a[1] as number))[0][0];
   };
-
-  // eslint-disable-next-line react-hooks/purity
   const daysSince = (d: Date) => Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
-
   const statusColor = (s: string) =>
-    s === "confirmed" ? { bg: "#ECFDF5", color: "#059669" }
-    : s === "cancelled" ? { bg: "#FEF2F2", color: "#DC2626" }
-    : { bg: "#FFF7ED", color: "#D97706" };
+    s === "confirmed" ? { bg: "#ECFDF5", color: "#059669", border: "#A7F3D0" }
+    : s === "cancelled" ? { bg: "#FEF2F2", color: "#DC2626", border: "#FECACA" }
+    : { bg: "#FFF7ED", color: "#D97706", border: "#FDE68A" };
 
-  if (loading) return (
-    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"60vh" }}>
-      <div style={{ fontSize:24, color:"var(--indigo)", fontWeight:800 }}>feature</div>
-    </div>
+  if (loading) return <DashboardShell salonName=""><SkeletonDashboard /></DashboardShell>;
+
+  const Topbar = (
+    <header style={{ background: "rgba(255,255,255,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid var(--border)", padding: "0 20px", height: 58, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 30, gap: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <HamburgerBtn />
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "var(--text-1)", letterSpacing: "-0.4px" }}>Clients</div>
+          <div style={{ fontSize: 11.5, color: "var(--text-3)" }}>{clients.length} clients in CRM</div>
+        </div>
+      </div>
+    </header>
   );
 
   return (
-    <div style={{ padding:"24px", maxWidth:1400, margin:"0 auto" }}>
+    <DashboardShell salonName={salon ? undefined : ""} topbar={Topbar}>
+      <div style={{ padding: "20px 20px 32px" }}>
 
-      {/* Stats */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))", gap:14, marginBottom:24 }}>
-        {[
-          { label:"Total Clients", value:clients.length, icon:"👤", color:"#6366F1" },
-          { label:"New This Month", value:newThisMonth, icon:"✨", color:"#10B981" },
-          { label:"Avg Spend", value:`£${avgSpend}`, icon:"💷", color:"#F59E0B" },
-          { label:"Top Spender", value:topSpender ? `£${topSpender.spent}` : "—", icon:"🏆", color:"#EF4444" },
-        ].map(s => (
-          <div key={s.label} style={{ background:"var(--surface)", border:"1px solid var(--border)", borderRadius:"var(--r-lg)", padding:"18px 20px", boxShadow:"var(--shadow-sm)" }}>
-            <div style={{ fontSize:22, marginBottom:6 }}>{s.icon}</div>
-            <div style={{ fontSize:24, fontWeight:800, color:s.color, letterSpacing:"-0.5px" }}>{s.value}</div>
-            <div style={{ fontSize:11.5, color:"var(--text-3)", marginTop:2, fontWeight:600 }}>{s.label}</div>
-          </div>
-        ))}
-      </div>
+        {/* Stats */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 20 }}>
+          <StatCard label="Total Clients" value={clients.length} icon="👤" color="indigo" sub="all time" />
+          <StatCard label="New This Month" value={newThisMonth} icon="✨" color="green" sub="vs last month" />
+          <StatCard label="Avg Spend" value={avgSpend} icon="💷" color="amber" prefix="£" sub="per client" />
+          <StatCard label="Top Spender" value={topSpender ? topSpender.spent : 0} icon="🏆" color="red" prefix="£" sub={topSpender?.name || "—"} />
+        </div>
 
-      <div style={{ display:"flex", gap:20, alignItems:"flex-start" }}>
-
-        {/* Client List */}
-        <div style={{ flex: selected ? "0 0 52%" : "1", minWidth:0, background:"var(--surface)", border:"1px solid var(--border)", borderRadius:"var(--r-lg)", overflow:"hidden", boxShadow:"var(--shadow-sm)" }}>
-          {/* Header */}
-          <div style={{ padding:"16px 20px", borderBottom:"1px solid var(--border)", display:"flex", gap:12, alignItems:"center", flexWrap:"wrap" }}>
-            <input type="text" placeholder="🔍 Search clients..." value={search} onChange={e=>setSearch(e.target.value)}
-              style={{ flex:1, minWidth:140, padding:"9px 14px", border:"1px solid var(--border)", borderRadius:"var(--r-sm)", fontSize:13, fontFamily:"inherit", outline:"none", background:"var(--surface-2)" }}/>
-            <select value={sortKey} onChange={e=>setSortKey(e.target.value as SortKey)}
-              style={{ padding:"9px 12px", border:"1px solid var(--border)", borderRadius:"var(--r-sm)", fontSize:13, fontFamily:"inherit", background:"var(--surface-2)", cursor:"pointer", outline:"none" }}>
-              <option value="lastVisit">Latest Visit</option>
-              <option value="spent">Most Spent</option>
-              <option value="bookings">Most Bookings</option>
-              <option value="name">Name A–Z</option>
-            </select>
-            <span style={{ fontSize:12, color:"var(--text-3)", whiteSpace:"nowrap" }}>{filtered.length} clients</span>
-          </div>
-
-          {filtered.length === 0 ? (
-            <div style={{ padding:"60px 24px", textAlign:"center", color:"var(--text-3)" }}>
-              <div style={{ fontSize:36, marginBottom:12 }}>👤</div>
-              <div style={{ fontSize:14, fontWeight:600 }}>{search ? "No clients found" : "No clients yet"}</div>
-              <div style={{ fontSize:12, marginTop:4 }}>Clients appear here after their first booking</div>
+        <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
+          {/* Client list */}
+          <div style={{ flex: selected ? "0 0 100%" : "1", minWidth: 0, background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(15,23,42,0.05)" }}>
+            {/* Toolbar */}
+            <div style={{ padding: "14px 18px", borderBottom: "1px solid #F1F5F9", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", background: "#FAFBFF" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 160, background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "8px 12px" }}
+                onFocusCapture={e => { e.currentTarget.style.borderColor = "#6366F1"; e.currentTarget.style.background = "#fff"; }}
+                onBlurCapture={e => { e.currentTarget.style.borderColor = "#E2E8F0"; e.currentTarget.style.background = "#F8FAFC"; }}
+              >
+                <svg width="13" height="13" viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5.75" stroke="#94A3B8" strokeWidth="1.75"/><path d="M13 13L17 17" stroke="#94A3B8" strokeWidth="1.75" strokeLinecap="round"/></svg>
+                <input type="text" placeholder="Search clients…" value={search} onChange={e => setSearch(e.target.value)}
+                  style={{ background: "none", border: "none", outline: "none", fontSize: 13, color: "var(--text-1)", fontFamily: "var(--font)", width: "100%" }} />
+              </div>
+              <select value={sortKey} onChange={e => setSortKey(e.target.value as SortKey)}
+                style={{ padding: "8px 12px", border: "1.5px solid #E2E8F0", borderRadius: 10, fontSize: 12.5, fontFamily: "var(--font)", background: "#fff", cursor: "pointer", outline: "none", color: "var(--text-1)" }}>
+                <option value="lastVisit">Latest Visit</option>
+                <option value="spent">Most Spent</option>
+                <option value="bookings">Most Bookings</option>
+                <option value="name">Name A–Z</option>
+              </select>
+              <span style={{ fontSize: 12, color: "var(--text-3)", whiteSpace: "nowrap", fontWeight: 600 }}>{filtered.length} clients</span>
             </div>
-          ) : (
-            <div style={{ overflowX:"auto" }}>
-              <table style={{ width:"100%", borderCollapse:"collapse", minWidth:520 }}>
-                <thead>
-                  <tr style={{ background:"var(--surface-2)" }}>
-                    {["Client","Contact","Bookings","Spent","Last Visit",""].map(h=>(
-                      <th key={h} style={{ fontSize:11, color:"var(--text-3)", textAlign:"left", padding:"10px 16px", fontWeight:700, borderBottom:"1px solid var(--border)", letterSpacing:"0.5px" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((c, i) => {
-                    const ds = daysSince(c.lastVisit);
-                    const isActive = selected?.email === c.email;
-                    return (
-                      <tr key={i} onClick={()=>openClient(c)}
-                        style={{ cursor:"pointer", background: isActive ? "var(--indigo-light)" : "transparent", transition:"background 0.1s" }}
-                        onMouseEnter={e=>{ if(!isActive) (e.currentTarget as HTMLElement).style.background="var(--slate-50)"; }}
-                        onMouseLeave={e=>{ if(!isActive) (e.currentTarget as HTMLElement).style.background="transparent"; }}
-                      >
-                        <td style={{ padding:"12px 16px", borderBottom:"1px solid var(--border)" }}>
-                          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                            <div style={{ width:34, height:34, borderRadius:"50%", background:"var(--indigo-light)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, fontWeight:700, color:"var(--indigo)", flexShrink:0 }}>
-                              {c.name?.charAt(0).toUpperCase()}
+
+            {filtered.length === 0 ? (
+              <div style={{ padding: "56px 24px", textAlign: "center" }}>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>👤</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)", marginBottom: 6 }}>{search ? "No clients found" : "No clients yet"}</div>
+                <div style={{ fontSize: 13, color: "var(--text-3)" }}>Clients appear here after their first booking</div>
+              </div>
+            ) : (
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 540 }}>
+                  <thead>
+                    <tr style={{ background: "#F8FAFC" }}>
+                      {["Client","Contact","Bookings","Spent","Last Visit",""].map(h => (
+                        <th key={h} style={{ fontSize: 10.5, color: "var(--text-3)", textAlign: "left", padding: "11px 16px", fontWeight: 800, borderBottom: "1.5px solid #F1F5F9", letterSpacing: "0.7px", textTransform: "uppercase" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((c, i) => {
+                      const ds = daysSince(c.lastVisit);
+                      const isActive = selected?.email === c.email;
+                      return (
+                        <tr key={i} onClick={() => openClient(c)}
+                          style={{ cursor: "pointer", background: isActive ? "#EEF2FF" : "transparent", transition: "background 0.1s" }}
+                          onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "#FAFBFF"; }}
+                          onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                        >
+                          <td style={{ padding: "13px 16px", borderBottom: "1px solid #F8FAFC" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                              <Avatar name={c.name} size={34} />
+                              <div>
+                                <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text-1)" }}>{c.name}</div>
+                                {favService(c) && <div style={{ fontSize: 10.5, color: "var(--text-3)", marginTop: 1 }}>⭐ {favService(c)}</div>}
+                              </div>
                             </div>
-                            <div>
-                              <div style={{ fontSize:13, fontWeight:600, color:"var(--text-1)" }}>{c.name}</div>
-                              {favService(c) && <div style={{ fontSize:10.5, color:"var(--text-3)", marginTop:1 }}>⭐ {favService(c)}</div>}
+                          </td>
+                          <td style={{ padding: "13px 16px", borderBottom: "1px solid #F8FAFC" }}>
+                            <div style={{ fontSize: 12.5, color: "var(--text-2)" }}>{c.email || "—"}</div>
+                            <div style={{ fontSize: 11.5, color: "var(--text-3)", marginTop: 1 }}>{c.phone || "—"}</div>
+                          </td>
+                          <td style={{ padding: "13px 16px", borderBottom: "1px solid #F8FAFC" }}>
+                            <span style={{ background: "#EEF2FF", color: "#6366F1", fontSize: 12, padding: "3px 10px", borderRadius: 99, fontWeight: 800, border: "1px solid #C7D2FE" }}>{c.bookings}</span>
+                          </td>
+                          <td style={{ padding: "13px 16px", fontSize: 13.5, fontWeight: 800, color: "var(--text-1)", borderBottom: "1px solid #F8FAFC" }}>£{c.spent.toFixed(0)}</td>
+                          <td style={{ padding: "13px 16px", borderBottom: "1px solid #F8FAFC" }}>
+                            <div style={{ fontSize: 12.5, color: "var(--text-2)" }}>{new Date(c.lastVisit).toLocaleDateString("en-GB")}</div>
+                            <div style={{ fontSize: 10.5, color: ds > 60 ? "var(--red)" : ds > 30 ? "var(--amber)" : "var(--green)", marginTop: 1, fontWeight: 700 }}>
+                              {ds === 0 ? "Today" : `${ds}d ago`}
                             </div>
-                          </div>
-                        </td>
-                        <td style={{ padding:"12px 16px", borderBottom:"1px solid var(--border)" }}>
-                          <div style={{ fontSize:12, color:"var(--text-2)" }}>{c.email || "—"}</div>
-                          <div style={{ fontSize:11, color:"var(--text-3)", marginTop:1 }}>{c.phone || "—"}</div>
-                        </td>
-                        <td style={{ padding:"12px 16px", borderBottom:"1px solid var(--border)" }}>
-                          <span style={{ background:"var(--indigo-light)", color:"var(--indigo)", fontSize:12, padding:"4px 10px", borderRadius:"var(--r-full)", fontWeight:700 }}>{c.bookings}</span>
-                        </td>
-                        <td style={{ padding:"12px 16px", fontSize:13, fontWeight:700, color:"var(--text-1)", borderBottom:"1px solid var(--border)" }}>£{c.spent.toFixed(0)}</td>
-                        <td style={{ padding:"12px 16px", borderBottom:"1px solid var(--border)" }}>
-                          <div style={{ fontSize:12, color:"var(--text-2)" }}>{new Date(c.lastVisit).toLocaleDateString("en-GB")}</div>
-                          <div style={{ fontSize:10.5, color: ds > 60 ? "var(--red)" : ds > 30 ? "var(--amber)" : "var(--green)", marginTop:1, fontWeight:600 }}>
-                            {ds === 0 ? "Today" : `${ds}d ago`}
-                          </div>
-                        </td>
-                        <td style={{ padding:"12px 16px", borderBottom:"1px solid var(--border)" }}>
-                          <span style={{ fontSize:11, color:"var(--indigo)", fontWeight:600 }}>View →</span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                          </td>
+                          <td style={{ padding: "13px 16px", borderBottom: "1px solid #F8FAFC" }}>
+                            <span style={{ fontSize: 11.5, color: "#6366F1", fontWeight: 700, background: "#EEF2FF", padding: "3px 10px", borderRadius: 8, border: "1px solid #C7D2FE" }}>View →</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Detail panel */}
+          {selected && (
+            <div style={{ width: "100%", background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, overflow: "hidden", boxShadow: "0 8px 32px rgba(99,102,241,0.12)", display: "flex", flexDirection: "column", maxHeight: "82vh" }}>
+              {/* Header */}
+              <div style={{ padding: "18px 20px", borderBottom: "1px solid #F1F5F9", display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(135deg,#EEF2FF,#F8FAFF)", flexShrink: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <Avatar name={selected.name} size={44} />
+                  <div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: "var(--text-1)", letterSpacing: "-0.3px" }}>{selected.name}</div>
+                    <div style={{ fontSize: 12, color: "var(--text-3)", marginTop: 2 }}>{selected.email}</div>
+                  </div>
+                </div>
+                <button onClick={() => setSelected(null)}
+                  style={{ background: "var(--slate-100)", border: "none", cursor: "pointer", width: 30, height: 30, borderRadius: "50%", fontSize: 14, color: "var(--text-2)", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.12s" }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "var(--slate-200)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "var(--slate-100)"; }}
+                >✕</button>
+              </div>
+
+              {/* Quick actions */}
+              <div style={{ padding: "12px 18px", borderBottom: "1px solid #F1F5F9", display: "flex", gap: 8, flexShrink: 0 }}>
+                {selected.phone && (
+                  <a href={`https://wa.me/${selected.phone.replace(/\D/g,"")}`} target="_blank" rel="noopener"
+                    style={{ flex: 1, background: "#ECFDF5", color: "#059669", border: "1px solid #A7F3D0", borderRadius: 10, padding: "9px", fontSize: 12.5, fontWeight: 700, textAlign: "center", textDecoration: "none", display: "block" }}>
+                    💬 WhatsApp
+                  </a>
+                )}
+                {selected.phone && (
+                  <a href={`tel:${selected.phone}`}
+                    style={{ flex: 1, background: "#EEF2FF", color: "#6366F1", border: "1px solid #C7D2FE", borderRadius: 10, padding: "9px", fontSize: 12.5, fontWeight: 700, textAlign: "center", textDecoration: "none", display: "block" }}>
+                    📞 Call
+                  </a>
+                )}
+                {salon?.slug && (
+                  <a href={`/book/${salon.slug}`} target="_blank" rel="noopener"
+                    style={{ flex: 1, background: "#F8FAFC", color: "var(--text-2)", border: "1px solid var(--border)", borderRadius: 10, padding: "9px", fontSize: 12.5, fontWeight: 700, textAlign: "center", textDecoration: "none", display: "block" }}>
+                    📅 Book Again
+                  </a>
+                )}
+              </div>
+
+              {/* Stats bar */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 1, background: "#F1F5F9", flexShrink: 0 }}>
+                {[
+                  { label: "Visits", value: selected.bookings },
+                  { label: "Total Spent", value: `£${selected.spent.toFixed(0)}` },
+                  { label: "Fav Service", value: favService(selected) || "—" },
+                ].map(s => (
+                  <div key={s.label} style={{ background: "#F8FAFC", padding: "13px 14px", textAlign: "center" }}>
+                    <div style={{ fontSize: 17, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.5px" }}>{s.value}</div>
+                    <div style={{ fontSize: 10.5, color: "var(--text-3)", marginTop: 2, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Notes */}
+              <div style={{ padding: "14px 18px", borderBottom: "1px solid #F1F5F9", flexShrink: 0 }}>
+                <div style={{ fontSize: 10.5, fontWeight: 800, color: "var(--text-3)", marginBottom: 8, letterSpacing: "1px", textTransform: "uppercase" }}>Notes</div>
+                <textarea value={note} onChange={e => setNote(e.target.value)} rows={2}
+                  placeholder="Add notes about this client…"
+                  style={{ width: "100%", padding: "9px 12px", border: "1.5px solid #E2E8F0", borderRadius: 10, fontSize: 13, fontFamily: "var(--font)", resize: "none", outline: "none", color: "var(--text-1)", boxSizing: "border-box", background: "#F8FAFC" }} />
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
+                  <span style={{ fontSize: 11.5, color: "var(--green)", fontWeight: 600 }}>{noteMsg}</span>
+                  <button onClick={saveNote} disabled={noteSaving}
+                    style={{ padding: "6px 16px", background: "#6366F1", color: "#fff", border: "none", borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
+                    Save Note
+                  </button>
+                </div>
+              </div>
+
+              {/* Booking history */}
+              <div style={{ padding: "12px 18px 6px", flexShrink: 0 }}>
+                <div style={{ fontSize: 10.5, fontWeight: 800, color: "var(--text-3)", letterSpacing: "1px", textTransform: "uppercase" }}>Booking History</div>
+              </div>
+              <div style={{ flex: 1, overflowY: "auto" }}>
+                {histLoading ? (
+                  <div style={{ padding: 32, textAlign: "center", color: "var(--text-3)", fontSize: 13 }}>Loading…</div>
+                ) : history.length === 0 ? (
+                  <div style={{ padding: 32, textAlign: "center", color: "var(--text-3)", fontSize: 13 }}>No bookings found</div>
+                ) : history.map(b => {
+                  const sc = statusColor(b.status);
+                  return (
+                    <div key={b.id} style={{ padding: "13px 18px", borderBottom: "1px solid #F8FAFC", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <div>
+                        <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text-1)", marginBottom: 3 }}>
+                          {Array.isArray(b.services) ? b.services[0]?.name : b.services?.name || "Service"}
+                        </div>
+                        <div style={{ fontSize: 11.5, color: "var(--text-3)" }}>
+                          {new Date(b.date_time).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
+                          {b.staff?.name && ` · ${b.staff.name}`}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: "var(--text-1)", marginBottom: 4 }}>
+                          £{Array.isArray(b.services) ? b.services[0]?.price : b.services?.price || 0}
+                        </div>
+                        <span style={{ background: sc.bg, color: sc.color, border: `1px solid ${sc.border}`, fontSize: 10.5, padding: "2px 8px", borderRadius: 99, fontWeight: 700 }}>{b.status}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
-
-        {/* Detail Panel */}
-        {selected && (
-          <div style={{ flex:"0 0 46%", minWidth:0, background:"var(--surface)", border:"1px solid var(--border)", borderRadius:"var(--r-lg)", overflow:"hidden", boxShadow:"var(--shadow-md)", display:"flex", flexDirection:"column", maxHeight:"80vh" }}>
-
-            {/* Header */}
-            <div style={{ padding:"18px 20px", borderBottom:"1px solid var(--border)", display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
-              <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-                <div style={{ width:44, height:44, borderRadius:"50%", background:"linear-gradient(135deg,var(--indigo),var(--indigo-dark))", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, fontWeight:800, color:"#fff" }}>
-                  {selected.name?.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <div style={{ fontSize:15, fontWeight:700, color:"var(--text-1)" }}>{selected.name}</div>
-                  <div style={{ fontSize:12, color:"var(--text-3)" }}>{selected.email}</div>
-                </div>
-              </div>
-              <button onClick={()=>setSelected(null)} style={{ background:"var(--slate-100)", border:"none", cursor:"pointer", width:28, height:28, borderRadius:"50%", fontSize:14, color:"var(--text-2)", display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
-            </div>
-
-            {/* Quick Actions */}
-            <div style={{ padding:"12px 20px", borderBottom:"1px solid var(--border)", display:"flex", gap:8, flexShrink:0 }}>
-              {selected.phone && (
-                <a href={`https://wa.me/${selected.phone.replace(/\D/g,"")}`} target="_blank" rel="noopener"
-                  style={{ flex:1, background:"#ECFDF5", color:"#059669", border:"1px solid #A7F3D0", borderRadius:"var(--r-sm)", padding:"8px", fontSize:12, fontWeight:700, textAlign:"center", textDecoration:"none", display:"block" }}>
-                  💬 WhatsApp
-                </a>
-              )}
-              {selected.phone && (
-                <a href={`tel:${selected.phone}`}
-                  style={{ flex:1, background:"var(--indigo-light)", color:"var(--indigo)", border:"1px solid var(--indigo-pale)", borderRadius:"var(--r-sm)", padding:"8px", fontSize:12, fontWeight:700, textAlign:"center", textDecoration:"none", display:"block" }}>
-                  📞 Call
-                </a>
-              )}
-              {salon?.slug && (
-                <a href={`/book/${salon.slug}`} target="_blank" rel="noopener"
-                  style={{ flex:1, background:"var(--slate-100)", color:"var(--text-2)", border:"1px solid var(--border)", borderRadius:"var(--r-sm)", padding:"8px", fontSize:12, fontWeight:700, textAlign:"center", textDecoration:"none", display:"block" }}>
-                  📅 Book Again
-                </a>
-              )}
-            </div>
-
-            {/* Stats */}
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:1, background:"var(--border)", flexShrink:0 }}>
-              {[
-                { label:"Visits", value:selected.bookings },
-                { label:"Total Spent", value:`£${selected.spent.toFixed(0)}` },
-                { label:"Fav Service", value:favService(selected) || "—" },
-              ].map(s=>(
-                <div key={s.label} style={{ background:"var(--surface-2)", padding:"12px 14px", textAlign:"center" }}>
-                  <div style={{ fontSize:16, fontWeight:800, color:"var(--text-1)", letterSpacing:"-0.3px" }}>{s.value}</div>
-                  <div style={{ fontSize:10.5, color:"var(--text-3)", marginTop:2, fontWeight:600 }}>{s.label}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Notes */}
-            <div style={{ padding:"14px 20px", borderBottom:"1px solid var(--border)", flexShrink:0 }}>
-              <div style={{ fontSize:11.5, fontWeight:700, color:"var(--text-2)", marginBottom:6, letterSpacing:"0.5px" }}>NOTES</div>
-              <textarea value={note} onChange={e=>setNote(e.target.value)} rows={2}
-                placeholder="Add notes about this client..."
-                style={{ width:"100%", padding:"8px 10px", border:"1px solid var(--border)", borderRadius:"var(--r-sm)", fontSize:12.5, fontFamily:"inherit", resize:"none", outline:"none", background:"var(--surface-2)", color:"var(--text-1)", boxSizing:"border-box" }}/>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:6 }}>
-                <span style={{ fontSize:11, color:"var(--green)" }}>{noteMsg}</span>
-                <button onClick={saveNote} disabled={noteSaving}
-                  style={{ padding:"5px 14px", background:"var(--indigo)", color:"#fff", border:"none", borderRadius:"var(--r-sm)", fontSize:12, fontWeight:600, cursor:"pointer" }}>
-                  Save Note
-                </button>
-              </div>
-            </div>
-
-            {/* Booking History */}
-            <div style={{ padding:"12px 20px 8px", flexShrink:0 }}>
-              <div style={{ fontSize:11.5, fontWeight:700, color:"var(--text-2)", letterSpacing:"0.5px" }}>BOOKING HISTORY</div>
-            </div>
-            <div style={{ flex:1, overflowY:"auto" }}>
-              {histLoading ? (
-                <div style={{ padding:32, textAlign:"center", color:"var(--text-3)", fontSize:13 }}>Loading...</div>
-              ) : history.length === 0 ? (
-                <div style={{ padding:32, textAlign:"center", color:"var(--text-3)", fontSize:13 }}>No bookings found</div>
-              ) : history.map(b => {
-                const sc = statusColor(b.status);
-                return (
-                  <div key={b.id} style={{ padding:"12px 20px", borderBottom:"1px solid var(--border)", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                    <div>
-                      <div style={{ fontSize:13, fontWeight:600, color:"var(--text-1)", marginBottom:2 }}>
-                        {Array.isArray(b.services) ? b.services[0]?.name : b.services?.name || "Service"}
-                      </div>
-                      <div style={{ fontSize:11, color:"var(--text-3)" }}>
-                        {new Date(b.date_time).toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short",year:"numeric"})}
-                        {b.staff?.name && ` · ${b.staff.name}`}
-                      </div>
-                    </div>
-                    <div style={{ textAlign:"right" }}>
-                      <div style={{ fontSize:13, fontWeight:700, color:"var(--text-1)", marginBottom:3 }}>
-                        £{Array.isArray(b.services) ? b.services[0]?.price : b.services?.price || 0}
-                      </div>
-                      <span style={{ background:sc.bg, color:sc.color, fontSize:10, padding:"2px 8px", borderRadius:"var(--r-full)", fontWeight:700 }}>{b.status}</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
       </div>
-    </div>
+    </DashboardShell>
   );
 }

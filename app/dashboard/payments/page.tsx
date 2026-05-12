@@ -2,25 +2,31 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import DashboardShell, { HamburgerBtn } from "../components/DashboardShell";
+import { SkeletonDashboard } from "../components/SkeletonLoader";
+import StatCard from "../components/StatCard";
+
+type Appt = { id: string; client_name: string; status: string; date_time: string; services?: { name: string; price: number } | null; staff?: { name: string } | null };
 
 export default function PaymentsPage() {
   const router = useRouter();
-  const [appointments, setAppointments] = useState<{
-    id: string; client_name: string; status: string; date_time: string;
-    services?: { name: string; price: number } | null;
-    staff?: { name: string } | null;
-  }[]>([]);
+  const [appointments, setAppointments] = useState<Appt[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("All");
   const [search, setSearch] = useState("");
+  const [salonName, setSalonName] = useState("");
 
   useEffect(() => {
     const loadData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
-      const { data: salonData } = await supabase.from("salons").select("id").eq("owner_id", user.id).single();
+      const { data: salonData } = await supabase.from("salons").select("id,name").eq("owner_id", user.id).single();
       if (salonData) {
-        const { data: appts } = await supabase.from("appointments").select("*, services(name, price), staff(name)").eq("salon_id", salonData.id).order("date_time", { ascending: false });
+        setSalonName(salonData.name || "");
+        const { data: appts } = await supabase.from("appointments")
+          .select("*, services(name, price), staff(name)")
+          .eq("salon_id", salonData.id)
+          .order("date_time", { ascending: false });
         setAppointments(appts || []);
       }
       setLoading(false);
@@ -28,9 +34,9 @@ export default function PaymentsPage() {
     loadData();
   }, [router]);
 
-  const totalCollected = appointments.filter(a => a.status === "confirmed").reduce((sum, a) => sum + (a.services?.price || 0), 0);
-  const pending = appointments.filter(a => a.status === "pending").reduce((sum, a) => sum + (a.services?.price || 0), 0);
-  const refunded = appointments.filter(a => a.status === "cancelled").reduce((sum, a) => sum + (a.services?.price || 0), 0);
+  const totalCollected = appointments.filter(a => a.status === "confirmed").reduce((s, a) => s + (a.services?.price || 0), 0);
+  const pending       = appointments.filter(a => a.status === "pending").reduce((s, a) => s + (a.services?.price || 0), 0);
+  const refunded      = appointments.filter(a => a.status === "cancelled").reduce((s, a) => s + (a.services?.price || 0), 0);
 
   const filtered = appointments.filter(a => {
     const matchTab = activeTab === "All" ? true : activeTab === "Paid" ? a.status === "confirmed" : activeTab === "Pending" ? a.status === "pending" : a.status === "cancelled";
@@ -38,74 +44,105 @@ export default function PaymentsPage() {
     return matchTab && matchSearch;
   });
 
-  if (loading) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
-      <div style={{ fontFamily: "Georgia, serif", fontSize: "24px", color: "#4F6EF7" }}>feature</div>
-    </div>
+  const statusStyle = (s: string) =>
+    s === "confirmed" ? { bg: "#ECFDF5", color: "#059669", border: "#A7F3D0", dot: "#10B981" }
+    : s === "cancelled" ? { bg: "#FEF2F2", color: "#DC2626", border: "#FECACA", dot: "#EF4444" }
+    : { bg: "#FFF7ED", color: "#D97706", border: "#FDE68A", dot: "#F59E0B" };
+
+  if (loading) return <DashboardShell salonName=""><SkeletonDashboard /></DashboardShell>;
+
+  const Topbar = (
+    <header style={{ background: "rgba(255,255,255,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid var(--border)", padding: "0 20px", height: 58, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 30, gap: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <HamburgerBtn />
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "var(--text-1)", letterSpacing: "-0.4px" }}>Payments</div>
+          <div style={{ fontSize: 11.5, color: "var(--text-3)" }}>{appointments.length} transactions total</div>
+        </div>
+      </div>
+    </header>
   );
 
   return (
-    <div style={{ backgroundColor: "#F2F4F7", minHeight: "100vh", padding: "28px 24px" }}>
-      <div style={{ marginBottom: "24px" }}>
-        <p style={{ margin: 0, fontSize: "14px", color: "#64748B" }}>Payment activity & invoices</p>
-        <h1 style={{ margin: 0, fontSize: "28px", color: "#0F172A" }}>Payments</h1>
-      </div>
+    <DashboardShell salonName={salonName} topbar={Topbar}>
+      <div style={{ padding: "20px 20px 32px" }}>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "16px", marginBottom: "24px" }}>
-        {[
-          { label: "Total Collected", value: `£${totalCollected.toFixed(2)}`, sub: `${appointments.filter(a => a.status === "confirmed").length} payments` },
-          { label: "Pending", value: `£${pending.toFixed(2)}`, sub: `${appointments.filter(a => a.status === "pending").length} unpaid` },
-          { label: "Refunded", value: `£${refunded.toFixed(2)}`, sub: `${appointments.filter(a => a.status === "cancelled").length} refunds` },
-          { label: "All Transactions", value: appointments.length, sub: "total records" },
-        ].map(stat => (
-          <div key={stat.label} style={{ backgroundColor: "#ffffff", borderRadius: "16px", padding: "20px", border: "0.5px solid #E8EAF0" }}>
-            <div style={{ fontSize: "11px", color: "#64748B", marginBottom: "8px" }}>{stat.label}</div>
-            <div style={{ fontSize: "26px", color: "#0F172A", fontWeight: 700 }}>{stat.value}</div>
-            <div style={{ fontSize: "12px", color: "#94A3B8", marginTop: "4px" }}>{stat.sub}</div>
-          </div>
-        ))}
-      </div>
-
-      <div style={{ backgroundColor: "#ffffff", borderRadius: "16px", border: "0.5px solid #E8EAF0", overflow: "hidden" }}>
-        <div style={{ padding: "16px 20px", borderBottom: "0.5px solid #E8EAF0", display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", gap: "4px" }}>
-            {["All", "Paid", "Pending", "Cancelled"].map(tab => (
-              <button key={tab} onClick={() => setActiveTab(tab)} style={{ fontSize: "12px", padding: "6px 14px", borderRadius: "6px", border: "0.5px solid", borderColor: activeTab === tab ? "#C7D2FE" : "#E8EAF0", background: activeTab === tab ? "#EEF2FF" : "#fff", color: activeTab === tab ? "#4F6EF7" : "#94A3B8", cursor: "pointer" }}>{tab}</button>
-            ))}
-          </div>
-          <input type="text" placeholder="Search client, service..." value={search} onChange={e => setSearch(e.target.value)} style={{ padding: "8px 12px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "8px", width: "200px" }} />
+        {/* Stats */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 20 }}>
+          <StatCard label="Total Collected" value={Math.round(totalCollected)} icon="💳" color="green" prefix="£" sub={`${appointments.filter(a => a.status === "confirmed").length} payments`} />
+          <StatCard label="Pending" value={Math.round(pending)} icon="⏳" color="amber" prefix="£" sub={`${appointments.filter(a => a.status === "pending").length} unpaid`} />
+          <StatCard label="Refunded" value={Math.round(refunded)} icon="↩️" color="red" prefix="£" sub={`${appointments.filter(a => a.status === "cancelled").length} refunds`} />
+          <StatCard label="All Transactions" value={appointments.length} icon="📋" color="indigo" sub="total records" />
         </div>
 
-        {filtered.length === 0 ? (
-          <div style={{ padding: "48px", textAlign: "center", color: "#94A3B8", fontSize: "14px" }}>No payments found</div>
-        ) : (
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "500px" }}>
-              <thead>
-                <tr style={{ background: "#F8F9FC" }}>
-                  {["Status", "Client", "Service", "Staff", "Date", "Amount"].map(h => (
-                    <th key={h} style={{ fontSize: "11px", color: "#94A3B8", textAlign: "left", padding: "10px 18px", fontWeight: 500, borderBottom: "0.5px solid #E8EAF0" }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(a => (
-                  <tr key={a.id}>
-                    <td style={{ padding: "11px 18px", borderBottom: "0.5px solid #F1F5F9" }}>
-                      <span style={{ background: a.status === "confirmed" ? "#ECFDF5" : a.status === "cancelled" ? "#FEE2E2" : "#FFF7ED", color: a.status === "confirmed" ? "#059669" : a.status === "cancelled" ? "#DC2626" : "#D97706", fontSize: "10px", padding: "3px 8px", borderRadius: "20px" }}>{a.status}</span>
-                    </td>
-                    <td style={{ padding: "11px 18px", fontSize: "13px", color: "#0F172A", borderBottom: "0.5px solid #F1F5F9" }}>{a.client_name}</td>
-                    <td style={{ padding: "11px 18px", fontSize: "13px", color: "#0F172A", borderBottom: "0.5px solid #F1F5F9" }}>{a.services?.name || "—"}</td>
-                    <td style={{ padding: "11px 18px", fontSize: "13px", color: "#64748B", borderBottom: "0.5px solid #F1F5F9" }}>{a.staff?.name || "—"}</td>
-                    <td style={{ padding: "11px 18px", fontSize: "13px", color: "#64748B", borderBottom: "0.5px solid #F1F5F9" }}>{new Date(a.date_time).toLocaleDateString("en-GB")}</td>
-                    <td style={{ padding: "11px 18px", fontSize: "13px", fontWeight: 600, color: "#0F172A", borderBottom: "0.5px solid #F1F5F9" }}>£{a.services?.price?.toFixed(2) || "0.00"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {/* Table card */}
+        <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(15,23,42,0.05)" }}>
+          {/* Toolbar */}
+          <div style={{ padding: "14px 18px", borderBottom: "1px solid #F1F5F9", display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", justifyContent: "space-between", background: "#FAFBFF" }}>
+            <div style={{ display: "flex", gap: 2, background: "#F1F5F9", borderRadius: 10, padding: 3 }}>
+              {["All","Paid","Pending","Cancelled"].map(tab => (
+                <button key={tab} onClick={() => setActiveTab(tab)}
+                  style={{ fontSize: 12.5, padding: "6px 12px", borderRadius: 8, border: "none", background: activeTab === tab ? "#fff" : "transparent", color: activeTab === tab ? "#6366F1" : "var(--text-3)", cursor: "pointer", fontWeight: activeTab === tab ? 700 : 500, boxShadow: activeTab === tab ? "0 1px 4px rgba(0,0,0,0.07)" : "none", transition: "all 0.12s", fontFamily: "var(--font)" }}>{tab}
+                </button>
+              ))}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "7px 12px", minWidth: 180 }}
+              onFocusCapture={e => { e.currentTarget.style.borderColor = "#6366F1"; e.currentTarget.style.background = "#fff"; }}
+              onBlurCapture={e => { e.currentTarget.style.borderColor = "#E2E8F0"; e.currentTarget.style.background = "#F8FAFC"; }}
+            >
+              <svg width="13" height="13" viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5.75" stroke="#94A3B8" strokeWidth="1.75"/><path d="M13 13L17 17" stroke="#94A3B8" strokeWidth="1.75" strokeLinecap="round"/></svg>
+              <input type="text" placeholder="Search client, service…" value={search} onChange={e => setSearch(e.target.value)}
+                style={{ background: "none", border: "none", outline: "none", fontSize: 13, color: "var(--text-1)", fontFamily: "var(--font)", width: "100%" }} />
+            </div>
           </div>
-        )}
+
+          {filtered.length === 0 ? (
+            <div style={{ padding: "56px 24px", textAlign: "center" }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>💳</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)", marginBottom: 6 }}>No payments found</div>
+              <div style={{ fontSize: 13, color: "var(--text-3)" }}>Payments appear here once bookings are created</div>
+            </div>
+          ) : (
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }}>
+                <thead>
+                  <tr style={{ background: "#F8FAFC" }}>
+                    {["Status","Client","Service","Staff","Date","Amount"].map(h => (
+                      <th key={h} style={{ fontSize: 10.5, color: "var(--text-3)", textAlign: "left", padding: "11px 18px", fontWeight: 800, borderBottom: "1.5px solid #F1F5F9", letterSpacing: "0.7px", textTransform: "uppercase" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(a => {
+                    const sc = statusStyle(a.status);
+                    return (
+                      <tr key={a.id}
+                        style={{ transition: "background 0.1s" }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#FAFBFF"; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                      >
+                        <td style={{ padding: "13px 18px", borderBottom: "1px solid #F8FAFC" }}>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: sc.bg, color: sc.color, border: `1px solid ${sc.border}`, fontSize: 10.5, padding: "3px 10px", borderRadius: 99, fontWeight: 700 }}>
+                            <span style={{ width: 5, height: 5, borderRadius: "50%", background: sc.dot, flexShrink: 0 }} />
+                            {a.status}
+                          </span>
+                        </td>
+                        <td style={{ padding: "13px 18px", fontSize: 13.5, fontWeight: 700, color: "var(--text-1)", borderBottom: "1px solid #F8FAFC" }}>{a.client_name}</td>
+                        <td style={{ padding: "13px 18px", fontSize: 13, color: "var(--text-2)", borderBottom: "1px solid #F8FAFC" }}>{a.services?.name || "—"}</td>
+                        <td style={{ padding: "13px 18px", fontSize: 13, color: "var(--text-3)", borderBottom: "1px solid #F8FAFC" }}>{a.staff?.name || "—"}</td>
+                        <td style={{ padding: "13px 18px", fontSize: 13, color: "var(--text-2)", borderBottom: "1px solid #F8FAFC" }}>{new Date(a.date_time).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</td>
+                        <td style={{ padding: "13px 18px", fontSize: 14, fontWeight: 900, color: a.status === "confirmed" ? "#059669" : "var(--text-1)", borderBottom: "1px solid #F8FAFC" }}>
+                          £{a.services?.price?.toFixed(2) || "0.00"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </DashboardShell>
   );
 }
