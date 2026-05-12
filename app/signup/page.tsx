@@ -1,7 +1,39 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "../lib/supabase";
+
+// ── Country config for geo-personalisation ──
+const GEO: Record<string,{phone:string;city:string;region:string;email:string}> = {
+  GB:{phone:"+44 7700 900000",city:"London",region:"UK & Europe",email:"you@yoursalon.co.uk"},
+  US:{phone:"+1 (555) 000-0000",city:"New York",region:"North America",email:"you@yoursalon.com"},
+  CA:{phone:"+1 (416) 000-0000",city:"Toronto",region:"North America",email:"you@yoursalon.ca"},
+  AU:{phone:"+61 4 0000 0000",city:"Sydney",region:"Australia",email:"you@yoursalon.com.au"},
+  NZ:{phone:"+64 21 000 0000",city:"Auckland",region:"New Zealand",email:"you@yoursalon.co.nz"},
+  DE:{phone:"+49 151 0000000",city:"Berlin",region:"Europe",email:"you@ihrsalon.de"},
+  FR:{phone:"+33 6 00 00 00 00",city:"Paris",region:"Europe",email:"you@voresalon.fr"},
+  ES:{phone:"+34 6 00 00 00 00",city:"Madrid",region:"Europe",email:"you@tusalon.es"},
+  IT:{phone:"+39 3 00 000 0000",city:"Milan",region:"Europe",email:"you@tuosalone.it"},
+  NL:{phone:"+31 6 0000 0000",city:"Amsterdam",region:"Europe",email:"you@uwsalon.nl"},
+  SE:{phone:"+46 70 000 00 00",city:"Stockholm",region:"Europe",email:"you@dinsalong.se"},
+  NO:{phone:"+47 400 00 000",city:"Oslo",region:"Europe",email:"you@dinsalong.no"},
+  PL:{phone:"+48 500 000 000",city:"Warsaw",region:"Europe",email:"you@twojsalon.pl"},
+  TR:{phone:"+90 532 000 0000",city:"Istanbul",region:"Europe",email:"you@salonunuz.com.tr"},
+  AE:{phone:"+971 50 000 0000",city:"Dubai",region:"Middle East",email:"you@yoursalon.ae"},
+  SA:{phone:"+966 5 0000 0000",city:"Riyadh",region:"Middle East",email:"you@yoursalon.com.sa"},
+  QA:{phone:"+974 5000 0000",city:"Doha",region:"Middle East",email:"you@yoursalon.qa"},
+  KW:{phone:"+965 5000 0000",city:"Kuwait City",region:"Middle East",email:"you@yoursalon.com.kw"},
+  EG:{phone:"+20 10 0000 0000",city:"Cairo",region:"Middle East",email:"you@yoursalon.com.eg"},
+  PK:{phone:"+92 3XX XXXXXXX",city:"Karachi",region:"South Asia",email:"you@yoursalon.pk"},
+  IN:{phone:"+91 98765 43210",city:"Mumbai",region:"South Asia",email:"you@yoursalon.in"},
+  BD:{phone:"+880 1XXX XXXXXX",city:"Dhaka",region:"South Asia",email:"you@yoursalon.com.bd"},
+  ZA:{phone:"+27 82 000 0000",city:"Cape Town",region:"Africa",email:"you@yoursalon.co.za"},
+  NG:{phone:"+234 801 000 0000",city:"Lagos",region:"Africa",email:"you@yoursalon.com.ng"},
+  SG:{phone:"+65 9000 0000",city:"Singapore",region:"Asia-Pacific",email:"you@yoursalon.sg"},
+  MY:{phone:"+60 12 000 0000",city:"Kuala Lumpur",region:"Asia-Pacific",email:"you@yoursalon.my"},
+  JP:{phone:"+81 90 0000 0000",city:"Tokyo",region:"Asia-Pacific",email:"you@yoursalon.jp"},
+};
+const DEFAULT_GEO = {phone:"+44 7700 900000",city:"Your city",region:"the world",email:"you@yoursalon.com"};
 
 // ── Design tokens ──────────────────────────────────────────────
 const C = {
@@ -88,6 +120,19 @@ export default function SignupPage() {
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
   const [category, setCategory] = useState("hair");
+  const [geo, setGeo] = useState(DEFAULT_GEO);
+  const [countryFlag, setCountryFlag] = useState("🌍");
+
+  useEffect(() => {
+    fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(3000) })
+      .then(r => r.json())
+      .then(d => {
+        const cc = d.country_code || "";
+        setGeo(GEO[cc] || DEFAULT_GEO);
+        setCountryFlag(d.country_flag_emoji || "🌍");
+      })
+      .catch(() => {});
+  }, []);
 
   const handleStep1 = (e: React.FormEvent) => {
     e.preventDefault();
@@ -185,7 +230,7 @@ export default function SignupPage() {
           The last salon software you&apos;ll ever need.
         </h2>
         <p style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", lineHeight: 1.7, marginBottom: 36 }}>
-          Join salons across the UK managing their bookings, staff, and payments — all in one place.
+          Join salons across {geo.region} managing their bookings, staff, and payments — all in one place.
         </p>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 40 }}>
@@ -244,12 +289,12 @@ export default function SignupPage() {
           {/* ── Step 0: Account ── */}
           {step === 0 && (
             <form onSubmit={handleStep1}>
-              <InputField label="Email address" type="email" value={email} onChange={setEmail} placeholder="you@yoursalon.co.uk" required />
+              <InputField label="Email address" type="email" value={email} onChange={setEmail} placeholder={geo.email} required />
               <InputField label="Password" type="password" value={password} onChange={setPassword} placeholder="Min. 8 characters" required hint="Use a strong password with letters, numbers & symbols." />
 
               <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 24, padding: "12px 14px", background: C.indigoSoft, border: "1.5px solid #C7D2FE", borderRadius: 10 }}>
                 <span style={{ fontSize: 16, marginTop: 1 }}>🔒</span>
-                <span style={{ fontSize: 12.5, color: "#4338CA", lineHeight: 1.6 }}>Your data is encrypted and never shared. We comply with GDPR &amp; UK data protection law.</span>
+                <span style={{ fontSize: 12.5, color: "#4338CA", lineHeight: 1.6 }}>Your data is encrypted and never shared. We comply with GDPR &amp; global data protection law.</span>
               </div>
 
               <button type="submit" style={{ width: "100%", padding: "14px", background: `linear-gradient(135deg,${C.indigo},${C.indigoDark})`, color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 800, cursor: "pointer", letterSpacing: "-0.2px", boxShadow: "0 6px 20px rgba(99,102,241,0.35)", transition: "all 0.15s" }}>
@@ -269,8 +314,8 @@ export default function SignupPage() {
               <InputField label="Salon name" value={salonName} onChange={setSalonName} placeholder="The Cut Studio" required hint="This appears on your public booking page." />
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }} className="salon-grid">
-                <InputField label="Phone (optional)" type="tel" value={phone} onChange={setPhone} placeholder="+1 (555) 000-0000" />
-                <InputField label="City (optional)" value={city} onChange={setCity} placeholder="New York" />
+                <InputField label="Phone (optional)" type="tel" value={phone} onChange={setPhone} placeholder={geo.phone} />
+                <InputField label="City (optional)" value={city} onChange={setCity} placeholder={geo.city} />
               </div>
 
               <div style={{ marginBottom: 20 }}>
@@ -321,7 +366,7 @@ export default function SignupPage() {
 
           {/* Trust badges */}
           <div style={{ display: "flex", justifyContent: "center", gap: 20, marginTop: 28, flexWrap: "wrap" }}>
-            {[{ icon: "🔒", text: "SSL Encrypted" }, { icon: "🌍", text: "Global Servers" }, { icon: "✓", text: "GDPR Compliant" }].map(b => (
+            {[{ icon: "🔒", text: "SSL Encrypted" }, { icon: countryFlag, text: geo.region }, { icon: "✓", text: "GDPR Compliant" }].map(b => (
               <div key={b.text} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, color: C.text3 }}>
                 <span>{b.icon}</span> {b.text}
               </div>
