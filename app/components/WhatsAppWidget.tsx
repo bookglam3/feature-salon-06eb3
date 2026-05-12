@@ -42,13 +42,27 @@ export default function WhatsAppWidget() {
           overflow: "hidden", animation: "slideUp 0.2s ease",
         }}>
           {/* Header */}
-          <div style={{ background: "#25D366", padding: "16px 18px", display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>✂</div>
+          <div style={{ background: "linear-gradient(135deg,#25D366,#128C5E)", padding: "16px 18px", display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ position: "relative" }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: "50%",
+                background: "rgba(255,255,255,0.25)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 18, fontWeight: 800, color: "#fff",
+                border: "2px solid rgba(255,255,255,0.5)",
+              }}>AN</div>
+              <span style={{
+                position: "absolute", bottom: 1, right: 1,
+                width: 10, height: 10, borderRadius: "50%",
+                background: "#fff", border: "2px solid #25D366",
+              }}/>
+            </div>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>Feature Salon Support</div>
-              <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.85)", marginTop: 2 }}>
-                <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: "#fff", marginRight: 5, verticalAlign: "middle" }}/>
-                Typically replies in minutes
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", letterSpacing: "-0.2px" }}>Anita</div>
+              <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.85)", marginTop: 1 }}>Feature Salon · Customer Success</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#B7F5C8", display: "inline-block" }}/>
+                Online · Replies in minutes
               </div>
             </div>
           </div>
