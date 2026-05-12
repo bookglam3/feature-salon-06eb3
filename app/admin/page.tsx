@@ -6,7 +6,7 @@ import { supabase } from "../lib/supabase";
 const ADMIN_EMAIL = "adilgill2008@gmail.com";
 const PLAN_OPTIONS = ["starter", "pro", "premium"];
 
-type Tab = "overview" | "salons" | "revenue" | "users" | "announcements" | "flags" | "settings" | "applications";
+type Tab = "overview" | "salons" | "revenue" | "users" | "announcements" | "flags" | "settings" | "applications" | "verifications";
 const PLAN_PRICE: Record<string, number> = { starter: 29, pro: 59, premium: 99 };
 const PLAN_COLOR: Record<string, string> = { starter: "#6366F1", pro: "#10B981", premium: "#F59E0B" };
 
@@ -26,7 +26,11 @@ interface Agent {
   referral_code?: string; admin_notes?: string; reviewed_at?: string;
   country?: string; street_address?: string; postcode?: string;
   id_card_number?: string; id_card_photo_url?: string; selfie_photo_url?: string;
+  address_proof_url?: string;
   referred_salons?: number; created_at: string;
+  verification_status?: "pending" | "verified" | "rejected" | "flagged";
+  verification_notes?: string; verified_at?: string; verified_by?: string;
+  auto_flags?: string[];
 }
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -133,6 +137,7 @@ const NAV_ITEMS: { key: Tab; label: string; icon: string }[] = [
   { key: "revenue", label: "Revenue", icon: "₤" },
   { key: "users", label: "Users", icon: "⊙" },
   { key: "applications", label: "Applications", icon: "✦" },
+  { key: "verifications", label: "Verifications", icon: "🪪" },
   { key: "announcements", label: "Announcements", icon: "◉" },
   { key: "flags", label: "Feature Flags", icon: "⚑" },
   { key: "settings", label: "Settings", icon: "◎" },
@@ -194,6 +199,13 @@ export default function AdminPage() {
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [modalNotes, setModalNotes] = useState("");
   const [actionLoading, setActionLoading] = useState("");
+  // ── Verification tab state ──
+  const [verifFilter, setVerifFilter] = useState<"all"|"pending"|"flagged"|"verified"|"rejected">("all");
+  const [verifSearch, setVerifSearch] = useState("");
+  const [verifyLoading, setVerifyLoading] = useState("");
+  const [lightboxUrl, setLightboxUrl] = useState<string|null>(null);
+  const [selectedVerif, setSelectedVerif] = useState<Agent|null>(null);
+  const [verifNotes, setVerifNotes] = useState("");
 
   // ── Auth + data load ──
   useEffect(() => {
@@ -264,6 +276,36 @@ export default function AdminPage() {
     finally { setActionLoading(""); }
   };
 
+  // ── Verification actions (direct Supabase, admin-only) ──
+  const applyVerification = async (
+    id: string,
+    verification_status: "verified" | "rejected" | "flagged",
+    notes: string
+  ) => {
+    setVerifyLoading(id + verification_status);
+    const { data, error: e } = await supabase
+      .from("sales_agents")
+      .update({
+        verification_status,
+        verification_notes: notes,
+        verified_at: new Date().toISOString(),
+        verified_by: ADMIN_EMAIL,
+      })
+      .eq("id", id)
+      .select()
+      .single();
+    if (!e && data) {
+      setAgents(p => p.map(a => a.id === id ? { ...a, ...data } : a));
+      setSelectedVerif(prev => prev?.id === id ? { ...prev, ...data } : prev);
+    } else if (e) setError(e.message);
+    setVerifyLoading("");
+  };
+
+  useEffect(() => {
+    if (activeTab === "verifications" && agents.length === 0) loadAgents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
   const updateSalonPlan = async (salonId: string, plan: string) => {
     const { error: e } = await supabase.from("salons").update({ plan }).eq("id", salonId);
     if (e) { setError(e.message); return; }
@@ -322,8 +364,8 @@ export default function AdminPage() {
 
   const TAB_TITLE: Record<Tab, string> = {
     overview: "Platform Overview", salons: "Salons", revenue: "Revenue & Billing",
-    users: "Users", applications: "Applications", announcements: "Announcements",
-    flags: "Feature Flags", settings: "Settings",
+    users: "Users", applications: "Applications", verifications: "Document Verifications",
+    announcements: "Announcements", flags: "Feature Flags", settings: "Settings",
   };
 
   // ─── Loading ───────────────────────────────────────────────────────────────
@@ -1162,6 +1204,290 @@ export default function AdminPage() {
                               </Btn>
                             </div>
                           )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* ── VERIFICATIONS ──────────────────────────────────────── */}
+            {activeTab === "verifications" && (() => {
+              const FLAG_LABEL: Record<string, { label: string; color: string; bg: string }> = {
+                missing_selfie:   { label: "No Selfie",    color: "#C2410C", bg: "#FFF7ED" },
+                missing_id_photo: { label: "No ID Photo",  color: "#B45309", bg: "#FFFBEB" },
+                missing_id_number:{ label: "No ID Number", color: "#7C3AED", bg: "#F5F3FF" },
+                duplicate_cnic:   { label: "Duplicate CNIC", color: "#DC2626", bg: "#FEF2F2" },
+              };
+              const VSTATUS: Record<string, { label: string; color: string; bg: string }> = {
+                pending:  { label: "Pending",  color: "#C2410C", bg: "#FFF7ED" },
+                flagged:  { label: "Flagged",  color: "#DC2626", bg: "#FEF2F2" },
+                verified: { label: "Verified", color: "#065F46", bg: "#ECFDF5" },
+                rejected: { label: "Rejected", color: "#991B1B", bg: "#FEF2F2" },
+              };
+              const vFiltered = agents
+                .filter(a => verifFilter === "all" || (a.verification_status || "pending") === verifFilter)
+                .filter(a => {
+                  const q = verifSearch.toLowerCase();
+                  return !q || a.full_name.toLowerCase().includes(q) || a.city?.toLowerCase().includes(q) || a.phone?.includes(q) || a.id_card_number?.includes(q);
+                });
+              const vCounts = {
+                all: agents.length,
+                pending:  agents.filter(a => (a.verification_status || "pending") === "pending").length,
+                flagged:  agents.filter(a => a.verification_status === "flagged").length,
+                verified: agents.filter(a => a.verification_status === "verified").length,
+                rejected: agents.filter(a => a.verification_status === "rejected").length,
+              };
+              return (
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {/* Stat cards */}
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 12 }}>
+                    {([
+                      { key: "all",      label: "Total",    value: vCounts.all,      accent: T.indigo },
+                      { key: "pending",  label: "Pending",  value: vCounts.pending,  accent: T.amber },
+                      { key: "flagged",  label: "Flagged",  value: vCounts.flagged,  accent: T.red },
+                      { key: "verified", label: "Verified", value: vCounts.verified, accent: T.green },
+                      { key: "rejected", label: "Rejected", value: vCounts.rejected, accent: "#6B7280" },
+                    ] as { key: typeof verifFilter; label: string; value: number; accent: string }[]).map(s => (
+                      <div key={s.key} className="kpi"
+                        onClick={() => setVerifFilter(s.key)}
+                        style={{
+                          background: T.surface, borderRadius: 14, padding: "16px 18px", cursor: "pointer",
+                          border: `1px solid ${verifFilter === s.key ? s.accent : T.border}`,
+                          boxShadow: verifFilter === s.key ? `0 0 0 3px ${s.accent}20` : T.shadow,
+                          transition: "all 0.15s",
+                        }}>
+                        <div style={{ fontSize: 24, fontWeight: 800, color: s.accent }}>{s.value}</div>
+                        <div style={{ fontSize: 12, color: T.text2, fontWeight: 500, marginTop: 2 }}>{s.label}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Toolbar */}
+                  <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, padding: "11px 16px", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "space-between" }}>
+                    <div style={{ fontSize: 13, color: T.text2 }}>{vFiltered.length} applicants</div>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <input type="text" placeholder="Search name, CNIC, phone…" value={verifSearch}
+                        onChange={e => setVerifSearch(e.target.value)}
+                        style={{ height: 34, padding: "0 12px", border: `1px solid ${T.border}`, borderRadius: 8, fontSize: 12.5, color: T.text, background: T.bg, width: 220 }} />
+                      <button onClick={loadAgents} style={{ height: 34, padding: "0 12px", borderRadius: 8, background: T.indigoSoft, border: "none", fontSize: 12, cursor: "pointer", color: T.indigo, fontWeight: 700, fontFamily: "inherit" }}>↻</button>
+                    </div>
+                  </div>
+
+                  {/* Table */}
+                  <Card style={{ padding: 0, overflow: "hidden" }}>
+                    {agentsLoading ? (
+                      <div style={{ padding: 48, textAlign: "center", color: T.text3 }}>Loading…</div>
+                    ) : vFiltered.length === 0 ? (
+                      <div style={{ padding: 56, textAlign: "center" }}>
+                        <div style={{ fontSize: 32, marginBottom: 10 }}>◌</div>
+                        <div style={{ fontSize: 14, color: T.text3 }}>No records found</div>
+                      </div>
+                    ) : (
+                      <div style={{ overflowX: "auto" }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                          <thead><tr>{["Applicant", "CNIC", "Documents", "Auto Flags", "Status", ""].map(h => <Th key={h}>{h}</Th>)}</tr></thead>
+                          <tbody>
+                            {vFiltered.map(a => {
+                              const vs = VSTATUS[a.verification_status || "pending"];
+                              const flags = a.auto_flags || [];
+                              return (
+                                <tr key={a.id} className="salon-row">
+                                  <Td>
+                                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                      <Avatar name={a.full_name} size={32} />
+                                      <div>
+                                        <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{a.full_name}</div>
+                                        <div style={{ fontSize: 11, color: T.text3 }}>{a.phone} · {a.city}</div>
+                                      </div>
+                                    </div>
+                                  </Td>
+                                  <Td style={{ fontSize: 12, fontFamily: "monospace", color: T.text2 }}>
+                                    {a.id_card_number || <span style={{ color: T.red, fontSize: 11 }}>Missing</span>}
+                                  </Td>
+                                  <Td>
+                                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                                      {a.id_card_photo_url ? (
+                                        <button onClick={() => setLightboxUrl(a.id_card_photo_url!)}
+                                          style={{ padding: "3px 10px", borderRadius: 6, background: T.indigoSoft, color: T.indigo, border: "none", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                                          ID Card
+                                        </button>
+                                      ) : <span style={{ fontSize: 11, color: T.red, fontWeight: 600 }}>No ID</span>}
+                                      {a.selfie_photo_url ? (
+                                        <button onClick={() => setLightboxUrl(a.selfie_photo_url!)}
+                                          style={{ padding: "3px 10px", borderRadius: 6, background: T.greenSoft, color: T.green, border: "none", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                                          Selfie
+                                        </button>
+                                      ) : <span style={{ fontSize: 11, color: T.amber, fontWeight: 600 }}>No Selfie</span>}
+                                      {a.address_proof_url && (
+                                        <button onClick={() => setLightboxUrl(a.address_proof_url!)}
+                                          style={{ padding: "3px 10px", borderRadius: 6, background: T.amberSoft, color: T.amber, border: "none", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>
+                                          Address
+                                        </button>
+                                      )}
+                                    </div>
+                                  </Td>
+                                  <Td>
+                                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                                      {flags.length === 0
+                                        ? <span style={{ fontSize: 11, color: T.green, fontWeight: 600 }}>✓ Clean</span>
+                                        : flags.map(f => {
+                                          const fm = FLAG_LABEL[f] || { label: f, color: T.text2, bg: T.bg };
+                                          return (
+                                            <span key={f} style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 99, background: fm.bg, color: fm.color }}>
+                                              {fm.label}
+                                            </span>
+                                          );
+                                        })
+                                      }
+                                    </div>
+                                  </Td>
+                                  <Td>
+                                    <span style={{ fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 99, background: vs.bg, color: vs.color }}>{vs.label}</span>
+                                  </Td>
+                                  <Td>
+                                    <button className="action-btn"
+                                      onClick={() => { setSelectedVerif(a); setVerifNotes(a.verification_notes || ""); }}
+                                      style={{ padding: "5px 14px", borderRadius: 7, background: T.indigoSoft, color: T.indigo, border: "none", fontSize: 12, fontWeight: 600 }}>
+                                      Review →
+                                    </button>
+                                  </Td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </Card>
+
+                  {/* Lightbox */}
+                  {lightboxUrl && (
+                    <div onClick={() => setLightboxUrl(null)} style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.88)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+                      <div style={{ position: "relative", maxWidth: "90vw", maxHeight: "90vh" }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={lightboxUrl} alt="Document" style={{ maxWidth: "100%", maxHeight: "85vh", borderRadius: 12, objectFit: "contain", boxShadow: "0 24px 80px rgba(0,0,0,0.6)" }} />
+                        <button onClick={() => setLightboxUrl(null)}
+                          style={{ position: "absolute", top: -12, right: -12, width: 36, height: 36, borderRadius: "50%", background: "#fff", border: "none", cursor: "pointer", fontSize: 18, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.3)" }}>
+                          ×
+                        </button>
+                        <a href={lightboxUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                          style={{ position: "absolute", bottom: -44, left: "50%", transform: "translateX(-50%)", background: "rgba(255,255,255,0.15)", color: "#fff", fontSize: 12, fontWeight: 600, padding: "6px 16px", borderRadius: 99, textDecoration: "none", backdropFilter: "blur(8px)" }}>
+                          Open full size ↗
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Detail / Review Modal */}
+                  {selectedVerif && (
+                    <div onClick={e => { if (e.target === e.currentTarget) setSelectedVerif(null); }}
+                      style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(10,15,28,0.6)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+                      <div style={{ background: T.surface, borderRadius: 20, width: "100%", maxWidth: 700, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 24px 80px rgba(0,0,0,0.2)", animation: "fadeUp 0.2s ease" }}>
+                        {/* Header */}
+                        <div style={{ background: T.nav, borderRadius: "20px 20px 0 0", padding: "22px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                            <Avatar name={selectedVerif.full_name} size={44} />
+                            <div>
+                              <div style={{ fontSize: 16, fontWeight: 700, color: "#fff" }}>{selectedVerif.full_name}</div>
+                              <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>{selectedVerif.phone} · {selectedVerif.city}</div>
+                            </div>
+                          </div>
+                          <button onClick={() => setSelectedVerif(null)} style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: 8, padding: "6px 12px", color: "#fff", cursor: "pointer", fontSize: 16 }}>×</button>
+                        </div>
+
+                        <div style={{ padding: "22px 24px" }}>
+                          {/* Auto-flags */}
+                          {(selectedVerif.auto_flags || []).length > 0 && (
+                            <div style={{ background: T.redSoft, border: `1px solid #FECACA`, borderRadius: 10, padding: "12px 16px", marginBottom: 18 }}>
+                              <div style={{ fontSize: 11.5, fontWeight: 700, color: T.red, marginBottom: 8 }}>⚠ Auto-detected issues</div>
+                              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                                {(selectedVerif.auto_flags || []).map(f => {
+                                  const fm = FLAG_LABEL[f] || { label: f, color: T.red, bg: "#FEF2F2" };
+                                  return <span key={f} style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 99, background: fm.bg, color: fm.color }}>{fm.label}</span>;
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Documents preview */}
+                          <div style={{ marginBottom: 18 }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: T.text2, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 12 }}>Documents</div>
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 10 }}>
+                              {[
+                                { label: "ID Card", url: selectedVerif.id_card_photo_url, accent: T.indigo },
+                                { label: "Selfie", url: selectedVerif.selfie_photo_url, accent: T.green },
+                                { label: "Address Proof", url: selectedVerif.address_proof_url, accent: T.amber },
+                              ].map(doc => (
+                                <div key={doc.label} style={{ borderRadius: 12, overflow: "hidden", border: `1px solid ${T.border}`, background: T.bg }}>
+                                  {doc.url ? (
+                                    <div style={{ position: "relative", cursor: "zoom-in" }} onClick={() => setLightboxUrl(doc.url!)}>
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img src={doc.url} alt={doc.label} style={{ width: "100%", height: 140, objectFit: "cover", display: "block" }} />
+                                      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0)", transition: "background 0.15s", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                        <span style={{ fontSize: 22, opacity: 0 }}>🔍</span>
+                                      </div>
+                                      <div style={{ padding: "8px 10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                        <span style={{ fontSize: 11.5, fontWeight: 600, color: doc.accent }}>{doc.label}</span>
+                                        <span style={{ fontSize: 10, color: T.green, fontWeight: 700 }}>✓ Uploaded</span>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div style={{ height: 140, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 6 }}>
+                                      <div style={{ fontSize: 24, opacity: 0.3 }}>📄</div>
+                                      <div style={{ fontSize: 11, color: T.text3 }}>{doc.label} not uploaded</div>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Info */}
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 18 }}>
+                            {[
+                              { label: "CNIC / ID Number", value: selectedVerif.id_card_number || "—" },
+                              { label: "Country", value: selectedVerif.country || "GB" },
+                              { label: "Address", value: selectedVerif.street_address || "—" },
+                              { label: "Postcode", value: selectedVerif.postcode || "—" },
+                            ].map(f => (
+                              <div key={f.label} style={{ background: T.bg, borderRadius: 9, padding: "10px 14px" }}>
+                                <div style={{ fontSize: 10.5, color: T.text3, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 3 }}>{f.label}</div>
+                                <div style={{ fontSize: 13, color: T.text, fontWeight: 500 }}>{f.value}</div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Admin notes */}
+                          <div style={{ marginBottom: 18 }}>
+                            <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: T.text2, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8 }}>Verification Notes</label>
+                            <textarea value={verifNotes} onChange={e => setVerifNotes(e.target.value)} rows={3}
+                              placeholder="Internal notes about this document review…"
+                              style={{ width: "100%", padding: "10px 14px", borderRadius: 9, border: `1px solid ${T.border}`, fontSize: 13, color: T.text, resize: "vertical", fontFamily: "inherit", background: T.bg }} />
+                          </div>
+
+                          {/* Action buttons */}
+                          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                            <button
+                              onClick={() => applyVerification(selectedVerif.id, "verified", verifNotes)}
+                              disabled={!!verifyLoading}
+                              style={{ flex: 1, minWidth: 120, padding: "12px", borderRadius: 10, border: "none", background: verifyLoading ? T.text3 : T.green, color: "#fff", fontWeight: 700, fontSize: 13.5, cursor: verifyLoading ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: verifyLoading ? 0.7 : 1, transition: "all 0.15s" }}>
+                              {verifyLoading === selectedVerif.id + "verified" ? "Verifying…" : "✓ Mark Verified"}
+                            </button>
+                            <button
+                              onClick={() => applyVerification(selectedVerif.id, "flagged", verifNotes)}
+                              disabled={!!verifyLoading}
+                              style={{ flex: 1, minWidth: 120, padding: "12px", borderRadius: 10, border: "none", background: verifyLoading ? T.text3 : T.amber, color: "#fff", fontWeight: 700, fontSize: 13.5, cursor: verifyLoading ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: verifyLoading ? 0.7 : 1, transition: "all 0.15s" }}>
+                              {verifyLoading === selectedVerif.id + "flagged" ? "Flagging…" : "⚑ Flag for Review"}
+                            </button>
+                            <button
+                              onClick={() => applyVerification(selectedVerif.id, "rejected", verifNotes)}
+                              disabled={!!verifyLoading}
+                              style={{ flex: 1, minWidth: 120, padding: "12px", borderRadius: 10, border: "none", background: verifyLoading ? T.text3 : T.red, color: "#fff", fontWeight: 700, fontSize: 13.5, cursor: verifyLoading ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: verifyLoading ? 0.7 : 1, transition: "all 0.15s" }}>
+                              {verifyLoading === selectedVerif.id + "rejected" ? "Rejecting…" : "✕ Reject Documents"}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
