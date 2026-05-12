@@ -125,7 +125,7 @@ export default function SignupPage() {
       }
       const { error: salonErr } = await supabase.from("salons").insert({
         name: salonName, slug, owner_id: data.user.id, owner_email: email,
-        plan: "starter", phone: phone || null,
+        plan: "starter",
       });
       if (salonErr) { setError("Failed to create salon: " + salonErr.message); setLoading(false); return; }
       setStep(2);
