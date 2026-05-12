@@ -16,9 +16,25 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true); setError("");
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) { setError(error.message); setLoading(false); }
-    else { window.location.href = "/dashboard"; }
+    const { data, error: loginErr } = await supabase.auth.signInWithPassword({ email, password });
+    if (loginErr) {
+      const msg = loginErr.message.toLowerCase();
+      if (msg.includes("invalid login") || msg.includes("invalid credentials") || msg.includes("wrong")) {
+        setError("Incorrect email or password. Please try again.");
+      } else if (msg.includes("email not confirmed") || msg.includes("not confirmed")) {
+        setError("EMAIL_NOT_CONFIRMED");
+      } else {
+        setError(loginErr.message);
+      }
+      setLoading(false);
+    } else if (data.user) {
+      window.location.href = "/dashboard";
+    }
+  };
+
+  const resendVerification = async () => {
+    await supabase.auth.resend({ type: "signup", email });
+    setError("RESENT");
   };
 
   const handleReset = async (e: React.FormEvent) => {
@@ -70,7 +86,21 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {error && (
+        {error === "RESENT" && (
+          <div style={{ background:"#ECFDF5", border:"1px solid #A7F3D0", borderRadius:"10px", padding:"12px 16px", marginBottom:"20px", fontSize:"13.5px", color:"#059669", display:"flex", alignItems:"center", gap:8 }}>
+            ✅ Verification email resent! Check your inbox (and spam folder).
+          </div>
+        )}
+        {error === "EMAIL_NOT_CONFIRMED" && (
+          <div style={{ background:"#FFF7ED", border:"1px solid #FDE68A", borderRadius:"10px", padding:"12px 16px", marginBottom:"20px", fontSize:"13px", color:"#92400E" }}>
+            <div style={{ fontWeight:700, marginBottom:6 }}>⚠ Email not verified yet</div>
+            <div style={{ marginBottom:10, lineHeight:1.6 }}>Please check your inbox and click the verification link first. Can&apos;t find it?</div>
+            <button onClick={resendVerification} style={{ background:"#F59E0B", color:"#fff", border:"none", borderRadius:8, padding:"7px 16px", fontSize:13, fontWeight:700, cursor:"pointer" }}>
+              Resend Verification Email
+            </button>
+          </div>
+        )}
+        {error && error !== "EMAIL_NOT_CONFIRMED" && error !== "RESENT" && (
           <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: "10px", padding: "12px 16px", marginBottom: "20px", fontSize: "13.5px", color: "#DC2626", display: "flex", alignItems: "center", gap: 8 }}>
             <span>⚠</span> {error}
           </div>
