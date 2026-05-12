@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function WhatsAppWidget() {
   const [open, setOpen] = useState(false);
-  const phone = "447700000000"; // Replace with real WhatsApp number
+  const phone = "17633461492"; // +1 (763) 346-1492
   const message = encodeURIComponent("Hi! I'd like to learn more about Feature Salon for my business.");
 
   return (
