@@ -90,6 +90,33 @@ input, select, textarea { font-family: var(--font); }
 ::-webkit-scrollbar-thumb { background: var(--slate-200); border-radius: var(--r-full); }
 ::-webkit-scrollbar-thumb:hover { background: var(--slate-300); }
 
+/* ── Global touch / tap polish ── */
+* { -webkit-tap-highlight-color: transparent; }
+button, a, [role="button"] {
+  touch-action: manipulation;
+  cursor: pointer;
+}
+/* Minimum 44px touch target (Apple HIG) */
+button:not([style*="width"]) { min-height: 44px; }
+
+/* ── iOS input zoom prevention (font-size < 16px causes zoom) ── */
+@media (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* ── Prevent horizontal scroll globally ── */
+html, body { overflow-x: hidden; max-width: 100vw; }
+
+/* ── Safe area insets (iPhone notch / home bar) ── */
+.ds-content {
+  padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 768px) {
+  .ds-content { padding-bottom: 0; }
+}
+
 /* ── Shimmer animation ── */
 @keyframes shimmer {
   0% { background-position: -400px 0; }
@@ -432,4 +459,56 @@ details[open] .faq-question::after { transform: rotate(45deg); }
 @media (min-width: 768px) {
   .dash-appt-card { display: none !important; }
   .dash-cols { grid-template-columns: 3fr 2fr !important; }
+}
+
+/* ─────────────── EXTRA MOBILE POLISH ─────────────── */
+
+/* Modal: prevent scroll bleed */
+[style*="position: fixed"][style*="inset: 0"] { overscroll-behavior: contain; }
+
+/* Login/Signup: full-width card on tiny phones */
+@media (max-width: 480px) {
+  .dash-stats { gap: 8px !important; }
+  .dash-wrap  { padding: 10px 10px !important; }
+  .hero-title { font-size: 28px !important; }
+  .hero-sub   { font-size: 14px !important; }
+  .section    { padding: 36px 16px !important; }
+  .nav        { padding: 0 12px !important; }
+  .signup-left { display: none !important; }
+}
+
+/* Smooth scroll containers */
+.ds-content { -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
+
+/* iOS autofill style fix */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-1);
+  -webkit-box-shadow: 0 0 0px 1000px #fff inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Table horizontal scroll: hide scrollbar but allow scroll */
+@media (max-width: 767px) {
+  div[style*="overflowX: auto"] {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  div[style*="overflowX: auto"]::-webkit-scrollbar { display: none; }
+}
+
+/* Global image safety */
+img { max-width: 100%; height: auto; }
+
+/* Prevent text size adjust on rotation */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+/* Accessible focus ring */
+:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; border-radius: var(--r-xs); }
+:focus:not(:focus-visible) { outline: none; }
+
+/* Admin stat grid: 2-col on mobile */
+@media (max-width: 767px) {
+  .admin-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
 }

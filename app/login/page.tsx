@@ -15,15 +15,10 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError("");
+    setLoading(true); setError("");
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-    } else {
-      window.location.href = "/dashboard";
-    }
+    if (error) { setError(error.message); setLoading(false); }
+    else { window.location.href = "/dashboard"; }
   };
 
   const handleReset = async (e: React.FormEvent) => {
@@ -37,18 +32,37 @@ export default function LoginPage() {
     setResetSent(true);
   };
 
-  const inputStyle: React.CSSProperties = {
-    width: "100%", padding: "10px 14px", border: "0.5px solid #E8EAF0",
-    borderRadius: "8px", fontSize: "14px", color: "#0F172A", outline: "none",
-    boxSizing: "border-box",
+  const inp: React.CSSProperties = {
+    width: "100%", padding: "12px 14px", border: "1.5px solid #E2E8F0",
+    borderRadius: "10px", fontSize: "16px",
+    color: "#0F172A", outline: "none", boxSizing: "border-box",
+    background: "#F8FAFC", transition: "border-color 0.15s, box-shadow 0.15s",
+    WebkitAppearance: "none",
+  };
+  const focusIn = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.currentTarget.style.borderColor = "#6366F1";
+    e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.12)";
+    e.currentTarget.style.background = "#fff";
+  };
+  const focusOut = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.currentTarget.style.borderColor = "#E2E8F0";
+    e.currentTarget.style.boxShadow = "none";
+    e.currentTarget.style.background = "#F8FAFC";
   };
 
   return (
-    <main style={{ minHeight: "100vh", background: "#F2F4F7", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ background: "#fff", border: "0.5px solid #E8EAF0", borderRadius: "16px", padding: "48px", width: "100%", maxWidth: "420px" }}>
-
-        <div style={{ textAlign: "center", marginBottom: "32px" }}>
-          <Link href="/" style={{ fontFamily: "Georgia, serif", fontSize: "28px", color: "#0F172A", letterSpacing: "-0.5px", textDecoration: "none" }}>
+    <main style={{
+      minHeight: "100vh", background: "#F2F4F7",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: "20px 16px",
+    }}>
+      <div style={{
+        background: "#fff", border: "1px solid #E8EAF0", borderRadius: "20px",
+        padding: "36px 28px", width: "100%", maxWidth: "420px",
+        boxShadow: "0 4px 24px rgba(15,23,42,0.08)",
+      }}>
+        <div style={{ textAlign: "center", marginBottom: "28px" }}>
+          <Link href="/" style={{ fontFamily: "Georgia,serif", fontSize: "26px", color: "#0F172A", letterSpacing: "-0.5px", textDecoration: "none" }}>
             feature
           </Link>
           <p style={{ fontSize: "14px", color: "#64748B", marginTop: "8px" }}>
@@ -57,77 +71,71 @@ export default function LoginPage() {
         </div>
 
         {error && (
-          <div style={{ background: "#FEF2F2", border: "0.5px solid #FECACA", borderRadius: "8px", padding: "12px 16px", marginBottom: "20px", fontSize: "13px", color: "#EF4444" }}>
-            {error}
+          <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: "10px", padding: "12px 16px", marginBottom: "20px", fontSize: "13.5px", color: "#DC2626", display: "flex", alignItems: "center", gap: 8 }}>
+            <span>⚠</span> {error}
           </div>
         )}
 
-        {/* ── Forgot Password Mode ── */}
         {resetMode ? (
           resetSent ? (
             <div style={{ textAlign: "center", padding: "20px 0" }}>
               <div style={{ fontSize: 48, marginBottom: 12 }}>📧</div>
               <div style={{ fontSize: 16, fontWeight: 700, color: "#0F172A", marginBottom: 8 }}>Check your inbox</div>
-              <div style={{ fontSize: 13, color: "#64748B", lineHeight: 1.6 }}>
-                We sent a password reset link to <strong>{resetEmail}</strong>.
-                Check your spam folder if it doesn&apos;t arrive.
+              <div style={{ fontSize: 13.5, color: "#64748B", lineHeight: 1.7 }}>
+                We sent a reset link to <strong>{resetEmail}</strong>.<br />
+                Check spam if it doesn&apos;t arrive within 2 mins.
               </div>
               <button onClick={() => { setResetMode(false); setResetSent(false); setError(""); }}
-                style={{ marginTop: 24, fontSize: 13, color: "#4F6EF7", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
-                Back to sign in
+                style={{ marginTop: 24, fontSize: 14, color: "#6366F1", background: "none", border: "none", cursor: "pointer", fontWeight: 600, minHeight: 44 }}>
+                ← Back to sign in
               </button>
             </div>
           ) : (
             <form onSubmit={handleReset}>
-              <div style={{ marginBottom: "16px" }}>
-                <label style={{ fontSize: "13px", fontWeight: 500, color: "#0F172A", display: "block", marginBottom: "6px" }}>Email address</label>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ fontSize: "13px", fontWeight: 600, color: "#0F172A", display: "block", marginBottom: "6px" }}>Email address</label>
                 <input type="email" value={resetEmail} onChange={e => setResetEmail(e.target.value)}
-                  placeholder="your@email.com" required style={inputStyle} />
+                  placeholder="your@email.com" required style={inp} autoComplete="email" onFocus={focusIn} onBlur={focusOut} />
               </div>
               <button type="submit" disabled={resetLoading}
-                style={{ width: "100%", padding: "12px", background: resetLoading ? "#94A3B8" : "#4F6EF7", color: "#fff", border: "none", borderRadius: "8px", fontSize: "14px", fontWeight: 500, cursor: resetLoading ? "not-allowed" : "pointer" }}>
+                style={{ width: "100%", padding: "13px", border: "none", borderRadius: "10px", fontSize: "15px", fontWeight: 700, minHeight: 48, background: resetLoading ? "#94A3B8" : "#6366F1", color: "#fff", cursor: resetLoading ? "not-allowed" : "pointer" }}>
                 {resetLoading ? "Sending…" : "Send Reset Link"}
               </button>
               <div style={{ textAlign: "center", marginTop: 16 }}>
                 <button type="button" onClick={() => { setResetMode(false); setError(""); }}
-                  style={{ fontSize: 13, color: "#64748B", background: "none", border: "none", cursor: "pointer" }}>
+                  style={{ fontSize: 13.5, color: "#64748B", background: "none", border: "none", cursor: "pointer", minHeight: 44 }}>
                   ← Back to sign in
                 </button>
               </div>
             </form>
           )
         ) : (
-          /* ── Sign In Mode ── */
           <>
             <form onSubmit={handleLogin}>
               <div style={{ marginBottom: "16px" }}>
-                <label style={{ fontSize: "13px", fontWeight: 500, color: "#0F172A", display: "block", marginBottom: "6px" }}>Email address</label>
+                <label style={{ fontSize: "13px", fontWeight: 600, color: "#0F172A", display: "block", marginBottom: "6px" }}>Email address</label>
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                  placeholder="sarah@thecutstudio.co.uk" required style={inputStyle} />
+                  placeholder="sarah@thecutstudio.co.uk" required style={inp} autoComplete="email" onFocus={focusIn} onBlur={focusOut} />
               </div>
               <div style={{ marginBottom: "8px" }}>
-                <label style={{ fontSize: "13px", fontWeight: 500, color: "#0F172A", display: "block", marginBottom: "6px" }}>Password</label>
+                <label style={{ fontSize: "13px", fontWeight: 600, color: "#0F172A", display: "block", marginBottom: "6px" }}>Password</label>
                 <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••" required style={inputStyle} />
+                  placeholder="••••••••" required style={inp} autoComplete="current-password" onFocus={focusIn} onBlur={focusOut} />
               </div>
-              {/* Forgot password link */}
               <div style={{ textAlign: "right", marginBottom: "20px" }}>
                 <button type="button" onClick={() => { setResetMode(true); setResetEmail(email); setError(""); }}
-                  style={{ fontSize: "12px", color: "#4F6EF7", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
+                  style={{ fontSize: "13px", color: "#6366F1", background: "none", border: "none", cursor: "pointer", fontWeight: 600, minHeight: 36 }}>
                   Forgot password?
                 </button>
               </div>
               <button type="submit" disabled={loading}
-                style={{ width: "100%", padding: "12px", background: loading ? "#94A3B8" : "#4F6EF7", color: "#fff", border: "none", borderRadius: "8px", fontSize: "14px", fontWeight: 500, cursor: loading ? "not-allowed" : "pointer" }}>
-                {loading ? "Signing in..." : "Sign in"}
+                style={{ width: "100%", padding: "13px", border: "none", borderRadius: "10px", fontSize: "15px", fontWeight: 700, minHeight: 48, background: loading ? "#94A3B8" : "linear-gradient(135deg,#6366F1,#4338CA)", color: "#fff", cursor: loading ? "not-allowed" : "pointer", boxShadow: loading ? "none" : "0 4px 14px rgba(99,102,241,0.3)" }}>
+                {loading ? "Signing in…" : "Sign in"}
               </button>
             </form>
-
-            <div style={{ textAlign: "center", margin: "24px 0", fontSize: "13px", color: "#94A3B8" }}>
+            <div style={{ textAlign: "center", margin: "24px 0 0", fontSize: "13.5px", color: "#64748B" }}>
               Don&apos;t have an account?{" "}
-              <Link href="/signup" style={{ color: "#4F6EF7", textDecoration: "none", fontWeight: 500 }}>
-                Start free trial
-              </Link>
+              <Link href="/signup" style={{ color: "#6366F1", textDecoration: "none", fontWeight: 700 }}>Start free trial →</Link>
             </div>
           </>
         )}

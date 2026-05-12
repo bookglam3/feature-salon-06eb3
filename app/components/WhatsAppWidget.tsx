@@ -1,11 +1,25 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function WhatsAppWidget() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const [isMobile, setIsMobile] = useState(false);
   const phone = "17633461492"; // +1 (763) 346-1492
   const message = encodeURIComponent("Hi! I'd like to learn more about Feature Salon for my business.");
+
+  // Detect mobile to raise widget above bottom nav
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  const isDashboard = pathname?.startsWith("/dashboard") || pathname?.startsWith("/admin");
+  const bottomPos = isMobile && isDashboard ? 80 : 24;
 
   return (
     <>
@@ -14,7 +28,7 @@ export default function WhatsAppWidget() {
         onClick={() => setOpen(!open)}
         aria-label="Chat on WhatsApp"
         style={{
-          position: "fixed", bottom: 24, right: 24, zIndex: 999,
+          position: "fixed", bottom: bottomPos, right: 24, zIndex: 999,
           width: 56, height: 56, borderRadius: "50%",
           background: "#25D366", border: "none", cursor: "pointer",
           boxShadow: "0 4px 20px rgba(37,211,102,0.45)",
@@ -36,7 +50,7 @@ export default function WhatsAppWidget() {
       {/* Popup card */}
       {open && (
         <div style={{
-          position: "fixed", bottom: 90, right: 24, zIndex: 998,
+          position: "fixed", bottom: bottomPos + 66, right: 24, zIndex: 998,
           background: "#fff", borderRadius: 16, width: 300,
           boxShadow: "0 12px 40px rgba(0,0,0,0.15)",
           overflow: "hidden", animation: "slideUp 0.2s ease",
