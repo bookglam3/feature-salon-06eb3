@@ -9,6 +9,7 @@ import EmptyState from "./components/EmptyState";
 import { SkeletonDashboard } from "./components/SkeletonLoader";
 import { useToast } from "./components/Toast";
 import type { Salon, Appointment, Service, Offer } from "../types";
+import OnboardingChecklist from "./components/OnboardingChecklist";
 
 type StaffItem = { id: string; name: string };
 
@@ -365,38 +366,6 @@ export default function DashboardPage() {
       <div className="dash-wrap" style={{ padding: "28px 24px", maxWidth: 1360, margin: "0 auto" }}>
 
 
-        {/* ── Onboarding Banner (new owners only) ──────────────── */}
-        {appointments.length === 0 && (
-          <div style={{ background: "#fff", border: "2px solid #C7D2FE", borderRadius: 20, padding: "24px 28px", marginBottom: 24, boxShadow: "0 4px 20px rgba(99,102,241,0.1)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-              <div style={{ fontSize: 24 }}>🚀</div>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: "#0F172A", letterSpacing: "-0.4px" }}>Welcome! Let&apos;s get your salon ready</div>
-                <div style={{ fontSize: 13, color: "#64748B", marginTop: 2 }}>Complete these steps to start accepting bookings</div>
-              </div>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {[
-                { done: services.length > 0, label: "Add your services (e.g. Haircut, Color)", action: () => router.push("/dashboard/settings"), cta: "Go to Settings →" },
-                { done: staff.length > 0, label: "Add your staff members", action: () => router.push("/dashboard/staff"), cta: "Add Staff →" },
-                { done: false, label: "Share your booking link with clients", action: handleCopyLink, cta: copied ? "✓ Copied!" : "Copy Link →" },
-              ].map((item, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", background: item.done ? "#F0FDF4" : "#F8FAFF", borderRadius: 12, border: `1.5px solid ${item.done ? "#A7F3D0" : "#E0E7FF"}` }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ width: 22, height: 22, borderRadius: "50%", background: item.done ? "#10B981" : "#E0E7FF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: item.done ? "#fff" : "#94A3B8", fontWeight: 900, flexShrink: 0 }}>
-                      {item.done ? "✓" : i + 1}
-                    </div>
-                    <span style={{ fontSize: 13.5, fontWeight: item.done ? 600 : 500, color: item.done ? "#059669" : "#334155", textDecoration: item.done ? "line-through" : "none" }}>{item.label}</span>
-                  </div>
-                  {!item.done && (
-                    <button onClick={item.action} style={{ fontSize: 12, fontWeight: 700, color: "#6366F1", background: "none", border: "none", cursor: "pointer", whiteSpace: "nowrap", padding: "4px 8px" }}>{item.cta}</button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* ── Welcome Banner ────────────────────────────────────── */}
         <div className="dash-banner" style={{ background: "linear-gradient(135deg,#0F0B2D 0%,#1E1B4B 35%,#3730A3 65%,#6366F1 100%)", borderRadius: 24, padding: "32px 36px", marginBottom: 24, position: "relative", overflow: "hidden", boxShadow: "0 16px 48px rgba(99,102,241,0.3)" }}>
           {/* decorative circles */}
@@ -729,6 +698,15 @@ export default function DashboardPage() {
         <ModalActions><BtnSecondary onClick={() => setShowOfferModal(false)}>Cancel</BtnSecondary><BtnPrimary onClick={handleAddOffer} disabled={!offerForm.title}>Save Offer</BtnPrimary></ModalActions>
       </Modal>
       </div>
+
+      {/* ── Floating Onboarding Checklist ── */}
+      <OnboardingChecklist
+        services={services.length}
+        staff={staff.length}
+        bookingLink={`${origin}/book/${salon?.slug}`}
+        salonSlug={salon?.slug || ""}
+      />
+
     </DashboardShell>
   );
 }
