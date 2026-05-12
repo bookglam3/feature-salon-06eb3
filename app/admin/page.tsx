@@ -7,8 +7,8 @@ const ADMIN_EMAIL = "adilgill2008@gmail.com";
 const PLAN_OPTIONS = ["starter", "pro", "premium"];
 
 type Tab = "overview" | "salons" | "revenue" | "users" | "announcements" | "flags" | "settings" | "applications";
-const PLAN_PRICE: Record<string,number> = { starter:29, pro:59, premium:99 };
-const PLAN_COLOR: Record<string,string> = { starter:"#6366F1", pro:"#10B981", premium:"#F59E0B" };
+const PLAN_PRICE: Record<string, number> = { starter: 29, pro: 59, premium: 99 };
+const PLAN_COLOR: Record<string, string> = { starter: "#6366F1", pro: "#10B981", premium: "#F59E0B" };
 
 interface SalonAdmin {
   id: string; name: string; slug: string; plan: string; created_at: string;
@@ -29,6 +29,147 @@ interface Agent {
   referred_salons?: number; created_at: string;
 }
 
+// ─── Design tokens ────────────────────────────────────────────────────────────
+const T = {
+  bg: "#F6F8FC",
+  surface: "#FFFFFF",
+  nav: "#0A0F1C",
+  navBorder: "rgba(255,255,255,0.07)",
+  navText: "rgba(255,255,255,0.45)",
+  navActive: "#FFFFFF",
+  border: "#E2E8F0",
+  text: "#0F172A",
+  text2: "#64748B",
+  text3: "#94A3B8",
+  indigo: "#6366F1",
+  indigoSoft: "#EEF2FF",
+  green: "#10B981",
+  greenSoft: "#ECFDF5",
+  amber: "#F59E0B",
+  amberSoft: "#FFFBEB",
+  red: "#EF4444",
+  redSoft: "#FEF2F2",
+  shadow: "0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04)",
+  shadowMd: "0 4px 16px rgba(0,0,0,0.08),0 2px 4px rgba(0,0,0,0.04)",
+};
+
+// ─── Tiny shared primitives ───────────────────────────────────────────────────
+const Card = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
+  <div style={{
+    background: T.surface, border: `1px solid ${T.border}`,
+    borderRadius: 16, padding: 20, boxShadow: T.shadow,
+    transition: "box-shadow 0.2s, transform 0.2s",
+    ...style,
+  }}>{children}</div>
+);
+
+const Pill = ({ children, color, bg }: { children: React.ReactNode; color: string; bg: string }) => (
+  <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 99, background: bg, color, display: "inline-block" }}>{children}</span>
+);
+
+const statusMeta: Record<string, { bg: string; color: string; label: string }> = {
+  active: { bg: "#ECFDF5", color: "#059669", label: "Active" },
+  trial: { bg: "#FFFBEB", color: "#D97706", label: "Trial" },
+  trialing: { bg: "#FFFBEB", color: "#D97706", label: "Trialing" },
+  past_due: { bg: "#FEF2F2", color: "#DC2626", label: "Past Due" },
+  cancelled: { bg: "#F1F5F9", color: "#64748B", label: "Cancelled" },
+  pending: { bg: "#FFFBEB", color: "#C2410C", label: "Pending" },
+  approved: { bg: "#ECFDF5", color: "#065F46", label: "Approved" },
+  rejected: { bg: "#FEF2F2", color: "#991B1B", label: "Rejected" },
+};
+const StatusPill = ({ status }: { status: string }) => {
+  const m = statusMeta[status] || { bg: "#F1F5F9", color: "#64748B", label: status };
+  return <Pill bg={m.bg} color={m.color}>{m.label}</Pill>;
+};
+
+const Avatar = ({ name, size = 32, gradient = "135deg,#6366F1,#8B5CF6" }: { name: string; size?: number; gradient?: string }) => (
+  <div style={{
+    width: size, height: size, borderRadius: size / 3,
+    background: `linear-gradient(${gradient})`,
+    display: "flex", alignItems: "center", justifyContent: "center",
+    fontSize: size * 0.38, fontWeight: 700, color: "#fff", flexShrink: 0,
+  }}>{name.charAt(0).toUpperCase()}</div>
+);
+
+const SectionHeader = ({ title, sub, action }: { title: string; sub?: string; action?: React.ReactNode }) => (
+  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
+    <div>
+      <div style={{ fontSize: 15, fontWeight: 700, color: T.text, letterSpacing: "-0.2px" }}>{title}</div>
+      {sub && <div style={{ fontSize: 12, color: T.text3, marginTop: 2 }}>{sub}</div>}
+    </div>
+    {action}
+  </div>
+);
+
+const Btn = ({
+  children, onClick, variant = "primary", size = "md", disabled, style,
+}: {
+  children: React.ReactNode; onClick?: () => void; variant?: "primary" | "outline" | "danger" | "ghost";
+  size?: "sm" | "md"; disabled?: boolean; style?: React.CSSProperties;
+}) => {
+  const styles: Record<string, React.CSSProperties> = {
+    primary: { background: T.indigo, color: "#fff", border: "none" },
+    outline: { background: "transparent", color: T.text2, border: `1px solid ${T.border}` },
+    danger: { background: T.redSoft, color: T.red, border: `1px solid #FECACA` },
+    ghost: { background: T.indigoSoft, color: T.indigo, border: "none" },
+  };
+  const sizes: Record<string, React.CSSProperties> = {
+    sm: { height: 30, padding: "0 12px", fontSize: 12, borderRadius: 8 },
+    md: { height: 38, padding: "0 16px", fontSize: 13.5, borderRadius: 10 },
+  };
+  return (
+    <button onClick={onClick} disabled={disabled} style={{
+      display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 600,
+      cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.55 : 1,
+      fontFamily: "inherit", transition: "all 0.15s",
+      ...styles[variant], ...sizes[size], ...style,
+    }}>{children}</button>
+  );
+};
+
+const NAV_ITEMS: { key: Tab; label: string; icon: string }[] = [
+  { key: "overview", label: "Overview", icon: "▣" },
+  { key: "salons", label: "Salons", icon: "✂" },
+  { key: "revenue", label: "Revenue", icon: "₤" },
+  { key: "users", label: "Users", icon: "⊙" },
+  { key: "applications", label: "Applications", icon: "✦" },
+  { key: "announcements", label: "Announcements", icon: "◉" },
+  { key: "flags", label: "Feature Flags", icon: "⚑" },
+  { key: "settings", label: "Settings", icon: "◎" },
+];
+
+// ─── Table primitives ─────────────────────────────────────────────────────────
+const Th = ({ children }: { children: React.ReactNode }) => (
+  <th style={{
+    fontSize: 11, fontWeight: 700, letterSpacing: "0.7px", textTransform: "uppercase",
+    color: T.text3, padding: "11px 16px", textAlign: "left",
+    borderBottom: `1px solid ${T.border}`, background: T.bg,
+  }}>{children}</th>
+);
+const Td = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
+  <td style={{ padding: "13px 16px", fontSize: 13.5, color: T.text, verticalAlign: "middle", ...style }}>{children}</td>
+);
+
+// ─── KPI Card ─────────────────────────────────────────────────────────────────
+const KpiCard = ({ label, value, sub, accent, icon }: {
+  label: string; value: string | number; sub: string; accent: string; icon: string;
+}) => (
+  <Card style={{ cursor: "default" }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+      <div style={{
+        width: 38, height: 38, borderRadius: 10,
+        background: accent + "18",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 18, color: accent,
+      }}>{icon}</div>
+    </div>
+    <div style={{ fontSize: 26, fontWeight: 800, color: T.text, letterSpacing: "-0.8px", marginBottom: 4 }}>{value}</div>
+    <div style={{ fontSize: 13, fontWeight: 600, color: T.text, marginBottom: 2 }}>{label}</div>
+    <div style={{ fontSize: 11.5, color: T.text3 }}>{sub}</div>
+  </Card>
+);
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function AdminPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -42,27 +183,24 @@ export default function AdminPage() {
   const [annSaving, setAnnSaving] = useState(false);
   const [searchSalon, setSearchSalon] = useState("");
   const [searchUser, setSearchUser] = useState("");
-  const [extendDays, setExtendDays] = useState<Record<string,string>>({});
-  const [extendMsg, setExtendMsg] = useState<Record<string,string>>({});
-  // Applications tab state
+  const [extendDays, setExtendDays] = useState<Record<string, string>>({});
+  const [extendMsg, setExtendMsg] = useState<Record<string, string>>({});
   const [agents, setAgents] = useState<Agent[]>([]);
   const [agentsLoading, setAgentsLoading] = useState(false);
-  const [agentFilter, setAgentFilter] = useState<"all"|"pending"|"approved"|"rejected">("all");
+  const [agentFilter, setAgentFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
   const [agentSearch, setAgentSearch] = useState("");
-  const [agentSort, setAgentSort] = useState<"latest"|"oldest">("latest");
+  const [agentSort, setAgentSort] = useState<"latest" | "oldest">("latest");
   const [agentPage, setAgentPage] = useState(1);
-  const [selectedAgent, setSelectedAgent] = useState<Agent|null>(null);
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [modalNotes, setModalNotes] = useState("");
   const [actionLoading, setActionLoading] = useState("");
 
+  // ── Auth + data load ──
   useEffect(() => {
     const loadAdmin = async () => {
       const { data: authData } = await supabase.auth.getUser();
       const user = authData?.user;
-      if (!user || user.email !== ADMIN_EMAIL) {
-        router.push("/dashboard");
-        return;
-      }
+      if (!user || user.email !== ADMIN_EMAIL) { router.push("/dashboard"); return; }
 
       const { data: salonData } = await supabase
         .from("salons")
@@ -85,30 +223,19 @@ export default function AdminPage() {
 
       setSalons(salonsWithCounts as SalonAdmin[]);
       setTotalBookings((appointmentData || []).length);
-
-      const userList: UserAdmin[] = (salonData || []).map(s => ({
-        id: s.owner_id,
-        email: s.owner_email,
-        salon: s.name,
-        plan: s.plan,
-        created_at: s.created_at,
-      }));
-      setUsers(userList);
+      setUsers((salonData || []).map(s => ({ id: s.owner_id, email: s.owner_email, salon: s.name, plan: s.plan, created_at: s.created_at })));
       setLoading(false);
     };
-
     loadAdmin();
   }, [router]);
 
-  // ── Load agents when Applications tab is opened ──
+  // ── Agents ──
   const loadAgents = async () => {
     setAgentsLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token || "";
     try {
-      const res = await fetch("/api/partners", {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
+      const res = await fetch("/api/partners", { headers: { "Authorization": `Bearer ${token}` } });
       const json = await res.json();
       if (res.ok) setAgents(json.agents || []);
     } catch { /* silent */ }
@@ -117,10 +244,11 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (activeTab === "applications" && agents.length === 0) loadAgents();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
-  const applyAgentAction = async (id: string, status: "approved"|"rejected", notes: string) => {
+  // ── Actions ──
+  const applyAgentAction = async (id: string, status: "approved" | "rejected", notes: string) => {
     setActionLoading(id + status);
     const { data: { session } } = await supabase.auth.getSession();
     const token = session?.access_token || "";
@@ -131,10 +259,7 @@ export default function AdminPage() {
         body: JSON.stringify({ id, status, admin_notes: notes }),
       });
       const json = await res.json();
-      if (res.ok && json.agent) {
-        setAgents(p => p.map(a => a.id === id ? json.agent : a));
-        setSelectedAgent(json.agent);
-      }
+      if (res.ok && json.agent) { setAgents(p => p.map(a => a.id === id ? json.agent : a)); setSelectedAgent(json.agent); }
     } catch { /* silent */ }
     finally { setActionLoading(""); }
   };
@@ -157,8 +282,8 @@ export default function AdminPage() {
     const { error: e } = await supabase.from("salons").update({ trial_ends_at: newDate, subscription_status: "trial" }).eq("id", salonId);
     if (e) { setError(e.message); return; }
     setSalons(p => p.map(s => s.id === salonId ? { ...s, trial_ends_at: newDate, subscription_status: "trial" } : s));
-    setExtendMsg(p => ({ ...p, [salonId]: `✓ Extended by ${days} days` }));
-    setTimeout(() => setExtendMsg(p => { const n={...p}; delete n[salonId]; return n; }), 3000);
+    setExtendMsg(p => ({ ...p, [salonId]: `✓ Extended ${days}d` }));
+    setTimeout(() => setExtendMsg(p => { const n = { ...p }; delete n[salonId]; return n; }), 3000);
   };
 
   const deleteSalon = async (salonId: string) => {
@@ -170,652 +295,916 @@ export default function AdminPage() {
 
   const saveAnnouncement = async () => {
     setAnnSaving(true);
-    // Store in a platform_settings table or use a simple approach
-    // Broadcast announcement to all salons via a platform_settings pattern
     await supabase.from("salons").update({ announcement } as Record<string, unknown>).neq("id", "00000000-0000-0000-0000-000000000000");
     setTimeout(() => setAnnSaving(false), 1000);
   };
 
-  const mrr = salons.filter(s => s.subscription_status === "active").reduce((sum: number, s: SalonAdmin) => sum + (PLAN_PRICE[s.subscription_plan || s.plan] || 0), 0);
+  // ── Derived stats ──
+  const mrr = salons.filter(s => s.subscription_status === "active").reduce((sum, s) => sum + (PLAN_PRICE[s.subscription_plan || s.plan] || 0), 0);
   const trialCount = salons.filter(s => s.subscription_status === "trial" || s.subscription_status === "trialing").length;
   const activeCount = salons.filter(s => s.subscription_status === "active").length;
   const cancelledCount = salons.filter(s => s.subscription_status === "cancelled").length;
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/login");
-  };
 
   const filteredSalons = salons.filter(s =>
     s.name?.toLowerCase().includes(searchSalon.toLowerCase()) ||
     s.owner_email?.toLowerCase().includes(searchSalon.toLowerCase())
   );
-
   const filteredUsers = users.filter(u =>
     u.email?.toLowerCase().includes(searchUser.toLowerCase()) ||
     u.salon?.toLowerCase().includes(searchUser.toLowerCase())
   );
-
   const planCounts = PLAN_OPTIONS.reduce((acc, plan) => {
     acc[plan] = salons.filter(s => s.plan === plan).length;
     return acc;
   }, {} as Record<string, number>);
 
+  const handleLogout = async () => { await supabase.auth.signOut(); router.push("/login"); };
+
+  const TAB_TITLE: Record<Tab, string> = {
+    overview: "Platform Overview", salons: "Salons", revenue: "Revenue & Billing",
+    users: "Users", applications: "Applications", announcements: "Announcements",
+    flags: "Feature Flags", settings: "Settings",
+  };
+
+  // ─── Loading ───────────────────────────────────────────────────────────────
   if (loading) return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#0F0F0F", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ fontFamily: "Georgia, serif", fontSize: "24px", color: "#4F6EF7" }}>feature admin</div>
+    <div style={{
+      minHeight: "100vh", background: T.nav,
+      display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16,
+    }}>
+      <div style={{
+        width: 40, height: 40, border: `3px solid rgba(99,102,241,0.2)`,
+        borderTopColor: T.indigo, borderRadius: "50%",
+        animation: "spin 0.7s linear infinite",
+      }} />
+      <div style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", letterSpacing: 2 }}>LOADING</div>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 
+  // ─── Shell ─────────────────────────────────────────────────────────────────
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#0A0A0A", display: "flex", fontFamily: "system-ui, sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: T.bg, display: "flex", fontFamily: "'Plus Jakarta Sans','Segoe UI',sans-serif" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{font-family:'Plus Jakarta Sans','Segoe UI',sans-serif}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        .tab-content{animation:fadeUp 0.25s ease both}
+        .nav-item{transition:all 0.15s;cursor:pointer}
+        .nav-item:hover{background:rgba(255,255,255,0.06)!important;color:#fff!important}
+        .kpi:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.1)!important}
+        .salon-row:hover td{background:#F8FAFC!important}
+        .user-row:hover td{background:#F8FAFC!important}
+        .flag-row:hover td{background:#F8FAFC!important}
+        .action-btn{transition:all 0.12s;cursor:pointer}
+        .action-btn:hover{border-color:${T.indigo}!important;color:${T.indigo}!important;background:${T.indigoSoft}!important}
+        select{font-family:inherit;cursor:pointer;outline:none}
+        select:focus{border-color:${T.indigo}!important}
+        input{font-family:inherit}
+        input:focus{border-color:${T.indigo}!important;box-shadow:0 0 0 3px rgba(99,102,241,0.1)!important;outline:none}
+        textarea:focus{border-color:${T.indigo}!important;outline:none}
+        ::-webkit-scrollbar{width:5px;height:5px}
+        ::-webkit-scrollbar-track{background:transparent}
+        ::-webkit-scrollbar-thumb{background:${T.border};border-radius:3px}
+      `}</style>
 
-      {/* Sidebar */}
-      <div style={{ width: "240px", background: "#111", borderRight: "0.5px solid #222", flexShrink: 0, display: "flex", flexDirection: "column" }}>
-        <div style={{ padding: "24px 20px", borderBottom: "0.5px solid #222" }}>
-          <div style={{ fontFamily: "Georgia, serif", fontSize: "18px", color: "#fff" }}>feature</div>
-          <div style={{ fontSize: "11px", color: "#555", marginTop: "4px", letterSpacing: "2px" }}>SUPER ADMIN</div>
+      {/* ── Sidebar ────────────────────────────────────────────────────────── */}
+      <aside style={{
+        width: 232, minHeight: "100vh", background: T.nav, flexShrink: 0,
+        display: "flex", flexDirection: "column", position: "sticky", top: 0, height: "100vh",
+      }}>
+        {/* Logo */}
+        <div style={{ padding: "22px 20px 18px", borderBottom: `1px solid ${T.navBorder}` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{
+              width: 34, height: 34, background: T.indigo, borderRadius: 9,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 16, color: "#fff", fontWeight: 800, letterSpacing: -0.5,
+            }}>F</div>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", letterSpacing: "-0.4px" }}>feature</div>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", letterSpacing: "1.5px", textTransform: "uppercase", marginTop: 1 }}>Super Admin</div>
+            </div>
+          </div>
         </div>
-        <div style={{ padding: "12px 0", flex: 1 }}>
-          {([
-            { key: "overview", label: "Overview", icon: "📊" },
-            { key: "salons", label: "Salons", icon: "💈" },
-            { key: "revenue", label: "Revenue", icon: "💰" },
-            { key: "users", label: "Users", icon: "👥" },
-            { key: "applications", label: "Applications", icon: "🧑‍💼" },
-            { key: "announcements", label: "Announcements", icon: "📣" },
-            { key: "flags", label: "Feature Flags", icon: "🚩" },
-            { key: "settings", label: "Settings", icon: "⚙️" },
-          ] as { key: Tab; label: string; icon: string }[]).map((item) => (
-            <div key={item.key} onClick={() => setActiveTab(item.key)}
-              style={{ padding: "10px 20px", fontSize: "13px", cursor: "pointer", display: "flex", alignItems: "center", gap: "10px", color: activeTab === item.key ? "#4F6EF7" : "#666", background: activeTab === item.key ? "#1A1A2E" : "transparent", borderLeft: activeTab === item.key ? "2px solid #4F6EF7" : "2px solid transparent" }}>
-              <span>{item.icon}</span>{item.label}
+
+        {/* Nav */}
+        <nav style={{ flex: 1, padding: "12px 10px", overflowY: "auto" }}>
+          {NAV_ITEMS.map(item => (
+            <div key={item.key} className="nav-item"
+              onClick={() => setActiveTab(item.key)}
+              style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "9px 10px", borderRadius: 8, marginBottom: 2,
+                color: activeTab === item.key ? T.navActive : T.navText,
+                background: activeTab === item.key ? "rgba(99,102,241,0.18)" : "transparent",
+                fontSize: 13.5, fontWeight: activeTab === item.key ? 600 : 500,
+                position: "relative",
+              }}>
+              {activeTab === item.key && (
+                <div style={{
+                  position: "absolute", left: -10, top: "50%", transform: "translateY(-50%)",
+                  width: 3, height: 20, background: T.indigo, borderRadius: "0 3px 3px 0",
+                }} />
+              )}
+              <span style={{ fontSize: 14, width: 18, textAlign: "center", flexShrink: 0 }}>{item.icon}</span>
+              {item.label}
+              {item.key === "applications" && agents.filter(a => a.status === "pending").length > 0 && (
+                <span style={{
+                  marginLeft: "auto", background: T.red, color: "#fff",
+                  fontSize: 10, fontWeight: 800, padding: "2px 6px", borderRadius: 99,
+                }}>{agents.filter(a => a.status === "pending").length}</span>
+              )}
             </div>
           ))}
-        </div>
-        <div style={{ padding: "16px 20px", borderTop: "0.5px solid #222" }}>
-          <div style={{ fontSize: "11px", color: "#555", marginBottom: "8px" }}>{ADMIN_EMAIL}</div>
-          <button onClick={handleLogout} style={{ fontSize: "12px", color: "#EF4444", background: "none", border: "none", cursor: "pointer", padding: 0 }}>Sign out</button>
-        </div>
-      </div>
+        </nav>
 
-      {/* Main */}
-      <div style={{ flex: 1, overflow: "auto" }}>
-        <div style={{ background: "#111", borderBottom: "0.5px solid #222", padding: "16px 28px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div>
-            <div style={{ fontSize: "18px", fontWeight: 600, color: "#fff" }}>
-              {activeTab === "overview" && "Platform Overview"}
-              {activeTab === "salons" && "Salons Management"}
-              {activeTab === "revenue" && "Revenue & Billing"}
-              {activeTab === "users" && "Users Management"}
-              {activeTab === "applications" && "Employee Applications"}
-              {activeTab === "announcements" && "Announcements"}
-              {activeTab === "flags" && "Feature Flags"}
-              {activeTab === "settings" && "Platform Settings"}
+        {/* Footer */}
+        <div style={{ padding: "14px 10px", borderTop: `1px solid ${T.navBorder}` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", borderRadius: 8 }}>
+            <Avatar name="A" size={32} gradient="135deg,#6366F1,#8B5CF6" />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>Adil Gill</div>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>Super Admin</div>
             </div>
-            <div style={{ fontSize: "12px", color: "#555", marginTop: "2px" }}>Super Admin Panel</div>
+            <button onClick={handleLogout} style={{
+              background: "none", border: "none", cursor: "pointer",
+              color: "rgba(255,255,255,0.3)", fontSize: 13, padding: 4,
+              transition: "color 0.15s",
+            }} title="Sign out">⏻</button>
           </div>
-          {maintenanceMode && (
-            <div style={{ background: "#FEF2F2", color: "#DC2626", fontSize: "12px", padding: "6px 14px", borderRadius: "20px", border: "1px solid #FECACA" }}>
-              🔴 Maintenance Mode ON
-            </div>
-          )}
         </div>
+      </aside>
 
-        <div style={{ padding: "28px" }}>
+      {/* ── Main ───────────────────────────────────────────────────────────── */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
+
+        {/* Header */}
+        <header style={{
+          background: T.surface, borderBottom: `1px solid ${T.border}`,
+          padding: "0 24px", height: 60,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          position: "sticky", top: 0, zIndex: 10, boxShadow: "0 1px 0 #E2E8F0",
+        }}>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: T.text, letterSpacing: "-0.3px" }}>{TAB_TITLE[activeTab]}</div>
+            <div style={{ fontSize: 11.5, color: T.text3 }}>Feature Salon Platform</div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {maintenanceMode && (
+              <div style={{ background: T.redSoft, color: T.red, fontSize: 11.5, fontWeight: 700, padding: "4px 12px", borderRadius: 99, border: `1px solid #FECACA` }}>
+                ● Maintenance ON
+              </div>
+            )}
+            <Btn variant="primary" size="sm" onClick={() => setActiveTab("salons")}>
+              + Add Salon
+            </Btn>
+          </div>
+        </header>
+
+        {/* Content */}
+        <main style={{ flex: 1, overflowY: "auto", padding: 24 }}>
           {error && (
-            <div style={{ marginBottom: "20px", padding: "14px 18px", backgroundColor: "#1A0000", border: "0.5px solid #7F1D1D", borderRadius: "10px", color: "#FCA5A5", fontSize: "13px" }}>
-              {error}
+            <div style={{
+              marginBottom: 20, padding: "12px 16px",
+              background: T.redSoft, border: `1px solid #FECACA`,
+              borderRadius: 10, color: "#DC2626", fontSize: 13,
+              display: "flex", alignItems: "center", gap: 8,
+            }}>
+              ⚠ {error}
+              <button onClick={() => setError("")} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "#DC2626", fontSize: 16 }}>×</button>
             </div>
           )}
 
-          {activeTab === "overview" && (
-            <div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "14px", marginBottom: "28px" }}>
-                {([
-                  { label: "MRR", value: `£${mrr}`, icon: "💰", sub: `ARR £${mrr*12}` },
-                  { label: "Active Salons", value: activeCount, icon: "✅", sub: "paying" },
-                  { label: "On Trial", value: trialCount, icon: "⏳", sub: "free trial" },
-                  { label: "Cancelled", value: cancelledCount, icon: "❌", sub: "churned" },
-                  { label: "Total Salons", value: salons.length, icon: "💈", sub: "all time" },
-                  { label: "Total Bookings", value: totalBookings, icon: "📅", sub: "all salons" },
-                ] satisfies { label: string; value: string | number; icon: string; sub: string }[]).map((s) => (
-                  <div key={s.label} style={{ background: "#111", border: "0.5px solid #222", borderRadius: "12px", padding: "20px" }}>
-                    <div style={{ fontSize: "24px", marginBottom: "8px" }}>{s.icon}</div>
-                    <div style={{ fontSize: "28px", fontWeight: 700, color: "#fff", marginBottom: "4px" }}>{s.value}</div>
-                    <div style={{ fontSize: "12px", color: "#555" }}>{s.label}</div>
-                    {s.sub && <div style={{ fontSize: "11px", color: "#444", marginTop: 2 }}>{s.sub}</div>}
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
-                <div style={{ background: "#111", border: "0.5px solid #222", borderRadius: "12px", padding: "20px" }}>
-                  <div style={{ fontSize: "14px", fontWeight: 500, color: "#fff", marginBottom: "16px" }}>Plan Distribution</div>
-                  {PLAN_OPTIONS.map((plan) => {
-                    const count = planCounts[plan] || 0;
-                    const pct = salons.length > 0 ? (count / salons.length) * 100 : 0;
-                    return (
-                      <div key={plan} style={{ marginBottom: "12px" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                          <span style={{ fontSize: "12px", color: "#aaa", textTransform: "capitalize" }}>{plan}</span>
-                          <span style={{ fontSize: "12px", color: "#fff" }}>{count} salons</span>
-                        </div>
-                        <div style={{ height: "6px", background: "#222", borderRadius: "3px" }}>
-                          <div style={{ height: "100%", width: `${pct}%`, background: plan === "starter" ? "#4F6EF7" : plan === "pro" ? "#10B981" : "#F59E0B", borderRadius: "3px" }} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div style={{ background: "#111", border: "0.5px solid #222", borderRadius: "12px", padding: "20px" }}>
-                  <div style={{ fontSize: "14px", fontWeight: 500, color: "#fff", marginBottom: "16px" }}>Recent Salons</div>
-                  {salons.slice(0, 5).map((s) => (
-                    <div key={s.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "0.5px solid #1A1A1A" }}>
-                      <div>
-                        <div style={{ fontSize: "13px", color: "#fff" }}>{s.name}</div>
-                        <div style={{ fontSize: "11px", color: "#555" }}>{s.owner_email}</div>
-                      </div>
-                      <span style={{ fontSize: "11px", background: "#1A1A2E", color: "#4F6EF7", padding: "3px 8px", borderRadius: "20px", textTransform: "capitalize" }}>{s.plan}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
+          <div className="tab-content" key={activeTab}>
 
-          {activeTab === "salons" && (
-            <div>
-              <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ fontSize: "13px", color: "#555" }}>{filteredSalons.length} salons</div>
-                <input type="text" placeholder="Search salons..." value={searchSalon}
-                  onChange={(e) => setSearchSalon(e.target.value)}
-                  style={{ padding: "8px 14px", background: "#111", border: "0.5px solid #333", borderRadius: "8px", color: "#fff", fontSize: "13px", width: "220px", outline: "none" }} />
-              </div>
-              <div style={{ background: "#111", border: "0.5px solid #222", borderRadius: "12px", overflow: "hidden" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr style={{ background: "#0A0A0A" }}>
-                      {["Salon","Owner","Plan","Status","Bookings","Created","Actions"].map(h => (
-                        <th key={h} style={{ fontSize:"11px", color:"#555", textAlign:"left", padding:"12px 18px", fontWeight:500, borderBottom:"0.5px solid #222", letterSpacing:"1px" }}>{h.toUpperCase()}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredSalons.map((salon) => (
-                      <tr key={salon.id} style={{ borderBottom:"0.5px solid #1A1A1A" }}>
-                        <td style={{ padding:"13px 18px" }}>
-                          <div style={{ fontSize:"13px", color:"#fff", fontWeight:500 }}>{salon.name}</div>
-                          <div style={{ fontSize:"11px", color:"#555" }}>{salon.slug}</div>
-                        </td>
-                        <td style={{ padding:"13px 18px", fontSize:"12px", color:"#666" }}>{salon.owner_email || salon.owner_id?.slice(0,8)+"..."}</td>
-                        <td style={{ padding:"13px 18px" }}>
-                          <select value={salon.plan||"starter"} onChange={e=>updateSalonPlan(salon.id, e.target.value)}
-                            style={{ padding:"6px 10px", background:"#1A1A1A", border:"0.5px solid #333", borderRadius:"6px", color:"#fff", fontSize:"12px", cursor:"pointer" }}>
-                            {PLAN_OPTIONS.map(plan=><option key={plan} value={plan}>{plan}</option>)}
-                          </select>
-                        </td>
-                        <td style={{ padding:"13px 18px" }}>
-                          <select value={salon.subscription_status||"trial"} onChange={e=>updateSalonStatus(salon.id, e.target.value)}
-                            style={{ padding:"6px 10px", background:"#1A1A1A", border:"0.5px solid #333", borderRadius:"6px", fontSize:"11px", cursor:"pointer",
-                              color: salon.subscription_status==="active"?"#10B981":salon.subscription_status==="trial"?"#F59E0B":"#EF4444" }}>
-                            {["trial","trialing","active","past_due","cancelled"].map(s=><option key={s} value={s}>{s}</option>)}
-                          </select>
-                        </td>
-                        <td style={{ padding:"13px 18px", fontSize:"13px", color:"#fff" }}>{salon.appointmentCount}</td>
-                        <td style={{ padding:"13px 18px", fontSize:"12px", color:"#555" }}>{new Date(salon.created_at).toLocaleDateString("en-GB")}</td>
-                        <td style={{ padding:"13px 18px" }}>
-                          <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
-                            <div style={{ display:"flex", gap:4, alignItems:"center" }}>
-                              <input type="number" placeholder="7" value={extendDays[salon.id]||""} onChange={e=>setExtendDays(p=>({...p,[salon.id]:e.target.value}))}
-                                style={{ width:44, padding:"4px 6px", background:"#0A0A0A", border:"0.5px solid #333", borderRadius:6, color:"#fff", fontSize:11, outline:"none" }}/>
-                              <button onClick={()=>extendTrial(salon.id)}
-                                style={{ background:"#1A2040", color:"#4F6EF7", border:"0.5px solid #4F6EF7", borderRadius:6, padding:"4px 8px", fontSize:11, cursor:"pointer", whiteSpace:"nowrap" }}>
-                                +days trial
-                              </button>
-                            </div>
-                            {extendMsg[salon.id] && <span style={{ fontSize:11, color:"#10B981" }}>{extendMsg[salon.id]}</span>}
-                            <button onClick={()=>deleteSalon(salon.id)}
-                              style={{ background:"#1A0000", color:"#EF4444", border:"0.5px solid #7F1D1D", borderRadius:6, padding:"4px 12px", fontSize:11, cursor:"pointer" }}>
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {activeTab === "users" && (
-            <div>
-              <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ fontSize: "13px", color: "#555" }}>{filteredUsers.length} users</div>
-                <input type="text" placeholder="Search users..." value={searchUser}
-                  onChange={(e) => setSearchUser(e.target.value)}
-                  style={{ padding: "8px 14px", background: "#111", border: "0.5px solid #333", borderRadius: "8px", color: "#fff", fontSize: "13px", width: "220px", outline: "none" }} />
-              </div>
-              <div style={{ background: "#111", border: "0.5px solid #222", borderRadius: "12px", overflow: "hidden" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr style={{ background: "#0A0A0A" }}>
-                      {["User", "Salon", "Plan", "Joined"].map(h => (
-                        <th key={h} style={{ fontSize: "11px", color: "#555", textAlign: "left", padding: "12px 18px", fontWeight: 500, borderBottom: "0.5px solid #222", letterSpacing: "1px" }}>{h.toUpperCase()}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredUsers.map((u, i) => (
-                      <tr key={i} style={{ borderBottom: "0.5px solid #1A1A1A" }}>
-                        <td style={{ padding: "13px 18px" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                            <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "#1A1A2E", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", color: "#4F6EF7", fontWeight: 700 }}>
-                              {u.email?.charAt(0).toUpperCase()}
-                            </div>
-                            <span style={{ fontSize: "13px", color: "#fff" }}>{u.email}</span>
-                          </div>
-                        </td>
-                        <td style={{ padding: "13px 18px", fontSize: "13px", color: "#666" }}>{u.salon}</td>
-                        <td style={{ padding: "13px 18px" }}>
-                          <span style={{ fontSize: "11px", background: "#1A1A2E", color: "#4F6EF7", padding: "3px 10px", borderRadius: "20px", textTransform: "capitalize" }}>{u.plan}</span>
-                        </td>
-                        <td style={{ padding: "13px 18px", fontSize: "12px", color: "#555" }}>{new Date(u.created_at).toLocaleDateString("en-GB")}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {activeTab === "revenue" && (
-            <div>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))", gap:14, marginBottom:28 }}>
-                {[
-                  { label:"MRR", value:`£${mrr}`, color:"#10B981", sub:"Monthly Recurring Revenue" },
-                  { label:"ARR", value:`£${mrr*12}`, color:"#6366F1", sub:"Annual Recurring Revenue" },
-                  { label:"Active Paying", value:activeCount, color:"#F59E0B", sub:"salons paying now" },
-                  { label:"Churn Rate", value: salons.length ? `${Math.round((cancelledCount/salons.length)*100)}%` : "0%", color:"#EF4444", sub:"of all signups cancelled" },
-                ].map(s => (
-                  <div key={s.label} style={{ background:"#111", border:"0.5px solid #222", borderRadius:12, padding:20 }}>
-                    <div style={{ fontSize:28, fontWeight:800, color:s.color, marginBottom:4 }}>{s.value}</div>
-                    <div style={{ fontSize:13, fontWeight:600, color:"#fff" }}>{s.label}</div>
-                    <div style={{ fontSize:11, color:"#555", marginTop:2 }}>{s.sub}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ background:"#111", border:"0.5px solid #222", borderRadius:12, padding:20 }}>
-                <div style={{ fontSize:14, fontWeight:600, color:"#fff", marginBottom:16 }}>Revenue by Plan</div>
-                {PLAN_OPTIONS.map(plan => {
-                  const count = salons.filter(s => (s.subscription_status === "active") && (s.subscription_plan === plan || s.plan === plan)).length;
-                  const rev = count * (PLAN_PRICE[plan] || 0);
-                  return (
-                    <div key={plan} style={{ display:"flex", alignItems:"center", gap:16, marginBottom:14 }}>
-                      <div style={{ width:80, fontSize:12, color:"#aaa", textTransform:"capitalize", textAlign:"right" }}>{plan}</div>
-                      <div style={{ flex:1, height:8, background:"#1A1A1A", borderRadius:4 }}>
-                        <div style={{ height:"100%", width:`${mrr>0?(rev/mrr*100):0}%`, background:PLAN_COLOR[plan], borderRadius:4, transition:"width 0.5s" }}/>
-                      </div>
-                      <div style={{ fontSize:12, color:"#fff", minWidth:60 }}>£{rev}/mo · {count}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {activeTab === "announcements" && (
-            <div style={{ maxWidth:600 }}>
-              <div style={{ background:"#111", border:"0.5px solid #222", borderRadius:12, padding:24, marginBottom:16 }}>
-                <div style={{ fontSize:14, fontWeight:600, color:"#fff", marginBottom:4 }}>📣 Send Announcement to All Salons</div>
-                <div style={{ fontSize:12, color:"#555", marginBottom:16 }}>This message will appear as a banner on every salon&apos;s dashboard.</div>
-                <textarea value={announcement} onChange={e => setAnnouncement(e.target.value)}
-                  placeholder="e.g. We're rolling out a new feature next week..." rows={4}
-                  style={{ width:"100%", padding:"12px 14px", background:"#0A0A0A", border:"0.5px solid #333", borderRadius:8, color:"#fff", fontSize:13, resize:"vertical", fontFamily:"inherit", boxSizing:"border-box", outline:"none", marginBottom:12 }}/>
-                <button onClick={saveAnnouncement} style={{ padding:"10px 22px", background: annSaving ? "#059669" : "#4F6EF7", color:"#fff", border:"none", borderRadius:8, fontSize:13, cursor:"pointer", fontWeight:600 }}>
-                  {annSaving ? "✓ Saved!" : "Send to All Salons"}
-                </button>
-              </div>
-              <div style={{ background:"#111", border:"0.5px solid #222", borderRadius:12, padding:20 }}>
-                <div style={{ fontSize:13, fontWeight:600, color:"#fff", marginBottom:12 }}>📧 Email Blast (coming soon)</div>
-                <div style={{ fontSize:12, color:"#555" }}>Send an email to all registered salon owners. Integration with Resend required.</div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === "flags" && (
-            <div>
-              <div style={{ fontSize:13, color:"#555", marginBottom:16 }}>Enable or disable features per salon. Changes apply immediately.</div>
-              <div style={{ background:"#111", border:"0.5px solid #222", borderRadius:12, overflow:"hidden" }}>
-                <table style={{ width:"100%", borderCollapse:"collapse" }}>
-                  <thead>
-                    <tr style={{ background:"#0A0A0A" }}>
-                      {["Salon","WhatsApp","Reminders","Online Bookings","Actions"].map(h=>(
-                        <th key={h} style={{ fontSize:11, color:"#555", textAlign:"left", padding:"12px 18px", fontWeight:500, borderBottom:"0.5px solid #222", letterSpacing:"1px" }}>{h.toUpperCase()}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {salons.map(salon => (
-                      <tr key={salon.id} style={{ borderBottom:"0.5px solid #1A1A1A" }}>
-                        <td style={{ padding:"12px 18px" }}>
-                          <div style={{ fontSize:13, color:"#fff", fontWeight:500 }}>{salon.name}</div>
-                          <div style={{ fontSize:11, color:"#555" }}>{salon.owner_email}</div>
-                        </td>
-                        {["whatsapp_enabled","reminders_enabled"].map(flag=>(
-                          <td key={flag} style={{ padding:"12px 18px" }}>
-                            <button onClick={async()=>{
-                              const newVal = !salon[flag];
-                              await supabase.from("salons").update({[flag]:newVal}).eq("id",salon.id);
-                              setSalons(p=>p.map(s=>s.id===salon.id?{...s,[flag]:newVal}:s));
-                            }} style={{ padding:"4px 12px", borderRadius:20, border:"none", cursor:"pointer", fontSize:11, fontWeight:700,
-                              background: salon[flag] ? "#0A2A1A" : "#1A1A1A",
-                              color: salon[flag] ? "#10B981" : "#555" }}>
-                              {salon[flag] ? "ON" : "OFF"}
-                            </button>
-                          </td>
-                        ))}
-                        <td style={{ padding:"12px 18px" }}>
-                          <span style={{ fontSize:11, color:salon.subscription_status==="active"?"#10B981":salon.subscription_status==="trial"?"#F59E0B":"#EF4444", background:"#1A1A1A", padding:"3px 10px", borderRadius:20, fontWeight:600 }}>
-                            {salon.subscription_status||"unknown"}
-                          </span>
-                        </td>
-                        <td style={{ padding:"12px 18px" }}>
-                          <a href={`/book/${salon.slug}`} target="_blank" rel="noopener" style={{ fontSize:11, color:"#4F6EF7", textDecoration:"none" }}>View Booking →</a>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {activeTab === "applications" && (() => {
-            const PER_PAGE = 25;
-            const statusColor: Record<string,{bg:string;color:string}> = {
-              pending:  { bg:"#FFF7ED", color:"#C2410C" },
-              approved: { bg:"#ECFDF5", color:"#065F46" },
-              rejected: { bg:"#FEF2F2", color:"#991B1B" },
-            };
-            const filtered = agents
-              .filter(a => agentFilter === "all" || a.status === agentFilter)
-              .filter(a => {
-                const q = agentSearch.toLowerCase();
-                return !q || a.full_name.toLowerCase().includes(q) || a.city.toLowerCase().includes(q) || a.phone.includes(q);
-              })
-              .sort((a,b) => agentSort === "latest"
-                ? new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-                : new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-              );
-            const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
-            const page = Math.min(agentPage, totalPages);
-            const visible = filtered.slice((page-1)*PER_PAGE, page*PER_PAGE);
-            const counts = { all: agents.length, pending: agents.filter(a=>a.status==="pending").length, approved: agents.filter(a=>a.status==="approved").length, rejected: agents.filter(a=>a.status==="rejected").length };
-
-            return (
-              <div style={{ animation:"fadeIn 0.2s ease both" }}>
-                {/* ── Stat Cards ── */}
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))", gap:14, marginBottom:24 }}>
+            {/* ── OVERVIEW ─────────────────────────────────────────────── */}
+            {activeTab === "overview" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                {/* KPIs */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 14 }}>
                   {([
-                    { label:"Total",    value:counts.all,      icon:"👥", accent:"#2D2E5F", light:"#EEEEF8" },
-                    { label:"Pending",  value:counts.pending,  icon:"⏳", accent:"#D97706", light:"#FFFBEB" },
-                    { label:"Approved", value:counts.approved, icon:"✅", accent:"#059669", light:"#ECFDF5" },
-                    { label:"Rejected", value:counts.rejected, icon:"❌", accent:"#DC2626", light:"#FEF2F2" },
-                  ]).map(s => (
-                    <div key={s.label} onClick={() => { setAgentFilter(s.label.toLowerCase() as "all"|"pending"|"approved"|"rejected"); setAgentPage(1); }}
-                      style={{ background:"#fff", borderRadius:16, padding:"18px 20px", boxShadow:"0 2px 12px rgba(45,46,95,0.08)", cursor:"pointer", border:`1.5px solid ${agentFilter===s.label.toLowerCase()?"#E8B4C4":"transparent"}`, transition:"all 0.18s" }}>
-                      <div style={{ width:36, height:36, borderRadius:10, background:s.light, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, marginBottom:12 }}>{s.icon}</div>
-                      <div style={{ fontSize:28, fontWeight:800, color:s.accent, lineHeight:1 }}>{s.value}</div>
-                      <div style={{ fontSize:12, color:"#64748B", marginTop:4, fontWeight:500 }}>{s.label} Applications</div>
+                    { label: "Monthly Revenue", value: `£${mrr}`, sub: `ARR £${mrr * 12}`, accent: T.indigo, icon: "£" },
+                    { label: "Active Salons", value: activeCount, sub: "Currently paying", accent: T.green, icon: "✓" },
+                    { label: "On Trial", value: trialCount, sub: "Free trial period", accent: T.amber, icon: "⏱" },
+                    { label: "Cancelled", value: cancelledCount, sub: "Churned accounts", accent: T.red, icon: "✕" },
+                    { label: "Total Salons", value: salons.length, sub: "All time signups", accent: "#8B5CF6", icon: "✂" },
+                    { label: "Total Bookings", value: totalBookings, sub: "Across all salons", accent: "#06B6D4", icon: "✦" },
+                  ] as { label: string; value: string | number; sub: string; accent: string; icon: string }[]).map(s => (
+                    <div key={s.label} className="kpi" style={{
+                      background: T.surface, border: `1px solid ${T.border}`,
+                      borderRadius: 16, padding: 20, boxShadow: T.shadow,
+                      transition: "transform 0.2s,box-shadow 0.2s", cursor: "default",
+                    }}>
+                      <div style={{
+                        width: 36, height: 36, borderRadius: 9,
+                        background: s.accent + "18", display: "flex",
+                        alignItems: "center", justifyContent: "center",
+                        fontSize: 16, color: s.accent, marginBottom: 12,
+                      }}>{s.icon}</div>
+                      <div style={{ fontSize: 26, fontWeight: 800, color: T.text, letterSpacing: "-0.8px", marginBottom: 2 }}>{s.value}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: T.text, marginBottom: 1 }}>{s.label}</div>
+                      <div style={{ fontSize: 11.5, color: T.text3 }}>{s.sub}</div>
                     </div>
                   ))}
                 </div>
 
-                {/* ── Toolbar ── */}
-                <div style={{ background:"#fff", borderRadius:16, padding:"14px 18px", boxShadow:"0 2px 12px rgba(45,46,95,0.06)", marginBottom:16, display:"flex", flexWrap:"wrap", gap:10, alignItems:"center", justifyContent:"space-between" }}>
-                  <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-                    {(["all","pending","approved","rejected"] as const).map(f => (
-                      <button key={f} onClick={() => { setAgentFilter(f); setAgentPage(1); }}
-                        style={{ padding:"6px 14px", borderRadius:99, border:"none", cursor:"pointer", fontSize:12, fontWeight:600, transition:"all 0.15s",
-                          background: agentFilter===f ? "#2D2E5F" : "#F1F5F9",
-                          color: agentFilter===f ? "#fff" : "#64748B" }}>
-                        {f.charAt(0).toUpperCase()+f.slice(1)} {f==="all"?"":"("+counts[f]+")"}
-                      </button>
-                    ))}
-                  </div>
-                  <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-                    <input type="text" placeholder="Search name, city, phone…" value={agentSearch} onChange={e=>{setAgentSearch(e.target.value);setAgentPage(1);}}
-                      style={{ padding:"8px 14px", border:"1.5px solid #E2E8F0", borderRadius:99, fontSize:12.5, outline:"none", width:220, color:"#0F172A" }} />
-                    <button onClick={() => setAgentSort(s => s==="latest"?"oldest":"latest")}
-                      style={{ padding:"8px 14px", borderRadius:99, background:"#F1F5F9", border:"none", fontSize:12, cursor:"pointer", color:"#475569", fontWeight:600, whiteSpace:"nowrap" }}>
-                      {agentSort==="latest" ? "⬇ Latest" : "⬆ Oldest"}
-                    </button>
-                    <button onClick={loadAgents} style={{ padding:"8px 14px", borderRadius:99, background:"#2D2E5F", border:"none", fontSize:12, cursor:"pointer", color:"#fff", fontWeight:600 }}>
-                      ↻ Refresh
-                    </button>
-                  </div>
-                </div>
+                {/* Charts row */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                  <Card>
+                    <SectionHeader title="Plan Distribution" sub="Salons per pricing tier" />
+                    {PLAN_OPTIONS.map(plan => {
+                      const count = planCounts[plan] || 0;
+                      const pct = salons.length > 0 ? (count / salons.length) * 100 : 0;
+                      return (
+                        <div key={plan} style={{ marginBottom: 14 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                            <span style={{ fontSize: 13, color: T.text, fontWeight: 500, textTransform: "capitalize" }}>{plan}</span>
+                            <span style={{ fontSize: 12, color: T.text2, fontWeight: 600 }}>{count} salons · {Math.round(pct)}%</span>
+                          </div>
+                          <div style={{ height: 6, background: T.bg, borderRadius: 3 }}>
+                            <div style={{
+                              height: "100%", width: `${pct}%`, borderRadius: 3,
+                              background: PLAN_COLOR[plan], transition: "width 0.6s ease",
+                            }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </Card>
 
-                {/* ── Table ── */}
-                <div style={{ background:"#fff", borderRadius:16, boxShadow:"0 2px 12px rgba(45,46,95,0.07)", overflow:"hidden", marginBottom:16 }}>
-                  {agentsLoading ? (
-                    <div style={{ padding:48, textAlign:"center", color:"#94A3B8", fontSize:14 }}>Loading applications…</div>
-                  ) : visible.length === 0 ? (
-                    <div style={{ padding:48, textAlign:"center" }}>
-                      <div style={{ fontSize:40, marginBottom:12 }}>📭</div>
-                      <div style={{ fontSize:14, color:"#94A3B8" }}>No applications found</div>
-                    </div>
-                  ) : (
-                    <table style={{ width:"100%", borderCollapse:"collapse" }}>
-                      <thead>
-                        <tr style={{ background:"#F9E7EC" }}>
-                          {["Applicant","City","Experience","Availability","Applied","Status","Actions"].map(h => (
-                            <th key={h} style={{ padding:"12px 16px", textAlign:"left", fontSize:11, fontWeight:700, color:"#2D2E5F", letterSpacing:"0.8px", textTransform:"uppercase", borderBottom:"1.5px solid #F0D4DC" }}>{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
+                  <Card>
+                    <SectionHeader title="Recent Signups" sub="Latest 5 salons" />
+                    {salons.slice(0, 5).map(s => (
+                      <div key={s.id} style={{
+                        display: "flex", justifyContent: "space-between", alignItems: "center",
+                        padding: "10px 0", borderBottom: `1px solid ${T.border}`,
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <Avatar name={s.name} size={30} />
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{s.name}</div>
+                            <div style={{ fontSize: 11, color: T.text3 }}>{s.owner_email}</div>
+                          </div>
+                        </div>
+                        <StatusPill status={s.subscription_status || "trial"} />
+                      </div>
+                    ))}
+                  </Card>
+                </div>
+              </div>
+            )}
+
+            {/* ── SALONS ───────────────────────────────────────────────── */}
+            {activeTab === "salons" && (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                  <div style={{ fontSize: 13, color: T.text2, fontWeight: 500 }}>{filteredSalons.length} salons found</div>
+                  <input
+                    type="text" placeholder="Search by name or email…" value={searchSalon}
+                    onChange={e => setSearchSalon(e.target.value)}
+                    style={{
+                      height: 36, padding: "0 14px", border: `1px solid ${T.border}`, borderRadius: 8,
+                      fontSize: 13, color: T.text, background: T.surface, width: 240,
+                      transition: "border-color 0.15s,box-shadow 0.15s",
+                    }}
+                  />
+                </div>
+                <Card style={{ padding: 0, overflow: "hidden" }}>
+                  <div style={{ overflowX: "auto" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                      <thead><tr>{["Salon", "Owner", "Plan", "Status", "Bookings", "Created", "Actions"].map(h => <Th key={h}>{h}</Th>)}</tr></thead>
                       <tbody>
-                        {visible.map((a,i) => (
-                          <tr key={a.id} style={{ borderBottom:"1px solid #F8F0F3", background: i%2===0?"#fff":"#FDFAFA", transition:"background 0.12s" }}>
-                            <td style={{ padding:"13px 16px" }}>
-                              <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                                <div style={{ width:36, height:36, borderRadius:10, background:"linear-gradient(135deg,#2D2E5F,#4F6EF7)", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, fontWeight:700, flexShrink:0 }}>
-                                  {a.full_name.charAt(0).toUpperCase()}
-                                </div>
+                        {filteredSalons.map(salon => (
+                          <tr key={salon.id} className="salon-row">
+                            <Td>
+                              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                <Avatar name={salon.name} size={30} />
                                 <div>
-                                  <div style={{ fontSize:13, fontWeight:600, color:"#0F172A" }}>{a.full_name}</div>
-                                  <div style={{ fontSize:11, color:"#94A3B8" }}>{a.phone}</div>
+                                  <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{salon.name}</div>
+                                  <div style={{ fontSize: 11, color: T.text3 }}>{salon.slug}</div>
                                 </div>
                               </div>
-                            </td>
-                            <td style={{ padding:"13px 16px", fontSize:13, color:"#475569" }}>{a.city}</td>
-                            <td style={{ padding:"13px 16px", fontSize:12.5, color:"#475569", textTransform:"capitalize" }}>{a.experience?.replace(/-/g," ")}</td>
-                            <td style={{ padding:"13px 16px", fontSize:12.5, color:"#475569", textTransform:"capitalize" }}>{a.daily_availability?.replace(/-/g," ")}</td>
-                            <td style={{ padding:"13px 16px", fontSize:12, color:"#94A3B8" }}>{new Date(a.created_at).toLocaleDateString("en-GB")}</td>
-                            <td style={{ padding:"13px 16px" }}>
-                              <span style={{ padding:"4px 12px", borderRadius:99, fontSize:11, fontWeight:700, background:statusColor[a.status]?.bg, color:statusColor[a.status]?.color }}>
-                                {a.status.charAt(0).toUpperCase()+a.status.slice(1)}
-                              </span>
-                              {a.referral_code && <div style={{ fontSize:10, color:"#94A3B8", marginTop:3, fontFamily:"monospace" }}>{a.referral_code}</div>}
-                            </td>
-                            <td style={{ padding:"13px 16px" }}>
-                              <button onClick={() => { setSelectedAgent(a); setModalNotes(a.admin_notes||""); }}
-                                style={{ padding:"6px 14px", borderRadius:8, background:"#EEF2FF", color:"#2D2E5F", border:"none", fontSize:12, fontWeight:600, cursor:"pointer" }}>
-                                View →
-                              </button>
-                            </td>
+                            </Td>
+                            <Td style={{ color: T.text2, fontSize: 12.5 }}>{salon.owner_email || salon.owner_id?.slice(0, 8) + "…"}</Td>
+                            <Td>
+                              <select
+                                value={salon.plan || "starter"}
+                                onChange={e => updateSalonPlan(salon.id, e.target.value)}
+                                style={{
+                                  padding: "5px 10px", background: T.bg, border: `1px solid ${T.border}`,
+                                  borderRadius: 7, color: T.text, fontSize: 12.5,
+                                }}
+                              >
+                                {PLAN_OPTIONS.map(plan => <option key={plan} value={plan}>{plan}</option>)}
+                              </select>
+                            </Td>
+                            <Td>
+                              <select
+                                value={salon.subscription_status || "trial"}
+                                onChange={e => updateSalonStatus(salon.id, e.target.value)}
+                                style={{
+                                  padding: "5px 10px", background: T.bg, border: `1px solid ${T.border}`,
+                                  borderRadius: 7, fontSize: 12.5,
+                                  color: statusMeta[salon.subscription_status || "trial"]?.color || T.text2,
+                                }}
+                              >
+                                {["trial", "trialing", "active", "past_due", "cancelled"].map(s => (
+                                  <option key={s} value={s}>{s}</option>
+                                ))}
+                              </select>
+                            </Td>
+                            <Td style={{ fontWeight: 600 }}>{salon.appointmentCount}</Td>
+                            <Td style={{ color: T.text2, fontSize: 12 }}>{new Date(salon.created_at).toLocaleDateString("en-GB")}</Td>
+                            <Td>
+                              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                                  <input
+                                    type="number" placeholder="7"
+                                    value={extendDays[salon.id] || ""}
+                                    onChange={e => setExtendDays(p => ({ ...p, [salon.id]: e.target.value }))}
+                                    style={{
+                                      width: 42, padding: "4px 6px", background: T.bg,
+                                      border: `1px solid ${T.border}`, borderRadius: 6, color: T.text, fontSize: 11,
+                                    }}
+                                  />
+                                  <button
+                                    className="action-btn"
+                                    onClick={() => extendTrial(salon.id)}
+                                    style={{
+                                      padding: "4px 8px", background: T.indigoSoft, color: T.indigo,
+                                      border: `1px solid #C7D2FE`, borderRadius: 6, fontSize: 11, fontWeight: 600,
+                                    }}
+                                  >+days</button>
+                                </div>
+                                {extendMsg[salon.id] && (
+                                  <span style={{ fontSize: 11, color: T.green, fontWeight: 600 }}>{extendMsg[salon.id]}</span>
+                                )}
+                                <button
+                                  className="action-btn"
+                                  onClick={() => deleteSalon(salon.id)}
+                                  style={{
+                                    padding: "4px 10px", background: T.redSoft, color: T.red,
+                                    border: `1px solid #FECACA`, borderRadius: 6, fontSize: 11, fontWeight: 600,
+                                  }}
+                                >Delete</button>
+                              </div>
+                            </Td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
-                  )}
-                </div>
-
-                {/* ── Pagination ── */}
-                {totalPages > 1 && (
-                  <div style={{ display:"flex", gap:6, justifyContent:"center", alignItems:"center" }}>
-                    <button onClick={() => setAgentPage(p=>Math.max(1,p-1))} disabled={page===1}
-                      style={{ padding:"6px 14px", borderRadius:8, background:page===1?"#F1F5F9":"#2D2E5F", color:page===1?"#94A3B8":"#fff", border:"none", cursor:page===1?"default":"pointer", fontSize:12, fontWeight:600 }}>← Prev</button>
-                    <span style={{ fontSize:13, color:"#64748B" }}>Page {page} of {totalPages}</span>
-                    <button onClick={() => setAgentPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages}
-                      style={{ padding:"6px 14px", borderRadius:8, background:page===totalPages?"#F1F5F9":"#2D2E5F", color:page===totalPages?"#94A3B8":"#fff", border:"none", cursor:page===totalPages?"default":"pointer", fontSize:12, fontWeight:600 }}>Next →</button>
                   </div>
-                )}
+                </Card>
+              </div>
+            )}
 
-                {/* ── Detail Modal ── */}
-                {selectedAgent && (
-                  <div onClick={e=>{if(e.target===e.currentTarget){setSelectedAgent(null);}}}
-                    style={{ position:"fixed", inset:0, zIndex:1000, background:"rgba(45,46,95,0.45)", backdropFilter:"blur(4px)", display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
-                    <div style={{ background:"#fff", borderRadius:24, width:"100%", maxWidth:680, maxHeight:"90vh", overflowY:"auto", boxShadow:"0 24px 80px rgba(45,46,95,0.25)" }}>
-                      {/* Modal Header */}
-                      <div style={{ background:"linear-gradient(135deg,#2D2E5F,#4F6EF7)", borderRadius:"24px 24px 0 0", padding:"24px 28px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                        <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-                          <div style={{ width:48, height:48, borderRadius:14, background:"rgba(255,255,255,0.2)", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, fontWeight:800 }}>
-                            {selectedAgent.full_name.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <div style={{ fontSize:18, fontWeight:700, color:"#fff" }}>{selectedAgent.full_name}</div>
-                            <span style={{ padding:"3px 10px", borderRadius:99, fontSize:11, fontWeight:700, background:statusColor[selectedAgent.status]?.bg, color:statusColor[selectedAgent.status]?.color }}>
-                              {selectedAgent.status.charAt(0).toUpperCase()+selectedAgent.status.slice(1)}
-                            </span>
-                          </div>
-                        </div>
-                        <button onClick={() => setSelectedAgent(null)}
-                          style={{ background:"rgba(255,255,255,0.15)", border:"none", borderRadius:8, padding:"6px 12px", color:"#fff", cursor:"pointer", fontSize:16 }}>✕</button>
-                      </div>
-
-                      <div style={{ padding:"24px 28px" }}>
-                        {/* Info grid */}
-                        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:20 }}>
-                          {[
-                            { label:"Phone",        value: selectedAgent.phone },
-                            { label:"WhatsApp",     value: selectedAgent.whatsapp || "—" },
-                            { label:"City",         value: selectedAgent.city },
-                            { label:"Country",      value: selectedAgent.country || "GB" },
-                            { label:"Experience",   value: selectedAgent.experience?.replace(/-/g," ") || "—" },
-                            { label:"Availability", value: selectedAgent.daily_availability?.replace(/-/g," ") || "—" },
-                            { label:"Vehicle",      value: selectedAgent.own_vehicle ? "Yes ✓" : "No" },
-                            { label:"Applied",      value: new Date(selectedAgent.created_at).toLocaleDateString("en-GB") },
-                          ].map(f => (
-                            <div key={f.label} style={{ background:"#F8FAFC", borderRadius:10, padding:"12px 14px" }}>
-                              <div style={{ fontSize:11, color:"#94A3B8", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:4 }}>{f.label}</div>
-                              <div style={{ fontSize:13, color:"#0F172A", fontWeight:500, textTransform:"capitalize" }}>{f.value}</div>
+            {/* ── USERS ────────────────────────────────────────────────── */}
+            {activeTab === "users" && (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                  <div style={{ fontSize: 13, color: T.text2, fontWeight: 500 }}>{filteredUsers.length} users</div>
+                  <input
+                    type="text" placeholder="Search by email or salon…" value={searchUser}
+                    onChange={e => setSearchUser(e.target.value)}
+                    style={{
+                      height: 36, padding: "0 14px", border: `1px solid ${T.border}`, borderRadius: 8,
+                      fontSize: 13, color: T.text, background: T.surface, width: 240,
+                    }}
+                  />
+                </div>
+                <Card style={{ padding: 0, overflow: "hidden" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead><tr>{["User", "Salon", "Plan", "Joined"].map(h => <Th key={h}>{h}</Th>)}</tr></thead>
+                    <tbody>
+                      {filteredUsers.map((u, i) => (
+                        <tr key={i} className="user-row">
+                          <Td>
+                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                              <Avatar name={u.email} size={30} />
+                              <span style={{ fontSize: 13, fontWeight: 500, color: T.text }}>{u.email}</span>
                             </div>
+                          </Td>
+                          <Td style={{ color: T.text2 }}>{u.salon}</Td>
+                          <Td>
+                            <Pill bg={T.indigoSoft} color={T.indigo}>{u.plan}</Pill>
+                          </Td>
+                          <Td style={{ color: T.text2, fontSize: 12 }}>{new Date(u.created_at).toLocaleDateString("en-GB")}</Td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </Card>
+              </div>
+            )}
+
+            {/* ── REVENUE ──────────────────────────────────────────────── */}
+            {activeTab === "revenue" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 14 }}>
+                  {([
+                    { label: "MRR", value: `£${mrr}`, accent: T.green, sub: "Monthly Recurring" },
+                    { label: "ARR", value: `£${mrr * 12}`, accent: T.indigo, sub: "Annual Recurring" },
+                    { label: "Active Paying", value: activeCount, accent: T.amber, sub: "Salons paying now" },
+                    { label: "Churn Rate", value: salons.length ? `${Math.round((cancelledCount / salons.length) * 100)}%` : "0%", accent: T.red, sub: "Of all signups" },
+                  ] as { label: string; value: string | number; accent: string; sub: string }[]).map(s => (
+                    <div key={s.label} className="kpi" style={{
+                      background: T.surface, border: `1px solid ${T.border}`,
+                      borderRadius: 16, padding: 20, boxShadow: T.shadow,
+                      transition: "transform 0.2s,box-shadow 0.2s",
+                    }}>
+                      <div style={{ fontSize: 26, fontWeight: 800, color: s.accent, marginBottom: 4 }}>{s.value}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{s.label}</div>
+                      <div style={{ fontSize: 11.5, color: T.text3, marginTop: 2 }}>{s.sub}</div>
+                    </div>
+                  ))}
+                </div>
+                <Card>
+                  <SectionHeader title="Revenue by Plan" sub="Active subscriptions breakdown" />
+                  {PLAN_OPTIONS.map(plan => {
+                    const count = salons.filter(s => s.subscription_status === "active" && (s.subscription_plan === plan || s.plan === plan)).length;
+                    const rev = count * (PLAN_PRICE[plan] || 0);
+                    return (
+                      <div key={plan} style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
+                        <div style={{
+                          width: 8, height: 8, borderRadius: "50%",
+                          background: PLAN_COLOR[plan], flexShrink: 0,
+                        }} />
+                        <div style={{ width: 72, fontSize: 13, color: T.text, fontWeight: 500, textTransform: "capitalize" }}>{plan}</div>
+                        <div style={{ flex: 1, height: 7, background: T.bg, borderRadius: 4 }}>
+                          <div style={{
+                            height: "100%", borderRadius: 4, background: PLAN_COLOR[plan],
+                            width: `${mrr > 0 ? (rev / mrr * 100) : 0}%`, transition: "width 0.6s ease",
+                          }} />
+                        </div>
+                        <div style={{ fontSize: 13, color: T.text, fontWeight: 700, width: 110, textAlign: "right" }}>£{rev}/mo · {count} salons</div>
+                      </div>
+                    );
+                  })}
+                </Card>
+              </div>
+            )}
+
+            {/* ── ANNOUNCEMENTS ────────────────────────────────────────── */}
+            {activeTab === "announcements" && (
+              <div style={{ maxWidth: 600, display: "flex", flexDirection: "column", gap: 16 }}>
+                <Card>
+                  <SectionHeader title="Send Announcement" sub="Broadcasts to every salon dashboard" />
+                  <textarea
+                    value={announcement}
+                    onChange={e => setAnnouncement(e.target.value)}
+                    placeholder="e.g. We're rolling out a new feature next week…"
+                    rows={4}
+                    style={{
+                      width: "100%", padding: "12px 14px", border: `1px solid ${T.border}`,
+                      borderRadius: 10, fontSize: 13, color: T.text, resize: "vertical",
+                      fontFamily: "inherit", background: T.bg, marginBottom: 14,
+                      transition: "border-color 0.15s",
+                    }}
+                  />
+                  <Btn variant="primary" onClick={saveAnnouncement} style={{ background: annSaving ? T.green : T.indigo }}>
+                    {annSaving ? "✓ Saved!" : "Send to All Salons"}
+                  </Btn>
+                </Card>
+                <Card>
+                  <SectionHeader title="Email Blast" sub="Coming soon — requires Resend integration" />
+                  <div style={{ fontSize: 13, color: T.text3 }}>
+                    Send a direct email to all registered salon owners. Connect Resend in your environment variables to enable this.
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {/* ── FLAGS ────────────────────────────────────────────────── */}
+            {activeTab === "flags" && (
+              <div>
+                <div style={{ fontSize: 13, color: T.text2, marginBottom: 16 }}>
+                  Toggle features per salon. Changes apply immediately without a deploy.
+                </div>
+                <Card style={{ padding: 0, overflow: "hidden" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr>
+                        {["Salon", "WhatsApp", "Reminders", "Online Bookings", "Actions"].map(h => <Th key={h}>{h}</Th>)}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {salons.map(salon => (
+                        <tr key={salon.id} className="flag-row">
+                          <Td>
+                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                              <Avatar name={salon.name} size={28} />
+                              <div>
+                                <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{salon.name}</div>
+                                <div style={{ fontSize: 11, color: T.text3 }}>{salon.owner_email}</div>
+                              </div>
+                            </div>
+                          </Td>
+                          {(["whatsapp_enabled", "reminders_enabled"] as const).map(flag => (
+                            <Td key={flag}>
+                              <button
+                                onClick={async () => {
+                                  const newVal = !salon[flag];
+                                  await supabase.from("salons").update({ [flag]: newVal }).eq("id", salon.id);
+                                  setSalons(p => p.map(s => s.id === salon.id ? { ...s, [flag]: newVal } : s));
+                                }}
+                                style={{
+                                  padding: "5px 14px", borderRadius: 99, border: "none", cursor: "pointer",
+                                  fontSize: 11, fontWeight: 700, transition: "all 0.15s",
+                                  background: salon[flag] ? T.greenSoft : T.bg,
+                                  color: salon[flag] ? T.green : T.text3,
+                                }}
+                              >
+                                {salon[flag] ? "ON" : "OFF"}
+                              </button>
+                            </Td>
                           ))}
-                        </div>
+                          <Td><StatusPill status={salon.subscription_status || "trial"} /></Td>
+                          <Td>
+                            <a href={`/book/${salon.slug}`} target="_blank" rel="noopener"
+                              style={{ fontSize: 12, color: T.indigo, fontWeight: 600, textDecoration: "none" }}>
+                              View Booking →
+                            </a>
+                          </Td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </Card>
+              </div>
+            )}
 
-                        {/* Why hire */}
-                        {selectedAgent.why_hire && (
-                          <div style={{ background:"#F0F4FF", borderRadius:12, padding:"14px 16px", marginBottom:20, border:"1px solid #C7D2FE" }}>
-                            <div style={{ fontSize:11, color:"#4F6EF7", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:8 }}>Why They Should Be Hired</div>
-                            <p style={{ fontSize:13, color:"#334155", lineHeight:1.7, margin:0 }}>{selectedAgent.why_hire}</p>
-                          </div>
-                        )}
+            {/* ── APPLICATIONS ─────────────────────────────────────────── */}
+            {activeTab === "applications" && (() => {
+              const PER_PAGE = 25;
+              const filtered = agents
+                .filter(a => agentFilter === "all" || a.status === agentFilter)
+                .filter(a => {
+                  const q = agentSearch.toLowerCase();
+                  return !q || a.full_name.toLowerCase().includes(q) || a.city.toLowerCase().includes(q) || a.phone.includes(q);
+                })
+                .sort((a, b) => agentSort === "latest"
+                  ? new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                  : new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                );
+              const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+              const page = Math.min(agentPage, totalPages);
+              const visible = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+              const counts = {
+                all: agents.length,
+                pending: agents.filter(a => a.status === "pending").length,
+                approved: agents.filter(a => a.status === "approved").length,
+                rejected: agents.filter(a => a.status === "rejected").length,
+              };
 
-                        {/* ID Info */}
-                        {selectedAgent.id_card_number && (
-                          <div style={{ background:"#FFFBEB", borderRadius:12, padding:"14px 16px", marginBottom:20, border:"1px solid #FDE68A" }}>
-                            <div style={{ fontSize:11, color:"#D97706", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:8 }}>🪪 Identity Verification</div>
-                            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
-                              <div style={{ fontSize:12, color:"#92400E" }}>ID Number: <strong>{selectedAgent.id_card_number}</strong></div>
-                            </div>
-                            <div style={{ display:"flex", gap:10, marginTop:12, flexWrap:"wrap" }}>
-                              {selectedAgent.id_card_photo_url && <a href={selectedAgent.id_card_photo_url} target="_blank" rel="noopener noreferrer" style={{ fontSize:12, color:"#4F6EF7", fontWeight:600, textDecoration:"none", background:"#EEF2FF", padding:"5px 12px", borderRadius:6 }}>View ID Photo ↗</a>}
-                              {selectedAgent.selfie_photo_url && <a href={selectedAgent.selfie_photo_url} target="_blank" rel="noopener noreferrer" style={{ fontSize:12, color:"#059669", fontWeight:600, textDecoration:"none", background:"#ECFDF5", padding:"5px 12px", borderRadius:6 }}>View Selfie ↗</a>}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Referral code (if approved) */}
-                        {selectedAgent.referral_code && (
-                          <div style={{ background:"#ECFDF5", borderRadius:12, padding:"14px 16px", marginBottom:20, border:"1px solid #6EE7B7", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                            <div>
-                              <div style={{ fontSize:11, color:"#065F46", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:4 }}>Referral Code</div>
-                              <div style={{ fontSize:18, fontWeight:800, color:"#065F46", fontFamily:"monospace" }}>{selectedAgent.referral_code}</div>
-                            </div>
-                            <div style={{ textAlign:"right" }}>
-                              <div style={{ fontSize:11, color:"#94A3B8" }}>Referred Salons</div>
-                              <div style={{ fontSize:24, fontWeight:800, color:"#059669" }}>{selectedAgent.referred_salons || 0}</div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Admin Notes */}
-                        <div style={{ marginBottom:20 }}>
-                          <label style={{ display:"block", fontSize:12, fontWeight:700, color:"#475569", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:8 }}>Internal Admin Notes</label>
-                          <textarea value={modalNotes} onChange={e=>setModalNotes(e.target.value)} rows={3} placeholder="Add notes visible only to admins…"
-                            style={{ width:"100%", padding:"12px 14px", borderRadius:10, border:"1.5px solid #E2E8F0", fontSize:13, color:"#0F172A", resize:"vertical", outline:"none", boxSizing:"border-box", fontFamily:"inherit" }} />
-                        </div>
-
-                        {/* Action Buttons */}
-                        {selectedAgent.status === "pending" ? (
-                          <div style={{ display:"flex", gap:10 }}>
-                            <button
-                              onClick={() => applyAgentAction(selectedAgent.id, "approved", modalNotes)}
-                              disabled={!!actionLoading}
-                              style={{ flex:1, padding:"13px", borderRadius:12, background: actionLoading ? "#94A3B8" : "linear-gradient(135deg,#059669,#10B981)", color:"#fff", border:"none", fontSize:14, fontWeight:700, cursor: actionLoading?"not-allowed":"pointer", boxShadow:"0 4px 14px rgba(16,185,129,0.3)" }}>
-                              {actionLoading===selectedAgent.id+"approved" ? "Approving…" : "✓ Approve & Generate Code"}
-                            </button>
-                            <button
-                              onClick={() => applyAgentAction(selectedAgent.id, "rejected", modalNotes)}
-                              disabled={!!actionLoading}
-                              style={{ flex:1, padding:"13px", borderRadius:12, background: actionLoading ? "#94A3B8" : "linear-gradient(135deg,#DC2626,#EF4444)", color:"#fff", border:"none", fontSize:14, fontWeight:700, cursor: actionLoading?"not-allowed":"pointer", boxShadow:"0 4px 14px rgba(239,68,68,0.3)" }}>
-                              {actionLoading===selectedAgent.id+"rejected" ? "Rejecting…" : "✕ Reject Application"}
-                            </button>
-                          </div>
-                        ) : (
-                          <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-                            {selectedAgent.status === "approved" && (
-                              <button onClick={() => applyAgentAction(selectedAgent.id, "rejected", modalNotes)} disabled={!!actionLoading}
-                                style={{ padding:"10px 20px", borderRadius:10, background:"#FEF2F2", color:"#DC2626", border:"1.5px solid #FECACA", fontSize:13, fontWeight:600, cursor:"pointer" }}>
-                                Revoke Approval
-                              </button>
-                            )}
-                            {selectedAgent.status === "rejected" && (
-                              <button onClick={() => applyAgentAction(selectedAgent.id, "approved", modalNotes)} disabled={!!actionLoading}
-                                style={{ padding:"10px 20px", borderRadius:10, background:"#ECFDF5", color:"#059669", border:"1.5px solid #6EE7B7", fontSize:13, fontWeight:600, cursor:"pointer" }}>
-                                Re-approve
-                              </button>
-                            )}
-                            <button onClick={() => {
-                              applyAgentAction(selectedAgent.id, selectedAgent.status as "approved"|"rejected", modalNotes);
-                            }} style={{ padding:"10px 20px", borderRadius:10, background:"#EEF2FF", color:"#4F6EF7", border:"1.5px solid #C7D2FE", fontSize:13, fontWeight:600, cursor:"pointer" }}>
-                              Save Notes
-                            </button>
-                          </div>
-                        )}
+              return (
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  {/* Stat cards */}
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 14 }}>
+                    {([
+                      { key: "all", label: "Total", value: counts.all, accent: T.indigo, icon: "⊙" },
+                      { key: "pending", label: "Pending", value: counts.pending, accent: T.amber, icon: "⏱" },
+                      { key: "approved", label: "Approved", value: counts.approved, accent: T.green, icon: "✓" },
+                      { key: "rejected", label: "Rejected", value: counts.rejected, accent: T.red, icon: "✕" },
+                    ] as { key: "all" | "pending" | "approved" | "rejected"; label: string; value: number; accent: string; icon: string }[]).map(s => (
+                      <div key={s.key} className="kpi"
+                        onClick={() => { setAgentFilter(s.key); setAgentPage(1); }}
+                        style={{
+                          background: T.surface,
+                          border: `1px solid ${agentFilter === s.key ? s.accent : T.border}`,
+                          borderRadius: 14, padding: 18, cursor: "pointer",
+                          boxShadow: agentFilter === s.key ? `0 0 0 3px ${s.accent}18` : T.shadow,
+                          transition: "all 0.15s",
+                        }}>
+                        <div style={{
+                          width: 32, height: 32, borderRadius: 8,
+                          background: s.accent + "18", display: "flex",
+                          alignItems: "center", justifyContent: "center",
+                          fontSize: 14, color: s.accent, marginBottom: 10,
+                        }}>{s.icon}</div>
+                        <div style={{ fontSize: 24, fontWeight: 800, color: s.accent, letterSpacing: "-0.8px" }}>{s.value}</div>
+                        <div style={{ fontSize: 12, color: T.text2, fontWeight: 500, marginTop: 2 }}>{s.label}</div>
                       </div>
+                    ))}
+                  </div>
+
+                  {/* Toolbar */}
+                  <div style={{
+                    background: T.surface, border: `1px solid ${T.border}`,
+                    borderRadius: 12, padding: "12px 16px",
+                    display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", justifyContent: "space-between",
+                  }}>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      {(["all", "pending", "approved", "rejected"] as const).map(f => (
+                        <button key={f} onClick={() => { setAgentFilter(f); setAgentPage(1); }}
+                          style={{
+                            padding: "6px 14px", borderRadius: 99, border: "none", cursor: "pointer",
+                            fontSize: 12, fontWeight: 600, transition: "all 0.15s",
+                            background: agentFilter === f ? T.indigo : T.bg,
+                            color: agentFilter === f ? "#fff" : T.text2,
+                          }}>
+                          {f.charAt(0).toUpperCase() + f.slice(1)}{f !== "all" && ` (${counts[f]})`}
+                        </button>
+                      ))}
+                    </div>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <input
+                        type="text" placeholder="Search name, city, phone…"
+                        value={agentSearch}
+                        onChange={e => { setAgentSearch(e.target.value); setAgentPage(1); }}
+                        style={{
+                          height: 34, padding: "0 12px", border: `1px solid ${T.border}`,
+                          borderRadius: 8, fontSize: 12.5, color: T.text, background: T.bg, width: 200,
+                        }}
+                      />
+                      <button
+                        onClick={() => setAgentSort(s => s === "latest" ? "oldest" : "latest")}
+                        style={{
+                          height: 34, padding: "0 12px", borderRadius: 8, background: T.bg,
+                          border: `1px solid ${T.border}`, fontSize: 12, cursor: "pointer",
+                          color: T.text2, fontWeight: 600, fontFamily: "inherit", whiteSpace: "nowrap",
+                        }}>
+                        {agentSort === "latest" ? "↓ Latest" : "↑ Oldest"}
+                      </button>
+                      <button onClick={loadAgents}
+                        style={{
+                          height: 34, padding: "0 12px", borderRadius: 8, background: T.indigoSoft,
+                          border: "none", fontSize: 12, cursor: "pointer", color: T.indigo,
+                          fontWeight: 700, fontFamily: "inherit",
+                        }}>↻ Refresh</button>
                     </div>
                   </div>
-                )}
-              </div>
-            );
-          })()}
 
-          {activeTab === "settings" && (
-            <div style={{ display:"flex", flexDirection:"column", gap:16, maxWidth:600 }}>
-              <div style={{ background:"#111", border:"0.5px solid #222", borderRadius:12, padding:20 }}>
-                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                  <div>
-                    <div style={{ fontSize:14, fontWeight:500, color:"#fff", marginBottom:4 }}>Maintenance Mode</div>
-                    <div style={{ fontSize:12, color:"#555" }}>Show maintenance page to all users</div>
-                  </div>
-                  <button onClick={() => setMaintenanceMode(!maintenanceMode)}
-                    style={{ padding:"8px 18px", background: maintenanceMode?"#7F1D1D":"#1A2040", color: maintenanceMode?"#FCA5A5":"#4F6EF7", border:`1px solid ${maintenanceMode?"#991B1B":"#4F6EF7"}`, borderRadius:8, fontSize:13, cursor:"pointer", fontWeight:500 }}>
-                    {maintenanceMode?"Turn OFF":"Turn ON"}
-                  </button>
+                  {/* Table */}
+                  <Card style={{ padding: 0, overflow: "hidden" }}>
+                    {agentsLoading ? (
+                      <div style={{ padding: 48, textAlign: "center", color: T.text3, fontSize: 14 }}>Loading applications…</div>
+                    ) : visible.length === 0 ? (
+                      <div style={{ padding: 56, textAlign: "center" }}>
+                        <div style={{ fontSize: 36, marginBottom: 12 }}>◌</div>
+                        <div style={{ fontSize: 14, color: T.text3, fontWeight: 500 }}>No applications found</div>
+                      </div>
+                    ) : (
+                      <div style={{ overflowX: "auto" }}>
+                        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                          <thead>
+                            <tr>{["Applicant", "City", "Experience", "Availability", "Applied", "Status", ""].map(h => <Th key={h}>{h}</Th>)}</tr>
+                          </thead>
+                          <tbody>
+                            {visible.map(a => (
+                              <tr key={a.id} className="salon-row">
+                                <Td>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                    <Avatar name={a.full_name} size={32} />
+                                    <div>
+                                      <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{a.full_name}</div>
+                                      <div style={{ fontSize: 11, color: T.text3 }}>{a.phone}</div>
+                                    </div>
+                                  </div>
+                                </Td>
+                                <Td style={{ color: T.text2 }}>{a.city}</Td>
+                                <Td style={{ color: T.text2, textTransform: "capitalize" }}>{a.experience?.replace(/-/g, " ")}</Td>
+                                <Td style={{ color: T.text2, textTransform: "capitalize" }}>{a.daily_availability?.replace(/-/g, " ")}</Td>
+                                <Td style={{ color: T.text3, fontSize: 12 }}>{new Date(a.created_at).toLocaleDateString("en-GB")}</Td>
+                                <Td>
+                                  <StatusPill status={a.status} />
+                                  {a.referral_code && (
+                                    <div style={{ fontSize: 10, color: T.text3, marginTop: 3, fontFamily: "monospace" }}>{a.referral_code}</div>
+                                  )}
+                                </Td>
+                                <Td>
+                                  <button
+                                    className="action-btn"
+                                    onClick={() => { setSelectedAgent(a); setModalNotes(a.admin_notes || ""); }}
+                                    style={{
+                                      padding: "5px 14px", borderRadius: 7, background: T.indigoSoft,
+                                      color: T.indigo, border: "none", fontSize: 12, fontWeight: 600,
+                                    }}>View →</button>
+                                </Td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </Card>
+
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div style={{ display: "flex", gap: 6, justifyContent: "center", alignItems: "center" }}>
+                      <Btn variant="outline" size="sm" onClick={() => setAgentPage(p => Math.max(1, p - 1))} disabled={page === 1}>← Prev</Btn>
+                      <span style={{ fontSize: 13, color: T.text2 }}>Page {page} of {totalPages}</span>
+                      <Btn variant="outline" size="sm" onClick={() => setAgentPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next →</Btn>
+                    </div>
+                  )}
+
+                  {/* Detail Modal */}
+                  {selectedAgent && (
+                    <div
+                      onClick={e => { if (e.target === e.currentTarget) setSelectedAgent(null); }}
+                      style={{
+                        position: "fixed", inset: 0, zIndex: 1000,
+                        background: "rgba(10,15,28,0.6)", backdropFilter: "blur(6px)",
+                        display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+                      }}>
+                      <div style={{
+                        background: T.surface, borderRadius: 20, width: "100%", maxWidth: 680,
+                        maxHeight: "90vh", overflowY: "auto", boxShadow: "0 24px 80px rgba(0,0,0,0.2)",
+                        animation: "fadeUp 0.2s ease",
+                      }}>
+                        {/* Modal header */}
+                        <div style={{
+                          background: T.nav, borderRadius: "20px 20px 0 0",
+                          padding: "22px 24px", display: "flex", alignItems: "center", justifyContent: "space-between",
+                        }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                            <Avatar name={selectedAgent.full_name} size={44} gradient="135deg,#6366F1,#8B5CF6" />
+                            <div>
+                              <div style={{ fontSize: 17, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{selectedAgent.full_name}</div>
+                              <StatusPill status={selectedAgent.status} />
+                            </div>
+                          </div>
+                          <button onClick={() => setSelectedAgent(null)} style={{
+                            background: "rgba(255,255,255,0.1)", border: "none", borderRadius: 8,
+                            padding: "6px 12px", color: "#fff", cursor: "pointer", fontSize: 16, lineHeight: 1,
+                          }}>×</button>
+                        </div>
+
+                        <div style={{ padding: "22px 24px" }}>
+                          {/* Info grid */}
+                          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 18 }}>
+                            {([
+                              { label: "Phone", value: selectedAgent.phone },
+                              { label: "WhatsApp", value: selectedAgent.whatsapp || "—" },
+                              { label: "City", value: selectedAgent.city },
+                              { label: "Country", value: selectedAgent.country || "GB" },
+                              { label: "Experience", value: selectedAgent.experience?.replace(/-/g, " ") || "—" },
+                              { label: "Availability", value: selectedAgent.daily_availability?.replace(/-/g, " ") || "—" },
+                              { label: "Vehicle", value: selectedAgent.own_vehicle ? "Yes ✓" : "No" },
+                              { label: "Applied", value: new Date(selectedAgent.created_at).toLocaleDateString("en-GB") },
+                            ]).map(f => (
+                              <div key={f.label} style={{ background: T.bg, borderRadius: 9, padding: "10px 14px" }}>
+                                <div style={{ fontSize: 10.5, color: T.text3, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 3 }}>{f.label}</div>
+                                <div style={{ fontSize: 13, color: T.text, fontWeight: 500, textTransform: "capitalize" }}>{f.value}</div>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* Why hire */}
+                          {selectedAgent.why_hire && (
+                            <div style={{
+                              background: T.indigoSoft, borderRadius: 10, padding: "13px 16px",
+                              marginBottom: 16, border: `1px solid #C7D2FE`,
+                            }}>
+                              <div style={{ fontSize: 10.5, color: T.indigo, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 6 }}>Why They Should Be Hired</div>
+                              <p style={{ fontSize: 13, color: "#334155", lineHeight: 1.7, margin: 0 }}>{selectedAgent.why_hire}</p>
+                            </div>
+                          )}
+
+                          {/* ID verification */}
+                          {selectedAgent.id_card_number && (
+                            <div style={{
+                              background: T.amberSoft, borderRadius: 10, padding: "13px 16px",
+                              marginBottom: 16, border: `1px solid #FDE68A`,
+                            }}>
+                              <div style={{ fontSize: 10.5, color: T.amber, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8 }}>Identity Verification</div>
+                              <div style={{ fontSize: 12, color: "#92400E", marginBottom: 10 }}>ID: <strong>{selectedAgent.id_card_number}</strong></div>
+                              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                                {selectedAgent.id_card_photo_url && (
+                                  <a href={selectedAgent.id_card_photo_url} target="_blank" rel="noopener noreferrer"
+                                    style={{ fontSize: 12, color: T.indigo, fontWeight: 600, textDecoration: "none", background: T.indigoSoft, padding: "4px 12px", borderRadius: 6 }}>
+                                    View ID Photo ↗
+                                  </a>
+                                )}
+                                {selectedAgent.selfie_photo_url && (
+                                  <a href={selectedAgent.selfie_photo_url} target="_blank" rel="noopener noreferrer"
+                                    style={{ fontSize: 12, color: T.green, fontWeight: 600, textDecoration: "none", background: T.greenSoft, padding: "4px 12px", borderRadius: 6 }}>
+                                    View Selfie ↗
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Referral code */}
+                          {selectedAgent.referral_code && (
+                            <div style={{
+                              background: T.greenSoft, borderRadius: 10, padding: "13px 16px",
+                              marginBottom: 16, border: `1px solid #6EE7B7`,
+                              display: "flex", alignItems: "center", justifyContent: "space-between",
+                            }}>
+                              <div>
+                                <div style={{ fontSize: 10.5, color: T.green, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>Referral Code</div>
+                                <div style={{ fontSize: 18, fontWeight: 800, color: "#065F46", fontFamily: "monospace" }}>{selectedAgent.referral_code}</div>
+                              </div>
+                              <div style={{ textAlign: "right" }}>
+                                <div style={{ fontSize: 11, color: T.text3 }}>Referred Salons</div>
+                                <div style={{ fontSize: 24, fontWeight: 800, color: T.green }}>{selectedAgent.referred_salons || 0}</div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Admin notes */}
+                          <div style={{ marginBottom: 18 }}>
+                            <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: T.text2, textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8 }}>
+                              Internal Notes
+                            </label>
+                            <textarea
+                              value={modalNotes} onChange={e => setModalNotes(e.target.value)}
+                              rows={3} placeholder="Notes visible only to admins…"
+                              style={{
+                                width: "100%", padding: "10px 14px", borderRadius: 9,
+                                border: `1px solid ${T.border}`, fontSize: 13, color: T.text,
+                                resize: "vertical", fontFamily: "inherit", background: T.bg,
+                              }}
+                            />
+                          </div>
+
+                          {/* Action buttons */}
+                          {selectedAgent.status === "pending" ? (
+                            <div style={{ display: "flex", gap: 10 }}>
+                              <button
+                                onClick={() => applyAgentAction(selectedAgent.id, "approved", modalNotes)}
+                                disabled={!!actionLoading}
+                                style={{
+                                  flex: 1, padding: 13, borderRadius: 10, border: "none", cursor: actionLoading ? "not-allowed" : "pointer",
+                                  background: actionLoading ? T.text3 : T.green, color: "#fff", fontSize: 14, fontWeight: 700,
+                                  fontFamily: "inherit", opacity: actionLoading ? 0.7 : 1, transition: "all 0.15s",
+                                }}>
+                                {actionLoading === selectedAgent.id + "approved" ? "Approving…" : "✓ Approve & Generate Code"}
+                              </button>
+                              <button
+                                onClick={() => applyAgentAction(selectedAgent.id, "rejected", modalNotes)}
+                                disabled={!!actionLoading}
+                                style={{
+                                  flex: 1, padding: 13, borderRadius: 10, border: "none", cursor: actionLoading ? "not-allowed" : "pointer",
+                                  background: actionLoading ? T.text3 : T.red, color: "#fff", fontSize: 14, fontWeight: 700,
+                                  fontFamily: "inherit", opacity: actionLoading ? 0.7 : 1, transition: "all 0.15s",
+                                }}>
+                                {actionLoading === selectedAgent.id + "rejected" ? "Rejecting…" : "✕ Reject Application"}
+                              </button>
+                            </div>
+                          ) : (
+                            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                              {selectedAgent.status === "approved" && (
+                                <Btn variant="danger" onClick={() => applyAgentAction(selectedAgent.id, "rejected", modalNotes)} disabled={!!actionLoading}>
+                                  Revoke Approval
+                                </Btn>
+                              )}
+                              {selectedAgent.status === "rejected" && (
+                                <Btn variant="ghost" style={{ color: T.green, background: T.greenSoft }} onClick={() => applyAgentAction(selectedAgent.id, "approved", modalNotes)} disabled={!!actionLoading}>
+                                  Re-approve
+                                </Btn>
+                              )}
+                              <Btn variant="ghost" onClick={() => applyAgentAction(selectedAgent.id, selectedAgent.status as "approved" | "rejected", modalNotes)}>
+                                Save Notes
+                              </Btn>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-              <div style={{ background:"#111", border:"0.5px solid #222", borderRadius:12, padding:20 }}>
-                <div style={{ fontSize:14, fontWeight:500, color:"#fff", marginBottom:12 }}>Admin Access</div>
-                <div style={{ fontSize:13, color:"#555", marginBottom:8 }}>Only this email can access admin panel:</div>
-                <div style={{ fontSize:13, color:"#4F6EF7", background:"#0A0A1A", padding:"10px 14px", borderRadius:8, fontFamily:"monospace" }}>{ADMIN_EMAIL}</div>
-              </div>
-            </div>
-          )}
+              );
+            })()}
 
-        </div>
+            {/* ── SETTINGS ─────────────────────────────────────────────── */}
+            {activeTab === "settings" && (
+              <div style={{ maxWidth: 560, display: "flex", flexDirection: "column", gap: 14 }}>
+                <Card>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: T.text, marginBottom: 3 }}>Maintenance Mode</div>
+                      <div style={{ fontSize: 12.5, color: T.text3 }}>Shows a maintenance page to all salon users</div>
+                    </div>
+                    <button
+                      onClick={() => setMaintenanceMode(!maintenanceMode)}
+                      style={{
+                        padding: "8px 18px", borderRadius: 8, fontSize: 13, fontWeight: 600,
+                        cursor: "pointer", fontFamily: "inherit", border: "none", transition: "all 0.15s",
+                        background: maintenanceMode ? T.redSoft : T.indigoSoft,
+                        color: maintenanceMode ? T.red : T.indigo,
+                      }}>
+                      {maintenanceMode ? "Turn OFF" : "Turn ON"}
+                    </button>
+                  </div>
+                </Card>
+                <Card>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: T.text, marginBottom: 10 }}>Admin Access</div>
+                  <div style={{ fontSize: 12.5, color: T.text2, marginBottom: 10 }}>Only this email can access the admin panel:</div>
+                  <div style={{
+                    fontSize: 13, color: T.indigo, background: T.indigoSoft,
+                    padding: "10px 14px", borderRadius: 8, fontFamily: "monospace",
+                    border: `1px solid #C7D2FE`,
+                  }}>{ADMIN_EMAIL}</div>
+                </Card>
+              </div>
+            )}
+
+          </div>
+        </main>
       </div>
     </div>
   );
