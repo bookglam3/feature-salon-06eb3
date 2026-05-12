@@ -105,7 +105,15 @@ export default function SignupPage() {
       email, password,
       options: { data: { salon_name: salonName } },
     });
-    if (signupErr) { setError(signupErr.message); setLoading(false); return; }
+    if (signupErr) {
+      // Friendly message for already-registered accounts
+      if (signupErr.message.toLowerCase().includes("already") || signupErr.message.toLowerCase().includes("registered")) {
+        setError("An account with this email already exists. Please sign in instead.");
+      } else {
+        setError(signupErr.message);
+      }
+      setLoading(false); return;
+    }
 
     if (data.user) {
       const baseSlug = salonName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
@@ -221,8 +229,15 @@ export default function SignupPage() {
           <ProgressBar step={step} />
 
           {error && (
-            <div style={{ background: "#FEF2F2", border: "1.5px solid #FECACA", borderRadius: 10, padding: "11px 16px", marginBottom: 20, fontSize: 13, color: "#DC2626", display: "flex", alignItems: "center", gap: 8 }}>
-              <span>⚠</span> {error}
+            <div style={{ background: "#FEF2F2", border: "1.5px solid #FECACA", borderRadius: 10, padding: "11px 16px", marginBottom: 20, fontSize: 13, color: "#DC2626" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: error.includes("already exists") ? 8 : 0 }}>
+                <span>⚠</span> {error}
+              </div>
+              {error.includes("already exists") && (
+                <Link href="/login" style={{ display: "inline-block", marginTop: 4, fontSize: 13, fontWeight: 700, color: C.indigo, textDecoration: "none", background: C.indigoSoft, padding: "6px 14px", borderRadius: 8, border: `1px solid #C7D2FE` }}>
+                  → Sign in to your account
+                </Link>
+              )}
             </div>
           )}
 
@@ -241,11 +256,7 @@ export default function SignupPage() {
                 Continue →
               </button>
 
-              <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "20px 0", color: C.text3, fontSize: 12 }}>
-                <div style={{ flex: 1, height: 1, background: C.border }} /> or <div style={{ flex: 1, height: 1, background: C.border }} />
-              </div>
-
-              <div style={{ textAlign: "center", fontSize: 13, color: C.text3 }}>
+              <div style={{ textAlign: "center", marginTop: 18, fontSize: 13, color: C.text3 }}>
                 Already have an account?{" "}
                 <Link href="/login" style={{ color: C.indigo, fontWeight: 700, textDecoration: "none" }}>Sign in →</Link>
               </div>
@@ -257,9 +268,9 @@ export default function SignupPage() {
             <form onSubmit={handleSignup}>
               <InputField label="Salon name" value={salonName} onChange={setSalonName} placeholder="The Cut Studio" required hint="This appears on your public booking page." />
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <InputField label="Phone (optional)" type="tel" value={phone} onChange={setPhone} placeholder="+44 7700 900000" />
-                <InputField label="City (optional)" value={city} onChange={setCity} placeholder="London" />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }} className="salon-grid">
+                <InputField label="Phone (optional)" type="tel" value={phone} onChange={setPhone} placeholder="+1 (555) 000-0000" />
+                <InputField label="City (optional)" value={city} onChange={setCity} placeholder="New York" />
               </div>
 
               <div style={{ marginBottom: 20 }}>
@@ -310,7 +321,7 @@ export default function SignupPage() {
 
           {/* Trust badges */}
           <div style={{ display: "flex", justifyContent: "center", gap: 20, marginTop: 28, flexWrap: "wrap" }}>
-            {[{ icon: "🔒", text: "SSL Encrypted" }, { icon: "🇬🇧", text: "UK Data Servers" }, { icon: "✓", text: "GDPR Compliant" }].map(b => (
+            {[{ icon: "🔒", text: "SSL Encrypted" }, { icon: "🌍", text: "Global Servers" }, { icon: "✓", text: "GDPR Compliant" }].map(b => (
               <div key={b.text} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, color: C.text3 }}>
                 <span>{b.icon}</span> {b.text}
               </div>
@@ -322,6 +333,7 @@ export default function SignupPage() {
       <style>{`
         @media (max-width: 768px) {
           .signup-left { display: none !important; }
+          .salon-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </main>
