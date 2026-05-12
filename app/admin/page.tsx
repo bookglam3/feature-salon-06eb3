@@ -6,7 +6,7 @@ import { supabase } from "../lib/supabase";
 const ADMIN_EMAIL = "adilgill2008@gmail.com";
 const PLAN_OPTIONS = ["starter", "pro", "premium"];
 
-type Tab = "overview" | "salons" | "revenue" | "users" | "announcements" | "flags" | "settings";
+type Tab = "overview" | "salons" | "revenue" | "users" | "announcements" | "flags" | "settings" | "applications";
 const PLAN_PRICE: Record<string,number> = { starter:29, pro:59, premium:99 };
 const PLAN_COLOR: Record<string,string> = { starter:"#6366F1", pro:"#10B981", premium:"#F59E0B" };
 
@@ -18,6 +18,16 @@ interface SalonAdmin {
   [key: string]: unknown;
 }
 interface UserAdmin { id: string; email: string; salon: string; plan: string; created_at: string; }
+
+interface Agent {
+  id: string; full_name: string; phone: string; whatsapp?: string; city: string;
+  experience: string; own_vehicle?: boolean; daily_availability: string; why_hire?: string;
+  status: "pending" | "approved" | "rejected";
+  referral_code?: string; admin_notes?: string; reviewed_at?: string;
+  country?: string; street_address?: string; postcode?: string;
+  id_card_number?: string; id_card_photo_url?: string; selfie_photo_url?: string;
+  referred_salons?: number; created_at: string;
+}
 
 export default function AdminPage() {
   const router = useRouter();
@@ -34,6 +44,16 @@ export default function AdminPage() {
   const [searchUser, setSearchUser] = useState("");
   const [extendDays, setExtendDays] = useState<Record<string,string>>({});
   const [extendMsg, setExtendMsg] = useState<Record<string,string>>({});
+  // Applications tab state
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [agentsLoading, setAgentsLoading] = useState(false);
+  const [agentFilter, setAgentFilter] = useState<"all"|"pending"|"approved"|"rejected">("all");
+  const [agentSearch, setAgentSearch] = useState("");
+  const [agentSort, setAgentSort] = useState<"latest"|"oldest">("latest");
+  const [agentPage, setAgentPage] = useState(1);
+  const [selectedAgent, setSelectedAgent] = useState<Agent|null>(null);
+  const [modalNotes, setModalNotes] = useState("");
+  const [actionLoading, setActionLoading] = useState("");
 
   useEffect(() => {
     const loadAdmin = async () => {
@@ -79,6 +99,45 @@ export default function AdminPage() {
 
     loadAdmin();
   }, [router]);
+
+  // ── Load agents when Applications tab is opened ──
+  const loadAgents = async () => {
+    setAgentsLoading(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token || "";
+    try {
+      const res = await fetch("/api/partners", {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      const json = await res.json();
+      if (res.ok) setAgents(json.agents || []);
+    } catch { /* silent */ }
+    finally { setAgentsLoading(false); }
+  };
+
+  useEffect(() => {
+    if (activeTab === "applications" && agents.length === 0) loadAgents();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
+  const applyAgentAction = async (id: string, status: "approved"|"rejected", notes: string) => {
+    setActionLoading(id + status);
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token || "";
+    try {
+      const res = await fetch("/api/partners", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ id, status, admin_notes: notes }),
+      });
+      const json = await res.json();
+      if (res.ok && json.agent) {
+        setAgents(p => p.map(a => a.id === id ? json.agent : a));
+        setSelectedAgent(json.agent);
+      }
+    } catch { /* silent */ }
+    finally { setActionLoading(""); }
+  };
 
   const updateSalonPlan = async (salonId: string, plan: string) => {
     const { error: e } = await supabase.from("salons").update({ plan }).eq("id", salonId);
@@ -163,6 +222,7 @@ export default function AdminPage() {
             { key: "salons", label: "Salons", icon: "💈" },
             { key: "revenue", label: "Revenue", icon: "💰" },
             { key: "users", label: "Users", icon: "👥" },
+            { key: "applications", label: "Applications", icon: "🧑‍💼" },
             { key: "announcements", label: "Announcements", icon: "📣" },
             { key: "flags", label: "Feature Flags", icon: "🚩" },
             { key: "settings", label: "Settings", icon: "⚙️" },
@@ -188,6 +248,7 @@ export default function AdminPage() {
               {activeTab === "salons" && "Salons Management"}
               {activeTab === "revenue" && "Revenue & Billing"}
               {activeTab === "users" && "Users Management"}
+              {activeTab === "applications" && "Employee Applications"}
               {activeTab === "announcements" && "Announcements"}
               {activeTab === "flags" && "Feature Flags"}
               {activeTab === "settings" && "Platform Settings"}
@@ -469,6 +530,268 @@ export default function AdminPage() {
               </div>
             </div>
           )}
+
+          {activeTab === "applications" && (() => {
+            const PER_PAGE = 25;
+            const statusColor: Record<string,{bg:string;color:string}> = {
+              pending:  { bg:"#FFF7ED", color:"#C2410C" },
+              approved: { bg:"#ECFDF5", color:"#065F46" },
+              rejected: { bg:"#FEF2F2", color:"#991B1B" },
+            };
+            const filtered = agents
+              .filter(a => agentFilter === "all" || a.status === agentFilter)
+              .filter(a => {
+                const q = agentSearch.toLowerCase();
+                return !q || a.full_name.toLowerCase().includes(q) || a.city.toLowerCase().includes(q) || a.phone.includes(q);
+              })
+              .sort((a,b) => agentSort === "latest"
+                ? new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                : new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+              );
+            const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+            const page = Math.min(agentPage, totalPages);
+            const visible = filtered.slice((page-1)*PER_PAGE, page*PER_PAGE);
+            const counts = { all: agents.length, pending: agents.filter(a=>a.status==="pending").length, approved: agents.filter(a=>a.status==="approved").length, rejected: agents.filter(a=>a.status==="rejected").length };
+
+            return (
+              <div style={{ animation:"fadeIn 0.2s ease both" }}>
+                {/* ── Stat Cards ── */}
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))", gap:14, marginBottom:24 }}>
+                  {([
+                    { label:"Total",    value:counts.all,      icon:"👥", accent:"#2D2E5F", light:"#EEEEF8" },
+                    { label:"Pending",  value:counts.pending,  icon:"⏳", accent:"#D97706", light:"#FFFBEB" },
+                    { label:"Approved", value:counts.approved, icon:"✅", accent:"#059669", light:"#ECFDF5" },
+                    { label:"Rejected", value:counts.rejected, icon:"❌", accent:"#DC2626", light:"#FEF2F2" },
+                  ]).map(s => (
+                    <div key={s.label} onClick={() => { setAgentFilter(s.label.toLowerCase() as "all"|"pending"|"approved"|"rejected"); setAgentPage(1); }}
+                      style={{ background:"#fff", borderRadius:16, padding:"18px 20px", boxShadow:"0 2px 12px rgba(45,46,95,0.08)", cursor:"pointer", border:`1.5px solid ${agentFilter===s.label.toLowerCase()?"#E8B4C4":"transparent"}`, transition:"all 0.18s" }}>
+                      <div style={{ width:36, height:36, borderRadius:10, background:s.light, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, marginBottom:12 }}>{s.icon}</div>
+                      <div style={{ fontSize:28, fontWeight:800, color:s.accent, lineHeight:1 }}>{s.value}</div>
+                      <div style={{ fontSize:12, color:"#64748B", marginTop:4, fontWeight:500 }}>{s.label} Applications</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* ── Toolbar ── */}
+                <div style={{ background:"#fff", borderRadius:16, padding:"14px 18px", boxShadow:"0 2px 12px rgba(45,46,95,0.06)", marginBottom:16, display:"flex", flexWrap:"wrap", gap:10, alignItems:"center", justifyContent:"space-between" }}>
+                  <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                    {(["all","pending","approved","rejected"] as const).map(f => (
+                      <button key={f} onClick={() => { setAgentFilter(f); setAgentPage(1); }}
+                        style={{ padding:"6px 14px", borderRadius:99, border:"none", cursor:"pointer", fontSize:12, fontWeight:600, transition:"all 0.15s",
+                          background: agentFilter===f ? "#2D2E5F" : "#F1F5F9",
+                          color: agentFilter===f ? "#fff" : "#64748B" }}>
+                        {f.charAt(0).toUpperCase()+f.slice(1)} {f==="all"?"":"("+counts[f]+")"}
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+                    <input type="text" placeholder="Search name, city, phone…" value={agentSearch} onChange={e=>{setAgentSearch(e.target.value);setAgentPage(1);}}
+                      style={{ padding:"8px 14px", border:"1.5px solid #E2E8F0", borderRadius:99, fontSize:12.5, outline:"none", width:220, color:"#0F172A" }} />
+                    <button onClick={() => setAgentSort(s => s==="latest"?"oldest":"latest")}
+                      style={{ padding:"8px 14px", borderRadius:99, background:"#F1F5F9", border:"none", fontSize:12, cursor:"pointer", color:"#475569", fontWeight:600, whiteSpace:"nowrap" }}>
+                      {agentSort==="latest" ? "⬇ Latest" : "⬆ Oldest"}
+                    </button>
+                    <button onClick={loadAgents} style={{ padding:"8px 14px", borderRadius:99, background:"#2D2E5F", border:"none", fontSize:12, cursor:"pointer", color:"#fff", fontWeight:600 }}>
+                      ↻ Refresh
+                    </button>
+                  </div>
+                </div>
+
+                {/* ── Table ── */}
+                <div style={{ background:"#fff", borderRadius:16, boxShadow:"0 2px 12px rgba(45,46,95,0.07)", overflow:"hidden", marginBottom:16 }}>
+                  {agentsLoading ? (
+                    <div style={{ padding:48, textAlign:"center", color:"#94A3B8", fontSize:14 }}>Loading applications…</div>
+                  ) : visible.length === 0 ? (
+                    <div style={{ padding:48, textAlign:"center" }}>
+                      <div style={{ fontSize:40, marginBottom:12 }}>📭</div>
+                      <div style={{ fontSize:14, color:"#94A3B8" }}>No applications found</div>
+                    </div>
+                  ) : (
+                    <table style={{ width:"100%", borderCollapse:"collapse" }}>
+                      <thead>
+                        <tr style={{ background:"#F9E7EC" }}>
+                          {["Applicant","City","Experience","Availability","Applied","Status","Actions"].map(h => (
+                            <th key={h} style={{ padding:"12px 16px", textAlign:"left", fontSize:11, fontWeight:700, color:"#2D2E5F", letterSpacing:"0.8px", textTransform:"uppercase", borderBottom:"1.5px solid #F0D4DC" }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {visible.map((a,i) => (
+                          <tr key={a.id} style={{ borderBottom:"1px solid #F8F0F3", background: i%2===0?"#fff":"#FDFAFA", transition:"background 0.12s" }}>
+                            <td style={{ padding:"13px 16px" }}>
+                              <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                                <div style={{ width:36, height:36, borderRadius:10, background:"linear-gradient(135deg,#2D2E5F,#4F6EF7)", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, fontWeight:700, flexShrink:0 }}>
+                                  {a.full_name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                  <div style={{ fontSize:13, fontWeight:600, color:"#0F172A" }}>{a.full_name}</div>
+                                  <div style={{ fontSize:11, color:"#94A3B8" }}>{a.phone}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td style={{ padding:"13px 16px", fontSize:13, color:"#475569" }}>{a.city}</td>
+                            <td style={{ padding:"13px 16px", fontSize:12.5, color:"#475569", textTransform:"capitalize" }}>{a.experience?.replace(/-/g," ")}</td>
+                            <td style={{ padding:"13px 16px", fontSize:12.5, color:"#475569", textTransform:"capitalize" }}>{a.daily_availability?.replace(/-/g," ")}</td>
+                            <td style={{ padding:"13px 16px", fontSize:12, color:"#94A3B8" }}>{new Date(a.created_at).toLocaleDateString("en-GB")}</td>
+                            <td style={{ padding:"13px 16px" }}>
+                              <span style={{ padding:"4px 12px", borderRadius:99, fontSize:11, fontWeight:700, background:statusColor[a.status]?.bg, color:statusColor[a.status]?.color }}>
+                                {a.status.charAt(0).toUpperCase()+a.status.slice(1)}
+                              </span>
+                              {a.referral_code && <div style={{ fontSize:10, color:"#94A3B8", marginTop:3, fontFamily:"monospace" }}>{a.referral_code}</div>}
+                            </td>
+                            <td style={{ padding:"13px 16px" }}>
+                              <button onClick={() => { setSelectedAgent(a); setModalNotes(a.admin_notes||""); }}
+                                style={{ padding:"6px 14px", borderRadius:8, background:"#EEF2FF", color:"#2D2E5F", border:"none", fontSize:12, fontWeight:600, cursor:"pointer" }}>
+                                View →
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+
+                {/* ── Pagination ── */}
+                {totalPages > 1 && (
+                  <div style={{ display:"flex", gap:6, justifyContent:"center", alignItems:"center" }}>
+                    <button onClick={() => setAgentPage(p=>Math.max(1,p-1))} disabled={page===1}
+                      style={{ padding:"6px 14px", borderRadius:8, background:page===1?"#F1F5F9":"#2D2E5F", color:page===1?"#94A3B8":"#fff", border:"none", cursor:page===1?"default":"pointer", fontSize:12, fontWeight:600 }}>← Prev</button>
+                    <span style={{ fontSize:13, color:"#64748B" }}>Page {page} of {totalPages}</span>
+                    <button onClick={() => setAgentPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages}
+                      style={{ padding:"6px 14px", borderRadius:8, background:page===totalPages?"#F1F5F9":"#2D2E5F", color:page===totalPages?"#94A3B8":"#fff", border:"none", cursor:page===totalPages?"default":"pointer", fontSize:12, fontWeight:600 }}>Next →</button>
+                  </div>
+                )}
+
+                {/* ── Detail Modal ── */}
+                {selectedAgent && (
+                  <div onClick={e=>{if(e.target===e.currentTarget){setSelectedAgent(null);}}}
+                    style={{ position:"fixed", inset:0, zIndex:1000, background:"rgba(45,46,95,0.45)", backdropFilter:"blur(4px)", display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
+                    <div style={{ background:"#fff", borderRadius:24, width:"100%", maxWidth:680, maxHeight:"90vh", overflowY:"auto", boxShadow:"0 24px 80px rgba(45,46,95,0.25)" }}>
+                      {/* Modal Header */}
+                      <div style={{ background:"linear-gradient(135deg,#2D2E5F,#4F6EF7)", borderRadius:"24px 24px 0 0", padding:"24px 28px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+                          <div style={{ width:48, height:48, borderRadius:14, background:"rgba(255,255,255,0.2)", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, fontWeight:800 }}>
+                            {selectedAgent.full_name.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <div style={{ fontSize:18, fontWeight:700, color:"#fff" }}>{selectedAgent.full_name}</div>
+                            <span style={{ padding:"3px 10px", borderRadius:99, fontSize:11, fontWeight:700, background:statusColor[selectedAgent.status]?.bg, color:statusColor[selectedAgent.status]?.color }}>
+                              {selectedAgent.status.charAt(0).toUpperCase()+selectedAgent.status.slice(1)}
+                            </span>
+                          </div>
+                        </div>
+                        <button onClick={() => setSelectedAgent(null)}
+                          style={{ background:"rgba(255,255,255,0.15)", border:"none", borderRadius:8, padding:"6px 12px", color:"#fff", cursor:"pointer", fontSize:16 }}>✕</button>
+                      </div>
+
+                      <div style={{ padding:"24px 28px" }}>
+                        {/* Info grid */}
+                        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:20 }}>
+                          {[
+                            { label:"Phone",        value: selectedAgent.phone },
+                            { label:"WhatsApp",     value: selectedAgent.whatsapp || "—" },
+                            { label:"City",         value: selectedAgent.city },
+                            { label:"Country",      value: selectedAgent.country || "GB" },
+                            { label:"Experience",   value: selectedAgent.experience?.replace(/-/g," ") || "—" },
+                            { label:"Availability", value: selectedAgent.daily_availability?.replace(/-/g," ") || "—" },
+                            { label:"Vehicle",      value: selectedAgent.own_vehicle ? "Yes ✓" : "No" },
+                            { label:"Applied",      value: new Date(selectedAgent.created_at).toLocaleDateString("en-GB") },
+                          ].map(f => (
+                            <div key={f.label} style={{ background:"#F8FAFC", borderRadius:10, padding:"12px 14px" }}>
+                              <div style={{ fontSize:11, color:"#94A3B8", fontWeight:600, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:4 }}>{f.label}</div>
+                              <div style={{ fontSize:13, color:"#0F172A", fontWeight:500, textTransform:"capitalize" }}>{f.value}</div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Why hire */}
+                        {selectedAgent.why_hire && (
+                          <div style={{ background:"#F0F4FF", borderRadius:12, padding:"14px 16px", marginBottom:20, border:"1px solid #C7D2FE" }}>
+                            <div style={{ fontSize:11, color:"#4F6EF7", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:8 }}>Why They Should Be Hired</div>
+                            <p style={{ fontSize:13, color:"#334155", lineHeight:1.7, margin:0 }}>{selectedAgent.why_hire}</p>
+                          </div>
+                        )}
+
+                        {/* ID Info */}
+                        {selectedAgent.id_card_number && (
+                          <div style={{ background:"#FFFBEB", borderRadius:12, padding:"14px 16px", marginBottom:20, border:"1px solid #FDE68A" }}>
+                            <div style={{ fontSize:11, color:"#D97706", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:8 }}>🪪 Identity Verification</div>
+                            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+                              <div style={{ fontSize:12, color:"#92400E" }}>ID Number: <strong>{selectedAgent.id_card_number}</strong></div>
+                            </div>
+                            <div style={{ display:"flex", gap:10, marginTop:12, flexWrap:"wrap" }}>
+                              {selectedAgent.id_card_photo_url && <a href={selectedAgent.id_card_photo_url} target="_blank" rel="noopener noreferrer" style={{ fontSize:12, color:"#4F6EF7", fontWeight:600, textDecoration:"none", background:"#EEF2FF", padding:"5px 12px", borderRadius:6 }}>View ID Photo ↗</a>}
+                              {selectedAgent.selfie_photo_url && <a href={selectedAgent.selfie_photo_url} target="_blank" rel="noopener noreferrer" style={{ fontSize:12, color:"#059669", fontWeight:600, textDecoration:"none", background:"#ECFDF5", padding:"5px 12px", borderRadius:6 }}>View Selfie ↗</a>}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Referral code (if approved) */}
+                        {selectedAgent.referral_code && (
+                          <div style={{ background:"#ECFDF5", borderRadius:12, padding:"14px 16px", marginBottom:20, border:"1px solid #6EE7B7", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                            <div>
+                              <div style={{ fontSize:11, color:"#065F46", fontWeight:700, textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:4 }}>Referral Code</div>
+                              <div style={{ fontSize:18, fontWeight:800, color:"#065F46", fontFamily:"monospace" }}>{selectedAgent.referral_code}</div>
+                            </div>
+                            <div style={{ textAlign:"right" }}>
+                              <div style={{ fontSize:11, color:"#94A3B8" }}>Referred Salons</div>
+                              <div style={{ fontSize:24, fontWeight:800, color:"#059669" }}>{selectedAgent.referred_salons || 0}</div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Admin Notes */}
+                        <div style={{ marginBottom:20 }}>
+                          <label style={{ display:"block", fontSize:12, fontWeight:700, color:"#475569", textTransform:"uppercase", letterSpacing:"0.5px", marginBottom:8 }}>Internal Admin Notes</label>
+                          <textarea value={modalNotes} onChange={e=>setModalNotes(e.target.value)} rows={3} placeholder="Add notes visible only to admins…"
+                            style={{ width:"100%", padding:"12px 14px", borderRadius:10, border:"1.5px solid #E2E8F0", fontSize:13, color:"#0F172A", resize:"vertical", outline:"none", boxSizing:"border-box", fontFamily:"inherit" }} />
+                        </div>
+
+                        {/* Action Buttons */}
+                        {selectedAgent.status === "pending" ? (
+                          <div style={{ display:"flex", gap:10 }}>
+                            <button
+                              onClick={() => applyAgentAction(selectedAgent.id, "approved", modalNotes)}
+                              disabled={!!actionLoading}
+                              style={{ flex:1, padding:"13px", borderRadius:12, background: actionLoading ? "#94A3B8" : "linear-gradient(135deg,#059669,#10B981)", color:"#fff", border:"none", fontSize:14, fontWeight:700, cursor: actionLoading?"not-allowed":"pointer", boxShadow:"0 4px 14px rgba(16,185,129,0.3)" }}>
+                              {actionLoading===selectedAgent.id+"approved" ? "Approving…" : "✓ Approve & Generate Code"}
+                            </button>
+                            <button
+                              onClick={() => applyAgentAction(selectedAgent.id, "rejected", modalNotes)}
+                              disabled={!!actionLoading}
+                              style={{ flex:1, padding:"13px", borderRadius:12, background: actionLoading ? "#94A3B8" : "linear-gradient(135deg,#DC2626,#EF4444)", color:"#fff", border:"none", fontSize:14, fontWeight:700, cursor: actionLoading?"not-allowed":"pointer", boxShadow:"0 4px 14px rgba(239,68,68,0.3)" }}>
+                              {actionLoading===selectedAgent.id+"rejected" ? "Rejecting…" : "✕ Reject Application"}
+                            </button>
+                          </div>
+                        ) : (
+                          <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+                            {selectedAgent.status === "approved" && (
+                              <button onClick={() => applyAgentAction(selectedAgent.id, "rejected", modalNotes)} disabled={!!actionLoading}
+                                style={{ padding:"10px 20px", borderRadius:10, background:"#FEF2F2", color:"#DC2626", border:"1.5px solid #FECACA", fontSize:13, fontWeight:600, cursor:"pointer" }}>
+                                Revoke Approval
+                              </button>
+                            )}
+                            {selectedAgent.status === "rejected" && (
+                              <button onClick={() => applyAgentAction(selectedAgent.id, "approved", modalNotes)} disabled={!!actionLoading}
+                                style={{ padding:"10px 20px", borderRadius:10, background:"#ECFDF5", color:"#059669", border:"1.5px solid #6EE7B7", fontSize:13, fontWeight:600, cursor:"pointer" }}>
+                                Re-approve
+                              </button>
+                            )}
+                            <button onClick={() => {
+                              applyAgentAction(selectedAgent.id, selectedAgent.status as "approved"|"rejected", modalNotes);
+                            }} style={{ padding:"10px 20px", borderRadius:10, background:"#EEF2FF", color:"#4F6EF7", border:"1.5px solid #C7D2FE", fontSize:13, fontWeight:600, cursor:"pointer" }}>
+                              Save Notes
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {activeTab === "settings" && (
             <div style={{ display:"flex", flexDirection:"column", gap:16, maxWidth:600 }}>

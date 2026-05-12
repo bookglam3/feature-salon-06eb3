@@ -6,12 +6,15 @@ const adminSupabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Helper: verify admin JWT
+const ADMIN_EMAIL = "adilgill2008@gmail.com";
+
+// Helper: verify admin JWT + enforce admin-only email
 async function verifyAdmin(req: NextRequest) {
   const token = (req.headers.get("authorization") || "").replace("Bearer ", "").trim();
   if (!token) return null;
   const { data: { user }, error } = await adminSupabase.auth.getUser(token);
   if (error || !user) return null;
+  if (user.email !== ADMIN_EMAIL) return null;
   return user;
 }
 
