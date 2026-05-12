@@ -81,22 +81,39 @@ const FAQ = [
   { q: "Do you offer refunds?", a: "We offer a 30-day money-back guarantee if you're not satisfied after the trial ends." },
 ];
 
-// ── Currency switcher dropdown ────────────────────────────
+// ── Currency switcher dropdown — grouped by region ──────
+const CURRENCY_GROUPS: { label: string; codes: CurrencyCode[] }[] = [
+  { label: "🇬🇧 British Isles",  codes: ["GBP"] },
+  { label: "🇪🇺 Europe",          codes: ["EUR","SEK","NOK","DKK","CHF","PLN","CZK","HUF","RON","BGN","TRY"] },
+  { label: "🌎 Americas",         codes: ["USD","CAD","AUD","NZD"] },
+  { label: "🌏 Middle East",      codes: ["AED","SAR","QAR","KWD","BHD","OMR","JOD","EGP"] },
+  { label: "🌏 South Asia",       codes: ["PKR","INR","BDT","LKR"] },
+  { label: "🌍 Africa",           codes: ["ZAR","NGN","KES"] },
+  { label: "🌏 Asia-Pacific",     codes: ["SGD","MYR","THB","IDR","PHP","VND","JPY","KRW"] },
+];
+
 function CurrencyDropdown({
   selected, onChange,
 }: { selected: CurrencyCode; onChange: (c: CurrencyCode) => void }) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const ref = useRef<HTMLDivElement>(null);
   const cur = CURRENCIES[selected];
 
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) { setOpen(false); setQuery(""); }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
+
+  const q = query.toLowerCase();
+  const allCodes = Object.keys(CURRENCIES) as CurrencyCode[];
+  const filteredCodes = q
+    ? allCodes.filter(c => CURRENCIES[c].name.toLowerCase().includes(q) || c.toLowerCase().includes(q))
+    : null;
 
   return (
     <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
@@ -108,45 +125,103 @@ function CurrencyDropdown({
           background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)",
           borderRadius: 8, padding: "7px 14px", cursor: "pointer",
           color: "#fff", fontSize: 13, fontWeight: 600,
+          transition: "background 0.15s",
         }}
+        onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.18)"; }}
+        onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; }}
       >
         <span>{cur.flag}</span>
         <span>{cur.symbol} {cur.code}</span>
-        <span style={{ fontSize: 9, opacity: 0.7 }}>▼</span>
+        <span style={{ fontSize: 9, opacity: 0.7, marginLeft: 2 }}>{open ? "▲" : "▼"}</span>
       </button>
+
       {open && (
         <div style={{
-          position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 200,
+          position: "absolute", top: "calc(100% + 8px)", right: 0, zIndex: 300,
           background: "#1E1B4B", border: "1px solid rgba(255,255,255,0.15)",
-          borderRadius: 10, overflow: "hidden", minWidth: 200,
-          boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+          borderRadius: 12, overflow: "hidden", width: 240,
+          boxShadow: "0 16px 48px rgba(0,0,0,0.6)",
         }}>
-          {(Object.keys(CURRENCIES) as CurrencyCode[]).map(code => {
-            const c = CURRENCIES[code];
-            return (
-              <button
-                key={code}
-                id={`pricing-currency-opt-${code}`}
-                onClick={() => { onChange(code); setOpen(false); }}
-                style={{
-                  display: "flex", alignItems: "center", gap: 10, width: "100%",
-                  padding: "11px 14px", border: "none", cursor: "pointer",
-                  background: selected === code ? "rgba(167,139,250,0.2)" : "transparent",
-                  color: "#fff", fontSize: 13, fontWeight: selected === code ? 700 : 500,
-                  textAlign: "left",
-                }}
-              >
-                <span style={{ fontSize: 18 }}>{c.flag}</span>
-                <span style={{ flex: 1 }}>{c.name}</span>
-                <span style={{ opacity: 0.5 }}>{c.symbol}</span>
-              </button>
-            );
-          })}
+          {/* Search */}
+          <div style={{ padding: "10px 12px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+            <input
+              autoFocus
+              placeholder="Search currency…"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              style={{
+                width: "100%", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)",
+                borderRadius: 7, padding: "7px 11px", color: "#fff", fontSize: 12.5,
+                outline: "none", fontFamily: "inherit",
+              }}
+            />
+          </div>
+
+          {/* List */}
+          <div style={{ maxHeight: 320, overflowY: "auto" }}>
+            {filteredCodes ? (
+              // Search results — flat list
+              filteredCodes.length === 0 ? (
+                <div style={{ padding: "16px", textAlign: "center", fontSize: 13, color: "rgba(255,255,255,0.4)" }}>No results</div>
+              ) : filteredCodes.map(code => {
+                const c = CURRENCIES[code];
+                return (
+                  <button key={code} id={`pricing-currency-opt-${code}`}
+                    onClick={() => { onChange(code); setOpen(false); setQuery(""); }}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10, width: "100%",
+                      padding: "10px 14px", border: "none", cursor: "pointer",
+                      background: selected === code ? "rgba(167,139,250,0.25)" : "transparent",
+                      color: "#fff", fontSize: 13, fontWeight: selected === code ? 700 : 400,
+                      textAlign: "left", transition: "background 0.1s",
+                    }}
+                    onMouseEnter={e => { if (selected !== code) e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
+                    onMouseLeave={e => { if (selected !== code) e.currentTarget.style.background = "transparent"; }}
+                  >
+                    <span style={{ fontSize: 17 }}>{c.flag}</span>
+                    <span style={{ flex: 1 }}>{c.name}</span>
+                    <span style={{ fontSize: 11, opacity: 0.45, fontWeight: 600 }}>{c.code}</span>
+                  </button>
+                );
+              })
+            ) : (
+              // Grouped list
+              CURRENCY_GROUPS.map(group => (
+                <div key={group.label}>
+                  <div style={{ padding: "8px 14px 4px", fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.35)", letterSpacing: "1px", textTransform: "uppercase" }}>
+                    {group.label}
+                  </div>
+                  {group.codes.map(code => {
+                    const c = CURRENCIES[code];
+                    return (
+                      <button key={code} id={`pricing-currency-opt-${code}`}
+                        onClick={() => { onChange(code); setOpen(false); setQuery(""); }}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 10, width: "100%",
+                          padding: "9px 14px", border: "none", cursor: "pointer",
+                          background: selected === code ? "rgba(167,139,250,0.25)" : "transparent",
+                          color: "#fff", fontSize: 13, fontWeight: selected === code ? 700 : 400,
+                          textAlign: "left", transition: "background 0.1s",
+                        }}
+                        onMouseEnter={e => { if (selected !== code) e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
+                        onMouseLeave={e => { if (selected !== code) e.currentTarget.style.background = "transparent"; }}
+                      >
+                        <span style={{ fontSize: 17 }}>{c.flag}</span>
+                        <span style={{ flex: 1 }}>{c.name}</span>
+                        <span style={{ fontSize: 11, opacity: 0.45, fontWeight: 600 }}>{c.code}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ))
+            )}
+          </div>
         </div>
       )}
     </div>
   );
 }
+
 
 export default function PricingPage() {
   const router = useRouter();
