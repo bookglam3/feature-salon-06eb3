@@ -34,10 +34,18 @@ const comparisonData = [
 const faqSchema = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
-  mainEntity: faqItems.map(item => ({
+  "@id": "https://www.featuresalon.co.uk/#faq",
+  url: "https://www.featuresalon.co.uk",
+  name: "Feature Salon — Frequently Asked Questions",
+  mainEntity: faqItems.map((item, i) => ({
     "@type": "Question",
+    "@id": `https://www.featuresalon.co.uk/#faq-${i + 1}`,
     name: item.question,
-    acceptedAnswer: { "@type": "Answer", text: item.answer },
+    acceptedAnswer: {
+      "@type": "Answer",
+      "@id": `https://www.featuresalon.co.uk/#faq-${i + 1}-answer`,
+      text: item.answer,
+    },
   })),
 };
 
