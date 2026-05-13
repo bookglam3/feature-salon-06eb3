@@ -1,7 +1,33 @@
 import { Resend } from "resend";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM = process.env.FROM_EMAIL || "onboarding@resend.dev";
+
+/**
+ * FROM address for all platform emails.
+ *
+ * IMPORTANT — Multi-tenant fix:
+ * "onboarding@resend.dev" only delivers to the Resend account owner's email.
+ * Any other recipient (other salon owners / their clients) will silently fail.
+ * Use a VERIFIED custom domain address instead.
+ *
+ * Setup: Resend Dashboard → Domains → Add featuresalon.co.uk → verify DNS
+ * Then set FROM_EMAIL=noreply@featuresalon.co.uk in Vercel env vars.
+ */
+const FROM = process.env.FROM_EMAIL || "noreply@featuresalon.co.uk";
+
+// Helper — wraps every resend.emails.send with clear error logging
+async function sendEmailSafe(payload: Parameters<typeof resend.emails.send>[0]) {
+  const { data, error } = await resend.emails.send(payload);
+  if (error) {
+    console.error(
+      `[email] ❌ Resend error sending to ${payload.to} from ${payload.from}:`,
+      JSON.stringify(error)
+    );
+    throw new Error(`Resend delivery failed: ${JSON.stringify(error)}`);
+  }
+  console.log(`[email] ✅ Sent "${payload.subject}" → ${payload.to} (id=${data?.id})`);
+  return data;
+}
 
 // ─────────────────────────────────────────
 // UK Date Formatter
@@ -245,12 +271,12 @@ export async function sendBookingEmails({
   </html>`;
 
   await Promise.all([
-    resend.emails.send({
+    sendEmailSafe({
       from: FROM, to: clientEmail,
       subject: `Booking Confirmed! ✂️ ${salonName}`,
       html: clientHtml,
     }),
-    resend.emails.send({
+    sendEmailSafe({
       from: FROM, to: salonOwnerEmail,
       subject: `New Booking! ${clientName} — ${formattedDate} at ${formattedTime}`,
       html: ownerHtml,
@@ -268,7 +294,7 @@ export async function send24hReminder({
   staffName?: string; salonName: string; dateTime: string; price?: number;
 }) {
   const { formattedDate, formattedTime } = formatDate(dateTime);
-  await resend.emails.send({
+  await sendEmailSafe({
     from: FROM, to,
     subject: `Reminder: Your appointment tomorrow at ${formattedTime} — ${salonName}`,
     html: emailTemplate({
@@ -289,7 +315,7 @@ export async function send2hReminder({
   staffName?: string; salonName: string; dateTime: string; price?: number;
 }) {
   const { formattedDate, formattedTime } = formatDate(dateTime);
-  await resend.emails.send({
+  await sendEmailSafe({
     from: FROM, to,
     subject: `See you in 2 hours — ${salonName}`,
     html: emailTemplate({
@@ -309,7 +335,7 @@ export async function sendWinbackEmail({
   to: string; clientName: string; salonName: string;
   lastServiceName?: string; bookingLink: string;
 }) {
-  await resend.emails.send({
+  await sendEmailSafe({
     from: FROM, to,
     subject: `We'd love to see you again — ${salonName}`,
     html: emailTemplate({
@@ -338,7 +364,7 @@ export async function sendThankyouEmail({
   to: string; clientName: string; salonName: string;
   serviceName?: string; reviewLink?: string;
 }) {
-  await resend.emails.send({
+  await sendEmailSafe({
     from: FROM, to,
     subject: `Thank you for visiting ${salonName} today! 💕`,
     html: emailTemplate({
@@ -372,7 +398,7 @@ export async function sendOfferEmail({
     ? new Date(expiresAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
     : null;
 
-  await resend.emails.send({
+  await sendEmailSafe({
     from: FROM, to,
     subject: `Exclusive Offer for You — ${salonName}`,
     html: emailTemplate({
