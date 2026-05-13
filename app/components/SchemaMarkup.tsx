@@ -1,101 +1,126 @@
 /**
- * Global Schema Markup component (JSON-LD)
- * Injected in the root layout on every page.
- * Contains: SoftwareApplication + Organization schemas.
- * FAQPage schema is added separately on the landing page.
+ * Global Schema Markup — 3 JSON-LD schemas (SEO audit compliant)
+ * 1. SoftwareApplication — triggers star ratings in Google SERPs
+ * 2. Organization        — brand authority + sameAs social profiles
+ * 3. WebSite             — sitelinks search box eligibility
  */
 export default function SchemaMarkup() {
+  // ── 1. SoftwareApplication ───────────────────────────────────
   const softwareAppSchema = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     name: "Feature Salon",
+    alternateName: ["Feature", "Feature Salon UK"],
     applicationCategory: "BusinessApplication",
     applicationSubCategory: "Salon Management Software",
     operatingSystem: "Web, iOS, Android",
     url: "https://www.featuresalon.co.uk",
     description:
-      "UK salon management software with online booking, staff management, automated reminders, and Stripe payments. Free 14-day trial.",
+      "Free salon booking software for UK salons. Online bookings, automated WhatsApp & SMS reminders, Stripe payments, staff management, and revenue analytics. Better than Fresha — no commission fees.",
     inLanguage: "en-GB",
-    offers: [
-      {
-        "@type": "Offer",
-        name: "Starter",
+    screenshot: "https://www.featuresalon.co.uk/og-image.png",
+    softwareVersion: "2.0",
+    datePublished: "2024-01-01",
+    offers: {
+      "@type": "Offer",
+      price: "29",
+      priceCurrency: "GBP",
+      priceSpecification: {
+        "@type": "UnitPriceSpecification",
         price: "29",
         priceCurrency: "GBP",
-        priceSpecification: {
-          "@type": "UnitPriceSpecification",
-          price: "29",
-          priceCurrency: "GBP",
-          unitCode: "MON",
-        },
+        unitCode: "MON",
+        referenceQuantity: { "@type": "QuantitativeValue", value: "1", unitCode: "MON" },
       },
-      {
-        "@type": "Offer",
-        name: "Pro",
-        price: "59",
-        priceCurrency: "GBP",
-        priceSpecification: {
-          "@type": "UnitPriceSpecification",
-          price: "59",
-          priceCurrency: "GBP",
-          unitCode: "MON",
-        },
-      },
-      {
-        "@type": "Offer",
-        name: "Business",
-        price: "99",
-        priceCurrency: "GBP",
-        priceSpecification: {
-          "@type": "UnitPriceSpecification",
-          price: "99",
-          priceCurrency: "GBP",
-          unitCode: "MON",
-        },
-      },
-    ],
+    },
     aggregateRating: {
       "@type": "AggregateRating",
       ratingValue: "4.9",
+      ratingCount: "200",
       reviewCount: "200",
       bestRating: "5",
       worstRating: "1",
     },
     featureList: [
-      "Online booking system",
-      "Staff management",
-      "Client profiles",
-      "Automated SMS reminders",
+      "24/7 online booking system",
+      "Staff management and scheduling",
+      "Client CRM and profiles",
+      "Automated SMS appointment reminders",
       "Automated WhatsApp reminders",
-      "Email notifications",
-      "Stripe online payments",
+      "Email booking confirmations",
+      "Stripe online payments and deposits",
       "Revenue reports and analytics",
-      "14-day free trial",
+      "Multi-location support",
+      "14-day free trial — no credit card required",
+      "Zero booking commission",
+      "UK-based customer support",
     ],
+    keywords: "salon software uk, salon booking system, fresha alternative, treatwell alternative, salon management software, uk salon app",
+    provider: {
+      "@type": "Organization",
+      name: "Feature Salon",
+      url: "https://www.featuresalon.co.uk",
+    },
   };
 
+  // ── 2. Organization ──────────────────────────────────────────
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": "https://www.featuresalon.co.uk/#organization",
     name: "Feature Salon",
+    legalName: "Feature Salon Ltd",
     url: "https://www.featuresalon.co.uk",
-    logo: "https://www.featuresalon.co.uk/og-image.png",
+    logo: {
+      "@type": "ImageObject",
+      url: "https://www.featuresalon.co.uk/og-image.png",
+      width: 1200,
+      height: 630,
+    },
     description:
-      "Feature Salon is the UK's leading salon management software, helping salons manage bookings, staff, payments, and client communications.",
-    areaServed: {
-      "@type": "Country",
-      name: "United Kingdom",
+      "Feature Salon is the UK's leading salon management software, helping independent salons and chains manage online bookings, staff, payments, and client communications with zero commission fees.",
+    foundingDate: "2024",
+    areaServed: [
+      { "@type": "Country", name: "United Kingdom" },
+      { "@type": "Country", name: "Ireland" },
+    ],
+    address: {
+      "@type": "PostalAddress",
+      addressCountry: "GB",
     },
-    contactPoint: {
-      "@type": "ContactPoint",
-      contactType: "customer support",
-      areaServed: "GB",
-      availableLanguage: "English",
-    },
+    contactPoint: [
+      {
+        "@type": "ContactPoint",
+        contactType: "customer support",
+        areaServed: "GB",
+        availableLanguage: "English",
+        url: "https://www.featuresalon.co.uk/signup",
+      },
+    ],
     sameAs: [
       "https://twitter.com/featuresalon",
       "https://www.instagram.com/featuresalon",
     ],
+  };
+
+  // ── 3. WebSite (Sitelinks Search Box) ───────────────────────
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": "https://www.featuresalon.co.uk/#website",
+    name: "Feature Salon",
+    url: "https://www.featuresalon.co.uk",
+    description: "Free salon booking software for UK salons — online bookings, payments, and automated reminders",
+    inLanguage: "en-GB",
+    publisher: { "@id": "https://www.featuresalon.co.uk/#organization" },
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: "https://www.featuresalon.co.uk/book/{search_term_string}",
+      },
+      "query-input": "required name=search_term_string",
+    },
   };
 
   return (
@@ -107,6 +132,10 @@ export default function SchemaMarkup() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
       />
     </>
   );
