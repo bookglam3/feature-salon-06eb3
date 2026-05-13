@@ -7,8 +7,12 @@ export async function POST(req: NextRequest) {
   try {
     const { amount, charge_amount, email, booking_id, salon_name, service_name, deposit_only } = await req.json();
 
-    if (!amount || !email) {
-      return NextResponse.json({ error: "Missing amount or email" }, { status: 400 });
+    if (!email) {
+      return NextResponse.json({ error: "Missing email" }, { status: 400 });
+    }
+    // Guard: £0 bookings should be handled as pay_at_salon on the client side
+    if (!charge_amount && !amount) {
+      return NextResponse.json({ error: "Missing amount" }, { status: 400 });
     }
 
     // charge_amount is the exact amount to charge (supports any deposit %)

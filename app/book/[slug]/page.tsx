@@ -355,9 +355,9 @@ export default function BookingPage() {
     }
     setBookingId(appt.id);
 
-    // Pay at salon — skip Stripe, show confirmation screen directly
-    if (isPayAtSalon) {
-      // Fire confirmation email immediately (no Stripe webhook for pay-at-salon)
+    // Pay at salon OR free service (£0) — skip Stripe, show confirmation directly
+    if (isPayAtSalon || chargeAmount === 0) {
+      // Fire confirmation email immediately (no Stripe webhook needed)
       fetch("/api/send-confirmation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

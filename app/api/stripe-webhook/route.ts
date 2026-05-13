@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
+import { sendBookingEmails } from "@/app/lib/email";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "");
 
@@ -54,18 +55,47 @@ export async function POST(req: NextRequest) {
         payment_intent_id: pi.id,
       }).eq("id", bookingId);
 
+      // ── Send confirmation emails directly (no HTTP self-call) ──────────
       try {
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://featuresalon.co.uk";
-        const emailRes = await fetch(`${appUrl}/api/send-confirmation`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ appointmentId: bookingId }),
-        });
-        const emailJson = await emailRes.json();
-        if (!emailRes.ok) console.error("[Webhook] send-confirmation failed:", emailJson);
-        else console.log("[Webhook] Confirmation emails sent:", emailJson);
+
+        // Fetch full appointment data (same as send-confirmation route)
+        const { data: appt } = await supabase
+          .from("appointments")
+          .select(`*, services(name,price), staff(name), salons(id,name,slug,address,owner_email,owner_id)`)
+          .eq("id", bookingId)
+          .single();
+
+        if (appt) {
+          const salon = appt.salons;
+          let ownerEmail: string = salon?.owner_email || "";
+          if (!ownerEmail && salon?.owner_id) {
+            const { data: authUser } = await supabase.auth.admin.getUserById(salon.owner_id);
+            ownerEmail = authUser?.user?.email || "";
+          }
+
+          await sendBookingEmails({
+            clientEmail:      appt.client_email,
+            clientName:       appt.client_name,
+            clientPhone:      appt.client_phone || "",
+            serviceName:      appt.services?.name || "Appointment",
+            dateTime:         appt.date_time,
+            staffName:        appt.staff?.name,
+            salonName:        salon?.name || "The Salon",
+            salonOwnerEmail:  ownerEmail || appt.client_email,
+            price:            appt.services?.price,
+            salonAddress:     salon?.address,
+            cancelLink:       `${appUrl}/reschedule/${bookingId}`,
+            dashboardUrl:     `${appUrl}/dashboard/bookings`,
+            paymentStatus:    depositOnly ? "deposit_paid" : "paid",
+            depositOnly,
+          });
+          console.log(`[Webhook] ✅ Confirmation emails sent for booking ${bookingId}`);
+        } else {
+          console.error(`[Webhook] ❌ Appointment ${bookingId} not found for email`);
+        }
       } catch (emailErr) {
-        console.error("[Webhook] send-confirmation exception:", emailErr);
+        console.error("[Webhook] ❌ Email error (non-fatal):", emailErr);
       }
     }
   }
