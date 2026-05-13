@@ -200,8 +200,8 @@ export default function BookingPage() {
   const [bookingId, setBookingId] = useState("");
   const [paymentError, setPaymentError] = useState("");
 
-  // Confirmation screen state (for pay_at_salon)
-  const [confirmedBooking, setConfirmedBooking] = useState<{ service: string; date: string; time: string; name: string; salon: string; apptId: string } | null>(null);
+  // Confirmation screen state (for pay_at_salon and free services)
+  const [confirmedBooking, setConfirmedBooking] = useState<{ service: string; date: string; time: string; name: string; salon: string; apptId: string; paymentStatus: string } | null>(null);
 
   // Track already-booked time slots for selected date/staff
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
@@ -365,7 +365,8 @@ export default function BookingPage() {
       }).catch(e => console.error("[send-confirmation] failed:", e));
 
       const dateStr = selDate?.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}) || "";
-      setConfirmedBooking({ service: selectedService.name, date: dateStr, time: selTime, name: form.name, salon: salon.name, apptId: appt.id });
+      const payStatus = chargeAmount === 0 ? "free" : "pay_at_salon";
+      setConfirmedBooking({ service: selectedService.name, date: dateStr, time: selTime, name: form.name, salon: salon.name, apptId: appt.id, paymentStatus: payStatus });
       setSubmitting(false);
       setStep(5);
       return;
@@ -811,7 +812,11 @@ export default function BookingPage() {
                       <div>
                         <div style={{ fontSize: 12, color: "#94A3B8", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>Payment</div>
                         <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: "#10B981", background: "rgba(16,185,129,0.1)", padding: "4px 10px", borderRadius: 20, border: "1px solid rgba(16,185,129,0.2)" }}>Pay at Salon</span>
+                          {confirmedBooking.paymentStatus === "free" ? (
+                            <span style={{ fontSize: 13, fontWeight: 700, color: "#6366F1", background: "rgba(99,102,241,0.1)", padding: "4px 10px", borderRadius: 20, border: "1px solid rgba(99,102,241,0.2)" }}>Free Service — No Payment</span>
+                          ) : (
+                            <span style={{ fontSize: 13, fontWeight: 700, color: "#10B981", background: "rgba(16,185,129,0.1)", padding: "4px 10px", borderRadius: 20, border: "1px solid rgba(16,185,129,0.2)" }}>Pay at Salon</span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -821,13 +826,19 @@ export default function BookingPage() {
                 {/* Confirmation note */}
                 <p style={{ fontSize: 13, color: "#94A3B8", fontWeight: 500, lineHeight: 1.6 }}>A confirmation has been sent to your email and phone. Please arrive a few minutes early.</p>
 
-                {/* Manage / Reschedule link */}
-                {confirmedBooking?.apptId && (
-                  <a href={`/reschedule/${confirmedBooking.apptId}`}
-                    style={{ display: "inline-block", marginTop: 20, padding: "12px 24px", background: "#F1F5F9", color: "#475569", borderRadius: 12, textDecoration: "none", fontSize: 13, fontWeight: 700, border: "1.5px solid #E2E8F0" }}>
-                    📅 Manage / Reschedule Appointment
+                {/* Action buttons */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 20 }}>
+                  {confirmedBooking?.apptId && (
+                    <a href={`/reschedule/${confirmedBooking.apptId}`}
+                      style={{ display: "block", padding: "12px 24px", background: "#F1F5F9", color: "#475569", borderRadius: 12, textDecoration: "none", fontSize: 13, fontWeight: 700, border: "1.5px solid #E2E8F0", textAlign: "center" }}>
+                      📅 Manage / Reschedule Appointment
+                    </a>
+                  )}
+                  <a href={`/book/${slug}`}
+                    style={{ display: "block", padding: "12px 24px", background: "linear-gradient(135deg,#667eea 0%,#764ba2 100%)", color: "#fff", borderRadius: 12, textDecoration: "none", fontSize: 13, fontWeight: 700, textAlign: "center", boxShadow: "0 4px 12px rgba(102,126,234,0.35)" }}>
+                    📅 Book Another Appointment
                   </a>
-                )}
+                </div>
               </div>
             )}
           </div>
