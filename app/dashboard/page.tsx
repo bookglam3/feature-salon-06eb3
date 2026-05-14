@@ -33,14 +33,14 @@ interface SalonExtended {
 /* ─── STATUS PILL ─────────────────────────────────────────────── */
 function StatusPill({ status }: { status: string }) {
   const map: Record<string, { bg: string; color: string; border: string; dot: string }> = {
-    confirmed: { bg: "#ECFDF5", color: "#059669", border: "#A7F3D0", dot: "#10B981" },
-    pending: { bg: "#FEF9C3", color: "#B45309", border: "#FDE68A", dot: "#F59E0B" },
-    cancelled: { bg: "#FEF2F2", color: "#DC2626", border: "#FECACA", dot: "#EF4444" },
+    confirmed: { bg: "rgba(16,185,129,0.12)", color: "#34D399", border: "rgba(16,185,129,0.25)", dot: "#10B981" },
+    pending:   { bg: "rgba(245,158,11,0.12)",  color: "#FCD34D", border: "rgba(245,158,11,0.25)", dot: "#F59E0B" },
+    cancelled: { bg: "rgba(239,68,68,0.12)",   color: "#FCA5A5", border: "rgba(239,68,68,0.25)", dot: "#EF4444" },
   };
   const s = map[status] || map.pending;
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 99, background: s.bg, color: s.color, border: `1px solid ${s.border}`, letterSpacing: "0.2px", textTransform: "capitalize", whiteSpace: "nowrap" }}>
-      <span style={{ width: 6, height: 6, borderRadius: "50%", background: s.dot, flexShrink: 0 }} />
+      <span style={{ width: 6, height: 6, borderRadius: "50%", background: s.dot, flexShrink: 0, boxShadow: `0 0 6px ${s.dot}` }} />
       {status}
     </span>
   );
@@ -50,12 +50,12 @@ function StatusPill({ status }: { status: string }) {
 function QuickAction({ icon, label, color, onClick }: { icon: string; label: string; color: string; onClick: () => void }) {
   return (
     <button onClick={onClick}
-      style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "16px 14px", background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 16, cursor: "pointer", transition: "all 0.18s ease", flex: 1, minWidth: 76, fontFamily: "inherit" }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = color; e.currentTarget.style.boxShadow = `0 8px 24px ${color}25`; e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.background = `${color}08`; }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = "#F1F5F9"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "none"; e.currentTarget.style.background = "#fff"; }}
+      style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "16px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, cursor: "pointer", transition: "all 0.18s ease", flex: 1, minWidth: 76, fontFamily: "inherit" }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = color + "55"; e.currentTarget.style.boxShadow = `0 8px 28px rgba(0,0,0,0.3), 0 0 0 1px ${color}33`; e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.background = `${color}15`; }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "none"; e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
     >
-      <div style={{ width: 44, height: 44, borderRadius: 13, background: `${color}15`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 21, transition: "transform 0.18s" }}>{icon}</div>
-      <span style={{ fontSize: 11.5, fontWeight: 700, color: "#475569", whiteSpace: "nowrap", letterSpacing: "0.1px" }}>{label}</span>
+      <div style={{ width: 44, height: 44, borderRadius: 13, background: `${color}20`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 21, transition: "transform 0.18s" }}>{icon}</div>
+      <span style={{ fontSize: 11.5, fontWeight: 700, color: "rgba(255,255,255,0.5)", whiteSpace: "nowrap", letterSpacing: "0.1px" }}>{label}</span>
     </button>
   );
 }
@@ -63,20 +63,20 @@ function QuickAction({ icon, label, color, onClick }: { icon: string; label: str
 /* ─── MINI STAT ───────────────────────────────────────────────── */
 function MiniStat({ label, value, color, icon, sub }: { label: string; value: string | number; color: string; icon: string; sub?: string }) {
   return (
-    <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 18, padding: "20px 18px", position: "relative", overflow: "hidden", transition: "all 0.18s ease", cursor: "default" }}
-      onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 12px 32px ${color}20`; e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.borderColor = `${color}40`; }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "none"; e.currentTarget.style.borderColor = "#F1F5F9"; }}
+    <div style={{ background: "#100F1C", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 18, padding: "20px 18px", position: "relative", overflow: "hidden", transition: "all 0.2s ease", cursor: "default", boxShadow: "0 4px 20px rgba(0,0,0,0.3)" }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 12px 36px rgba(0,0,0,0.4), 0 0 0 1px ${color}44`; e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.borderColor = `${color}44`; }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.3)"; e.currentTarget.style.transform = "none"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}
     >
       {/* top color bar */}
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${color}, ${color}88)`, borderRadius: "18px 18px 0 0" }} />
-      {/* bg circle */}
-      <div style={{ position: "absolute", bottom: -20, right: -20, width: 80, height: 80, borderRadius: "50%", background: `${color}08` }} />
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${color}, ${color}55)`, borderRadius: "18px 18px 0 0" }} />
+      {/* bg glow */}
+      <div style={{ position: "absolute", bottom: -24, right: -24, width: 90, height: 90, borderRadius: "50%", background: `${color}0D`, pointerEvents: "none" }} />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-        <span style={{ fontSize: 10, fontWeight: 800, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.8px" }}>{label}</span>
-        <div style={{ width: 36, height: 36, borderRadius: 11, background: `${color}15`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17 }}>{icon}</div>
+        <span style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.8px" }}>{label}</span>
+        <div style={{ width: 36, height: 36, borderRadius: 11, background: `${color}20`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, boxShadow: `0 4px 12px ${color}30` }}>{icon}</div>
       </div>
-      <div style={{ fontSize: 30, fontWeight: 900, color: "#0F172A", letterSpacing: "-1.5px", lineHeight: 1 }}>{value}</div>
-      {sub && <div style={{ fontSize: 11.5, color: "#94A3B8", marginTop: 6, fontWeight: 500 }}>{sub}</div>}
+      <div style={{ fontSize: 30, fontWeight: 900, color: "#F1F5F9", letterSpacing: "-1.5px", lineHeight: 1 }}>{value}</div>
+      {sub && <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.3)", marginTop: 6, fontWeight: 500 }}>{sub}</div>}
     </div>
   );
 }
@@ -84,13 +84,13 @@ function MiniStat({ label, value, color, icon, sub }: { label: string; value: st
 /* ─── SEARCH BAR ──────────────────────────────────────────────── */
 function SearchBar({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "8px 14px", minWidth: 220, transition: "border-color 0.15s" }}
-      onFocusCapture={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "#6366F1"; (e.currentTarget as HTMLDivElement).style.background = "#fff"; }}
-      onBlurCapture={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "#E2E8F0"; (e.currentTarget as HTMLDivElement).style.background = "#F8FAFC"; }}
+    <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "8px 14px", minWidth: 220, transition: "all 0.15s" }}
+      onFocusCapture={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "#8B5CF6"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 0 0 3px rgba(139,92,246,0.15)"; }}
+      onBlurCapture={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.08)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "none"; }}
     >
-      <span style={{ fontSize: 15, color: "#94A3B8" }}>🔍</span>
-      <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder || "Search..."} style={{ background: "none", border: "none", outline: "none", fontSize: 13, color: "#1E293B", fontFamily: "inherit", width: "100%" }} />
-      {value && <button onClick={() => onChange("")} style={{ background: "none", border: "none", cursor: "pointer", color: "#94A3B8", fontSize: 16, padding: 0, lineHeight: 1 }}>×</button>}
+      <span style={{ fontSize: 14, color: "rgba(255,255,255,0.25)" }}>🔍</span>
+      <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder || "Search..."} style={{ background: "none", border: "none", outline: "none", fontSize: 13, color: "#F1F5F9", fontFamily: "inherit", width: "100%" }} />
+      {value && <button onClick={() => onChange("")} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.3)", fontSize: 16, padding: 0, lineHeight: 1 }}>×</button>}
     </div>
   );
 }
@@ -112,8 +112,8 @@ function RevenueMiniChart({ appointments }: { appointments: Appointment[] }) {
     <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 60, paddingTop: 8 }}>
       {dayRevenue.map((rev, i) => (
         <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-          <div title={`£${rev}`} style={{ width: "100%", borderRadius: "5px 5px 0 0", height: `${Math.max((rev / max) * 52, 4)}px`, background: i === todayIdx ? "linear-gradient(180deg,#6366F1,#4F46E5)" : "#E0E7FF", transition: "all 0.3s ease", cursor: "default" }} />
-          <span style={{ fontSize: 9, color: i === todayIdx ? "#6366F1" : "#94A3B8", fontWeight: i === todayIdx ? 800 : 500 }}>{days[i]}</span>
+          <div title={`£${rev}`} style={{ width: "100%", borderRadius: "5px 5px 0 0", height: `${Math.max((rev / max) * 52, 4)}px`, background: i === todayIdx ? "linear-gradient(180deg,#7C3AED,#4C1D95)" : "rgba(139,92,246,0.15)", boxShadow: i === todayIdx ? "0 0 12px rgba(124,58,237,0.4)" : "none", transition: "all 0.3s ease", cursor: "default" }} />
+          <span style={{ fontSize: 9, color: i === todayIdx ? "#A78BFA" : "rgba(255,255,255,0.25)", fontWeight: i === todayIdx ? 800 : 500 }}>{days[i]}</span>
         </div>
       ))}
     </div>
@@ -333,28 +333,28 @@ export default function DashboardPage() {
 
   /* ── Topbar ── */
   const Topbar = (
-    <header style={{ background: "#fff", borderBottom: "1px solid #F1F5F9", padding: "0 24px", height: 66, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 30, gap: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+    <header style={{ background: "rgba(10,9,20,0.96)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: "1px solid rgba(255,255,255,0.07)", padding: "0 24px", height: 66, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 30, gap: 12 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <HamburgerBtn />
         <div>
-          <div style={{ fontSize: 14.5, fontWeight: 800, color: "#0F172A", letterSpacing: "-0.4px" }}>{greeting}, {salon?.name?.split(" ")[0]}</div>
-          <div className="dash-greeting-date" style={{ fontSize: 11.5, color: "#94A3B8", marginTop: 1 }}>{new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
+          <div style={{ fontSize: 14.5, fontWeight: 800, color: "#F1F5F9", letterSpacing: "-0.4px" }}>{greeting}, {salon?.name?.split(" ")[0]}</div>
+          <div className="dash-greeting-date" style={{ fontSize: 11.5, color: "rgba(255,255,255,0.3)", marginTop: 1 }}>{new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         {/* Plan badge */}
-        <div className="dash-topbar-badge" style={{ padding: "5px 14px", borderRadius: 99, background: planInfo.bg, border: `1.5px solid ${planInfo.border}`, fontSize: 10.5, fontWeight: 900, color: planInfo.color, letterSpacing: "1px" }}>{planInfo.badge}</div>
+        <div className="dash-topbar-badge" style={{ padding: "5px 14px", borderRadius: 99, background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.25)", fontSize: 10.5, fontWeight: 900, color: "#A78BFA", letterSpacing: "1px" }}>{planInfo.badge}</div>
         {/* Export */}
         <button onClick={handleExportCSV} title="Export CSV" className="dash-topbar-export"
-          style={{ width: 38, height: 38, borderRadius: 10, background: "#F8FAFC", border: "1.5px solid #E2E8F0", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 17, transition: "all 0.15s" }}
-          onMouseEnter={e => { e.currentTarget.style.background = "#EEF2FF"; e.currentTarget.style.borderColor = "#6366F1"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "#F8FAFC"; e.currentTarget.style.borderColor = "#E2E8F0"; }}
+          style={{ width: 38, height: 38, borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 17, transition: "all 0.15s" }}
+          onMouseEnter={e => { e.currentTarget.style.background = "rgba(139,92,246,0.15)"; e.currentTarget.style.borderColor = "rgba(139,92,246,0.3)"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
         >📥</button>
         {/* New Booking */}
         <button onClick={() => setShowModal(true)} className="dash-topbar-newbtn"
-          style={{ display: "flex", alignItems: "center", gap: 6, background: "linear-gradient(135deg,#6366F1 0%,#4F46E5 100%)", color: "#fff", fontSize: 13.5, fontWeight: 800, padding: "10px 22px", borderRadius: 12, border: "none", cursor: "pointer", boxShadow: "0 4px 14px rgba(99,102,241,0.35)", whiteSpace: "nowrap", letterSpacing: "-0.2px", transition: "all 0.18s" }}
-          onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(99,102,241,0.45)"; }}
-          onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 4px 14px rgba(99,102,241,0.35)"; }}
+          style={{ display: "flex", alignItems: "center", gap: 6, background: "linear-gradient(135deg,#7C3AED,#6D28D9)", color: "#fff", fontSize: 13.5, fontWeight: 800, padding: "10px 22px", borderRadius: 12, border: "none", cursor: "pointer", boxShadow: "0 4px 16px rgba(124,58,237,0.45)", whiteSpace: "nowrap", letterSpacing: "-0.2px", transition: "all 0.18s" }}
+          onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(124,58,237,0.6)"; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(124,58,237,0.45)"; }}
         >＋ New Booking</button>
       </div>
     </header>
@@ -367,7 +367,7 @@ export default function DashboardPage() {
 
 
         {/* ── Welcome Banner ────────────────────────────────────── */}
-        <div className="dash-banner" style={{ background: "linear-gradient(135deg,#0F0B2D 0%,#1E1B4B 35%,#3730A3 65%,#6366F1 100%)", borderRadius: 24, padding: "32px 36px", marginBottom: 24, position: "relative", overflow: "hidden", boxShadow: "0 16px 48px rgba(99,102,241,0.3)" }}>
+        <div className="dash-banner" style={{ background: "linear-gradient(135deg,#0F0B2D 0%,#1E1448 30%,#4C1D95 65%,#7C3AED 100%)", borderRadius: 24, padding: "32px 36px", marginBottom: 24, position: "relative", overflow: "hidden", boxShadow: "0 16px 56px rgba(124,58,237,0.35)" }}>
           {/* decorative circles */}
           <div style={{ position: "absolute", top: -50, right: -50, width: 220, height: 220, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
           <div style={{ position: "absolute", bottom: -80, right: 100, width: 280, height: 280, borderRadius: "50%", background: "rgba(255,255,255,0.03)" }} />
@@ -383,15 +383,15 @@ export default function DashboardPage() {
             </div>
             <div className="dash-banner-btns" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <button onClick={handleCopyLink}
-                style={{ padding: "10px 20px", background: copied ? "rgba(16,185,129,0.25)" : "rgba(255,255,255,0.1)", color: "#fff", border: `1.5px solid ${copied ? "rgba(16,185,129,0.6)" : "rgba(255,255,255,0.2)"}`, borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.15s", backdropFilter: "blur(8px)" }}>
+                style={{ padding: "10px 20px", background: copied ? "rgba(16,185,129,0.2)" : "rgba(255,255,255,0.08)", color: "#fff", border: `1px solid ${copied ? "rgba(16,185,129,0.5)" : "rgba(255,255,255,0.15)"}`, borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.15s", backdropFilter: "blur(8px)" }}>
                 {copied ? "✓ Copied!" : "🔗 Copy Link"}
               </button>
               <button onClick={() => window.open(`/book/${salon?.slug}`, "_blank")}
-                style={{ padding: "10px 20px", background: "rgba(255,255,255,0.12)", color: "#fff", border: "1.5px solid rgba(255,255,255,0.2)", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.15s", backdropFilter: "blur(8px)" }}>
+                style={{ padding: "10px 20px", background: "rgba(255,255,255,0.08)", color: "#fff", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.15s", backdropFilter: "blur(8px)" }}>
                 Preview ↗
               </button>
               <a href="/dashboard/reports"
-                style={{ padding: "10px 20px", background: "rgba(255,255,255,0.08)", color: "#fff", border: "1.5px solid rgba(255,255,255,0.15)", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.15s", textDecoration: "none", backdropFilter: "blur(8px)" }}>
+                style={{ padding: "10px 20px", background: "rgba(255,255,255,0.06)", color: "#fff", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.15s", textDecoration: "none", backdropFilter: "blur(8px)" }}>
                 Reports 📊
               </a>
             </div>
@@ -407,8 +407,8 @@ export default function DashboardPage() {
         </div>
 
         {/* ── Quick Actions ──────────────────────────────────────── */}
-        <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, padding: "20px 22px", marginBottom: 20, boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
-          <div style={{ fontSize: 11, fontWeight: 900, color: "#94A3B8", letterSpacing: "1.2px", textTransform: "uppercase", marginBottom: 16 }}>Quick Actions</div>
+        <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "20px 22px", marginBottom: 20, boxShadow: "0 4px 20px rgba(0,0,0,0.25)" }}>
+          <div style={{ fontSize: 11, fontWeight: 900, color: "rgba(255,255,255,0.25)", letterSpacing: "1.2px", textTransform: "uppercase", marginBottom: 16 }}>Quick Actions</div>
           <div className="dash-quick-scroll" style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 2 }}>
             <QuickAction icon="📅" label="New Booking" color="#6366F1" onClick={() => setShowModal(true)} />
             <QuickAction icon="🎁" label="Add Offer" color="#10B981" onClick={() => setShowOfferModal(true)} />
@@ -428,15 +428,15 @@ export default function DashboardPage() {
 
 
               {/* All Appointments Table */}
-              <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid #F1F5F9", flexWrap: "wrap", gap: 12 }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: "#0F172A" }}>All Appointments</div>
+              <div style={{ background: "#100F1C", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.3)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.07)", flexWrap: "wrap", gap: 12 }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "#F1F5F9" }}>All Appointments</div>
                   <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                     <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Search client, service..." />
-                    <div style={{ display: "flex", gap: 2, background: "#F1F5F9", padding: 3, borderRadius: 10 }}>
+                    <div style={{ display: "flex", gap: 2, background: "rgba(255,255,255,0.05)", padding: 3, borderRadius: 10 }}>
                       {["All", "Today", "Upcoming", "Confirmed", "Pending", "Completed", "Cancelled", "No-show"].map(t => (
                         <button key={t} onClick={() => setActiveTab(t)}
-                          style={{ fontSize: 11.5, padding: "5px 12px", borderRadius: 8, border: "none", background: activeTab === t ? "#fff" : "transparent", color: activeTab === t ? "#6366F1" : "#64748B", cursor: "pointer", fontWeight: activeTab === t ? 800 : 500, boxShadow: activeTab === t ? "0 1px 4px rgba(0,0,0,0.08)" : "none", transition: "all 0.12s", whiteSpace: "nowrap" }}>{t}</button>
+                          style={{ fontSize: 11.5, padding: "5px 12px", borderRadius: 8, border: "none", background: activeTab === t ? "rgba(139,92,246,0.25)" : "transparent", color: activeTab === t ? "#C4B5FD" : "rgba(255,255,255,0.35)", cursor: "pointer", fontWeight: activeTab === t ? 800 : 500, boxShadow: activeTab === t ? "0 1px 4px rgba(0,0,0,0.2)" : "none", transition: "all 0.12s", whiteSpace: "nowrap" }}>{t}</button>
                       ))}
                     </div>
                   </div>
@@ -449,9 +449,9 @@ export default function DashboardPage() {
                     {/* Desktop table */}
                     <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 600 }}>
                       <thead className="dash-table-head">
-                        <tr style={{ background: "#F8FAFC" }}>
+                        <tr>
                           {["Status", "Client", "Service", "Staff", "Date & Time", "Amount", "Actions"].map(h => (
-                            <th key={h} style={{ fontSize: 10, fontWeight: 900, color: "#94A3B8", textAlign: "left", padding: "11px 16px", letterSpacing: "0.8px", textTransform: "uppercase", borderBottom: "1px solid #F1F5F9" }}>{h}</th>
+                            <th key={h} style={{ fontSize: 10, fontWeight: 900, color: "rgba(255,255,255,0.3)", textAlign: "left", padding: "11px 16px", letterSpacing: "0.8px", textTransform: "uppercase", borderBottom: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.03)" }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -459,30 +459,30 @@ export default function DashboardPage() {
                         {filteredAppts.map(a => (
                           <React.Fragment key={a.id}>
                             {/* Desktop row */}
-                            <tr key={`row-${a.id}`} className="dash-appt-row" style={{ transition: "background 0.1s" }}
-                              onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = "#F8FAFC"; }}
+                            <tr key={`row-${a.id}`} className="dash-appt-row dk-table-row" style={{ transition: "background 0.1s" }}
+                              onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = "rgba(255,255,255,0.03)"; }}
                               onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = "transparent"; }}
                             >
-                              <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9" }}><StatusPill status={a.status} /></td>
-                              <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9", fontSize: 13.5, fontWeight: 800, color: "#0F172A" }}>{a.client_name}</td>
-                              <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9", fontSize: 13, color: "#475569" }}>{a.services?.name || "—"}</td>
-                              <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9", fontSize: 13, color: "#94A3B8" }}>{a.staff?.name || "—"}</td>
-                              <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9", fontSize: 12.5, color: "#475569", whiteSpace: "nowrap" }}>{new Date(a.date_time).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</td>
-                              <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9", fontSize: 13, fontWeight: 800, color: "#10B981" }}>{a.services?.price ? `£${a.services.price}` : "—"}</td>
-                              <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9" }}>
+                              <td style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}><StatusPill status={a.status} /></td>
+                              <td style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", fontSize: 13.5, fontWeight: 800, color: "#F1F5F9" }}>{a.client_name}</td>
+                              <td style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", fontSize: 13, color: "rgba(255,255,255,0.5)" }}>{a.services?.name || "—"}</td>
+                              <td style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", fontSize: 13, color: "rgba(255,255,255,0.35)" }}>{a.staff?.name || "—"}</td>
+                              <td style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", fontSize: 12.5, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap" }}>{new Date(a.date_time).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</td>
+                              <td style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", fontSize: 13, fontWeight: 800, color: "#34D399" }}>{a.services?.price ? `£${a.services.price}` : "—"}</td>
+                              <td style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                                 <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                                   {a.status !== "confirmed" && (
                                     <button onClick={() => handleUpdateStatus(a.id, "confirmed")} disabled={updatingId === a.id}
-                                      style={{ fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 7, border: "1.5px solid #A7F3D0", background: "#ECFDF5", color: "#059669", cursor: "pointer", opacity: updatingId === a.id ? 0.5 : 1 }}>✓</button>
+                                      style={{ fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 7, border: "1px solid rgba(16,185,129,0.3)", background: "rgba(16,185,129,0.12)", color: "#34D399", cursor: "pointer", opacity: updatingId === a.id ? 0.5 : 1 }}>✓</button>
                                   )}
                                   {a.status !== "cancelled" && (
                                     <button onClick={() => handleUpdateStatus(a.id, "cancelled")} disabled={updatingId === a.id}
-                                      style={{ fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 7, border: "1.5px solid #FECACA", background: "#FEF2F2", color: "#DC2626", cursor: "pointer", opacity: updatingId === a.id ? 0.5 : 1 }}>✕</button>
+                                      style={{ fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 7, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.12)", color: "#FCA5A5", cursor: "pointer", opacity: updatingId === a.id ? 0.5 : 1 }}>✕</button>
                                   )}
                                   <button onClick={() => handleDeleteAppt(a.id)}
-                                    style={{ fontSize: 13, padding: "4px 7px", borderRadius: 7, border: "1.5px solid #E2E8F0", background: "#F8FAFC", color: "#94A3B8", cursor: "pointer" }}
-                                    onMouseEnter={e => { e.currentTarget.style.borderColor = "#FECACA"; e.currentTarget.style.color = "#EF4444"; }}
-                                    onMouseLeave={e => { e.currentTarget.style.borderColor = "#E2E8F0"; e.currentTarget.style.color = "#94A3B8"; }}
+                                    style={{ fontSize: 13, padding: "4px 7px", borderRadius: 7, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.35)", cursor: "pointer" }}
+                                    onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(239,68,68,0.4)"; e.currentTarget.style.color = "#FCA5A5"; }}
+                                    onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "rgba(255,255,255,0.35)"; }}
                                   >🗑</button>
                                 </div>
                               </td>
@@ -511,7 +511,7 @@ export default function DashboardPage() {
                         ))}
                       </tbody>
                     </table>
-                    <div className="dash-table-footer" style={{ padding: "12px 22px", fontSize: 12, color: "#94A3B8", borderTop: "1px solid #F1F5F9" }}>
+                    <div className="dash-table-footer" style={{ padding: "12px 22px", fontSize: 12, color: "rgba(255,255,255,0.3)", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
                       Showing {filteredAppts.length} of {appointments.length} total appointments
                     </div>
                   </div>
@@ -523,21 +523,21 @@ export default function DashboardPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
 
               {/* Revenue Chart */}
-              <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, overflow: "hidden", padding: "18px 22px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: "#0F172A", marginBottom: 4 }}>This Week&apos;s Revenue</div>
-                <div style={{ fontSize: 12, color: "#94A3B8", marginBottom: 4 }}>Daily breakdown (confirmed)</div>
+              <div style={{ background: "#100F1C", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, overflow: "hidden", padding: "18px 22px", boxShadow: "0 4px 24px rgba(0,0,0,0.3)" }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "#F1F5F9", marginBottom: 4 }}>This Week&apos;s Revenue</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>Daily breakdown (confirmed)</div>
                 <RevenueMiniChart appointments={appointments} />
               </div>
 
               {/* Subscription Plan */}
-              <div style={{ background: "#fff", border: `2px solid ${statusBadge.color}25`, borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
-                <div style={{ padding: "18px 20px", borderBottom: "1px solid #F1F5F9", background: `linear-gradient(135deg,${statusBadge.bg} 0%,#fff 100%)` }}>
+              <div style={{ background: "#100F1C", border: "1px solid rgba(139,92,246,0.2)", borderRadius: 20, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.3)" }}>
+                <div style={{ padding: "18px 20px", borderBottom: "1px solid rgba(255,255,255,0.07)", background: "rgba(139,92,246,0.06)" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                    <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "1.5px", color: statusBadge.color, textTransform: "uppercase" }}>Current Plan</div>
-                    <div style={{ padding: "4px 12px", borderRadius: 99, background: statusBadge.bg, color: statusBadge.color, fontSize: 10, fontWeight: 900, letterSpacing: "0.8px", border: `1.5px solid ${statusBadge.color}44` }}>{statusBadge.label}</div>
+                    <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "1.5px", color: "rgba(255,255,255,0.35)", textTransform: "uppercase" }}>Current Plan</div>
+                    <div style={{ padding: "4px 12px", borderRadius: 99, background: "rgba(139,92,246,0.2)", color: "#C4B5FD", fontSize: 10, fontWeight: 900, letterSpacing: "0.8px", border: "1px solid rgba(139,92,246,0.3)" }}>{statusBadge.label}</div>
                   </div>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: "#0F172A", letterSpacing: "-0.5px", textTransform: "capitalize" }}>{subPlan} Plan</div>
-                  <div style={{ fontSize: 13, color: "#64748B", marginTop: 4 }}>{PLAN_PRICE[subPlan] || "£29"}/month</div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: "#F1F5F9", letterSpacing: "-0.5px", textTransform: "capitalize" }}>{subPlan} Plan</div>
+                  <div style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", marginTop: 4 }}>{PLAN_PRICE[subPlan] || "£29"}/month</div>
                 </div>
                 <div style={{ padding: "16px 20px" }}>
                   {(subStatus === "trial" || subStatus === "trialing") && (
@@ -569,16 +569,16 @@ export default function DashboardPage() {
               </div>
 
               {/* Special Offers */}
-              <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid #F1F5F9" }}>
+              <div style={{ background: "#100F1C", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.3)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
                   <div>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: "#0F172A" }}>Special Offers</div>
-                    <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 2 }}>{offers.length} active offer{offers.length !== 1 ? "s" : ""}</div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: "#F1F5F9" }}>Special Offers</div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>{offers.length} active offer{offers.length !== 1 ? "s" : ""}</div>
                   </div>
                   <button onClick={() => setShowOfferModal(true)}
-                    style={{ padding: "7px 16px", background: "#ECFDF5", color: "#059669", border: "1.5px solid #A7F3D0", borderRadius: 10, fontSize: 12.5, fontWeight: 800, cursor: "pointer", transition: "all 0.12s" }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "#D1FAE5"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "#ECFDF5"; }}
+                    style={{ padding: "7px 16px", background: "rgba(16,185,129,0.12)", color: "#34D399", border: "1px solid rgba(16,185,129,0.25)", borderRadius: 10, fontSize: 12.5, fontWeight: 800, cursor: "pointer", transition: "all 0.12s" }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(16,185,129,0.2)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "rgba(16,185,129,0.12)"; }}
                   >+ Add</button>
                 </div>
                 {offers.length === 0 ? (
@@ -622,10 +622,10 @@ export default function DashboardPage() {
               </div>
 
               {/* Team Overview */}
-              <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid #F1F5F9" }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: "#0F172A" }}>Team Overview</div>
-                  <a href="/dashboard/staff" style={{ fontSize: 12.5, fontWeight: 700, color: "#6366F1", textDecoration: "none", padding: "6px 14px", background: "#EEF2FF", borderRadius: 8 }}>Manage →</a>
+              <div style={{ background: "#100F1C", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.3)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "#F1F5F9" }}>Team Overview</div>
+                  <a href="/dashboard/staff" style={{ fontSize: 12.5, fontWeight: 700, color: "#A78BFA", textDecoration: "none", padding: "6px 14px", background: "rgba(139,92,246,0.12)", borderRadius: 8, border: "1px solid rgba(139,92,246,0.2)" }}>Manage →</a>
                 </div>
                 {staff.length === 0 ? (
                   <EmptyState icon="✂️" title="No staff" description="Add team members to assign bookings" action={{ label: "Add Staff", onClick: () => router.push("/dashboard/staff") }} />
@@ -638,16 +638,16 @@ export default function DashboardPage() {
                       const staffAppts = appointments.filter(a => a.staff_id === s.id && a.status === "confirmed");
                       return (
                         <div key={s.id}
-                          style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 14px", borderRadius: 13, border: "1.5px solid #F1F5F9", transition: "all 0.12s" }}
-                          onMouseEnter={e => { e.currentTarget.style.background = "#F8FAFC"; e.currentTarget.style.borderColor = "#E0E7FF"; }}
-                          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "#F1F5F9"; }}
+                          style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 14px", borderRadius: 13, border: "1px solid rgba(255,255,255,0.07)", transition: "all 0.12s" }}
+                          onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = "rgba(139,92,246,0.2)"; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}
                         >
-                          <div style={{ width: 38, height: 38, borderRadius: 12, background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: "#fff", flexShrink: 0, boxShadow: `0 4px 10px ${bg}40` }}>{initials}</div>
+                          <div style={{ width: 38, height: 38, borderRadius: 12, background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: "#fff", flexShrink: 0, boxShadow: `0 4px 10px ${bg}55` }}>{initials}</div>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13.5, fontWeight: 800, color: "#0F172A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</div>
-                            <div style={{ fontSize: 11.5, color: "#94A3B8" }}>{staffAppts.length} confirmed booking{staffAppts.length !== 1 ? "s" : ""}</div>
+                            <div style={{ fontSize: 13.5, fontWeight: 800, color: "#F1F5F9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</div>
+                            <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.3)" }}>{staffAppts.length} confirmed booking{staffAppts.length !== 1 ? "s" : ""}</div>
                           </div>
-                          <div style={{ fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 99, background: "#ECFDF5", color: "#059669", border: "1px solid #A7F3D0", flexShrink: 0 }}>Active</div>
+                          <div style={{ fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 99, background: "rgba(16,185,129,0.12)", color: "#34D399", border: "1px solid rgba(16,185,129,0.25)", flexShrink: 0 }}>Active</div>
                         </div>
                       );
                     })}

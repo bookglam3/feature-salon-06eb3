@@ -32,18 +32,22 @@ function TrialBanner({ salon }: { salon: SalonSub }) {
   };
   return (
     <div style={{
-      background: urgent ? "linear-gradient(90deg,#991B1B,#DC2626)" : "linear-gradient(90deg,#1E40AF,#6366F1)",
+      background: urgent
+        ? "linear-gradient(90deg,rgba(127,29,29,0.95),rgba(185,28,28,0.95))"
+        : "linear-gradient(90deg,rgba(30,27,75,0.95),rgba(76,29,149,0.95))",
+      backdropFilter: "blur(8px)",
       color:"#fff", padding:"10px 20px", fontSize:13, fontWeight:600,
       display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap",
+      borderBottom: `1px solid ${urgent ? "rgba(239,68,68,0.3)" : "rgba(139,92,246,0.3)"}`,
     }}>
-      <span>
+      <span style={{ color: urgent ? "#FCA5A5" : "#C4B5FD" }}>
         {urgent ? "⚠️" : "🎁"}{" "}
         {days === 0
           ? "Your free trial has ended — subscribe to keep access"
           : `Free trial: ${days} day${days === 1 ? "" : "s"} remaining`}
         {salon.subscription_plan && ` · ${salon.subscription_plan.charAt(0).toUpperCase() + salon.subscription_plan.slice(1)} plan`}
       </span>
-      <button onClick={openPortal} style={{ background:"rgba(255,255,255,0.2)", border:"1px solid rgba(255,255,255,0.3)", color:"#fff", borderRadius:99, padding:"5px 14px", fontSize:12, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>
+      <button onClick={openPortal} style={{ background: urgent ? "rgba(239,68,68,0.25)" : "rgba(139,92,246,0.25)", border: `1px solid ${urgent ? "rgba(239,68,68,0.4)" : "rgba(139,92,246,0.4)"}`, color:"#fff", borderRadius:99, padding:"5px 14px", fontSize:12, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>
         {salon.stripe_customer_id ? "Manage Subscription →" : "Upgrade Now →"}
       </button>
     </div>
@@ -57,9 +61,9 @@ function PastDueBanner({ salon }: { salon: SalonSub }) {
     if (data.url) window.location.href = data.url;
   };
   return (
-    <div style={{ background:"linear-gradient(90deg,#78350F,#D97706)", color:"#fff", padding:"10px 20px", fontSize:13, fontWeight:600, display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap" }}>
-      <span>⚠️ Payment failed — please update your payment method to avoid losing access</span>
-      <button onClick={openPortal} style={{ background:"rgba(255,255,255,0.2)", border:"1px solid rgba(255,255,255,0.3)", color:"#fff", borderRadius:99, padding:"5px 14px", fontSize:12, fontWeight:700, cursor:"pointer" }}>
+    <div style={{ background:"linear-gradient(90deg,rgba(120,53,15,0.95),rgba(161,98,7,0.95))", backdropFilter:"blur(8px)", color:"#fff", padding:"10px 20px", fontSize:13, fontWeight:600, display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap", borderBottom:"1px solid rgba(245,158,11,0.3)" }}>
+      <span style={{ color:"#FCD34D" }}>⚠️ Payment failed — please update your payment method to avoid losing access</span>
+      <button onClick={openPortal} style={{ background:"rgba(245,158,11,0.25)", border:"1px solid rgba(245,158,11,0.4)", color:"#fff", borderRadius:99, padding:"5px 14px", fontSize:12, fontWeight:700, cursor:"pointer" }}>
         Fix Payment →
       </button>
     </div>
@@ -76,13 +80,13 @@ function LockedOverlay({ salon }: { salon: SalonSub }) {
   };
 
   return (
-    <div style={{ position:"fixed", inset:0, zIndex:9999, background:"rgba(2,6,23,0.96)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:24, backdropFilter:"blur(8px)" }}>
-      <div style={{ maxWidth:480, width:"100%", textAlign:"center" }}>
-        <div style={{ fontSize:64, marginBottom:20 }}>🔒</div>
-        <h1 style={{ fontSize:28, fontWeight:900, color:"#fff", letterSpacing:"-1px", marginBottom:12 }}>
+    <div style={{ position:"fixed", inset:0, zIndex:9999, background:"rgba(0,0,0,0.92)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:24, backdropFilter:"blur(16px)" }}>
+      <div style={{ maxWidth:480, width:"100%", textAlign:"center", background:"rgba(20,18,42,0.95)", border:"1px solid rgba(139,92,246,0.2)", borderRadius:24, padding:"48px 36px", boxShadow:"0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(139,92,246,0.1)" }}>
+        <div style={{ fontSize:56, marginBottom:20 }}>🔒</div>
+        <h1 style={{ fontSize:28, fontWeight:900, color:"#F1F5F9", letterSpacing:"-1px", marginBottom:12 }}>
           Dashboard Locked
         </h1>
-        <p style={{ color:"rgba(255,255,255,0.6)", fontSize:15, lineHeight:1.7, marginBottom:32 }}>
+        <p style={{ color:"rgba(255,255,255,0.5)", fontSize:15, lineHeight:1.7, marginBottom:32 }}>
           {salon.subscription_status === "cancelled"
             ? "Your subscription has been cancelled. Reactivate to access your dashboard."
             : "Your subscription has expired. Please renew to continue managing your salon."}
@@ -90,11 +94,13 @@ function LockedOverlay({ salon }: { salon: SalonSub }) {
         <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
           <button
             onClick={openPortal}
-            style={{ background:"linear-gradient(135deg,#6366F1 0%,#8B5CF6 100%)", color:"#fff", border:"none", borderRadius:12, padding:"16px 32px", fontSize:16, fontWeight:800, cursor:"pointer", boxShadow:"0 8px 32px rgba(99,102,241,0.4)" }}
+            style={{ background:"linear-gradient(135deg,#7C3AED 0%,#6D28D9 100%)", color:"#fff", border:"none", borderRadius:12, padding:"16px 32px", fontSize:16, fontWeight:800, cursor:"pointer", boxShadow:"0 8px 32px rgba(124,58,237,0.5)", transition:"all 0.18s" }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(124,58,237,0.65)"; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(124,58,237,0.5)"; }}
           >
             {salon.stripe_customer_id ? "Reactivate Subscription →" : "Choose a Plan →"}
           </button>
-          <div style={{ fontSize:13, color:"rgba(255,255,255,0.4)" }}>
+          <div style={{ fontSize:13, color:"rgba(255,255,255,0.3)" }}>
             Plans from £29/month · Cancel anytime
           </div>
         </div>

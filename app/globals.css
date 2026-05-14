@@ -35,7 +35,7 @@
   --slate-700: #334155;
   --slate-800: #1E293B;
   --slate-900: #0F172A;
-  /* ── Semantic ── */
+  /* ── Semantic (light) ── */
   --bg: #F8F9FC;
   --surface: #FFFFFF;
   --surface-2: #F8FAFC;
@@ -70,6 +70,29 @@
   /* ── Gradients ── */
   --gradient-brand: linear-gradient(135deg,#6366F1 0%,#8B5CF6 50%,#4338CA 100%);
   --gradient-surface: linear-gradient(135deg,#F8FAFF 0%,#F0F4FF 100%);
+
+  /* ══ DARK DASHBOARD THEME ══════════════════════════════════════ */
+  --dk-bg:        #09090F;
+  --dk-surface:   #100F1C;
+  --dk-surface-2: #16152A;
+  --dk-surface-3: #1E1C35;
+  --dk-border:    rgba(255,255,255,0.07);
+  --dk-border-2:  rgba(255,255,255,0.12);
+  --dk-text-1:    #F1F5F9;
+  --dk-text-2:    #94A3B8;
+  --dk-text-3:    #475569;
+  --dk-purple:    #7C3AED;
+  --dk-purple-mid: #8B5CF6;
+  --dk-purple-light: rgba(139,92,246,0.15);
+  --dk-purple-glow: rgba(139,92,246,0.35);
+  --dk-green:     #10B981;
+  --dk-green-dim: rgba(16,185,129,0.15);
+  --dk-amber:     #F59E0B;
+  --dk-amber-dim: rgba(245,158,11,0.15);
+  --dk-red:       #EF4444;
+  --dk-red-dim:   rgba(239,68,68,0.15);
+  --dk-shadow-card: 0 4px 24px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.3);
+  --dk-shadow-purple: 0 8px 32px rgba(139,92,246,0.25);
 }
 
 html { scroll-behavior: smooth; }
@@ -790,3 +813,139 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   .premium-card { border-radius: 14px; }
   .premium-table th, .premium-table td { padding: 10px 12px; }
 }
+
+/* ═══════════════════════════════════════════════════════
+   DARK DASHBOARD — PREMIUM SaaS THEME
+   ═══════════════════════════════════════════════════════ */
+
+/* Dark layout shell */
+.ds-layout {
+  background: var(--dk-bg) !important;
+  min-height: 100vh;
+}
+
+/* Dark content area */
+.ds-content {
+  background: var(--dk-bg) !important;
+}
+
+/* Dark topbar */
+.ds-topbar {
+  background: rgba(10,9,20,0.96) !important;
+  border-bottom: 1px solid var(--dk-border) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+}
+.ds-topbar-search {
+  background: rgba(255,255,255,0.05) !important;
+  border: 1.5px solid rgba(255,255,255,0.08) !important;
+}
+.ds-topbar-search:focus-within {
+  border-color: var(--dk-purple-mid) !important;
+  background: rgba(255,255,255,0.08) !important;
+  box-shadow: 0 0 0 3px rgba(139,92,246,0.15) !important;
+}
+.ds-topbar-search input { color: var(--dk-text-1) !important; }
+.ds-topbar-search input::placeholder { color: var(--dk-text-3) !important; }
+.ds-notif-btn {
+  background: rgba(255,255,255,0.05) !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+.ds-notif-btn:hover {
+  background: var(--dk-purple-light) !important;
+  border-color: rgba(139,92,246,0.3) !important;
+}
+.ds-avatar-chip {
+  background: rgba(255,255,255,0.05) !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+.ds-avatar-chip:hover {
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(139,92,246,0.3) !important;
+}
+.ds-plan-badge {
+  background: var(--dk-purple-light) !important;
+  color: #A78BFA !important;
+  border-color: rgba(139,92,246,0.25) !important;
+}
+
+/* Dark skeleton shimmer */
+.skeleton {
+  background: linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.08) 50%,rgba(255,255,255,0.04) 75%) !important;
+  background-size: 800px 100% !important;
+}
+
+/* Dark premium card */
+.dk-card {
+  background: var(--dk-surface);
+  border: 1px solid var(--dk-border);
+  border-radius: 18px;
+  box-shadow: var(--dk-shadow-card);
+  transition: all 0.2s ease;
+}
+.dk-card:hover {
+  border-color: rgba(139,92,246,0.2);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(139,92,246,0.15);
+  transform: translateY(-2px);
+}
+
+/* Dark overlay */
+.ds-overlay {
+  background: rgba(0,0,0,0.7) !important;
+}
+
+/* Focus ring in dark */
+.ds-content :focus-visible {
+  outline-color: var(--dk-purple-mid) !important;
+}
+
+/* Dark subscription warning bars */
+.dk-sub-warn {
+  background: rgba(239,68,68,0.12);
+  border-bottom: 1px solid rgba(239,68,68,0.2);
+  color: #FCA5A5;
+}
+.dk-sub-pastdue {
+  background: rgba(245,158,11,0.12);
+  border-bottom: 1px solid rgba(245,158,11,0.2);
+  color: #FCD34D;
+}
+
+/* ── Glow pulse animation for active sidebar items ── */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(139,92,246,0.3); }
+  50%       { box-shadow: 0 0 16px rgba(139,92,246,0.5); }
+}
+.glow-active { animation: glowPulse 2.5s ease-in-out infinite; }
+
+/* ── Dark mode table ── */
+.dk-table-head tr { background: rgba(255,255,255,0.03) !important; }
+.dk-table-head th {
+  color: var(--dk-text-3) !important;
+  border-bottom: 1px solid var(--dk-border) !important;
+}
+.dk-table-row:hover { background: rgba(255,255,255,0.03) !important; }
+.dk-table-row td   { border-bottom: 1px solid var(--dk-border) !important; }
+
+/* ── Purple glow button ── */
+.btn-purple-glow {
+  background: linear-gradient(135deg,#7C3AED,#6D28D9) !important;
+  box-shadow: 0 4px 18px rgba(124,58,237,0.4) !important;
+  transition: all 0.18s ease !important;
+}
+.btn-purple-glow:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 8px 28px rgba(124,58,237,0.55) !important;
+}
+
+/* ── Mobile bottom nav dark ── */
+.mobile-nav-bar {
+  background: rgba(9,9,15,0.97) !important;
+  border-top: 1px solid rgba(255,255,255,0.07) !important;
+  box-shadow: 0 -8px 32px rgba(0,0,0,0.4) !important;
+}
+.mnav-item.active .mnav-icon-wrap {
+  background: rgba(139,92,246,0.15) !important;
+}
+.mnav-item.active .mnav-label { color: #A78BFA !important; }
+.mnav-active-dot { background: #8B5CF6 !important; }
