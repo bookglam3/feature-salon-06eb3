@@ -1,5 +1,12 @@
 "use client";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
+import {
+  CalendarPlus, Tag, UserPlus, Scissors, BarChart3, Settings2,
+  Clock, TrendingUp, BookOpen, Users,
+  Search, Download, Plus,
+  CheckCircle2, XCircle, Trash2,
+  Link2, ExternalLink, BarChart2,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import { getCurrentUserProfile } from "@/app/lib/auth";
@@ -47,36 +54,40 @@ function StatusPill({ status }: { status: string }) {
 }
 
 /* ─── QUICK ACTION ────────────────────────────────────────────── */
-function QuickAction({ icon, label, color, onClick }: { icon: string; label: string; color: string; onClick: () => void }) {
+function QuickAction({ lucideIcon, label, color, onClick }: { lucideIcon: React.ReactNode; label: string; color: string; onClick: () => void }) {
   return (
     <button onClick={onClick}
-      style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "16px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, cursor: "pointer", transition: "all 0.18s ease", flex: 1, minWidth: 76, fontFamily: "inherit" }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = color + "55"; e.currentTarget.style.boxShadow = `0 8px 28px rgba(0,0,0,0.3), 0 0 0 1px ${color}33`; e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.background = `${color}15`; }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "none"; e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+      style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "16px 14px", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 16, cursor: "pointer", transition: "all 0.2s cubic-bezier(0.4,0,0.2,1)", flex: 1, minWidth: 76, fontFamily: "inherit" }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = color + "55"; e.currentTarget.style.boxShadow = `0 8px 28px rgba(0,0,0,0.35), 0 0 0 1px ${color}33`; e.currentTarget.style.transform = "translateY(-4px) scale(1.02)"; e.currentTarget.style.background = `${color}14`; }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "none"; e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
     >
-      <div style={{ width: 44, height: 44, borderRadius: 13, background: `${color}20`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 21, transition: "transform 0.18s" }}>{icon}</div>
-      <span style={{ fontSize: 11.5, fontWeight: 700, color: "rgba(255,255,255,0.5)", whiteSpace: "nowrap", letterSpacing: "0.1px" }}>{label}</span>
+      <div style={{ width: 44, height: 44, borderRadius: 13, background: `${color}18`, border: `1px solid ${color}30`, display: "flex", alignItems: "center", justifyContent: "center", color: color, transition: "transform 0.2s" }}>
+        {lucideIcon}
+      </div>
+      <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap", letterSpacing: "0.1px" }}>{label}</span>
     </button>
   );
 }
 
 /* ─── MINI STAT ───────────────────────────────────────────────── */
-function MiniStat({ label, value, color, icon, sub }: { label: string; value: string | number; color: string; icon: string; sub?: string }) {
+function MiniStat({ label, value, color, lucideIcon, sub }: { label: string; value: string | number; color: string; lucideIcon: React.ReactNode; sub?: string }) {
   return (
-    <div style={{ background: "#100F1C", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 18, padding: "20px 18px", position: "relative", overflow: "hidden", transition: "all 0.2s ease", cursor: "default", boxShadow: "0 4px 20px rgba(0,0,0,0.3)" }}
-      onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 12px 36px rgba(0,0,0,0.4), 0 0 0 1px ${color}44`; e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.borderColor = `${color}44`; }}
+    <div style={{ background: "linear-gradient(145deg,#100F1C,#130F2A)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 18, padding: "20px 18px", position: "relative", overflow: "hidden", transition: "all 0.22s cubic-bezier(0.4,0,0.2,1)", cursor: "default", boxShadow: "0 4px 20px rgba(0,0,0,0.3)" }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 16px 40px rgba(0,0,0,0.5), 0 0 0 1px ${color}33`; e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.borderColor = `${color}33`; }}
       onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.3)"; e.currentTarget.style.transform = "none"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}
     >
-      {/* top color bar */}
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${color}, ${color}55)`, borderRadius: "18px 18px 0 0" }} />
-      {/* bg glow */}
-      <div style={{ position: "absolute", bottom: -24, right: -24, width: 90, height: 90, borderRadius: "50%", background: `${color}0D`, pointerEvents: "none" }} />
+      {/* Gradient top accent */}
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${color}, ${color}44)`, borderRadius: "18px 18px 0 0" }} />
+      {/* Ambient glow orb */}
+      <div style={{ position: "absolute", bottom: -30, right: -30, width: 100, height: 100, borderRadius: "50%", background: `${color}0C`, pointerEvents: "none", filter: "blur(20px)" }} />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-        <span style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.8px" }}>{label}</span>
-        <div style={{ width: 36, height: 36, borderRadius: 11, background: `${color}20`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, boxShadow: `0 4px 12px ${color}30` }}>{icon}</div>
+        <span style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.28)", textTransform: "uppercase", letterSpacing: "0.9px" }}>{label}</span>
+        <div style={{ width: 36, height: 36, borderRadius: 11, background: `${color}18`, border: `1px solid ${color}28`, display: "flex", alignItems: "center", justifyContent: "center", color: color, boxShadow: `0 4px 14px ${color}25` }}>
+          {lucideIcon}
+        </div>
       </div>
       <div style={{ fontSize: 30, fontWeight: 900, color: "#F1F5F9", letterSpacing: "-1.5px", lineHeight: 1 }}>{value}</div>
-      {sub && <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.3)", marginTop: 6, fontWeight: 500 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.28)", marginTop: 7, fontWeight: 500 }}>{sub}</div>}
     </div>
   );
 }
@@ -84,11 +95,11 @@ function MiniStat({ label, value, color, icon, sub }: { label: string; value: st
 /* ─── SEARCH BAR ──────────────────────────────────────────────── */
 function SearchBar({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "8px 14px", minWidth: 220, transition: "all 0.15s" }}
-      onFocusCapture={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "#8B5CF6"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 0 0 3px rgba(139,92,246,0.15)"; }}
-      onBlurCapture={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.08)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "none"; }}
+    <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "7px 13px", minWidth: 220, transition: "all 0.18s" }}
+      onFocusCapture={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(139,92,246,0.5)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 0 0 3px rgba(139,92,246,0.12)"; (e.currentTarget as HTMLDivElement).style.background = "rgba(139,92,246,0.05)"; }}
+      onBlurCapture={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.08)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "none"; (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)"; }}
     >
-      <span style={{ fontSize: 14, color: "rgba(255,255,255,0.25)" }}>🔍</span>
+      <Search size={13} strokeWidth={2} color="rgba(255,255,255,0.22)" />
       <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder || "Search..."} style={{ background: "none", border: "none", outline: "none", fontSize: 13, color: "#F1F5F9", fontFamily: "inherit", width: "100%" }} />
       {value && <button onClick={() => onChange("")} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.3)", fontSize: 16, padding: 0, lineHeight: 1 }}>×</button>}
     </div>
@@ -346,16 +357,16 @@ export default function DashboardPage() {
         <div className="dash-topbar-badge" style={{ padding: "5px 14px", borderRadius: 99, background: "rgba(139,92,246,0.15)", border: "1px solid rgba(139,92,246,0.25)", fontSize: 10.5, fontWeight: 900, color: "#A78BFA", letterSpacing: "1px" }}>{planInfo.badge}</div>
         {/* Export */}
         <button onClick={handleExportCSV} title="Export CSV" className="dash-topbar-export"
-          style={{ width: 38, height: 38, borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 17, transition: "all 0.15s" }}
-          onMouseEnter={e => { e.currentTarget.style.background = "rgba(139,92,246,0.15)"; e.currentTarget.style.borderColor = "rgba(139,92,246,0.3)"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
-        >📥</button>
+          style={{ width: 38, height: 38, borderRadius: 10, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "rgba(255,255,255,0.5)", transition: "all 0.18s" }}
+          onMouseEnter={e => { e.currentTarget.style.background = "rgba(139,92,246,0.12)"; e.currentTarget.style.borderColor = "rgba(139,92,246,0.28)"; e.currentTarget.style.color = "#A78BFA"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
+        ><Download size={15} strokeWidth={2} /></button>
         {/* New Booking */}
         <button onClick={() => setShowModal(true)} className="dash-topbar-newbtn"
-          style={{ display: "flex", alignItems: "center", gap: 6, background: "linear-gradient(135deg,#7C3AED,#6D28D9)", color: "#fff", fontSize: 13.5, fontWeight: 800, padding: "10px 22px", borderRadius: 12, border: "none", cursor: "pointer", boxShadow: "0 4px 16px rgba(124,58,237,0.45)", whiteSpace: "nowrap", letterSpacing: "-0.2px", transition: "all 0.18s" }}
-          onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(124,58,237,0.6)"; }}
-          onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(124,58,237,0.45)"; }}
-        >＋ New Booking</button>
+          style={{ display: "flex", alignItems: "center", gap: 7, background: "linear-gradient(135deg,#7C3AED,#6D28D9)", color: "#fff", fontSize: 13, fontWeight: 700, padding: "10px 20px", borderRadius: 11, border: "1px solid rgba(255,255,255,0.12)", cursor: "pointer", boxShadow: "0 4px 18px rgba(124,58,237,0.45)", whiteSpace: "nowrap", letterSpacing: "-0.1px", transition: "all 0.18s" }}
+          onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 30px rgba(124,58,237,0.65)"; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 4px 18px rgba(124,58,237,0.45)"; }}
+        ><Plus size={15} strokeWidth={2.5} /> New Booking</button>
       </div>
     </header>
   );
@@ -383,16 +394,19 @@ export default function DashboardPage() {
             </div>
             <div className="dash-banner-btns" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <button onClick={handleCopyLink}
-                style={{ padding: "10px 20px", background: copied ? "rgba(16,185,129,0.2)" : "rgba(255,255,255,0.08)", color: "#fff", border: `1px solid ${copied ? "rgba(16,185,129,0.5)" : "rgba(255,255,255,0.15)"}`, borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.15s", backdropFilter: "blur(8px)" }}>
-                {copied ? "✓ Copied!" : "🔗 Copy Link"}
+                style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", background: copied ? "rgba(16,185,129,0.2)" : "rgba(255,255,255,0.08)", color: "#fff", border: `1px solid ${copied ? "rgba(16,185,129,0.4)" : "rgba(255,255,255,0.14)"}`, borderRadius: 11, fontSize: 12.5, fontWeight: 700, cursor: "pointer", transition: "all 0.15s", backdropFilter: "blur(8px)" }}>
+                <Link2 size={13} strokeWidth={2} />
+                {copied ? "Copied!" : "Copy Link"}
               </button>
               <button onClick={() => window.open(`/book/${salon?.slug}`, "_blank")}
-                style={{ padding: "10px 20px", background: "rgba(255,255,255,0.08)", color: "#fff", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.15s", backdropFilter: "blur(8px)" }}>
-                Preview ↗
+                style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "rgba(255,255,255,0.08)", color: "#fff", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 11, fontSize: 12.5, fontWeight: 700, cursor: "pointer", transition: "all 0.15s", backdropFilter: "blur(8px)" }}>
+                <ExternalLink size={13} strokeWidth={2} />
+                Preview
               </button>
               <a href="/dashboard/reports"
-                style={{ padding: "10px 20px", background: "rgba(255,255,255,0.06)", color: "#fff", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.15s", textDecoration: "none", backdropFilter: "blur(8px)" }}>
-                Reports 📊
+                style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "rgba(255,255,255,0.06)", color: "#fff", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 11, fontSize: 12.5, fontWeight: 700, cursor: "pointer", transition: "all 0.15s", textDecoration: "none", backdropFilter: "blur(8px)" }}>
+                <BarChart2 size={13} strokeWidth={2} />
+                Reports
               </a>
             </div>
           </div>
@@ -400,22 +414,22 @@ export default function DashboardPage() {
 
         {/* ── 4 Stat Cards ─────────────────────────────────────────── */}
         <div className="dash-stats" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 20 }}>
-          <MiniStat label="Upcoming" value={upcomingAppts.length} color="#6366F1" icon="⏰" sub={`${confirmedAppts.length} confirmed`} />
-          <MiniStat label="Total Revenue" value={`£${totalRevenue}`} color="#10B981" icon="💰" sub="all confirmed" />
-          <MiniStat label="Total Bookings" value={appointments.length} color="#8B5CF6" icon="📋" sub={`${pendingAppts.length} pending`} />
-          <MiniStat label="Staff Members" value={staff.length} color="#EC4899" icon="✂️" sub="active team" />
+          <MiniStat label="Upcoming" value={upcomingAppts.length} color="#6366F1" lucideIcon={<Clock size={17} strokeWidth={1.8} />} sub={`${confirmedAppts.length} confirmed`} />
+          <MiniStat label="Total Revenue" value={`£${totalRevenue}`} color="#10B981" lucideIcon={<TrendingUp size={17} strokeWidth={1.8} />} sub="all confirmed" />
+          <MiniStat label="Total Bookings" value={appointments.length} color="#8B5CF6" lucideIcon={<BookOpen size={17} strokeWidth={1.8} />} sub={`${pendingAppts.length} pending`} />
+          <MiniStat label="Staff Members" value={staff.length} color="#EC4899" lucideIcon={<Users size={17} strokeWidth={1.8} />} sub="active team" />
         </div>
 
         {/* ── Quick Actions ──────────────────────────────────────── */}
         <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "20px 22px", marginBottom: 20, boxShadow: "0 4px 20px rgba(0,0,0,0.25)" }}>
           <div style={{ fontSize: 11, fontWeight: 900, color: "rgba(255,255,255,0.25)", letterSpacing: "1.2px", textTransform: "uppercase", marginBottom: 16 }}>Quick Actions</div>
           <div className="dash-quick-scroll" style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 2 }}>
-            <QuickAction icon="📅" label="New Booking" color="#6366F1" onClick={() => setShowModal(true)} />
-            <QuickAction icon="🎁" label="Add Offer" color="#10B981" onClick={() => setShowOfferModal(true)} />
-            <QuickAction icon="👤" label="Add Client" color="#8B5CF6" onClick={() => router.push("/dashboard/clients")} />
-            <QuickAction icon="✂️" label="Add Staff" color="#EC4899" onClick={() => router.push("/dashboard/staff")} />
-            <QuickAction icon="📊" label="Reports" color="#F59E0B" onClick={() => router.push("/dashboard/reports")} />
-            <QuickAction icon="⚙️" label="Settings" color="#06B6D4" onClick={() => router.push("/dashboard/settings")} />
+            <QuickAction lucideIcon={<CalendarPlus size={20} strokeWidth={1.8} />} label="New Booking" color="#6366F1" onClick={() => setShowModal(true)} />
+            <QuickAction lucideIcon={<Tag size={20} strokeWidth={1.8} />} label="Add Offer" color="#10B981" onClick={() => setShowOfferModal(true)} />
+            <QuickAction lucideIcon={<UserPlus size={20} strokeWidth={1.8} />} label="Add Client" color="#8B5CF6" onClick={() => router.push("/dashboard/clients")} />
+            <QuickAction lucideIcon={<Scissors size={20} strokeWidth={1.8} />} label="Add Staff" color="#EC4899" onClick={() => router.push("/dashboard/staff")} />
+            <QuickAction lucideIcon={<BarChart3 size={20} strokeWidth={1.8} />} label="Reports" color="#F59E0B" onClick={() => router.push("/dashboard/reports")} />
+            <QuickAction lucideIcon={<Settings2 size={20} strokeWidth={1.8} />} label="Settings" color="#06B6D4" onClick={() => router.push("/dashboard/settings")} />
           </div>
         </div>
 
@@ -473,35 +487,39 @@ export default function DashboardPage() {
                                 <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                                   {a.status !== "confirmed" && (
                                     <button onClick={() => handleUpdateStatus(a.id, "confirmed")} disabled={updatingId === a.id}
-                                      style={{ fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 7, border: "1px solid rgba(16,185,129,0.3)", background: "rgba(16,185,129,0.12)", color: "#34D399", cursor: "pointer", opacity: updatingId === a.id ? 0.5 : 1 }}>✓</button>
+                                      style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: 7, border: "1px solid rgba(16,185,129,0.3)", background: "rgba(16,185,129,0.1)", color: "#34D399", cursor: "pointer", opacity: updatingId === a.id ? 0.5 : 1 }}>
+                                      <CheckCircle2 size={13} strokeWidth={2} />
+                                    </button>
                                   )}
                                   {a.status !== "cancelled" && (
                                     <button onClick={() => handleUpdateStatus(a.id, "cancelled")} disabled={updatingId === a.id}
-                                      style={{ fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 7, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.12)", color: "#FCA5A5", cursor: "pointer", opacity: updatingId === a.id ? 0.5 : 1 }}>✕</button>
+                                      style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: 7, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.1)", color: "#FCA5A5", cursor: "pointer", opacity: updatingId === a.id ? 0.5 : 1 }}>
+                                      <XCircle size={13} strokeWidth={2} />
+                                    </button>
                                   )}
                                   <button onClick={() => handleDeleteAppt(a.id)}
-                                    style={{ fontSize: 13, padding: "4px 7px", borderRadius: 7, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.35)", cursor: "pointer" }}
-                                    onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(239,68,68,0.4)"; e.currentTarget.style.color = "#FCA5A5"; }}
-                                    onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "rgba(255,255,255,0.35)"; }}
-                                  >🗑</button>
+                                    style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: 7, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.3)", cursor: "pointer", transition: "all 0.15s" }}
+                                    onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(239,68,68,0.35)"; e.currentTarget.style.color = "#FCA5A5"; e.currentTarget.style.background = "rgba(239,68,68,0.08)"; }}
+                                    onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "rgba(255,255,255,0.3)"; e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
+                                  ><Trash2 size={13} strokeWidth={2} /></button>
                                 </div>
                               </td>
                             </tr>
                             {/* Mobile card */}
                             <tr key={`card-${a.id}`} className="dash-appt-card" style={{ display: "none" }}>
-                              <td colSpan={7} style={{ padding: "10px 16px", borderBottom: "1px solid #F1F5F9" }}>
+                              <td colSpan={7} style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
                                   <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ fontSize: 14, fontWeight: 800, color: "#0F172A", marginBottom: 2 }}>{a.client_name}</div>
-                                    <div style={{ fontSize: 12, color: "#64748B" }}>{a.services?.name || "No service"}{a.staff?.name ? ` · ${a.staff.name}` : ""}</div>
-                                    <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 2 }}>{new Date(a.date_time).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}{a.services?.price ? ` · £${a.services.price}` : ""}</div>
+                                    <div style={{ fontSize: 14, fontWeight: 800, color: "#F1F5F9", marginBottom: 2 }}>{a.client_name}</div>
+                                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>{a.services?.name || "No service"}{a.staff?.name ? ` · ${a.staff.name}` : ""}</div>
+                                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.28)", marginTop: 2 }}>{new Date(a.date_time).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}{a.services?.price ? ` · £${a.services.price}` : ""}</div>
                                   </div>
                                   <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
                                     <StatusPill status={a.status} />
                                     <div style={{ display: "flex", gap: 5 }}>
-                                      {a.status !== "confirmed" && <button onClick={() => handleUpdateStatus(a.id, "confirmed")} style={{ fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 7, border: "1.5px solid #A7F3D0", background: "#ECFDF5", color: "#059669", cursor: "pointer" }}>✓</button>}
-                                      {a.status !== "cancelled" && <button onClick={() => handleUpdateStatus(a.id, "cancelled")} style={{ fontSize: 11, fontWeight: 700, padding: "4px 9px", borderRadius: 7, border: "1.5px solid #FECACA", background: "#FEF2F2", color: "#DC2626", cursor: "pointer" }}>✕</button>}
-                                      <button onClick={() => handleDeleteAppt(a.id)} style={{ fontSize: 13, padding: "4px 7px", borderRadius: 7, border: "1.5px solid #E2E8F0", background: "#F8FAFC", color: "#94A3B8", cursor: "pointer" }}>🗑</button>
+                                      {a.status !== "confirmed" && <button onClick={() => handleUpdateStatus(a.id, "confirmed")} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: 7, border: "1px solid rgba(16,185,129,0.3)", background: "rgba(16,185,129,0.1)", color: "#34D399", cursor: "pointer" }}><CheckCircle2 size={13} strokeWidth={2} /></button>}
+                                      {a.status !== "cancelled" && <button onClick={() => handleUpdateStatus(a.id, "cancelled")} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: 7, border: "1px solid rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.1)", color: "#FCA5A5", cursor: "pointer" }}><XCircle size={13} strokeWidth={2} /></button>}
+                                      <button onClick={() => handleDeleteAppt(a.id)} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: 7, border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)", color: "rgba(255,255,255,0.3)", cursor: "pointer" }}><Trash2 size={13} strokeWidth={2} /></button>
                                     </div>
                                   </div>
                                 </div>
@@ -590,12 +608,12 @@ export default function DashboardPage() {
                       const expired = offer.valid_until && new Date(offer.valid_until) < new Date();
                       return (
                         <div key={offer.id}
-                          style={{ border: "1.5px solid #F1F5F9", borderRadius: 14, padding: "14px 16px", opacity: offer.active ? 1 : 0.5, transition: "all 0.14s" }}
-                          onMouseEnter={e => { e.currentTarget.style.borderColor = "#C7D2FE"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(99,102,241,0.1)"; }}
-                          onMouseLeave={e => { e.currentTarget.style.borderColor = "#F1F5F9"; e.currentTarget.style.boxShadow = "none"; }}
+                          style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "14px 16px", opacity: offer.active ? 1 : 0.5, transition: "all 0.18s", background: "rgba(255,255,255,0.02)" }}
+                          onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(139,92,246,0.25)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.3)"; e.currentTarget.style.background = "rgba(139,92,246,0.04)"; }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.background = "rgba(255,255,255,0.02)"; }}
                         >
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-                            <div style={{ fontSize: 13.5, fontWeight: 800, color: "#0F172A", lineHeight: 1.3 }}>{offer.title}</div>
+                            <div style={{ fontSize: 13.5, fontWeight: 800, color: "#F1F5F9", lineHeight: 1.3 }}>{offer.title}</div>
                             <label style={{ position: "relative", width: 32, height: 18, cursor: "pointer", flexShrink: 0, marginTop: 2 }}>
                               <input type="checkbox" checked={offer.active} onChange={() => handleToggleOffer(offer.id, offer.active)} style={{ opacity: 0, width: 0, height: 0 }} />
                               <span style={{ position: "absolute", inset: 0, background: offer.active ? "#10B981" : "#CBD5E1", borderRadius: 99, transition: "background 0.18s" }}>
@@ -604,14 +622,14 @@ export default function DashboardPage() {
                             </label>
                           </div>
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 10 }}>
-                            <span style={{ fontSize: 11.5, fontWeight: 800, padding: "3px 10px", borderRadius: 99, background: "#ECFDF5", color: "#059669", border: "1px solid #A7F3D0" }}>🎉 {label}</span>
+                            <span style={{ fontSize: 11.5, fontWeight: 800, padding: "3px 10px", borderRadius: 99, background: "rgba(16,185,129,0.12)", color: "#34D399", border: "1px solid rgba(16,185,129,0.25)" }}>{label}</span>
                             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                               <span style={{ fontSize: 11, color: expired ? "#EF4444" : "#94A3B8", fontWeight: 500 }}>{expired ? "Expired" : offer.valid_until ? `Until ${new Date(offer.valid_until).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` : "No expiry"}</span>
                               <button onClick={() => handleDeleteOffer(offer.id)}
-                                style={{ background: "none", border: "none", cursor: "pointer", color: "#CBD5E1", fontSize: 14, padding: 0, transition: "color 0.12s" }}
-                                onMouseEnter={e => { e.currentTarget.style.color = "#EF4444"; }}
-                                onMouseLeave={e => { e.currentTarget.style.color = "#CBD5E1"; }}
-                              >🗑</button>
+                                style={{ display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.25)", padding: 0, width: 24, height: 24, transition: "color 0.12s" }}
+                                onMouseEnter={e => { e.currentTarget.style.color = "#FCA5A5"; }}
+                                onMouseLeave={e => { e.currentTarget.style.color = "rgba(255,255,255,0.25)"; }}
+                              ><Trash2 size={14} strokeWidth={2} /></button>
                             </div>
                           </div>
                         </div>

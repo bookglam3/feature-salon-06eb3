@@ -2,22 +2,20 @@
 
 /**
  * DashboardIcons — Lucide React based icon components
- * Each icon is a separate component with:
- * - size prop (default 18)
- * - className prop for Tailwind
- * - Dark mode compatible (inherits currentColor)
+ * 2026 Premium SaaS Icon Set
+ * All icons use consistent Lucide React family
  */
 
 import {
   LayoutDashboard,
   CalendarDays,
-  ClipboardList,
-  Clock,
+  BookOpenCheck,
+  Clock3,
   Users,
-  UserCheck,
-  CreditCard,
-  Coins,
-  FileText,
+  Scissors,
+  Wallet,
+  BadgeDollarSign,
+  ReceiptText,
   BarChart3,
   Gift,
   Star,
@@ -29,6 +27,15 @@ import {
   ImageIcon,
   CalendarX,
   Settings2,
+  Handshake,
+  Search,
+  Download,
+  Plus,
+  Bell,
+  LogOut,
+  ChevronDown,
+  Home,
+  Menu,
 } from "lucide-react";
 import type { LucideProps } from "lucide-react";
 
@@ -59,13 +66,13 @@ function makeIcon(LucideIcon: React.FC<LucideProps>) {
 // ─────────────────────────────────────────────────────────────────
 export const DashboardIcon    = makeIcon(LayoutDashboard);
 export const CalendarIcon     = makeIcon(CalendarDays);
-export const BookingsIcon     = makeIcon(ClipboardList);
-export const WaitlistIcon     = makeIcon(Clock);
+export const BookingsIcon     = makeIcon(BookOpenCheck);
+export const WaitlistIcon     = makeIcon(Clock3);
 export const ClientsIcon      = makeIcon(Users);
-export const StaffIcon        = makeIcon(UserCheck);
-export const PaymentsIcon     = makeIcon(CreditCard);
-export const TipsIcon         = makeIcon(Coins);
-export const InvoicesIcon     = makeIcon(FileText);
+export const StaffIcon        = makeIcon(Scissors);
+export const PaymentsIcon     = makeIcon(Wallet);
+export const TipsIcon         = makeIcon(BadgeDollarSign);
+export const InvoicesIcon     = makeIcon(ReceiptText);
 export const ReportsIcon      = makeIcon(BarChart3);
 export const GiftCardsIcon    = makeIcon(Gift);
 export const ReviewsIcon      = makeIcon(Star);
@@ -77,6 +84,17 @@ export const ClientPortalIcon = makeIcon(Globe);
 export const GalleryIcon      = makeIcon(ImageIcon);
 export const ClosedDatesIcon  = makeIcon(CalendarX);
 export const SettingsIcon     = makeIcon(Settings2);
+export const PartnersIcon     = makeIcon(Handshake);
+
+// UI utility icons
+export const SearchIcon       = makeIcon(Search);
+export const DownloadIcon     = makeIcon(Download);
+export const PlusIcon         = makeIcon(Plus);
+export const BellIcon         = makeIcon(Bell);
+export const LogOutIcon       = makeIcon(LogOut);
+export const ChevronDownIcon  = makeIcon(ChevronDown);
+export const HomeIcon         = makeIcon(Home);
+export const MenuIcon         = makeIcon(Menu);
 
 // ─────────────────────────────────────────────────────────────────
 // Icon map — for dynamic lookup by nav label
@@ -102,4 +120,5 @@ export const NAV_ICON_MAP: Record<string, React.FC<IconProps>> = {
   "Gallery":       GalleryIcon,
   "Closed Dates":  ClosedDatesIcon,
   "Settings":      SettingsIcon,
+  "Partners":      PartnersIcon,
 };

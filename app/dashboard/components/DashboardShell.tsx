@@ -5,6 +5,7 @@ import { supabase } from "@/app/lib/supabase";
 import Sidebar from "./Sidebar";
 import MobileNav from "./MobileNav";
 import { ToastProvider } from "./Toast";
+import { Search, Bell, ChevronDown, Menu } from "lucide-react";
 
 interface DashboardShellProps {
   children: React.ReactNode;
@@ -50,41 +51,56 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
     <ToastProvider>
       <style>{`
         :root { --sidebar-w: 256px; }
+
+        /* ══ Layout ══ */
         .ds-layout {
           display: flex; min-height: 100vh;
           background: #09090F;
+          position: relative;
         }
 
-        /* ── Sidebar wrapper ── */
+        /* Subtle noise texture overlay */
+        .ds-layout::after {
+          content: "";
+          position: fixed; inset: 0;
+          background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+          pointer-events: none; z-index: 0; opacity: 0.4;
+        }
+
+        /* ══ Sidebar wrapper ══ */
         .ds-sidebar-wrap {
           position: fixed; top: 0; left: 0; bottom: 0;
           width: 100vw; max-width: 100vw; z-index: 50;
           transform: translateX(-100%);
-          transition: transform 0.26s cubic-bezier(0.4,0,0.2,1);
+          transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
           will-change: transform;
         }
         .ds-sidebar-wrap.open { transform: translateX(0); }
 
-        /* ── Overlay ── */
+        /* ══ Overlay ══ */
         .ds-overlay {
           display: none; position: fixed; inset: 0;
-          background: rgba(0,0,0,0.72);
-          backdrop-filter: blur(6px);
-          -webkit-backdrop-filter: blur(6px);
+          background: rgba(0,0,0,0.75);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
           z-index: 49;
         }
-        .ds-overlay.open { display: block; animation: fadeOverlay 0.2s ease; }
-        @keyframes fadeOverlay { from { opacity:0; } to { opacity:1; } }
+        .ds-overlay.open { display: block; animation: fadeOverlay 0.22s ease; }
+        @keyframes fadeOverlay { from { opacity: 0; } to { opacity: 1; } }
 
-        /* ── Main ── */
-        .ds-main { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
+        /* ══ Main content area ══ */
+        .ds-main {
+          flex: 1; display: flex; flex-direction: column;
+          min-width: 0; overflow: hidden;
+          position: relative; z-index: 1;
+        }
         .ds-content {
           flex: 1; overflow-y: auto; background: #09090F;
           padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
           -webkit-overflow-scrolling: touch;
         }
 
-        /* ── Desktop ── */
+        /* ══ Desktop ══ */
         @media (min-width: 768px) {
           .ds-sidebar-wrap {
             width: var(--sidebar-w);
@@ -95,78 +111,113 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
           .ds-content { padding-bottom: 0; }
         }
 
-        /* ── Premium dark topbar ── */
+        /* ══ Premium Topbar ══ */
         .ds-topbar {
-          background: rgba(10,9,20,0.96);
-          backdrop-filter: blur(20px) saturate(160%);
-          -webkit-backdrop-filter: blur(20px) saturate(160%);
-          border-bottom: 1px solid rgba(255,255,255,0.07);
-          padding: 0 20px; height: 58px;
+          background: rgba(9,9,20,0.97);
+          backdrop-filter: blur(24px) saturate(180%);
+          -webkit-backdrop-filter: blur(24px) saturate(180%);
+          border-bottom: 1px solid rgba(255,255,255,0.06);
+          padding: 0 20px; height: 60px;
           display: flex; align-items: center; justify-content: space-between;
           position: sticky; top: 0; z-index: 30;
           gap: 12px;
+          /* Subtle shimmer line at very bottom */
+          box-shadow: 0 1px 0 rgba(139,92,246,0.08), 0 4px 20px rgba(0,0,0,0.25);
         }
+
+        /* Search bar */
         .ds-topbar-search {
           display: flex; align-items: center; gap: 8px;
-          background: rgba(255,255,255,0.05);
-          border: 1.5px solid rgba(255,255,255,0.08);
-          border-radius: 10px; padding: 7px 13px;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 10px; padding: 7px 12px;
           flex: 1; max-width: 260px;
-          transition: all 0.15s;
+          transition: all 0.18s ease;
         }
         .ds-topbar-search:focus-within {
-          border-color: #8B5CF6;
-          background: rgba(255,255,255,0.08);
-          box-shadow: 0 0 0 3px rgba(139,92,246,0.15);
+          border-color: rgba(139,92,246,0.5);
+          background: rgba(139,92,246,0.06);
+          box-shadow: 0 0 0 3px rgba(139,92,246,0.12);
         }
         .ds-topbar-search input {
           background: none; border: none; outline: none;
           font-size: 13px; color: #F1F5F9;
           font-family: var(--font); width: 100%;
         }
-        .ds-topbar-search input::placeholder { color: rgba(255,255,255,0.25); }
+        .ds-topbar-search input::placeholder { color: rgba(255,255,255,0.2); }
         @media (max-width: 480px) { .ds-topbar-search { display: none; } }
 
+        /* Notification button */
         .ds-notif-btn {
           width: 36px; height: 36px; border-radius: 10px;
-          border: 1px solid rgba(255,255,255,0.08);
-          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.07);
+          background: rgba(255,255,255,0.04);
           display: flex; align-items: center; justify-content: center;
-          cursor: pointer; position: relative; transition: all 0.15s;
-          flex-shrink: 0;
+          cursor: pointer; position: relative; transition: all 0.18s;
+          flex-shrink: 0; color: rgba(255,255,255,0.45);
         }
         .ds-notif-btn:hover {
-          border-color: rgba(139,92,246,0.4);
-          background: rgba(139,92,246,0.12);
+          border-color: rgba(139,92,246,0.35);
+          background: rgba(139,92,246,0.1);
+          color: rgba(255,255,255,0.75);
         }
         .ds-notif-dot {
           position: absolute; top: 7px; right: 7px;
-          width: 7px; height: 7px; border-radius: 50%;
+          width: 6px; height: 6px; border-radius: 50%;
           background: #EF4444; border: 1.5px solid #09090F;
-          box-shadow: 0 0 6px rgba(239,68,68,0.6);
+          box-shadow: 0 0 6px rgba(239,68,68,0.7);
+          animation: notifPulse 2s ease-in-out infinite;
         }
+        @keyframes notifPulse {
+          0%, 100% { box-shadow: 0 0 4px rgba(239,68,68,0.6); }
+          50%       { box-shadow: 0 0 10px rgba(239,68,68,0.9); }
+        }
+
+        /* Avatar chip */
         .ds-avatar-chip {
-          display: flex; align-items: center; gap: 8px;
+          display: flex; align-items: center; gap: 7px;
           padding: 4px 10px 4px 5px;
-          border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;
-          background: rgba(255,255,255,0.05); cursor: pointer;
-          transition: all 0.15s; flex-shrink: 0;
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 11px;
+          background: rgba(255,255,255,0.04);
+          cursor: pointer; transition: all 0.18s; flex-shrink: 0;
         }
         .ds-avatar-chip:hover {
-          border-color: rgba(139,92,246,0.35);
-          background: rgba(139,92,246,0.08);
+          border-color: rgba(139,92,246,0.3);
+          background: rgba(139,92,246,0.07);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 16px rgba(0,0,0,0.2);
         }
+
+        /* Plan badge */
         .ds-plan-badge {
           font-size: 9.5px; font-weight: 800; letter-spacing: 0.8px;
           text-transform: uppercase; padding: 3px 9px;
           border-radius: 99px; white-space: nowrap;
-          background: rgba(139,92,246,0.15);
+          background: rgba(139,92,246,0.14);
           color: #A78BFA;
-          border: 1px solid rgba(139,92,246,0.25);
+          border: 1px solid rgba(139,92,246,0.22);
         }
 
+        /* Hamburger */
         .hbtn { display: flex; }
         @media(min-width:768px){ .hbtn { display: none !important; } }
+
+        /* Subscription warning banners */
+        .ds-sub-warning {
+          display: flex; align-items: center; justify-content: space-between;
+          gap: 12px; flex-wrap: wrap;
+          padding: 10px 20px;
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+        }
+        .ds-sub-warning-link {
+          font-size: 12px; font-weight: 700; color: #fff;
+          padding: 6px 16px; border-radius: 8px;
+          text-decoration: none; white-space: nowrap;
+          transition: all 0.15s;
+        }
+        .ds-sub-warning-link:hover { transform: translateY(-1px); }
       `}</style>
 
       <div className="ds-layout">
@@ -195,31 +246,35 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
 
           {/* Subscription warning */}
           {(subStatus === "past_due" || subStatus === "cancelled") && (
-            <div style={{
-              background: subStatus === "cancelled"
-                ? "rgba(239,68,68,0.1)"
-                : "rgba(245,158,11,0.1)",
-              borderBottom: `1px solid ${subStatus === "cancelled" ? "rgba(239,68,68,0.2)" : "rgba(245,158,11,0.2)"}`,
-              padding: "10px 20px",
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              gap: 12, flexWrap: "wrap",
-            }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: subStatus === "cancelled" ? "#FCA5A5" : "#FCD34D" }}>
+            <div
+              className="ds-sub-warning"
+              style={{
+                background: subStatus === "cancelled"
+                  ? "linear-gradient(90deg, rgba(127,29,29,0.85), rgba(185,28,28,0.85))"
+                  : "linear-gradient(90deg, rgba(120,53,15,0.85), rgba(161,98,7,0.85))",
+                borderBottom: `1px solid ${subStatus === "cancelled" ? "rgba(239,68,68,0.25)" : "rgba(245,158,11,0.25)"}`,
+              }}
+            >
+              <span style={{
+                fontSize: 13, fontWeight: 600,
+                color: subStatus === "cancelled" ? "#FCA5A5" : "#FCD34D",
+              }}>
                 {subStatus === "cancelled"
                   ? "❌ Your subscription is cancelled — renew to keep accepting bookings."
                   : "⚠️ Payment failed — update billing to avoid interruption."}
               </span>
-              <a href="/subscribe" style={{
-                fontSize: 12, fontWeight: 700, color: "#fff",
-                background: subStatus === "cancelled"
-                  ? "linear-gradient(135deg,#DC2626,#991B1B)"
-                  : "linear-gradient(135deg,#D97706,#92400E)",
-                padding: "6px 16px", borderRadius: 8, textDecoration: "none",
-                whiteSpace: "nowrap",
-                boxShadow: subStatus === "cancelled"
-                  ? "0 4px 12px rgba(239,68,68,0.3)"
-                  : "0 4px 12px rgba(245,158,11,0.3)",
-              }}>Renew Now →</a>
+              <a
+                href="/subscribe"
+                className="ds-sub-warning-link"
+                style={{
+                  background: subStatus === "cancelled"
+                    ? "linear-gradient(135deg,#DC2626,#991B1B)"
+                    : "linear-gradient(135deg,#D97706,#92400E)",
+                  boxShadow: subStatus === "cancelled"
+                    ? "0 4px 12px rgba(239,68,68,0.35)"
+                    : "0 4px 12px rgba(245,158,11,0.35)",
+                }}
+              >Renew Now →</a>
             </div>
           )}
 
@@ -235,7 +290,7 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
   );
 }
 
-/* ── Premium Dark Topbar ── */
+/* ══ Premium Dark Topbar ══ */
 function PremiumTopBar({ onMenuClick, salonName, plan }: {
   onMenuClick: () => void;
   salonName: string;
@@ -257,23 +312,30 @@ function PremiumTopBar({ onMenuClick, salonName, plan }: {
 
   return (
     <header className="ds-topbar">
-      {/* Left: hamburger + title */}
+      {/* Left: hamburger + page title */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
         <HamburgerBtn onClick={onMenuClick} />
-        <div style={{ fontSize: 14.5, fontWeight: 800, color: "#F1F5F9", letterSpacing: "-0.4px", lineHeight: 1 }}>
+        <div style={{
+          fontSize: 14.5, fontWeight: 800, color: "#F1F5F9",
+          letterSpacing: "-0.4px", lineHeight: 1,
+        }}>
           {pageTitle}
         </div>
       </div>
 
       {/* Center: Search */}
       <div className="ds-topbar-search">
-        <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
-          <circle cx="8.5" cy="8.5" r="5.75" stroke="rgba(255,255,255,0.25)" strokeWidth="1.75"/>
-          <path d="M13 13L17 17" stroke="rgba(255,255,255,0.25)" strokeWidth="1.75" strokeLinecap="round"/>
-        </svg>
-        <input value={searchVal} onChange={e => setSearchVal(e.target.value)} placeholder="Search anything…" />
+        <Search size={13} strokeWidth={2} color="rgba(255,255,255,0.22)" />
+        <input
+          value={searchVal}
+          onChange={e => setSearchVal(e.target.value)}
+          placeholder="Search anything…"
+        />
         {searchVal && (
-          <button onClick={() => setSearchVal("")} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.3)", fontSize: 14, padding: 0, lineHeight: 1 }}>×</button>
+          <button
+            onClick={() => setSearchVal("")}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.3)", fontSize: 14, padding: 0, lineHeight: 1 }}
+          >×</button>
         )}
       </div>
 
@@ -283,10 +345,7 @@ function PremiumTopBar({ onMenuClick, salonName, plan }: {
 
         {/* Notification bell */}
         <button className="ds-notif-btn" title="Notifications">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-          </svg>
+          <Bell size={15} strokeWidth={1.8} />
           <span className="ds-notif-dot" />
         </button>
 
@@ -297,21 +356,22 @@ function PremiumTopBar({ onMenuClick, salonName, plan }: {
             background: "linear-gradient(135deg,#7C3AED,#6D28D9)",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 10, fontWeight: 800, color: "#fff", flexShrink: 0,
-            boxShadow: "0 2px 8px rgba(124,58,237,0.4)",
+            boxShadow: "0 2px 8px rgba(124,58,237,0.45)",
           }}>{initials}</div>
-          <span style={{ fontSize: 12.5, fontWeight: 700, color: "#F1F5F9", maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <span style={{
+            fontSize: 12.5, fontWeight: 700, color: "#F1F5F9",
+            maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+          }}>
             {salonName || "Salon"}
           </span>
-          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }}>
-            <path d="M3 4.5l3 3 3-3" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
+          <ChevronDown size={11} strokeWidth={2} color="rgba(255,255,255,0.3)" />
         </div>
       </div>
     </header>
   );
 }
 
-/* ── Hamburger Button ── */
+/* ══ Hamburger Button ══ */
 export function HamburgerBtn({ onClick }: { onClick?: () => void }) {
   const handleClick = () => {
     if (onClick) { onClick(); return; }
@@ -322,18 +382,18 @@ export function HamburgerBtn({ onClick }: { onClick?: () => void }) {
       className="hbtn"
       onClick={handleClick}
       style={{
-        background: "rgba(255,255,255,0.06)",
-        border: "1px solid rgba(255,255,255,0.08)",
-        cursor: "pointer", padding: 7, borderRadius: 9,
+        background: "rgba(255,255,255,0.05)",
+        border: "1px solid rgba(255,255,255,0.07)",
+        cursor: "pointer", padding: "7px 8px", borderRadius: 9,
         display: "flex", flexDirection: "column", gap: 4,
-        transition: "all 0.15s", alignItems: "center",
+        transition: "all 0.18s", alignItems: "center",
       }}
-      onMouseEnter={e => { e.currentTarget.style.background = "rgba(139,92,246,0.15)"; e.currentTarget.style.borderColor = "rgba(139,92,246,0.3)"; }}
-      onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
+      onMouseEnter={e => { e.currentTarget.style.background = "rgba(139,92,246,0.12)"; e.currentTarget.style.borderColor = "rgba(139,92,246,0.25)"; }}
+      onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}
     >
-      <span style={{ display: "block", width: 16, height: 1.5, background: "rgba(255,255,255,0.6)", borderRadius: 2 }} />
-      <span style={{ display: "block", width: 12, height: 1.5, background: "rgba(255,255,255,0.6)", borderRadius: 2 }} />
-      <span style={{ display: "block", width: 16, height: 1.5, background: "rgba(255,255,255,0.6)", borderRadius: 2 }} />
+      <span style={{ display: "block", width: 16, height: 1.5, background: "rgba(255,255,255,0.55)", borderRadius: 2 }} />
+      <span style={{ display: "block", width: 11, height: 1.5, background: "rgba(255,255,255,0.55)", borderRadius: 2 }} />
+      <span style={{ display: "block", width: 16, height: 1.5, background: "rgba(255,255,255,0.55)", borderRadius: 2 }} />
     </button>
   );
 }

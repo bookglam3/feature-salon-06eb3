@@ -1,52 +1,74 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { NAV_ICON_MAP, LogOutIcon } from "./DashboardIcons";
+import type { LucideProps } from "lucide-react";
 
+// ─────────────────────────────────────────────────────────────────
+// Section color themes per nav group
+// ─────────────────────────────────────────────────────────────────
+const SECTION_COLORS: Record<string, {
+  grad: string;
+  dimBg: string;
+  glow: string;
+  border: string;
+  labelColor: string;
+}> = {
+  Main:       { grad: "linear-gradient(135deg,#7C3AED,#6D28D9)",  dimBg: "rgba(124,58,237,0.14)",  glow: "rgba(124,58,237,0.5)",  border: "#8B5CF6", labelColor: "rgba(167,139,250,0.6)" },
+  Finance:    { grad: "linear-gradient(135deg,#059669,#10B981)",  dimBg: "rgba(5,150,105,0.14)",   glow: "rgba(5,150,105,0.5)",   border: "#34D399", labelColor: "rgba(52,211,153,0.6)" },
+  Engagement: { grad: "linear-gradient(135deg,#2563EB,#6366F1)",  dimBg: "rgba(37,99,235,0.14)",   glow: "rgba(37,99,235,0.5)",   border: "#60A5FA", labelColor: "rgba(96,165,250,0.6)" },
+  Content:    { grad: "linear-gradient(135deg,#DB2777,#EC4899)",  dimBg: "rgba(219,39,119,0.14)",  glow: "rgba(219,39,119,0.5)",  border: "#F472B6", labelColor: "rgba(244,114,182,0.6)" },
+  System:     { grad: "linear-gradient(135deg,#475569,#64748B)",  dimBg: "rgba(71,85,105,0.14)",   glow: "rgba(71,85,105,0.4)",   border: "#94A3B8", labelColor: "rgba(148,163,184,0.5)" },
+};
+
+// ─────────────────────────────────────────────────────────────────
+// Nav structure
+// ─────────────────────────────────────────────────────────────────
 const NAV = [
   {
     group: "Main",
     items: [
-      { label: "Dashboard",    path: "/dashboard",              emoji: "◻",   gradient: "linear-gradient(135deg,#7C3AED,#6D28D9)" },
-      { label: "Calendar",     path: "/dashboard/calendar",     emoji: "🗓️",  gradient: "linear-gradient(135deg,#3B82F6,#6366F1)" },
-      { label: "Bookings",     path: "/dashboard/bookings",     emoji: "📅",  gradient: "linear-gradient(135deg,#6366F1,#4338CA)" },
-      { label: "Waitlist",     path: "/dashboard/waitlist",     emoji: "⏳",  gradient: "linear-gradient(135deg,#F59E0B,#EF4444)" },
-      { label: "Clients",      path: "/dashboard/clients",      emoji: "👤",  gradient: "linear-gradient(135deg,#10B981,#059669)" },
-      { label: "Staff",        path: "/dashboard/staff",        emoji: "✂️",  gradient: "linear-gradient(135deg,#8B5CF6,#6366F1)" },
+      { label: "Dashboard",    path: "/dashboard" },
+      { label: "Calendar",     path: "/dashboard/calendar" },
+      { label: "Bookings",     path: "/dashboard/bookings" },
+      { label: "Waitlist",     path: "/dashboard/waitlist" },
+      { label: "Clients",      path: "/dashboard/clients" },
+      { label: "Staff",        path: "/dashboard/staff" },
     ],
   },
   {
     group: "Finance",
     items: [
-      { label: "Payments",     path: "/dashboard/payments",     emoji: "💳",  gradient: "linear-gradient(135deg,#10B981,#0EA5E9)" },
-      { label: "Tips",         path: "/dashboard/tips",         emoji: "💸",  gradient: "linear-gradient(135deg,#F59E0B,#10B981)" },
-      { label: "Invoices",     path: "/dashboard/invoices",     emoji: "🧾",  gradient: "linear-gradient(135deg,#475569,#334155)" },
-      { label: "Reports",      path: "/dashboard/reports",      emoji: "📊",  gradient: "linear-gradient(135deg,#6366F1,#10B981)" },
-      { label: "Gift Cards",   path: "/dashboard/gift-cards",   emoji: "🎁",  gradient: "linear-gradient(135deg,#EF4444,#F59E0B)" },
+      { label: "Payments",     path: "/dashboard/payments" },
+      { label: "Tips",         path: "/dashboard/tips" },
+      { label: "Invoices",     path: "/dashboard/invoices" },
+      { label: "Reports",      path: "/dashboard/reports" },
+      { label: "Gift Cards",   path: "/dashboard/gift-cards" },
     ],
   },
   {
     group: "Engagement",
     items: [
-      { label: "Reviews",      path: "/dashboard/reviews",      emoji: "⭐",  gradient: "linear-gradient(135deg,#F59E0B,#EF4444)" },
-      { label: "Loyalty",      path: "/dashboard/loyalty",      emoji: "🏆",  gradient: "linear-gradient(135deg,#F59E0B,#F97316)" },
-      { label: "Referrals",    path: "/dashboard/referrals",    emoji: "🔗",  gradient: "linear-gradient(135deg,#3B82F6,#6366F1)" },
-      { label: "Broadcast",    path: "/dashboard/broadcast",    emoji: "📢",  gradient: "linear-gradient(135deg,#8B5CF6,#EC4899)" },
-      { label: "Automations",  path: "/dashboard/automations",  emoji: "🤖",  gradient: "linear-gradient(135deg,#0EA5E9,#6366F1)" },
-      { label: "Client Portal",path: "/dashboard/client-portal",emoji: "🔐",  gradient: "linear-gradient(135deg,#475569,#6366F1)" },
+      { label: "Reviews",      path: "/dashboard/reviews" },
+      { label: "Loyalty",      path: "/dashboard/loyalty" },
+      { label: "Referrals",    path: "/dashboard/referrals" },
+      { label: "Broadcast",    path: "/dashboard/broadcast" },
+      { label: "Automations",  path: "/dashboard/automations" },
+      { label: "Client Portal",path: "/dashboard/client-portal" },
     ],
   },
   {
     group: "Content",
     items: [
-      { label: "Gallery",      path: "/dashboard/gallery",      emoji: "📸",  gradient: "linear-gradient(135deg,#EC4899,#8B5CF6)" },
+      { label: "Gallery",      path: "/dashboard/gallery" },
     ],
   },
   {
     group: "System",
     items: [
-      { label: "Closed Dates", path: "/dashboard/closed-dates", emoji: "🚫",  gradient: "linear-gradient(135deg,#EF4444,#DC2626)" },
-      { label: "Partners",     path: "/dashboard/partners",     emoji: "🤝",  gradient: "linear-gradient(135deg,#10B981,#6366F1)" },
-      { label: "Settings",     path: "/dashboard/settings",     emoji: "⚙️",  gradient: "linear-gradient(135deg,#64748B,#475569)" },
+      { label: "Closed Dates", path: "/dashboard/closed-dates" },
+      { label: "Partners",     path: "/dashboard/partners" },
+      { label: "Settings",     path: "/dashboard/settings" },
     ],
   },
 ];
@@ -57,6 +79,8 @@ interface SidebarProps {
   onLogout: () => void;
   onMenuClick?: () => void;
 }
+
+type IconComp = React.FC<{ size?: number; className?: string; strokeWidth?: number }>;
 
 export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) {
   const pathname = usePathname();
@@ -76,76 +100,105 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
         .sb-wrap {
           width: 100%;
           max-width: var(--sidebar-w);
-          background: linear-gradient(180deg,#0F0B2D 0%,#130F38 55%,#0D0D1A 100%);
-          border-right: 1px solid rgba(255,255,255,0.06);
+          background: linear-gradient(180deg,#0A0818 0%,#100F28 40%,#0D0C1E 100%);
+          border-right: 1px solid rgba(255,255,255,0.05);
           display: flex; flex-direction: column;
           height: 100%; overflow: hidden;
+          position: relative;
         }
+        /* Ambient glow behind sidebar */
+        .sb-wrap::before {
+          content: "";
+          position: absolute;
+          top: 60px; left: -40px;
+          width: 160px; height: 160px;
+          background: radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%);
+          pointer-events: none;
+          border-radius: 50%;
+        }
+        /* Glass nav link base */
         .sb-link {
           display: flex; align-items: center; gap: 10px;
-          padding: 6px 10px; border-radius: 10px;
+          padding: 5px 8px; border-radius: 11px;
           font-size: 13px; font-weight: 500;
-          color: rgba(255,255,255,0.45);
+          color: rgba(255,255,255,0.4);
           background: transparent;
           text-decoration: none; margin-bottom: 1px;
-          transition: background 0.15s, color 0.15s, transform 0.12s;
-          position: relative; border-left: 2px solid transparent;
+          transition: all 0.18s cubic-bezier(0.4,0,0.2,1);
+          position: relative;
+          border: 1px solid transparent;
         }
         .sb-link:hover {
           background: rgba(255,255,255,0.05);
-          color: rgba(255,255,255,0.75);
-          transform: translateX(1px);
+          color: rgba(255,255,255,0.78);
+          transform: translateX(2px);
+          border-color: rgba(255,255,255,0.06);
         }
         .sb-link.active {
-          background: rgba(139,92,246,0.12);
+          background: rgba(139,92,246,0.1);
           color: #F1F5F9;
           font-weight: 700;
-          border-left-color: #8B5CF6;
-          box-shadow: inset 0 0 0 1px rgba(139,92,246,0.08);
+          border-color: rgba(139,92,246,0.12);
         }
-        .sb-icon {
-          width: 28px; height: 28px; border-radius: 8px;
+        /* Icon box inside link */
+        .sb-icon-box {
+          width: 30px; height: 30px; border-radius: 8px;
           display: flex; align-items: center; justify-content: center;
-          font-size: 13px; flex-shrink: 0;
-          background: rgba(255,255,255,0.05);
-          transition: transform 0.15s, box-shadow 0.15s;
+          flex-shrink: 0;
+          transition: all 0.18s cubic-bezier(0.4,0,0.2,1);
         }
-        .sb-link.active .sb-icon {
-          box-shadow: 0 0 10px rgba(139,92,246,0.4);
+        .sb-link:hover .sb-icon-box {
+          transform: scale(1.1);
         }
-        .sb-link:hover .sb-icon { transform: scale(1.1); }
+        /* Active dot */
+        .sb-active-dot {
+          width: 4px; height: 4px; border-radius: 50%;
+          flex-shrink: 0; margin-left: auto;
+          animation: sbDotPulse 2.4s ease-in-out infinite;
+        }
+        @keyframes sbDotPulse {
+          0%, 100% { opacity: 0.7; transform: scale(1); }
+          50%       { opacity: 1;   transform: scale(1.3); }
+        }
+        /* Group label */
         .sb-group-label {
           font-size: 9px; font-weight: 800;
-          color: rgba(255,255,255,0.2); letter-spacing: 1.8px;
-          text-transform: uppercase; padding: 14px 10px 5px;
+          letter-spacing: 1.6px;
+          text-transform: uppercase;
+          padding: 14px 10px 5px;
           display: flex; align-items: center; gap: 8px;
         }
         .sb-group-label::after {
           content: ""; flex: 1; height: 1px;
-          background: rgba(255,255,255,0.06);
+          background: rgba(255,255,255,0.05);
         }
-        .sb-active-dot {
-          width: 5px; height: 5px; border-radius: 50%;
-          background: #8B5CF6; flex-shrink: 0;
-          box-shadow: 0 0 8px rgba(139,92,246,0.7);
+        /* Scroll area */
+        .sb-nav-scroll {
+          flex: 1; overflow-y: auto; overflow-x: hidden;
+          padding: 2px 8px;
+          scrollbar-width: none;
+          animation: sbSlideIn 0.24s cubic-bezier(0.4,0,0.2,1) both;
         }
+        .sb-nav-scroll::-webkit-scrollbar { display: none; }
         @keyframes sbSlideIn {
-          from { opacity: 0; transform: translateX(-10px); }
+          from { opacity: 0; transform: translateX(-8px); }
           to   { opacity: 1; transform: translateX(0); }
         }
-        .sb-nav-scroll { animation: sbSlideIn 0.22s ease both; }
-        .sb-footer-btn {
-          width: 100%; padding: 7px 12px; border-radius: 8px;
-          border: 1px solid rgba(255,255,255,0.08);
-          background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.4);
+        /* Footer signout button */
+        .sb-signout-btn {
+          width: 100%; padding: 8px 12px; border-radius: 9px;
+          border: 1px solid rgba(255,255,255,0.07);
+          background: rgba(255,255,255,0.03);
+          color: rgba(255,255,255,0.38);
           font-size: 12px; font-weight: 600; cursor: pointer;
-          transition: all 0.15s; font-family: var(--font);
-          display: flex; align-items: center; justify-content: center; gap: 6px;
+          transition: all 0.18s;
+          font-family: var(--font);
+          display: flex; align-items: center; justify-content: center; gap: 7px;
         }
-        .sb-footer-btn:hover {
-          background: rgba(239,68,68,0.12);
+        .sb-signout-btn:hover {
+          background: rgba(239,68,68,0.1);
           color: #FCA5A5;
-          border-color: rgba(239,68,68,0.25);
+          border-color: rgba(239,68,68,0.2);
         }
       `}</style>
 
@@ -154,84 +207,130 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
         {/* ── Logo ── */}
         <div style={{
           padding: "18px 16px 14px",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          borderBottom: "1px solid rgba(255,255,255,0.05)",
           display: "flex", alignItems: "center", justifyContent: "space-between",
+          flexShrink: 0,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {/* Gradient logo mark */}
+            {/* Premium gradient logo mark */}
             <div style={{
-              width: 34, height: 34, borderRadius: 10,
-              background: "linear-gradient(135deg,#7C3AED 0%,#6D28D9 50%,#4C1D95 100%)",
+              width: 36, height: 36, borderRadius: 11, position: "relative",
+              background: "linear-gradient(135deg,#7C3AED 0%,#5B21B6 60%,#4C1D95 100%)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 15, color: "#fff", fontWeight: 900, letterSpacing: -0.5,
-              boxShadow: "0 4px 16px rgba(124,58,237,0.5), inset 0 1px 0 rgba(255,255,255,0.2)",
-            }}>f</div>
+              fontSize: 16, color: "#fff", fontWeight: 900, letterSpacing: -0.5,
+              boxShadow: "0 4px 18px rgba(124,58,237,0.55), inset 0 1px 0 rgba(255,255,255,0.22)",
+              flexShrink: 0,
+            }}>
+              f
+              {/* Pulse ring */}
+              <div style={{
+                position: "absolute", inset: -3, borderRadius: 14,
+                border: "1px solid rgba(139,92,246,0.35)",
+                animation: "logoPulse 3s ease-in-out infinite",
+              }} />
+            </div>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 800, color: "#F1F5F9", letterSpacing: "-0.6px", lineHeight: 1 }}>feature</div>
-              <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.25)", letterSpacing: "1.8px", textTransform: "uppercase", marginTop: 2 }}>SALON OS</div>
+              <div style={{ fontSize: 15.5, fontWeight: 800, color: "#F1F5F9", letterSpacing: "-0.7px", lineHeight: 1 }}>feature</div>
+              <div style={{ fontSize: 8.5, fontWeight: 700, color: "rgba(255,255,255,0.22)", letterSpacing: "2px", textTransform: "uppercase", marginTop: 2 }}>SALON OS</div>
             </div>
           </div>
           {onClose && (
             <button onClick={onClose} style={{
-              background: "rgba(255,255,255,0.06)", border: "none", cursor: "pointer",
-              width: 28, height: 28, borderRadius: "50%",
-              fontSize: 12, color: "rgba(255,255,255,0.4)",
+              background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)",
+              cursor: "pointer", width: 28, height: 28, borderRadius: 8,
+              fontSize: 12, color: "rgba(255,255,255,0.35)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              transition: "all 0.12s",
+              transition: "all 0.15s", flexShrink: 0,
             }}
-              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.12)"; e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "rgba(255,255,255,0.4)"; }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "#fff"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = "rgba(255,255,255,0.35)"; }}
             >✕</button>
           )}
         </div>
 
         {/* ── Nav ── */}
-        <nav className="sb-nav-scroll" style={{
-          flex: 1, overflowY: "auto", overflowX: "hidden",
-          padding: "4px 8px",
-          maxHeight: "calc(100vh - 140px)",
-          scrollbarWidth: "none",
-        }}>
-          {NAV.map(group => (
-            <div key={group.group}>
-              <div className="sb-group-label">{group.group}</div>
-              {group.items.map(item => {
-                const active = isActive(item.path);
-                return (
-                  <Link
-                    key={item.path}
-                    href={item.path}
-                    onClick={onClose}
-                    className={`sb-link${active ? " active" : ""}`}
-                  >
-                    <span className="sb-icon" style={active ? {
-                      background: item.gradient,
-                    } : {}}>
-                      {item.emoji}
-                    </span>
-                    <span style={{ flex: 1 }}>{item.label}</span>
-                    {active && <span className="sb-active-dot" />}
-                  </Link>
-                );
-              })}
-            </div>
-          ))}
+        <nav className="sb-nav-scroll">
+          {NAV.map(group => {
+            const s = SECTION_COLORS[group.group] || SECTION_COLORS.System;
+            return (
+              <div key={group.group}>
+                <div className="sb-group-label" style={{ color: s.labelColor }}>
+                  {group.group}
+                </div>
+                {group.items.map(item => {
+                  const active = isActive(item.path);
+                  const Icon = NAV_ICON_MAP[item.label] as IconComp | undefined;
+                  return (
+                    <Link
+                      key={item.path}
+                      href={item.path}
+                      onClick={onClose}
+                      className={`sb-link${active ? " active" : ""}`}
+                      style={{
+                        borderLeftColor: active ? s.border : "transparent",
+                        borderLeft: `2px solid ${active ? s.border : "transparent"}`,
+                      }}
+                    >
+                      {/* Icon box */}
+                      <div
+                        className="sb-icon-box"
+                        style={{
+                          background: active ? s.grad : s.dimBg,
+                          boxShadow: active ? `0 0 12px ${s.glow}, inset 0 1px 0 rgba(255,255,255,0.15)` : "none",
+                          border: `1px solid ${active ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.05)"}`,
+                          color: active ? "#fff" : "rgba(255,255,255,0.45)",
+                        }}
+                      >
+                        {Icon && (
+                          <Icon
+                            size={15}
+                            strokeWidth={active ? 2 : 1.6}
+                          />
+                        )}
+                      </div>
+
+                      {/* Label */}
+                      <span style={{ flex: 1, fontSize: 13, letterSpacing: "-0.1px" }}>{item.label}</span>
+
+                      {/* Active indicator dot */}
+                      {active && (
+                        <div
+                          className="sb-active-dot"
+                          style={{
+                            background: s.border,
+                            boxShadow: `0 0 6px ${s.glow}`,
+                          }}
+                        />
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            );
+          })}
         </nav>
 
         {/* ── Footer ── */}
         <div style={{
           padding: "12px 14px",
-          borderTop: "1px solid rgba(255,255,255,0.06)",
+          borderTop: "1px solid rgba(255,255,255,0.05)",
           background: "rgba(255,255,255,0.02)",
+          backdropFilter: "blur(20px)",
+          flexShrink: 0,
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-            {/* Salon avatar */}
+          {/* Salon info card */}
+          <div style={{
+            display: "flex", alignItems: "center", gap: 10, marginBottom: 10,
+            padding: "9px 10px", borderRadius: 11,
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.06)",
+          }}>
             <div style={{
               width: 34, height: 34, borderRadius: 10, flexShrink: 0,
               background: "linear-gradient(135deg,#7C3AED,#4C1D95)",
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 12, fontWeight: 800, color: "#fff",
-              boxShadow: "0 2px 10px rgba(124,58,237,0.4)",
+              boxShadow: "0 2px 10px rgba(124,58,237,0.45)",
             }}>{initials}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{
@@ -243,15 +342,30 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
                 fontSize: 10, color: "#10B981", fontWeight: 600,
                 display: "flex", alignItems: "center", gap: 4, marginTop: 1,
               }}>
-                <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#10B981", display: "inline-block", boxShadow: "0 0 6px rgba(16,185,129,0.6)" }} />
+                <span style={{
+                  width: 5, height: 5, borderRadius: "50%",
+                  background: "#10B981", display: "inline-block",
+                  boxShadow: "0 0 6px rgba(16,185,129,0.7)",
+                  animation: "logoPulse 2s ease-in-out infinite",
+                }} />
                 Active
               </div>
             </div>
           </div>
-          <button onClick={onLogout} className="sb-footer-btn">
-            <span style={{ fontSize: 13 }}>→</span> Sign out
+
+          <button onClick={onLogout} className="sb-signout-btn">
+            <LogOutIcon size={13} strokeWidth={2} />
+            Sign out
           </button>
         </div>
+
+        {/* Keyframes */}
+        <style>{`
+          @keyframes logoPulse {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50%       { opacity: 1;   transform: scale(1.06); }
+          }
+        `}</style>
       </aside>
     </>
   );
