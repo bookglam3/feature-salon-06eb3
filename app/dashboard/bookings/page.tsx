@@ -11,17 +11,17 @@ import type { Appointment, Service } from "../../types";
 
 type StaffItem = { id: string; name: string };
 
-const STATUS_COLORS: Record<string, { bg: string; color: string; border: string }> = {
-  confirmed:  { bg: "var(--green-light)",  color: "var(--green)",  border: "var(--green-pale)" },
-  pending:    { bg: "var(--indigo-light)", color: "var(--indigo)", border: "var(--indigo-pale)" },
-  cancelled:  { bg: "var(--red-light)",    color: "var(--red)",    border: "var(--red-pale)" },
-  completed:  { bg: "#F0FDF4",             color: "#059669",       border: "#A7F3D0" },
-  no_show:    { bg: "#FFF7ED",             color: "#D97706",       border: "#FDE68A" },
+const STATUS_COLORS: Record<string, string> = {
+  confirmed: "dk-badge-green",
+  pending:   "dk-badge-indigo",
+  cancelled: "dk-badge-red",
+  completed: "dk-badge-green",
+  no_show:   "dk-badge-amber",
 };
 
 function StatusPill({ status }: { status: string }) {
-  const s = STATUS_COLORS[status] || STATUS_COLORS.pending;
-  return <span style={{ fontSize: 10.5, fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: s.bg, color: s.color, border: `1px solid ${s.border}` }}>{status}</span>;
+  const cls = STATUS_COLORS[status] || "dk-badge-slate";
+  return <span className={`dk-badge ${cls}`}>{status.replace("_"," ")}</span>;
 }
 
 const EMPTY_FORM = { client_name: "", client_email: "", client_phone: "", staff_id: "", service_id: "", date_time: "", status: "pending" };
@@ -142,25 +142,25 @@ export default function BookingsPage() {
   if (loading) return <DashboardShell salonName=""><SkeletonDashboard /></DashboardShell>;
 
   const Topbar = (
-    <header style={{ background: "#fff", borderBottom: "1px solid var(--border)", padding: "0 20px", height: 58, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 30, gap: 12, flexWrap: "wrap" }}>
+    <header className="elite-topbar">
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        <HamburgerBtn onClick={() => {}} />
+        <HamburgerBtn />
         <div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)", letterSpacing: "-0.3px" }}>Bookings</div>
-          <div style={{ fontSize: 11.5, color: "var(--text-3)" }}>{appointments.length} total appointments</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "#F1F5F9", letterSpacing: "-0.4px" }}>Bookings</div>
+          <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.3)", marginTop: 1 }}>{appointments.length} total appointments</div>
         </div>
       </div>
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        <div style={{ display: "flex", background: "var(--slate-100)", borderRadius: 8, padding: 3 }}>
+        <div className="elite-tabs">
           {(["table","calendar"] as const).map(v => (
-            <button key={v} onClick={() => setView(v)} style={{ padding: "5px 14px", borderRadius: 6, border: "none", background: view === v ? "#fff" : "transparent", color: view === v ? "var(--text-1)" : "var(--text-3)", fontSize: 12, cursor: "pointer", fontWeight: view === v ? 600 : 400, boxShadow: view === v ? "var(--shadow-xs)" : "none", transition: "all 0.12s" }}>
+            <button key={v} onClick={() => setView(v)} className={`elite-tab${view === v ? " active" : ""}`}>
               {v === "table" ? "Table" : "Calendar"}
             </button>
           ))}
         </div>
-        <button onClick={() => { setShowForm(true); setEditingId(null); setFormData(EMPTY_FORM); }} style={{ background: "var(--indigo)", color: "#fff", fontSize: 13, fontWeight: 600, padding: "8px 16px", borderRadius: "var(--r-sm)", border: "none", cursor: "pointer", boxShadow: "var(--shadow-indigo)", whiteSpace: "nowrap", transition: "all 0.14s" }}
-          onMouseEnter={e => { e.currentTarget.style.background = "var(--indigo-dark)"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "var(--indigo)"; }}
+        <button
+          onClick={() => { setShowForm(true); setEditingId(null); setFormData(EMPTY_FORM); }}
+          className="elite-btn-primary"
         >+ New Booking</button>
       </div>
     </header>
@@ -172,98 +172,84 @@ export default function BookingsPage() {
 
         {/* Search + Tabs bar */}
         <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by client or service..." style={{ flex: 1, minWidth: 160, padding: "9px 13px", border: "1px solid var(--border-2)", borderRadius: "var(--r-sm)", fontSize: 13.5, fontFamily: "var(--font)", outline: "none", color: "var(--text-1)" }}
-            onFocus={e => { e.currentTarget.style.borderColor = "var(--indigo)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.12)"; }}
-            onBlur={e => { e.currentTarget.style.borderColor = "var(--border-2)"; e.currentTarget.style.boxShadow = "none"; }}
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search by client or service…"
+            className="elite-input"
+            style={{ flex: 1, minWidth: 160 }}
           />
-          <div style={{ display: "flex", gap: 2, background: "var(--slate-100)", padding: 3, borderRadius: 8, flexWrap: "wrap" }}>
+          <div className="elite-tabs" style={{ flexWrap: "wrap" }}>
             {["All","Today","Upcoming","Completed","Cancelled"].map(t => (
-              <button key={t} onClick={() => setActiveTab(t)} style={{ fontSize: 12, padding: "5px 10px", borderRadius: 6, border: "none", background: activeTab === t ? "#fff" : "transparent", color: activeTab === t ? "var(--indigo)" : "var(--text-3)", cursor: "pointer", fontWeight: activeTab === t ? 700 : 500, boxShadow: activeTab === t ? "var(--shadow-xs)" : "none", transition: "all 0.12s" }}>{t}</button>
+              <button key={t} onClick={() => setActiveTab(t)} className={`elite-tab${activeTab === t ? " active" : ""}`}>{t}</button>
             ))}
           </div>
         </div>
 
         {view === "table" ? (
-          <div style={{ background: "#fff", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", overflow: "hidden" }}>
+          <div className="elite-table-wrap fade-in-up">
             {filtered.length === 0 ? (
-              <EmptyState icon="📅" title="No bookings found" description={search ? "Try a different search term" : "Create your first booking"} action={{ label: "+ New Booking", onClick: () => setShowForm(true) }} />
+              <EmptyState title="No bookings found" description={search ? "Try a different search term" : "Create your first booking to get started"} action={{ label: "+ New Booking", onClick: () => setShowForm(true) }} />
             ) : (
-              <>
-                <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 600 }}>
-                    <thead>
-                      <tr style={{ background: "var(--slate-50)" }}>
-                        {["Status","Client","Service","Staff","Date & Time","Amount","Notes","Actions"].map(h => (
-                          <th key={h} style={{ fontSize: 10.5, fontWeight: 700, color: "var(--text-3)", textAlign: "left", padding: "10px 18px", letterSpacing: "0.5px", textTransform: "uppercase", borderBottom: "1px solid var(--border)" }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filtered.map(a => (
-                        <tr key={a.id}
-                          onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = "var(--slate-50)"; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = "transparent"; }}
-                          style={{ transition: "background 0.1s" }}
-                        >
-                          <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)" }}><StatusPill status={a.status} /></td>
-                          <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", fontSize: 13, fontWeight: 600, color: "var(--text-1)" }}>{a.client_name}</td>
-                          <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", fontSize: 13, color: "var(--text-2)" }}>{a.services?.name || <span style={{color:"var(--text-3)",opacity:.5}}>—</span>}</td>
-                          <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", fontSize: 13, color: "var(--text-3)" }}>{a.staff?.name || <span style={{fontSize:11,color:"var(--text-3)",opacity:.5}}>Any</span>}</td>
-                          <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", fontSize: 13, color: "var(--text-2)" }}>{new Date(a.date_time).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</td>
-                          <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", fontSize: 13, fontWeight: 700, color: "var(--green)" }}>{a.services?.price ? `£${a.services.price}` : <span style={{color:"var(--text-3)",opacity:.5}}>—</span>}</td>
-                          <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", fontSize: 12, color: "var(--text-3)", maxWidth: 130 }}>
-                            {a.notes
-                              ? <span title={a.notes} style={{ display:"block",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:120,cursor:"help" }}>{a.notes}</span>
-                              : <span style={{opacity:.3}}>—</span>}
-                          </td>
-                          <td style={{ padding: "12px 18px", borderBottom: "1px solid var(--slate-100)", whiteSpace: "nowrap" }}>
-                            <button onClick={() => handleEdit(a)} style={{ color: "var(--indigo)", background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, marginRight: 8, fontFamily: "var(--font)" }}>Edit</button>
+              <div style={{ overflowX: "auto" }}>
+                <table className="elite-table" style={{ minWidth: 640 }}>
+                  <thead>
+                    <tr>
+                      {["Status","Client","Service","Staff","Date & Time","Amount","Actions"].map(h => (
+                        <th key={h}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map(a => (
+                      <tr key={a.id}>
+                        <td><StatusPill status={a.status} /></td>
+                        <td style={{ fontWeight: 700, color: "#F1F5F9" }}>{a.client_name}</td>
+                        <td style={{ color: "rgba(255,255,255,0.55)" }}>{a.services?.name || <span style={{opacity:.3}}>—</span>}</td>
+                        <td style={{ color: "rgba(255,255,255,0.4)" }}>{a.staff?.name || <span style={{fontSize:11,opacity:.4}}>Any</span>}</td>
+                        <td style={{ color: "rgba(255,255,255,0.55)", whiteSpace: "nowrap" }}>{new Date(a.date_time).toLocaleString("en-GB",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"})}</td>
+                        <td style={{ fontWeight: 700, color: "#34D399" }}>{a.services?.price ? `£${a.services.price}` : <span style={{opacity:.3}}>—</span>}</td>
+                        <td style={{ whiteSpace: "nowrap" }}>
+                          <div style={{ display: "flex", gap: 4 }}>
+                            <button onClick={() => handleEdit(a)} className="elite-btn-ghost" style={{ padding: "4px 10px", fontSize: 11.5 }}>Edit</button>
                             {a.status !== "completed" && a.status !== "cancelled" && (
-                              <button onClick={async () => {
-                                await supabase.from("appointments").update({ status: "completed" }).eq("id", a.id);
-                                await reloadAppts();
-                                toast.success("Marked as complete ✓");
-                              }} style={{ color: "#059669", background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, marginRight: 8, fontFamily: "var(--font)" }}>✓ Done</button>
+                              <button onClick={async () => { await supabase.from("appointments").update({ status: "completed" }).eq("id", a.id); await reloadAppts(); toast.success("Marked complete ✓"); }} className="elite-btn-ghost" style={{ padding: "4px 10px", fontSize: 11.5, color: "#34D399", borderColor: "rgba(16,185,129,0.2)" }}>Done</button>
                             )}
                             {a.status !== "no_show" && a.status !== "cancelled" && a.status !== "completed" && (
-                              <button onClick={async () => {
-                                await supabase.from("appointments").update({ status: "no_show" }).eq("id", a.id);
-                                await reloadAppts();
-                                toast.success("Marked as no-show");
-                              }} style={{ color: "#D97706", background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, marginRight: 8, fontFamily: "var(--font)" }}>No-show</button>
+                              <button onClick={async () => { await supabase.from("appointments").update({ status: "no_show" }).eq("id", a.id); await reloadAppts(); toast.success("No-show marked"); }} className="elite-btn-ghost" style={{ padding: "4px 10px", fontSize: 11.5, color: "#FCD34D", borderColor: "rgba(245,158,11,0.2)" }}>No-show</button>
                             )}
-                            <button onClick={() => handleDelete(a.id)} style={{ color: "var(--red)", background: "none", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: "var(--font)" }}>Delete</button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </>
+                            <button onClick={() => handleDelete(a.id)} className="elite-btn-ghost" style={{ padding: "4px 10px", fontSize: 11.5, color: "#FCA5A5", borderColor: "rgba(239,68,68,0.2)" }}>Delete</button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         ) : (
           /* Calendar View */
-          <div style={{ background: "#fff", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", overflow: "hidden" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", borderBottom: "1px solid var(--border)" }}>
-              <button onClick={() => setWeekOffset(w => w - 1)} style={{ border: "1px solid var(--border)", background: "#fff", borderRadius: "var(--r-sm)", padding: "5px 12px", cursor: "pointer", fontSize: 14, color: "var(--text-2)" }}>�</button>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text-1)" }}>
-                {weekDays[0].toLocaleDateString("en-GB", { day: "numeric", month: "short" })} � {weekDays[6].toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+          <div className="elite-table-wrap fade-in-up">
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+              <button onClick={() => setWeekOffset(w => w - 1)} className="elite-btn-ghost" style={{ padding: "5px 12px" }}>←</button>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#F1F5F9" }}>
+                {weekDays[0].toLocaleDateString("en-GB",{day:"numeric",month:"short"})} – {weekDays[6].toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}
               </div>
               <div style={{ display: "flex", gap: 6 }}>
-                <button onClick={() => setWeekOffset(0)} style={{ border: "1px solid var(--indigo-pale)", background: "var(--indigo-light)", borderRadius: "var(--r-sm)", padding: "5px 12px", cursor: "pointer", fontSize: 12, color: "var(--indigo)", fontWeight: 600 }}>Today</button>
-                <button onClick={() => setWeekOffset(w => w + 1)} style={{ border: "1px solid var(--border)", background: "#fff", borderRadius: "var(--r-sm)", padding: "5px 12px", cursor: "pointer", fontSize: 14, color: "var(--text-2)" }}>�</button>
+                <button onClick={() => setWeekOffset(0)} className="elite-btn-ghost" style={{ padding: "5px 12px", color: "#C4B5FD", borderColor: "rgba(139,92,246,0.25)" }}>Today</button>
+                <button onClick={() => setWeekOffset(w => w + 1)} className="elite-btn-ghost" style={{ padding: "5px 12px" }}>→</button>
               </div>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", borderBottom: "1px solid var(--border)", overflowX: "auto" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", borderBottom: "1px solid rgba(255,255,255,0.07)", overflowX: "auto" }}>
               {weekDays.map((day, i) => {
                 const isToday = day.toDateString() === new Date().toDateString();
                 return (
-                  <div key={i} style={{ padding: "10px 8px", textAlign: "center", borderRight: i < 6 ? "1px solid var(--border)" : "none" }}>
-                    <div style={{ fontSize: 10, color: "var(--text-3)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  <div key={i} style={{ padding: "10px 8px", textAlign: "center", borderRight: i < 6 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.28)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" }}>
                       {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][day.getDay()]}
                     </div>
-                    <div style={{ width: 28, height: 28, borderRadius: "50%", background: isToday ? "var(--indigo)" : "transparent", color: isToday ? "#fff" : "var(--text-1)", fontSize: 13, fontWeight: isToday ? 700 : 500, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto" }}>
+                    <div style={{ width: 28, height: 28, borderRadius: "50%", background: isToday ? "linear-gradient(135deg,#7C3AED,#6D28D9)" : "transparent", color: isToday ? "#fff" : "#F1F5F9", fontSize: 13, fontWeight: isToday ? 800 : 500, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto", boxShadow: isToday ? "0 4px 12px rgba(124,58,237,0.45)" : "none" }}>
                       {day.getDate()}
                     </div>
                   </div>
@@ -274,15 +260,16 @@ export default function BookingsPage() {
               {weekDays.map((day, i) => {
                 const dayAppts = appointments.filter(a => new Date(a.date_time).toDateString() === day.toDateString());
                 return (
-                  <div key={i} style={{ padding: 6, borderRight: i < 6 ? "1px solid var(--border)" : "none", minHeight: 200 }}>
+                  <div key={i} style={{ padding: 6, borderRight: i < 6 ? "1px solid rgba(255,255,255,0.05)" : "none", minHeight: 200 }}>
                     {dayAppts.map(a => (
-                      <div key={a.id} onClick={() => handleEdit(a)} style={{ background: "var(--indigo-light)", borderRadius: 6, padding: "5px 7px", marginBottom: 4, cursor: "pointer", borderLeft: "3px solid var(--indigo)", transition: "all 0.12s" }}
-                        onMouseEnter={e => { e.currentTarget.style.background = "var(--indigo-pale)"; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = "var(--indigo-light)"; }}
+                      <div key={a.id} onClick={() => handleEdit(a)}
+                        style={{ background: "rgba(124,58,237,0.12)", borderRadius: 7, padding: "5px 8px", marginBottom: 4, cursor: "pointer", borderLeft: "3px solid #7C3AED", transition: "all 0.15s" }}
+                        onMouseEnter={e => { e.currentTarget.style.background = "rgba(124,58,237,0.22)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = "rgba(124,58,237,0.12)"; }}
                       >
-                        <div style={{ fontSize: 10.5, fontWeight: 600, color: "var(--text-1)" }}>{new Date(a.date_time).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</div>
-                        <div style={{ fontSize: 10.5, color: "var(--indigo)", fontWeight: 500 }}>{a.client_name}</div>
-                        <div style={{ fontSize: 10, color: "var(--text-3)" }}>{a.services?.name}</div>
+                        <div style={{ fontSize: 10.5, fontWeight: 700, color: "#C4B5FD" }}>{new Date(a.date_time).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}</div>
+                        <div style={{ fontSize: 10.5, color: "#F1F5F9", fontWeight: 600 }}>{a.client_name}</div>
+                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>{a.services?.name}</div>
                       </div>
                     ))}
                   </div>

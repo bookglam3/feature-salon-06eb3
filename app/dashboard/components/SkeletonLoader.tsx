@@ -1,4 +1,4 @@
-/* ── Skeleton shimmer blocks ── */
+/* ── Skeleton shimmer blocks — DARK PREMIUM ── */
 export function SkeletonBox({ w = "100%", h = 16, r = 8 }: { w?: string | number; h?: number; r?: number }) {
   return (
     <div
@@ -11,10 +11,18 @@ export function SkeletonBox({ w = "100%", h = 16, r = 8 }: { w?: string | number
 export function SkeletonStatCard() {
   return (
     <div style={{
-      background: "#fff", border: "1px solid var(--border)",
-      borderRadius: "var(--r-lg)", padding: "20px 18px",
-      display: "flex", flexDirection: "column", gap: 14,
+      background: "linear-gradient(145deg,#100F1C,#130F2A)",
+      border: "1px solid rgba(255,255,255,0.06)",
+      borderRadius: 18,
+      padding: "20px 18px",
+      display: "flex",
+      flexDirection: "column",
+      gap: 14,
+      position: "relative",
+      overflow: "hidden",
     }}>
+      {/* top accent */}
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg,rgba(139,92,246,0.4),transparent)", borderRadius: "18px 18px 0 0" }} />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <SkeletonBox w={80} h={10} />
         <SkeletonBox w={36} h={36} r={10} />
@@ -26,8 +34,14 @@ export function SkeletonStatCard() {
 
 export function SkeletonRow() {
   return (
-    <div style={{ display: "flex", gap: 16, alignItems: "center", padding: "14px 20px", borderBottom: "1px solid var(--slate-100)" }}>
-      <SkeletonBox w={60} h={10} />
+    <div style={{
+      display: "flex",
+      gap: 16,
+      alignItems: "center",
+      padding: "14px 20px",
+      borderBottom: "1px solid rgba(255,255,255,0.05)",
+    }}>
+      <SkeletonBox w={60} h={22} r={99} />
       <SkeletonBox w={100} h={10} />
       <SkeletonBox w={80} h={10} />
       <SkeletonBox w={60} h={10} />
@@ -39,9 +53,13 @@ export function SkeletonRow() {
 export function SkeletonCard() {
   return (
     <div style={{
-      background: "#fff", border: "1px solid var(--border)",
-      borderRadius: "var(--r-md)", padding: 16,
-      display: "flex", flexDirection: "column", gap: 10,
+      background: "linear-gradient(145deg,#100F1C,#130F2A)",
+      border: "1px solid rgba(255,255,255,0.06)",
+      borderRadius: 14,
+      padding: 16,
+      display: "flex",
+      flexDirection: "column",
+      gap: 10,
     }}>
       <div style={{ display: "flex", justifyContent: "space-between" }}>
         <SkeletonBox w={120} h={14} />
@@ -61,8 +79,14 @@ export function SkeletonDashboard() {
         {[1,2,3,4].map(i => <SkeletonStatCard key={i} />)}
       </div>
       {/* Section card */}
-      <div style={{ background: "#fff", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", overflow: "hidden", marginBottom: 20 }}>
-        <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border)" }}>
+      <div style={{
+        background: "linear-gradient(145deg,#100F1C,#130F2A)",
+        border: "1px solid rgba(255,255,255,0.06)",
+        borderRadius: 18,
+        overflow: "hidden",
+        marginBottom: 20,
+      }}>
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
           <SkeletonBox w={140} h={14} />
         </div>
         {[1,2,3,4,5].map(i => <SkeletonRow key={i} />)}
