@@ -878,6 +878,27 @@ export default function SettingsPage() {
         </form>
       </div>
 
+      {/* ── Payout Settings ── */}
+      <div style={cardStyle}>
+        <div style={{ fontSize: "14px", fontWeight: 700, color: "#0F172A", marginBottom: "4px" }}>💳 Payout Settings</div>
+        <div style={{ fontSize: "12.5px", color: "#64748B", marginBottom: "16px" }}>
+          Connect your Stripe account to receive automatic payouts from bookings.
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: "linear-gradient(135deg,#F0F4FF,#EEF2FF)", border: "1px solid #C7D2FE", borderRadius: 12, marginBottom: 16 }}>
+          <span style={{ fontSize: 28 }}>🏦</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#1E1B4B" }}>Stripe Connect Express</div>
+            <div style={{ fontSize: 11.5, color: "#6366F1", marginTop: 2 }}>5% platform fee · automatic payouts · Stripe-powered</div>
+          </div>
+        </div>
+        <button
+          onClick={() => router.push("/dashboard/earnings")}
+          style={{ padding: "10px 20px", background: "linear-gradient(135deg,#6366F1,#4F46E5)", color: "#fff", border: "none", borderRadius: "10px", fontSize: "13px", cursor: "pointer", fontWeight: 700, boxShadow: "0 4px 16px rgba(99,102,241,0.3)" }}
+        >
+          💰 Manage Payouts →
+        </button>
+      </div>
+
       {/* ── Account ── */}
       <div style={cardStyle}>
         <div style={{ fontSize: "14px", fontWeight: 600, color: "#0F172A", marginBottom: "12px" }}>Account</div>

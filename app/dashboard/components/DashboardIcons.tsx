@@ -36,6 +36,7 @@ import {
   ChevronDown,
   Home,
   Menu,
+  TrendingUp,
 } from "lucide-react";
 import type { LucideProps } from "lucide-react";
 
@@ -85,6 +86,7 @@ export const GalleryIcon      = makeIcon(ImageIcon);
 export const ClosedDatesIcon  = makeIcon(CalendarX);
 export const SettingsIcon     = makeIcon(Settings2);
 export const PartnersIcon     = makeIcon(Handshake);
+export const EarningsIcon     = makeIcon(TrendingUp);
 
 // UI utility icons
 export const SearchIcon       = makeIcon(Search);
@@ -121,4 +123,5 @@ export const NAV_ICON_MAP: Record<string, React.FC<IconProps>> = {
   "Closed Dates":  ClosedDatesIcon,
   "Settings":      SettingsIcon,
   "Partners":      PartnersIcon,
+  "Earnings":      EarningsIcon,
 };

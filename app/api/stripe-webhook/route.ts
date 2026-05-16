@@ -169,5 +169,26 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // ── Stripe Connect Events ────────────────────────────────────
+
+  if (event.type === "account.updated") {
+    const account = event.data.object as Stripe.Account;
+    await supabase.from("salons").update({
+      charges_enabled: account.charges_enabled,
+      payouts_enabled: account.payouts_enabled,
+    }).eq("stripe_account_id", account.id);
+    console.log(`[Webhook] account.updated id=${account.id} charges=${account.charges_enabled} payouts=${account.payouts_enabled}`);
+  }
+
+  if (event.type === "payout.paid") {
+    const payout = event.data.object as Stripe.Payout;
+    console.log(`[Webhook] payout.paid id=${payout.id} amount=${payout.amount / 100}`);
+  }
+
+  if (event.type === "payout.failed") {
+    const payout = event.data.object as Stripe.Payout;
+    console.log(`[Webhook] payout.failed id=${payout.id} reason=${payout.failure_message}`);
+  }
+
   return NextResponse.json({ received: true });
 }

@@ -33,6 +33,7 @@ const NAV_GROUPS = [
   ]},
   { group: "FINANCE", items: [
     { label: "Payments",       path: "/dashboard/payments" },
+    { label: "Earnings",       path: "/dashboard/earnings" },
     { label: "Tips",           path: "/dashboard/tips" },
     { label: "Invoices",       path: "/dashboard/invoices" },
     { label: "Reports",        path: "/dashboard/reports" },
