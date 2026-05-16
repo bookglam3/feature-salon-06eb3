@@ -9,12 +9,13 @@ const supabaseAdmin = createClient(
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const { data, error } = await supabaseAdmin
     .from("appointments")
     .select("*, services(name,price), salon:salons(name,slug,owner_email)")
-    .eq("id", params.id)
+    .eq("id", id)
     .single();
 
   if (error || !data) {
@@ -25,8 +26,9 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const body = await req.json();
   const { action, date_time, notes } = body;
 
@@ -34,7 +36,7 @@ export async function PATCH(
     const { error } = await supabaseAdmin
       .from("appointments")
       .update({ date_time, status: "pending", notes })
-      .eq("id", params.id);
+      .eq("id", id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ success: true });
   }
@@ -43,7 +45,7 @@ export async function PATCH(
     const { error } = await supabaseAdmin
       .from("appointments")
       .update({ status: "cancelled", notes })
-      .eq("id", params.id);
+      .eq("id", id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ success: true });
   }
