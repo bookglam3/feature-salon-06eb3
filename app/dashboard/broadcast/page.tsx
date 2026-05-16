@@ -85,14 +85,50 @@ function BroadcastContent() {
     if (!salonId || !form.message || !form.title) { toast.error("Title and message required"); return; }
     if (!confirm(`Send to ${recipientCount} clients via ${form.channel.toUpperCase()}?`)) return;
     setSending(true);
-    const { data, error } = await supabase.from("broadcast_messages").insert({
-      salon_id: salonId, title: form.title, message: form.message,
-      channel: form.channel, recipient_count: recipientCount, status: "sent",
-    }).select().single();
-    if (error) { toast.error("Failed to log broadcast"); setSending(false); return; }
-    setHistory(p => [data, ...p]);
-    toast.success(`Broadcast logged for ${recipientCount} clients!`);
-    setForm({ title: "", message: "", channel: "whatsapp", filter: "all" });
+
+    // 1. Log the broadcast first (status = "sending")
+    const { data: broadcastRow, error: logErr } = await supabase
+      .from("broadcast_messages")
+      .insert({
+        salon_id: salonId, title: form.title, message: form.message,
+        channel: form.channel, recipient_count: recipientCount, status: "sending",
+      })
+      .select().single();
+
+    if (logErr) { toast.error("Failed to log broadcast"); setSending(false); return; }
+
+    // 2. Actually send via API
+    try {
+      const res = await fetch("/api/broadcast/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          broadcastId: broadcastRow?.id,
+          salonId,
+          salonName,
+          salonSlug,
+          channel: form.channel,
+          title: form.title,
+          message: form.message,
+          clients: filteredClients,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Send failed");
+
+      const successCount = json.sent ?? 0;
+      const errCount = json.errors?.length ?? 0;
+      setHistory(p => [{ ...broadcastRow, status: "sent", recipient_count: successCount }, ...p]);
+
+      if (errCount > 0) {
+        toast.error(`Sent to ${successCount}, failed for ${errCount} clients`);
+      } else {
+        toast.success(`✅ Sent to ${successCount} clients!`);
+      }
+      setForm({ title: "", message: "", channel: "whatsapp", filter: "all" });
+    } catch (e) {
+      toast.error(`Send failed: ${e}`);
+    }
     setSending(false);
   };
 

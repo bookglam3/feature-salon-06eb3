@@ -87,7 +87,7 @@ export function formatWADate(dateTime: string): string {
 // ─────────────────────────────────────────────────────────
 // Core WhatsApp sender
 // ─────────────────────────────────────────────────────────
-async function sendWhatsApp(to: string, body: string): Promise<void> {
+export async function sendWhatsApp(to: string, body: string): Promise<void> {
   const normalisedTo = normalisePhone(to);
   if (!normalisedTo) {
     console.warn(`[WhatsApp] Skipping — could not normalise phone: ${to}`);

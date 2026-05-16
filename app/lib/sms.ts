@@ -73,7 +73,7 @@ export function formatUKDate(dateTime: string): string {
 // ─────────────────────────────────────────────────────────
 // Core SMS sender
 // ─────────────────────────────────────────────────────────
-async function sendSMS(to: string, body: string): Promise<void> {
+export async function sendSMS(to: string, body: string): Promise<void> {
   const normalisedTo = normalisePhone(to);
   if (!normalisedTo) {
     console.warn(`[SMS] Skipping — could not normalise phone: ${to}`);
