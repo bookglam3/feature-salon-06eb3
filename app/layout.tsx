@@ -95,6 +95,8 @@ export default function RootLayout({
     >
       <head>
         <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/logo.png" />
+        <link rel="icon" href="/logo.png" type="image/png" />
         <meta name="theme-color" content="#4F6EF7" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-title" content="Feature" />
