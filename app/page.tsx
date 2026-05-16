@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "Feature Salon | UK's #1 Salon Management Software",
@@ -56,7 +57,10 @@ export default function Home() {
 
       {/* ── Navbar ── */}
       <nav className="nav">
-        <span className="nav-logo">feature</span>
+        <span className="nav-logo" style={{display:"flex",alignItems:"center",gap:8}}>
+          <Image src="/icons/icon-192.png" alt="Feature Salon logo" width={28} height={28} style={{borderRadius:8,display:"block"}} priority />
+          feature
+        </span>
         <div className="nav-links">
           <a href="#features">Features</a>
           <a href="#how">How it works</a>
@@ -403,7 +407,10 @@ export default function Home() {
 
       {/* ── Footer ── */}
       <footer className="footer">
-        <span className="nav-logo footer-logo">feature</span>
+        <span className="nav-logo footer-logo" style={{display:"flex",alignItems:"center",gap:8}}>
+          <Image src="/icons/icon-192.png" alt="Feature Salon logo" width={24} height={24} style={{borderRadius:6,display:"block",opacity:0.9}} />
+          feature
+        </span>
         <nav className="footer-links" aria-label="Footer navigation">
           <Link href="/pricing">Pricing</Link>
           <Link href="/partner">Become a Partner</Link>

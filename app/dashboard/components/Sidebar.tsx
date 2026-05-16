@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { NAV_ICON_MAP, LogOutIcon } from "./DashboardIcons";
 import type { LucideProps } from "lucide-react";
@@ -212,21 +213,27 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
           flexShrink: 0,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {/* Premium gradient logo mark */}
+            {/* App logo mark */}
             <div style={{
               width: 36, height: 36, borderRadius: 11, position: "relative",
-              background: "linear-gradient(135deg,#7C3AED 0%,#5B21B6 60%,#4C1D95 100%)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 16, color: "#fff", fontWeight: 900, letterSpacing: -0.5,
-              boxShadow: "0 4px 18px rgba(124,58,237,0.55), inset 0 1px 0 rgba(255,255,255,0.22)",
-              flexShrink: 0,
+              boxShadow: "0 4px 18px rgba(124,58,237,0.55)",
+              flexShrink: 0, overflow: "hidden",
             }}>
-              f
+              <Image
+                src="/icons/icon-192.png"
+                alt="Feature Salon"
+                width={36}
+                height={36}
+                style={{ width: 36, height: 36, objectFit: "cover", borderRadius: 11 }}
+                priority
+              />
               {/* Pulse ring */}
               <div style={{
                 position: "absolute", inset: -3, borderRadius: 14,
-                border: "1px solid rgba(139,92,246,0.35)",
+                border: "1px solid rgba(139,92,246,0.45)",
                 animation: "logoPulse 3s ease-in-out infinite",
+                pointerEvents: "none",
               }} />
             </div>
             <div>
