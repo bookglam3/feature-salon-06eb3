@@ -74,7 +74,7 @@ export default function ReschedulePage({ params }: { params: Promise<{ id: strin
     if (!newDate || !newTime) return;
     setNotifying(true);
     const newDateTime = new Date(`${newDate}T${newTime}`).toISOString();
-    const res = await fetch(`/api/appointment/${params.id}`, {
+    const res = await fetch(`/api/appointment/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -92,7 +92,7 @@ export default function ReschedulePage({ params }: { params: Promise<{ id: strin
   const handleCancel = async () => {
     if (!confirm("Are you sure you want to cancel this appointment?")) return;
     setNotifying(true);
-    const res = await fetch(`/api/appointment/${params.id}`, {
+    const res = await fetch(`/api/appointment/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
