@@ -82,18 +82,34 @@ export default function EarningsPage() {
     }
   }, [searchParams, toast, loadStatus]);
 
+  const [connectError, setConnectError] = useState("");
+
   const handleConnect = async () => {
     setConnecting(true);
-    const token = await getToken();
-    const res = await fetch("/api/stripe-connect/create-account", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const json = await res.json();
-    if (json.url) {
-      window.location.href = json.url;
-    } else {
-      toast.error(json.error || "Failed to start onboarding");
+    setConnectError("");
+    try {
+      const token = await getToken();
+      if (!token) { setConnectError("Not logged in — please refresh and try again."); setConnecting(false); return; }
+
+      const res = await fetch("/api/stripe-connect/create-account", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const json = await res.json();
+
+      if (json.url) {
+        window.location.href = json.url;
+      } else {
+        const errMsg = json.error || `Error ${res.status} — please try again`;
+        setConnectError(errMsg);
+        toast.error(errMsg);
+        setConnecting(false);
+      }
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : "Network error — please try again";
+      setConnectError(errMsg);
+      toast.error(errMsg);
       setConnecting(false);
     }
   };
@@ -173,6 +189,11 @@ export default function EarningsPage() {
               style={{ width: "100%", padding: "16px", background: connecting ? "rgba(99,102,241,0.4)" : "linear-gradient(135deg,#6366F1,#4F46E5)", border: "none", borderRadius: 14, fontSize: 15, fontWeight: 800, color: "#fff", cursor: connecting ? "not-allowed" : "pointer", boxShadow: "0 8px 30px rgba(99,102,241,0.4)", letterSpacing: "-0.2px" }}>
               {connecting ? "⏳ Redirecting to Stripe…" : "🔗 Connect Stripe Account"}
             </button>
+            {connectError && (
+              <div style={{ marginTop: 12, padding: "12px 16px", background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.4)", borderRadius: 10, fontSize: 12.5, color: "#FCA5A5", fontWeight: 600 }}>
+                ❌ {connectError}
+              </div>
+            )}
             <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.3)", marginTop: 12 }}>
               Secure onboarding via Stripe Express. Takes ~2 minutes.
             </p>
