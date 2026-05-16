@@ -58,7 +58,7 @@ export default function Home() {
       {/* ── Navbar ── */}
       <nav className="nav">
         <span className="nav-logo" style={{display:"flex",alignItems:"center",gap:8}}>
-          <Image src="/icons/icon-192.png" alt="Feature Salon logo" width={28} height={28} style={{borderRadius:8,display:"block"}} priority />
+          <Image src="/logo.png" alt="Feature Logo" width={40} height={40} />
           feature
         </span>
         <div className="nav-links">
@@ -408,7 +408,7 @@ export default function Home() {
       {/* ── Footer ── */}
       <footer className="footer">
         <span className="nav-logo footer-logo" style={{display:"flex",alignItems:"center",gap:8}}>
-          <Image src="/icons/icon-192.png" alt="Feature Salon logo" width={24} height={24} style={{borderRadius:6,display:"block",opacity:0.9}} />
+          <Image src="/logo.png" alt="Feature Logo" width={40} height={40} />
           feature
         </span>
         <nav className="footer-links" aria-label="Footer navigation">
