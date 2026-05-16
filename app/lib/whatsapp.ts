@@ -224,3 +224,30 @@ export async function sendWinbackWhatsApp({
 
   await sendWhatsApp(to, body);
 }
+
+// ═══════════════════════════════════════════════════════════
+// 5. 1h After — Thank You + Review Request (WhatsApp)
+// ═══════════════════════════════════════════════════════════
+export async function sendThankyouWhatsApp({
+  to,
+  clientName,
+  salonName,
+  reviewLink,
+}: {
+  to: string;
+  clientName: string;
+  salonName: string;
+  reviewLink?: string;
+}) {
+  const reviewPart = reviewLink
+    ? `\n\n⭐ We'd love your feedback:\n${reviewLink}`
+    : "";
+
+  const body =
+    `🙏 *Thank you for visiting ${salonName}!*\n\n` +
+    `Hi ${clientName}, it was great having you with us today.` +
+    reviewPart +
+    `\n\nSee you next time! 💅`;
+
+  await sendWhatsApp(to, body);
+}

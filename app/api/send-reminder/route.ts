@@ -17,6 +17,7 @@ import {
   send24hWhatsApp,
   send2hWhatsApp,
   sendWinbackWhatsApp,
+  sendThankyouWhatsApp,
   formatWATime,
 } from "@/app/lib/whatsapp";
 
@@ -248,7 +249,7 @@ export async function GET(req: Request) {
   // ════════════════════════════════════════════════════════
   const { data: appts1hAgo, error: err1h } = await supabase
     .from("appointments")
-    .select("*, services(name), salons(name,slug,reminders_enabled,review_link)")
+    .select("*, services(name), salons(name,slug,reminders_enabled,whatsapp_enabled,review_link)")
     .eq("status", "confirmed")
     .eq("thankyou_1h_sent", false)
     .gte("date_time", w1hAgo.start)
@@ -286,6 +287,18 @@ export async function GET(req: Request) {
           reviewLink,
         });
       } catch (e) { errors.push(`thankyou SMS ${a.id}: ${e}`); }
+    }
+
+    // WhatsApp
+    if (a.client_phone && a.salons?.whatsapp_enabled && !(await isOptedOut(a.client_phone))) {
+      try {
+        await sendThankyouWhatsApp({
+          to:         a.client_phone,
+          clientName: a.client_name,
+          salonName:  a.salons?.name || "Your Salon",
+          reviewLink,
+        });
+      } catch (e) { errors.push(`thankyou WhatsApp ${a.id}: ${e}`); }
     }
 
     await supabase
