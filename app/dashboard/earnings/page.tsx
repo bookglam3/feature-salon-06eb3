@@ -20,11 +20,11 @@ interface ConnectStatus {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  paid:        "#10B981",
-  in_transit:  "#F59E0B",
-  pending:     "#6366F1",
-  failed:      "#EF4444",
-  canceled:    "#94A3B8",
+  paid: "#10B981",
+  in_transit: "#F59E0B",
+  pending: "#6366F1",
+  failed: "#EF4444",
+  canceled: "#94A3B8",
 };
 
 function fmt(amount: number, currency = "gbp") {
@@ -113,7 +113,7 @@ export default function EarningsPage() {
   const Topbar = (
     <header style={{ background: "linear-gradient(135deg,#0F0B2D,#1E1B4B)", borderBottom: "1px solid rgba(99,102,241,0.2)", padding: "0 24px", height: 66, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 30 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        <HamburgerBtn onClick={() => {}} />
+        <HamburgerBtn onClick={() => { }} />
         <div>
           <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", letterSpacing: "-0.4px" }}>💰 Earnings & Payouts</div>
           <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.5)", marginTop: 1 }}>Stripe Connect — salon payout management</div>
@@ -140,8 +140,8 @@ export default function EarningsPage() {
   );
 
   const available = status?.balance?.available?.[0]?.amount ?? 0;
-  const pending   = status?.balance?.pending?.[0]?.amount ?? 0;
-  const currency  = status?.balance?.available?.[0]?.currency || "gbp";
+  const pending = status?.balance?.pending?.[0]?.amount ?? 0;
+  const currency = status?.balance?.available?.[0]?.currency || "gbp";
 
   return (
     <DashboardShell salonName={salonName} topbar={Topbar}>
@@ -206,8 +206,8 @@ export default function EarningsPage() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16, marginBottom: 24 }}>
               {[
                 { label: "Available Balance", value: fmt(available, currency), icon: "💵", color: "#34D399", desc: "Ready to pay out to your bank" },
-                { label: "Pending Balance",   value: fmt(pending, currency),   icon: "⏳", color: "#F59E0B", desc: "Processing — arrives in 2-7 days" },
-                { label: "Platform Fee",      value: "5%",                     icon: "🏷️", color: "#A5B4FC", desc: "Kept per transaction" },
+                { label: "Pending Balance", value: fmt(pending, currency), icon: "⏳", color: "#F59E0B", desc: "Processing — arrives in 2-7 days" },
+                { label: "Platform Fee", value: "5%", icon: "🏷️", color: "#A5B4FC", desc: "Kept per transaction" },
               ].map(s => (
                 <div key={s.label} style={{ background: "linear-gradient(135deg,rgba(15,11,45,0.9),rgba(30,27,75,0.9))", border: "1px solid rgba(99,102,241,0.2)", borderRadius: 20, padding: "22px 20px", position: "relative", overflow: "hidden" }}>
                   <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: s.color }} />
