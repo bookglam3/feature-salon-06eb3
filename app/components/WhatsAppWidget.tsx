@@ -72,7 +72,7 @@ export default function WhatsAppWidget() {
               }}/>
             </div>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", letterSpacing: "-0.2px" }}>Anita</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", letterSpacing: "-0.2px" }}>Anitooi</div>
               <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.85)", marginTop: 1 }}>Feature Salon · Customer Success</div>
               <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
                 <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#B7F5C8", display: "inline-block" }}/>
