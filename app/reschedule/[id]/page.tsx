@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, use } from "react";
 
 interface Appointment {
   id: string;
@@ -19,7 +19,8 @@ const TIME_SLOTS = [
   "18:00","18:30","19:00","19:30",
 ];
 
-export default function ReschedulePage({ params }: { params: { id: string } }) {
+export default function ReschedulePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const [appt, setAppt] = useState<Appointment | null>(null);
   const [loading, setLoading] = useState(true);
   const [newDate, setNewDate] = useState("");
@@ -32,7 +33,7 @@ export default function ReschedulePage({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     const load = async () => {
-      const res = await fetch(`/api/appointment/${params.id}`);
+      const res = await fetch(`/api/appointment/${id}`);
       if (!res.ok) { setLoading(false); return; }
       const data = await res.json();
       setAppt(data);
@@ -44,7 +45,7 @@ export default function ReschedulePage({ params }: { params: { id: string } }) {
       setLoading(false);
     };
     load();
-  }, [params.id]);
+  }, [id]);
 
   // Notify owner via API
   const notifyOwner = async (action: "rescheduled" | "cancelled", newDT?: string) => {
