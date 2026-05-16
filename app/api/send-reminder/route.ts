@@ -5,6 +5,7 @@ import {
   send2hReminder,
   sendThankyouEmail,
   sendWinbackEmail,
+  sendNoShowAlertEmail,
 } from "@/app/lib/email";
 import {
   send24hSMS,
@@ -92,9 +93,14 @@ export async function GET(req: Request) {
   const errors: string[] = [];
 
   // ── Time windows ──────────────────────────────────
-  const w24h  = window15(now.getTime() + 24 * 60 * 60 * 1000);
-  const w2h   = window15(now.getTime() +  2 * 60 * 60 * 1000);
-  const w1hAgo = window15(now.getTime() -  1 * 60 * 60 * 1000);
+  const w24h    = window15(now.getTime() + 24 * 60 * 60 * 1000);
+  const w2h     = window15(now.getTime() +  2 * 60 * 60 * 1000);
+  const w1hAgo  = window15(now.getTime() -  1 * 60 * 60 * 1000);
+  // No-show window: 30-60 min after appointment (still confirmed = likely no-show)
+  const wNoShow = {
+    start: new Date(now.getTime() - 60 * 60 * 1000).toISOString(),
+    end:   new Date(now.getTime() - 30 * 60 * 1000).toISOString(),
+  };
   const w6wkAgo = window15(now.getTime() - 42 * 24 * 60 * 60 * 1000);
 
   console.log(`[Reminder] ⏰ Running at ${now.toISOString()}`);
@@ -309,7 +315,55 @@ export async function GET(req: Request) {
   }
 
   // ════════════════════════════════════════════════════════
-  // 4. 6 WEEKS AFTER — Win-back
+  // 4. NO-SHOW DETECTION — 30-60 min after appointment
+  // ════════════════════════════════════════════════════════
+  const { data: apptsNoShow, error: errNoShow } = await supabase
+    .from("appointments")
+    .select("*, services(name), salons(id,name,slug,owner_email,owner_id,reminders_enabled)")
+    .eq("status", "confirmed")           // still confirmed = never marked completed
+    .eq("no_show_alert_sent", false)
+    .gte("date_time", wNoShow.start)
+    .lte("date_time", wNoShow.end);
+
+  if (errNoShow) console.error("[Reminder] no-show query error:", errNoShow);
+  console.log(`[Reminder] No-show candidates: ${apptsNoShow?.length ?? 0}`);
+
+  for (const a of apptsNoShow || []) {
+    if (a.salons?.reminders_enabled === false) continue;
+    console.log(`[Reminder] Processing no-show for appointment ${a.id} (${a.client_name})`);
+
+    const salon = a.salons;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://featuresalon.co.uk";
+
+    // Resolve owner email
+    let ownerEmail = salon?.owner_email || "";
+    if (!ownerEmail && salon?.owner_id) {
+      const { data: authUser } = await supabase.auth.admin.getUserById(salon.owner_id);
+      ownerEmail = authUser?.user?.email || "";
+    }
+
+    if (ownerEmail) {
+      try {
+        await sendNoShowAlertEmail({
+          to:          ownerEmail,
+          clientName:  a.client_name,
+          serviceName: a.services?.name,
+          dateTime:    a.date_time,
+          salonName:   salon?.name || "Your Salon",
+          dashboardUrl: `${appUrl}/dashboard/bookings`,
+        });
+      } catch (e) { errors.push(`no-show alert ${a.id}: ${e}`); }
+    }
+
+    await supabase
+      .from("appointments")
+      .update({ no_show_alert_sent: true })
+      .eq("id", a.id);
+    sent++;
+  }
+
+  // ════════════════════════════════════════════════════════
+  // 5. 6 WEEKS AFTER — Win-back
   // ════════════════════════════════════════════════════════
   const { data: appts6wk, error: err6wk } = await supabase
     .from("appointments")

@@ -418,3 +418,78 @@ export async function sendOfferEmail({
     }),
   });
 }
+
+// ═══════════════════════════════════════════════
+// 7. NO-SHOW ALERT — To Salon Owner
+// ═══════════════════════════════════════════════
+export async function sendNoShowAlertEmail({
+  to, ownerName, clientName, serviceName, dateTime, salonName, dashboardUrl,
+}: {
+  to: string;
+  ownerName?: string;
+  clientName: string;
+  serviceName?: string;
+  dateTime: string;
+  salonName: string;
+  dashboardUrl?: string;
+}) {
+  const { formattedDate, formattedTime } = formatDate(dateTime);
+  const greeting = ownerName ? ownerName : "there";
+
+  await sendEmailSafe({
+    from: FROM,
+    to,
+    subject: `⚠️ Possible No-Show: ${clientName} — ${formattedTime} today`,
+    html: `
+    <!DOCTYPE html>
+    <html lang="en-GB">
+    <head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/></head>
+    <body style="margin:0;padding:0;background:#F4F4F5;">
+      <div style="max-width:520px;margin:32px auto;font-family:'Helvetica Neue',Arial,sans-serif;color:#1a1a1a;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.10);">
+
+        <!-- Header -->
+        <div style="background:linear-gradient(135deg,#DC2626 0%,#991B1B 100%);padding:32px 28px;text-align:center;">
+          <div style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,0.2);display:inline-flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:12px;">⚠️</div>
+          <p style="color:rgba(255,255,255,0.8);margin:0 0 4px;font-size:11px;letter-spacing:2px;text-transform:uppercase;">${salonName}</p>
+          <h1 style="color:#fff;margin:0;font-size:22px;font-weight:700;">Possible No-Show</h1>
+        </div>
+
+        <!-- Body -->
+        <div style="background:#fff;padding:28px;">
+          <p style="font-size:15px;margin:0 0 14px;color:#222;">Hi <strong>${greeting}</strong>,</p>
+          <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 22px;">
+            It looks like <strong>${clientName}</strong> may not have shown up for their appointment that was scheduled for <strong>${formattedTime}</strong> today. The booking is still marked as <em>confirmed</em>.
+          </p>
+
+          <!-- Appointment Details -->
+          <div style="background:#FFF5F5;border:1.5px solid #FCA5A5;border-radius:12px;padding:18px 20px;margin-bottom:22px;">
+            <table style="width:100%;font-size:14px;border-collapse:collapse;">
+              <tr><td style="color:#999;padding:6px 0;width:110px;">👤 Client</td><td style="font-weight:700;color:#0F172A;">${clientName}</td></tr>
+              ${serviceName ? `<tr><td style="color:#999;padding:6px 0;">✂️ Service</td><td style="font-weight:600;color:#0F172A;">${serviceName}</td></tr>` : ""}
+              <tr><td style="color:#999;padding:6px 0;">📅 Date</td><td style="font-weight:600;color:#0F172A;">${formattedDate}</td></tr>
+              <tr><td style="color:#999;padding:6px 0;">🕐 Time</td><td style="font-weight:700;color:#DC2626;font-size:16px;">${formattedTime}</td></tr>
+            </table>
+          </div>
+
+          <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 20px;">
+            Please update the booking status in your dashboard. If the client did attend, you can mark it as <strong>Completed</strong>. If not, mark it as <strong>No-Show</strong> to keep your records accurate.
+          </p>
+
+          ${dashboardUrl ? `
+          <div style="text-align:center;margin-bottom:8px;">
+            <a href="${dashboardUrl}" style="display:inline-block;background:linear-gradient(135deg,#DC2626 0%,#991B1B 100%);color:#fff;padding:13px 28px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14px;box-shadow:0 4px 12px rgba(220,38,38,0.3);">Update Booking Status →</a>
+          </div>` : ""}
+        </div>
+
+        <!-- Footer -->
+        <div style="background:#F9F9F9;border-top:1px solid #EFEFEF;padding:16px 28px;text-align:center;">
+          <p style="font-size:12px;color:#bbb;margin:0;line-height:1.8;">
+            ${salonName} • Powered by feature • United Kingdom<br/>
+            This is an automated alert from your booking system.
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>`,
+  });
+}
