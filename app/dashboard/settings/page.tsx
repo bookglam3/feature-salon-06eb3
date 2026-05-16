@@ -249,18 +249,28 @@ export default function SettingsPage() {
     if (file.size > 5 * 1024 * 1024) { setLogoError("Image must be less than 5MB."); return; }
     setLogoError("");
     setLogoUploading(true);
-    const ext = file.name.split(".").pop();
-    const path = `salon-logos/${salon.id}/logo.${ext}`;
-    const { error: upErr } = await supabase.storage.from("salon-assets").upload(path, file, { upsert: true, contentType: file.type });
-    if (upErr) {
-      setLogoUploading(false);
-      setLogoError("Storage upload failed. Please create the 'salon-assets' bucket in Supabase Storage, or paste your logo URL below.");
-      return;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || "";
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload-logo", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Upload failed");
+
+      setLogoUrl(json.url);
+      setLogoUrlInput(json.url);
+    } catch (err) {
+      setLogoError(`Upload failed: ${err}. You can paste a logo URL below instead.`);
     }
-    const { data: urlData } = supabase.storage.from("salon-assets").getPublicUrl(path);
-    const publicUrl = urlData.publicUrl + "?t=" + Date.now();
-    setLogoUrl(publicUrl);
-    setLogoUrlInput(publicUrl);
     setLogoUploading(false);
   };
 
