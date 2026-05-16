@@ -1,6 +1,5 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { supabase } from "../../../lib/supabase";
 
 interface Appointment {
   id: string;
@@ -33,11 +32,9 @@ export default function ReschedulePage({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase
-        .from("appointments")
-        .select("*, services(name,price), salon:salons(name,slug,owner_email)")
-        .eq("id", params.id)
-        .single();
+      const res = await fetch(`/api/appointment/${params.id}`);
+      if (!res.ok) { setLoading(false); return; }
+      const data = await res.json();
       setAppt(data);
       if (data?.date_time) {
         const d = new Date(data.date_time);
@@ -76,12 +73,16 @@ export default function ReschedulePage({ params }: { params: { id: string } }) {
     if (!newDate || !newTime) return;
     setNotifying(true);
     const newDateTime = new Date(`${newDate}T${newTime}`).toISOString();
-    const { error } = await supabase.from("appointments").update({
-      date_time: newDateTime,
-      status: "pending",
-      notes: `Rescheduled by client${note ? `: ${note}` : ""}.`,
-    }).eq("id", params.id);
-    if (error) { setStatus("error"); setNotifying(false); return; }
+    const res = await fetch(`/api/appointment/${params.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "reschedule",
+        date_time: newDateTime,
+        notes: `Rescheduled by client${note ? `: ${note}` : ""}.`,
+      }),
+    });
+    if (!res.ok) { setStatus("error"); setNotifying(false); return; }
     await notifyOwner("rescheduled", newDateTime);
     setNotifying(false);
     setStatus("rescheduled");
@@ -90,11 +91,15 @@ export default function ReschedulePage({ params }: { params: { id: string } }) {
   const handleCancel = async () => {
     if (!confirm("Are you sure you want to cancel this appointment?")) return;
     setNotifying(true);
-    const { error } = await supabase.from("appointments").update({
-      status: "cancelled",
-      notes: `Cancelled by client${note ? `: ${note}` : ""}.`,
-    }).eq("id", params.id);
-    if (error) { setStatus("error"); setNotifying(false); return; }
+    const res = await fetch(`/api/appointment/${params.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "cancel",
+        notes: `Cancelled by client${note ? `: ${note}` : ""}.`,
+      }),
+    });
+    if (!res.ok) { setStatus("error"); setNotifying(false); return; }
     await notifyOwner("cancelled");
     setNotifying(false);
     setStatus("cancelled");
