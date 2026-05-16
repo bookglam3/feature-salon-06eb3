@@ -20,10 +20,7 @@ export default function LondonPage() {
   return (
     <main className="landing">
       <nav className="nav">
-        <Link href="/" className="nav-logo" style={{display:"flex",alignItems:"center",gap:8}}>
-          <Image src="/icons/icon-192.png" alt="Feature Salon logo" width={28} height={28} style={{borderRadius:8,display:"block"}} priority />
-          feature
-        </Link>
+        <Link href="/" className="nav-logo">feature</Link>
         <div className="nav-links">
           <Link href="/#features">Features</Link>
           <Link href="/pricing">Pricing</Link>
@@ -111,10 +108,7 @@ export default function LondonPage() {
       </section>
 
       <footer className="footer">
-        <Link href="/" className="nav-logo footer-logo" style={{display:"flex",alignItems:"center",gap:8}}>
-          <Image src="/icons/icon-192.png" alt="Feature Salon logo" width={24} height={24} style={{borderRadius:6,display:"block",opacity:0.9}} />
-          feature
-        </Link>
+        <Link href="/" className="nav-logo footer-logo">feature</Link>
         <nav className="footer-links" aria-label="Footer navigation">
           <Link href="/">Home</Link>
           <Link href="/pricing">Pricing</Link>
