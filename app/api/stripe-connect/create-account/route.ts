@@ -34,24 +34,27 @@ export async function POST(req: NextRequest) {
 
     // Create Stripe Express account if not exists
     if (!accountId) {
-      const account = await stripe.accounts.create({
+      // Don't hardcode country — Stripe will ask during onboarding
+      // so UAE, US, UK owners all see their own country's form
+      const accountParams: Stripe.AccountCreateParams = {
         type: "express",
-        country: "GB",
         capabilities: {
           card_payments: { requested: true },
-          transfers: { requested: true },
+          transfers:     { requested: true },
         },
         business_profile: {
           name: salon.name,
-          mcc: "7230", // Beauty salons, barbers
-          url: `${APP_URL}/book`,
+          mcc:  "7230", // Beauty salons & barbers
+          url:  `${APP_URL}/book`,
         },
         settings: {
           payouts: {
             schedule: { interval: "daily" },
           },
         },
-      });
+      };
+
+      const account = await stripe.accounts.create(accountParams);
       accountId = account.id;
 
       // Save to DB
