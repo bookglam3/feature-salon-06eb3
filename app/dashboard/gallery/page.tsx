@@ -21,7 +21,12 @@ export default function GalleryPage() {
   const [showModal, setShowModal] = useState(false);
   const [lightbox, setLightbox] = useState<Photo | null>(null);
   const [filter, setFilter] = useState("all");
-  const [form, setForm] = useState({ url: "", caption: "", category: "general", is_featured: false });
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+  const [form, setForm] = useState({ caption: "", category: "general", is_featured: false });
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -36,15 +41,68 @@ export default function GalleryPage() {
     load();
   }, [router]);
 
-  const handleAdd = async () => {
-    if (!salonId || !form.url) { toast.error("Image URL required"); return; }
-    const { data, error } = await supabase.from("gallery_photos").insert({ salon_id: salonId, ...form }).select().single();
-    if (error) { toast.error("Failed to add photo"); return; }
-    setPhotos(p => [data, ...p]);
-    toast.success("Photo added!");
-    setShowModal(false);
-    setForm({ url: "", caption: "", category: "general", is_featured: false });
+  const addFiles = (files: FileList | File[]) => {
+    const arr = Array.from(files).filter(f => f.type.startsWith("image/") || f.name.match(/\.(heic|heif)$/i));
+    if (!arr.length) { toast.error("Only image files allowed"); return; }
+    setSelectedFiles(prev => [...prev, ...arr]);
+    arr.forEach(f => {
+      const reader = new FileReader();
+      reader.onload = e => setPreviews(prev => [...prev, e.target?.result as string]);
+      reader.readAsDataURL(f);
+    });
   };
+
+  const removeFile = (idx: number) => {
+    setSelectedFiles(p => p.filter((_, i) => i !== idx));
+    setPreviews(p => p.filter((_, i) => i !== idx));
+  };
+
+  const handleUpload = async () => {
+    if (!salonId || selectedFiles.length === 0) { toast.error("Select at least one photo"); return; }
+    setUploading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || "";
+
+      const fd = new FormData();
+      selectedFiles.forEach(f => fd.append("files", f));
+
+      const res = await fetch("/api/upload-gallery", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Upload failed");
+
+      // Save each uploaded photo to gallery_photos table
+      const inserts = (json.uploaded as { url: string }[]).map(u =>
+        supabase.from("gallery_photos").insert({
+          salon_id: salonId,
+          url: u.url,
+          caption: form.caption,
+          category: form.category,
+          is_featured: form.is_featured,
+        }).select().single()
+      );
+      const results = await Promise.all(inserts);
+      const newPhotos = results.map(r => r.data).filter(Boolean) as Photo[];
+      setPhotos(p => [...newPhotos, ...p]);
+
+      toast.success(`✅ ${newPhotos.length} photo${newPhotos.length > 1 ? "s" : ""} uploaded!`);
+      if (json.errors?.length) toast.error(`Some failed: ${json.errors.join(", ")}`);
+
+      setShowModal(false);
+      setSelectedFiles([]);
+      setPreviews([]);
+      setForm({ caption: "", category: "general", is_featured: false });
+    } catch (e) {
+      toast.error(`Upload failed: ${e}`);
+    }
+    setUploading(false);
+  };
+
+  const handleAdd = handleUpload; // alias kept for compatibility
 
   const toggleFeatured = async (id: string, current: boolean) => {
     await supabase.from("gallery_photos").update({ is_featured: !current }).eq("id", id);
@@ -152,24 +210,52 @@ export default function GalleryPage() {
 
       {/* Add Photo Modal */}
       {showModal && (
-        <div onClick={() => setShowModal(false)} style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, backdropFilter: "blur(4px)" }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 20, padding: 28, width: "100%", maxWidth: 440, boxShadow: "0 32px 80px rgba(0,0,0,0.2)" }}>
-            <div style={{ fontSize: 18, fontWeight: 900, color: "#0F172A", marginBottom: 20 }}>📸 Add Photo</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: "#475569", display: "block", marginBottom: 6 }}>Image URL *</label>
-                <input value={form.url} onChange={e => setForm(p => ({ ...p, url: e.target.value }))} placeholder="https://example.com/photo.jpg"
-                  style={{ width: "100%", padding: "10px 13px", border: "1.5px solid #E2E8F0", borderRadius: 10, fontSize: 14, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
-                {form.url && <Image src={form.url} alt="" width={400} height={140} style={{ marginTop: 8, width: "100%", height: 140, objectFit: "cover", borderRadius: 10 }} />}
+        <div onClick={() => { setShowModal(false); setSelectedFiles([]); setPreviews([]); }} style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.6)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, backdropFilter: "blur(6px)" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 20, padding: 28, width: "100%", maxWidth: 520, boxShadow: "0 32px 80px rgba(0,0,0,0.25)", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 18, fontWeight: 900, color: "#0F172A", marginBottom: 20 }}>📸 Upload Photos</div>
+
+            {/* Drop Zone */}
+            <div
+              onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={e => { e.preventDefault(); setDragOver(false); addFiles(e.dataTransfer.files); }}
+              onClick={() => fileInputRef.current?.click()}
+              style={{ border: `2px dashed ${dragOver ? "#EC4899" : "#E2E8F0"}`, borderRadius: 14, padding: "28px 20px", textAlign: "center", cursor: "pointer", background: dragOver ? "#FDF2F8" : "#FAFAFA", transition: "all 0.18s", marginBottom: 16 }}
+            >
+              <div style={{ fontSize: 36, marginBottom: 8 }}>📁</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#0F172A", marginBottom: 4 }}>Drag & drop photos here</div>
+              <div style={{ fontSize: 12.5, color: "#94A3B8" }}>or click to browse • JPG, PNG, WebP, HEIC • max 10MB each</div>
+              <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: "none" }}
+                onChange={e => { if (e.target.files) addFiles(e.target.files); e.target.value = ""; }} />
+            </div>
+
+            {/* Previews */}
+            {previews.length > 0 && (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 16 }}>
+                {previews.map((src, i) => (
+                  <div key={i} style={{ position: "relative", borderRadius: 10, overflow: "hidden", aspectRatio: "1" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <button onClick={() => removeFile(i)}
+                      style={{ position: "absolute", top: 4, right: 4, width: 22, height: 22, borderRadius: "50%", background: "rgba(0,0,0,0.6)", border: "none", color: "#fff", fontSize: 11, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+                  </div>
+                ))}
+                <div onClick={() => fileInputRef.current?.click()}
+                  style={{ borderRadius: 10, border: "2px dashed #E2E8F0", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", aspectRatio: "1", color: "#94A3B8", fontSize: 22 }}>+</div>
               </div>
+            )}
+
+            {/* Caption + Category */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: "#475569", display: "block", marginBottom: 6 }}>Caption</label>
+                <label style={{ fontSize: 12, fontWeight: 700, color: "#475569", display: "block", marginBottom: 6 }}>Caption (optional)</label>
                 <input value={form.caption} onChange={e => setForm(p => ({ ...p, caption: e.target.value }))} placeholder="e.g. Balayage transformation"
                   style={{ width: "100%", padding: "10px 13px", border: "1.5px solid #E2E8F0", borderRadius: 10, fontSize: 14, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
               </div>
               <div>
                 <label style={{ fontSize: 12, fontWeight: 700, color: "#475569", display: "block", marginBottom: 6 }}>Category</label>
-                <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} style={{ width: "100%", padding: "10px 13px", border: "1.5px solid #E2E8F0", borderRadius: 10, fontSize: 14, outline: "none", fontFamily: "inherit" }}>
+                <select value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))}
+                  style={{ width: "100%", padding: "10px 13px", border: "1.5px solid #E2E8F0", borderRadius: 10, fontSize: 14, outline: "none", fontFamily: "inherit" }}>
                   {CATEGORIES.map(c => <option key={c} value={c} style={{ textTransform: "capitalize" }}>{c}</option>)}
                 </select>
               </div>
@@ -178,9 +264,14 @@ export default function GalleryPage() {
                 <span style={{ fontSize: 13.5, fontWeight: 600, color: "#475569" }}>⭐ Mark as featured</span>
               </label>
             </div>
+
             <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-              <button onClick={() => setShowModal(false)} style={{ flex: 1, padding: 12, background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#475569", cursor: "pointer" }}>Cancel</button>
-              <button onClick={handleAdd} disabled={!form.url} style={{ flex: 2, padding: 12, background: "linear-gradient(135deg,#EC4899,#DB2777)", border: "none", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#fff", cursor: "pointer", opacity: !form.url ? 0.5 : 1 }}>Add Photo</button>
+              <button onClick={() => { setShowModal(false); setSelectedFiles([]); setPreviews([]); }}
+                style={{ flex: 1, padding: 12, background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#475569", cursor: "pointer" }}>Cancel</button>
+              <button onClick={handleUpload} disabled={uploading || selectedFiles.length === 0}
+                style={{ flex: 2, padding: 12, background: uploading ? "#F1F5F9" : "linear-gradient(135deg,#EC4899,#DB2777)", border: "none", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: uploading ? "#94A3B8" : "#fff", cursor: uploading || selectedFiles.length === 0 ? "not-allowed" : "pointer", opacity: selectedFiles.length === 0 ? 0.5 : 1 }}>
+                {uploading ? "⏳ Uploading…" : `Upload ${selectedFiles.length > 0 ? `${selectedFiles.length} Photo${selectedFiles.length > 1 ? "s" : ""}` : "Photos"}`}
+              </button>
             </div>
           </div>
         </div>
