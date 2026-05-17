@@ -111,10 +111,25 @@ export default function GalleryPage() {
   };
 
   const deletePhoto = async (id: string) => {
-    if (!confirm("Delete this photo?")) return;
+    const photo = photos.find(p => p.id === id);
+    if (!photo) return;
+    if (!confirm(`Delete "${photo.caption || "this photo"}"?`)) return;
+
+    // Extract storage path from public URL and delete from bucket
+    try {
+      const url = new URL(photo.url);
+      // URL format: .../storage/v1/object/public/salon-assets/salon-gallery/...
+      const match = url.pathname.match(/\/salon-assets\/(.+)$/);
+      if (match?.[1]) {
+        await supabase.storage.from("salon-assets").remove([match[1]]);
+      }
+    } catch {
+      // If storage delete fails, still remove from DB
+    }
+
     await supabase.from("gallery_photos").delete().eq("id", id);
     setPhotos(p => p.filter(ph => ph.id !== id));
-    toast.success("Photo deleted");
+    toast.success("🗑️ Photo deleted!");
   };
 
   const filtered = filter === "all" ? photos : filter === "featured" ? photos.filter(p => p.is_featured) : photos.filter(p => p.category === filter);
