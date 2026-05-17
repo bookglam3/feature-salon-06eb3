@@ -12,7 +12,7 @@ const client = twilio(
 // Production: swap to your approved WhatsApp Business number
 const FROM_WHATSAPP = process.env.TWILIO_WHATSAPP_FROM!; // e.g. whatsapp:+14155238886
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://feature-saas.vercel.app";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://featuresalon.co.uk";
 
 // GDPR opt-out footer — required for ICO / GDPR compliance
 const GDPR_FOOTER = `\n\nReply STOP to opt out. Unsubscribe: ${APP_URL}/api/whatsapp-optout`;

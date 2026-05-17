@@ -190,7 +190,7 @@ export default function BookingPage() {
   const [selTime, setSelTime] = useState("");
   const [form, setForm] = useState({ name:"", email:"", phone:"" });
   const [errors, setErrors] = useState({ email:"", phone:"" });
-  const [countryCode, setCountryCode] = useState<CountryCode>("PK"); // default Pakistan
+  const [countryCode, setCountryCode] = useState<CountryCode>("GB"); // default UK
   const [phoneRaw, setPhoneRaw] = useState(""); // local format as typed
   const [countryDropOpen, setCountryDropOpen] = useState(false);
 
