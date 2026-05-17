@@ -2,8 +2,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { supabase } from "../../lib/supabase";
 import { NAV_ICON_MAP, LogOutIcon } from "./DashboardIcons";
 import type { LucideProps } from "lucide-react";
+
+const SUPER_ADMIN_EMAIL = "adilgill2008@gmail.com";
 
 // ─────────────────────────────────────────────────────────────────
 // Section color themes per nav group
@@ -86,6 +90,16 @@ type IconComp = React.FC<{ size?: number; className?: string; strokeWidth?: numb
 
 export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) {
   const pathname = usePathname();
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUserEmail(data?.user?.email ?? null);
+    });
+  }, []);
+
+  const isAdmin = userEmail === SUPER_ADMIN_EMAIL;
+
   const isActive = (path: string) =>
     path === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(path);
 
@@ -267,7 +281,9 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
                 <div className="sb-group-label" style={{ color: s.labelColor }}>
                   {group.group}
                 </div>
-                {group.items.map(item => {
+                {group.items
+                  .filter(item => item.label !== "Partners" || isAdmin)
+                  .map(item => {
                   const active = isActive(item.path);
                   const Icon = NAV_ICON_MAP[item.label] as IconComp | undefined;
                   return (
