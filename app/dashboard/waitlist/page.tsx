@@ -33,6 +33,7 @@ export default function WaitlistPage() {
   const [entries, setEntries] = useState<WaitlistEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [notifying, setNotifying] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "waiting" | "contacted" | "booked">("waiting");
   const [form, setForm] = useState({ client_name: "", client_email: "", client_phone: "", preferred_date: "", preferred_time: "", notes: "" });
 
@@ -69,6 +70,33 @@ export default function WaitlistPage() {
     await supabase.from("waitlist").delete().eq("id", id);
     setEntries(p => p.filter(e => e.id !== id));
     toast.success("Removed from waitlist");
+  };
+
+  const handleNotify = async (entry: WaitlistEntry) => {
+    if (!entry.client_phone && !entry.client_email) {
+      toast.error("No phone or email — cannot notify this client");
+      return;
+    }
+    setNotifying(entry.id);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token || "";
+      const res = await fetch("/api/notify-waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ waitlist_id: entry.id }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed");
+      const parts = [];
+      if (json.whatsappSent) parts.push("WhatsApp");
+      if (json.emailSent) parts.push("Email");
+      toast.success(`✅ Notified via ${parts.join(" + ") || "notification sent"}!`);
+      setEntries(p => p.map(e => e.id === entry.id ? { ...e, status: "contacted" } : e));
+    } catch (err) {
+      toast.error(`Failed: ${err}`);
+    }
+    setNotifying(null);
   };
 
   const filtered = filter === "all" ? entries : entries.filter(e => e.status === filter);
@@ -146,7 +174,17 @@ export default function WaitlistPage() {
                           </select>
                         </td>
                         <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9" }}>
-                          <div style={{ display: "flex", gap: 6 }}>
+                          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                            {/* Notify via WhatsApp + Email */}
+                            {e.status === "waiting" && (e.client_phone || e.client_email) && (
+                              <button
+                                onClick={() => handleNotify(e)}
+                                disabled={notifying === e.id}
+                                style={{ padding: "5px 10px", background: notifying === e.id ? "#F1F5F9" : "linear-gradient(135deg,#7C3AED,#C2185B)", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: notifying === e.id ? "not-allowed" : "pointer", color: notifying === e.id ? "#94A3B8" : "#fff", whiteSpace: "nowrap" }}
+                              >
+                                {notifying === e.id ? "Sending…" : "🔔 Notify"}
+                              </button>
+                            )}
                             {e.client_phone && <button onClick={() => { navigator.clipboard.writeText(e.client_phone); toast.success("Phone copied!"); }} style={{ padding: "5px 10px", background: "#F0FDF4", border: "1.5px solid #BBF7D0", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#059669" }}>📞</button>}
                             <button onClick={() => deleteEntry(e.id)} style={{ padding: "5px 10px", background: "#FEF2F2", border: "1.5px solid #FECACA", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#DC2626" }}>✕</button>
                           </div>
