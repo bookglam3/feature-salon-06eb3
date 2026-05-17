@@ -1,17 +1,15 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import SchemaMarkup from "./components/SchemaMarkup";
 import WhatsAppWidget from "./components/WhatsAppWidget";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// next/font/google — self-hosted, zero layout shift, no external request
+const inter = Inter({
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+  preload: true,
 });
 
 const BASE_URL = "https://www.featuresalon.co.uk";
@@ -91,7 +89,7 @@ export default function RootLayout({
   return (
     <html
       lang="en-GB"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} h-full antialiased`}
     >
       <head>
         <link rel="manifest" href="/manifest.json" />
@@ -103,7 +101,9 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="geo.region" content="GB" />
         <meta name="geo.placename" content="United Kingdom" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        {/* DNS prefetch for fast API calls */}
+        <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+        <link rel="dns-prefetch" href="https://js.stripe.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className="min-h-full flex flex-col">
