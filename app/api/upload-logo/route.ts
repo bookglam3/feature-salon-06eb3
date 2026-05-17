@@ -55,6 +55,15 @@ export async function POST(req: NextRequest) {
 
     if (upErr) {
       console.error("[upload-logo] Storage error:", upErr);
+
+      // If bucket doesn't exist, give a helpful error
+      if (upErr.message?.includes("Bucket not found") || upErr.message?.includes("not found")) {
+        return NextResponse.json(
+          { error: "Storage bucket not set up. Please run the supabase-storage-bucket.sql script in your Supabase dashboard." },
+          { status: 500 }
+        );
+      }
+
       return NextResponse.json(
         { error: "Upload failed: " + upErr.message },
         { status: 500 }
@@ -65,10 +74,21 @@ export async function POST(req: NextRequest) {
       .from("salon-assets")
       .getPublicUrl(path);
 
-    // Append cache-busting param
+    // Append cache-busting param so browser refreshes immediately
     const publicUrl = urlData.publicUrl + "?t=" + Date.now();
 
-    return NextResponse.json({ url: publicUrl });
+    // ── AUTO-SAVE: update logo_url in salons table immediately ──
+    const { error: updateErr } = await supabaseAdmin
+      .from("salons")
+      .update({ logo_url: publicUrl })
+      .eq("id", salon.id);
+
+    if (updateErr) {
+      console.error("[upload-logo] DB update error:", updateErr);
+      // Still return the URL even if DB update fails — user can save manually
+    }
+
+    return NextResponse.json({ url: publicUrl, saved: !updateErr });
 
   } catch (err) {
     console.error("[upload-logo] Error:", err);
