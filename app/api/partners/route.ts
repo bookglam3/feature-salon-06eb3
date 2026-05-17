@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import twilio from "twilio";
 
 const adminSupabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -131,6 +132,7 @@ export async function PATCH(req: NextRequest) {
   };
 
   // Generate referral code on approval (only if not already set)
+  let referralCode: string | null = null;
   if (status === "approved") {
     const { data: existing } = await adminSupabase
       .from("sales_agents")
@@ -139,7 +141,6 @@ export async function PATCH(req: NextRequest) {
       .single();
 
     if (!existing?.referral_code) {
-      // Generate unique code
       let code = generateCode();
       let attempts = 0;
       while (attempts < 5) {
@@ -153,6 +154,9 @@ export async function PATCH(req: NextRequest) {
         attempts++;
       }
       updatePayload.referral_code = code;
+      referralCode = code;
+    } else {
+      referralCode = existing.referral_code;
     }
   }
 
@@ -167,5 +171,60 @@ export async function PATCH(req: NextRequest) {
     console.error("[/api/partners] PATCH failed:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  // ── Send WhatsApp notification to applicant ──────────────────
+  try {
+    const agentPhone = data.whatsapp || data.phone;
+    const agentName  = data.full_name?.split(" ")[0] || "there";
+    const appUrl     = process.env.NEXT_PUBLIC_APP_URL || "https://featuresalon.co.uk";
+
+    if (agentPhone) {
+      const twilioClient = twilio(
+        process.env.TWILIO_ACCOUNT_SID!,
+        process.env.TWILIO_AUTH_TOKEN!
+      );
+      const from = process.env.TWILIO_WHATSAPP_FROM || "whatsapp:+14155238886";
+
+      // Normalize phone to E.164
+      let to = agentPhone.trim().replace(/\s+/g, "");
+      if (!to.startsWith("+")) to = "+" + to;
+
+      let messageBody = "";
+
+      if (status === "approved") {
+        messageBody =
+          `🎉 Congratulations ${agentName}!\n\n` +
+          `Your Feature Salon Partner application has been *APPROVED*! ✅\n\n` +
+          `Your unique referral code is:\n` +
+          `*${referralCode}*\n\n` +
+          `Share this signup link with salons:\n` +
+          `${appUrl}/signup?ref=${referralCode}\n\n` +
+          `Every salon that signs up via your link earns you commission. 💰\n\n` +
+          `Our team will be in touch shortly with next steps.\n\n` +
+          `— Feature Salon Team 🌟`;
+      } else if (status === "rejected") {
+        messageBody =
+          `Hi ${agentName},\n\n` +
+          `Thank you for applying to become a Feature Salon Partner.\n\n` +
+          `After careful review, we are unable to proceed with your application at this time.` +
+          (admin_notes ? `\n\nFeedback: ${admin_notes}` : "") +
+          `\n\nYou're welcome to reapply in the future as our requirements evolve.\n\n` +
+          `— Feature Salon Team`;
+      }
+
+      if (messageBody) {
+        await twilioClient.messages.create({
+          from,
+          to: `whatsapp:${to}`,
+          body: messageBody,
+        });
+        console.log(`[/api/partners] WhatsApp sent to ${to} — status: ${status}`);
+      }
+    }
+  } catch (notifErr) {
+    // Don't fail the request if notification fails
+    console.error("[/api/partners] WhatsApp notification failed:", notifErr);
+  }
+
   return NextResponse.json({ agent: data });
 }
