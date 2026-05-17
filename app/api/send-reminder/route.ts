@@ -95,7 +95,12 @@ export async function GET(req: Request) {
   // ── Time windows ──────────────────────────────────
   const w24h    = window15(now.getTime() + 24 * 60 * 60 * 1000);
   const w2h     = window15(now.getTime() +  2 * 60 * 60 * 1000);
-  const w1hAgo  = window15(now.getTime() -  1 * 60 * 60 * 1000);
+  // Thank-you window: look back up to 24h for completed appointments
+  // (owners may mark "Completed" immediately or hours later)
+  const w1hAgo  = {
+    start: new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString(), // up to 24h ago
+    end:   new Date(now.getTime() -  1 * 60 * 60 * 1000).toISOString(), // at least 1h ago
+  };
   // No-show window: 30-60 min after appointment (still confirmed = likely no-show)
   const wNoShow = {
     start: new Date(now.getTime() - 60 * 60 * 1000).toISOString(),
@@ -251,21 +256,29 @@ export async function GET(req: Request) {
   }
 
   // ════════════════════════════════════════════════════════
-  // 3. 1h AFTER — Thank You + Review Request
+  // 3. AFTER VISIT — Thank You + Review Request
+  //    ONLY sent when owner marks appointment as "completed"
+  //    NO-SHOW appointments are automatically excluded
   // ════════════════════════════════════════════════════════
   const { data: appts1hAgo, error: err1h } = await supabase
     .from("appointments")
     .select("*, services(name), salons(name,slug,reminders_enabled,whatsapp_enabled,review_link)")
-    .eq("status", "confirmed")
+    .eq("status", "completed")        // ← Only COMPLETED visits get thank you
     .eq("thankyou_1h_sent", false)
     .gte("date_time", w1hAgo.start)
     .lte("date_time", w1hAgo.end);
 
-  if (err1h) console.error("[Reminder] 1h-ago query error:", err1h);
-  console.log(`[Reminder] 1h-ago appointments found: ${appts1hAgo?.length ?? 0}`);
+  if (err1h) console.error("[Reminder] thankyou query error:", err1h);
+  console.log(`[Reminder] Completed appointments (thankyou pending): ${appts1hAgo?.length ?? 0}`);
 
   for (const a of appts1hAgo || []) {
     if (a.salons?.reminders_enabled === false) continue;
+    // Extra guard — never send to no-shows (should not appear due to query but safety net)
+    if (a.status === "no-show" || a.status === "no_show" || a.status === "noshow") {
+      console.log(`[Reminder] Skipping thankyou for no-show ${a.id}`);
+      await supabase.from("appointments").update({ thankyou_1h_sent: true }).eq("id", a.id);
+      continue;
+    }
     console.log(`[Reminder] Processing thankyou for appointment ${a.id} (${a.client_name})`);
 
     const reviewLink = a.salons?.review_link || undefined;
