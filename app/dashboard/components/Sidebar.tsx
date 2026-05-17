@@ -99,6 +99,8 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
   return (
     <>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap');
+
         .sb-wrap {
           width: 100%;
           max-width: var(--sidebar-w);
@@ -238,7 +240,7 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
               }} />
             </div>
             <div>
-              <div style={{ fontSize: 15.5, fontWeight: 800, color: "#F1F5F9", letterSpacing: "-0.7px", lineHeight: 1 }}>feature</div>
+              <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 600, color: "#F1F5F9", letterSpacing: "-0.3px", lineHeight: 1, fontStyle: "italic" }}>feature</div>
               <div style={{ fontSize: 8.5, fontWeight: 700, color: "rgba(255,255,255,0.22)", letterSpacing: "2px", textTransform: "uppercase", marginTop: 2 }}>SALON OS</div>
             </div>
           </div>

@@ -189,7 +189,7 @@ export default function SignupPage() {
       {/* Left Panel */}
       <div style={{ width:380, background:"linear-gradient(160deg,#0F0B2D,#1E1B4B 40%,#3730A3 70%,#6366F1)", display:"flex", flexDirection:"column", justifyContent:"center", padding:"48px 40px", flexShrink:0 }} className="signup-left">
         <div style={{ marginBottom:40 }}>
-          <div style={{ fontFamily:"Georgia,serif", fontSize:28, color:"#fff", marginBottom:6 }}>feature</div>
+          <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: "italic", fontSize: 28, color: "#fff", marginBottom: 6 }}>feature</div>
           <div style={{ fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.4)", letterSpacing:"3px", textTransform:"uppercase" }}>Salon Management Platform</div>
         </div>
         <h2 style={{ fontSize:24, fontWeight:900, color:"#fff", lineHeight:1.3, marginBottom:10 }}>The last salon software you&apos;ll ever need.</h2>

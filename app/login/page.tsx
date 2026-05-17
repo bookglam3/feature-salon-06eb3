@@ -78,7 +78,7 @@ export default function LoginPage() {
         boxShadow: "0 4px 24px rgba(15,23,42,0.08)",
       }}>
         <div style={{ textAlign: "center", marginBottom: "28px" }}>
-          <Link href="/" style={{ fontFamily: "Georgia,serif", fontSize: "26px", color: "#0F172A", letterSpacing: "-0.5px", textDecoration: "none" }}>
+          <Link href="/" style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: "italic", fontSize: "26px", color: "#0F172A", letterSpacing: "-0.3px", textDecoration: "none" }}>
             feature
           </Link>
           <p style={{ fontSize: "14px", color: "#64748B", marginTop: "8px" }}>
