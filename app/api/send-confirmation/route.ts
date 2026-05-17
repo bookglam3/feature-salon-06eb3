@@ -20,10 +20,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing appointmentId" }, { status: 400 });
     }
 
-    // Use service role key for reading owner data safely
+    // MUST use service role key — anon key is blocked by RLS for admin lookups
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
     // Fetch appointment with all related data
