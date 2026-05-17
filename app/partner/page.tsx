@@ -55,14 +55,14 @@ const CFG = {
 type CountryCode = keyof typeof CFG;
 
 interface FS {
-  full_name:string; phone:string; whatsapp:string; country:CountryCode;
+  full_name:string; phone:string; whatsapp:string; email:string; country:CountryCode;
   street_address:string; city:string; postcode:string;
   experience:string; own_vehicle:boolean; daily_availability:string; why_hire:string;
   id_card_number:string; id_issue_date:string; id_expiry_date:string;
   id_card_photo_url:string; selfie_photo_url:string;
 }
 
-const EMPTY:FS = { full_name:"",phone:"",whatsapp:"",country:"GB", street_address:"",city:"",postcode:"", experience:"",own_vehicle:false,daily_availability:"",why_hire:"", id_card_number:"",id_issue_date:"",id_expiry_date:"",id_card_photo_url:"",selfie_photo_url:"" };
+const EMPTY:FS = { full_name:"",phone:"",whatsapp:"",email:"",country:"GB", street_address:"",city:"",postcode:"", experience:"",own_vehicle:false,daily_availability:"",why_hire:"", id_card_number:"",id_issue_date:"",id_expiry_date:"",id_card_photo_url:"",selfie_photo_url:"" };
 
 const si = (extra?:React.CSSProperties):React.CSSProperties => ({ width:"100%",padding:"11px 14px",border:"1.5px solid #E5E7EB",borderRadius:10,fontSize:14,color:"#111827",outline:"none",boxSizing:"border-box",fontFamily:"inherit",background:"#fff",...extra });
 const bf = (e:React.FocusEvent<HTMLInputElement|HTMLSelectElement|HTMLTextAreaElement>) => { e.currentTarget.style.borderColor=IND; e.currentTarget.style.boxShadow="0 0 0 3px rgba(79,110,247,0.12)"; };
@@ -116,7 +116,7 @@ export default function PartnerPage() {
   const c = CFG[form.country];
 
   const validate = () => {
-    if(step===0){if(!form.full_name.trim())return"Full name required";if(!form.phone.trim())return"Phone required";}
+    if(step===0){if(!form.full_name.trim())return"Full name required";if(!form.phone.trim())return"Phone required";if(!form.email.trim()||!form.email.includes("@"))return"Valid email required";}
     if(step===1){if(!form.street_address.trim())return"Street address required";if(!form.city.trim())return"City required";if(!form.postcode.trim())return`${c.postal} required`;}
     if(step===2){if(!form.experience)return"Experience required";if(!form.daily_availability)return"Availability required";if(form.why_hire.trim().length<20)return"Please write at least 20 characters";}
     if(step===3){if(!form.id_card_number.trim())return"ID number required";if(!form.id_issue_date)return"Issue date required";if(!form.id_expiry_date)return"Expiry date required";if(!form.id_card_photo_url)return"ID photo required";if(!form.selfie_photo_url)return"Your photo required";}
@@ -201,6 +201,10 @@ export default function PartnerPage() {
             </div>
 
             <F label="Full Legal Name *"><I placeholder="Exactly as on your ID" value={form.full_name} onChange={e=>set("full_name",e.target.value)}/></F>
+
+            <F label="Email Address *" hint="You will receive approval/rejection notification here">
+              <I type="email" placeholder="your@email.com" value={form.email} onChange={e=>set("email",e.target.value)}/>
+            </F>
 
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
               <F label="Phone Number *">
