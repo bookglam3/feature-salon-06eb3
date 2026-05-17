@@ -152,14 +152,65 @@ NOTIFY pgrst, 'reload schema';
 
 
 -- ─────────────────────────────────────────────────────────────
+-- 6. DISCOUNT CODES — promo codes for bookings
+-- ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS discount_codes (
+  id          UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  salon_id    UUID REFERENCES salons(id) ON DELETE CASCADE,
+  code        TEXT NOT NULL,
+  type        TEXT NOT NULL DEFAULT 'percentage', -- 'percentage' | 'fixed'
+  value       NUMERIC(10,2) NOT NULL,
+  max_uses    INTEGER,
+  uses        INTEGER DEFAULT 0,
+  expires_at  TIMESTAMPTZ,
+  is_active   BOOLEAN DEFAULT TRUE,
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(salon_id, code)
+);
+
+CREATE INDEX IF NOT EXISTS idx_discount_codes_salon
+  ON discount_codes (salon_id, is_active);
+
+ALTER TABLE discount_codes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all on discount_codes" ON discount_codes;
+CREATE POLICY "Allow all on discount_codes" ON discount_codes
+  FOR ALL USING (true) WITH CHECK (true);
+
+
+-- ─────────────────────────────────────────────────────────────
+-- 7. GIFT CARDS — digital gift cards
+-- ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS gift_cards (
+  id               UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  salon_id         UUID REFERENCES salons(id) ON DELETE CASCADE,
+  code             TEXT NOT NULL UNIQUE,
+  amount           NUMERIC(10,2) NOT NULL,
+  remaining        NUMERIC(10,2) NOT NULL,
+  recipient_name   TEXT NOT NULL DEFAULT '',
+  recipient_email  TEXT DEFAULT '',
+  is_redeemed      BOOLEAN DEFAULT FALSE,
+  created_at       TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_gift_cards_salon
+  ON gift_cards (salon_id, created_at DESC);
+
+ALTER TABLE gift_cards ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow all on gift_cards" ON gift_cards;
+CREATE POLICY "Allow all on gift_cards" ON gift_cards
+  FOR ALL USING (true) WITH CHECK (true);
+
+
+-- ─────────────────────────────────────────────────────────────
 -- VERIFY — check all tables exist
 -- ─────────────────────────────────────────────────────────────
-SELECT table_name, 
-  CASE WHEN table_name IN ('broadcast_messages','loyalty_points','loyalty_transactions','waitlist')
-    THEN '✅ Created'
-    ELSE '✅ Exists'
-  END AS status
+SELECT table_name,
+  '✅ OK' AS status
 FROM information_schema.tables
 WHERE table_schema = 'public'
-  AND table_name IN ('salons','appointments','payments','sms_opt_outs','broadcast_messages','loyalty_points','loyalty_transactions','waitlist')
+  AND table_name IN (
+    'salons','appointments','payments','sms_opt_outs',
+    'broadcast_messages','loyalty_points','loyalty_transactions',
+    'waitlist','discount_codes','gift_cards'
+  )
 ORDER BY table_name;
