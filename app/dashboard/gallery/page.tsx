@@ -189,12 +189,13 @@ export default function GalleryPage() {
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 16 }}>
             {filtered.map(photo => (
-              <div key={photo.id} style={{ position: "relative", borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 16px rgba(0,0,0,0.08)", cursor: "pointer", transition: "transform 0.18s" }}
+              <div key={photo.id} style={{ position: "relative", borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 16px rgba(0,0,0,0.08)", cursor: "pointer", transition: "transform 0.18s", height: 220 }}
                 onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.02)"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = "none"; }}>
-                <Image src={photo.url} alt={photo.caption} onClick={() => setLightbox(photo)}
-                  fill style={{ objectFit: "cover", cursor: "pointer" }}
-                  onError={() => {}} />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={photo.url} alt={photo.caption} onClick={() => setLightbox(photo)}
+                  style={{ width: "100%", height: "100%", objectFit: "cover", cursor: "pointer", display: "block" }}
+                  onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
                 {photo.is_featured && (
                   <div style={{ position: "absolute", top: 10, left: 10, background: "#F59E0B", color: "#fff", fontSize: 10, fontWeight: 800, padding: "3px 8px", borderRadius: 99 }}>⭐ Featured</div>
                 )}
@@ -210,6 +211,7 @@ export default function GalleryPage() {
               </div>
             ))}
           </div>
+
         )}
       </div>
 
