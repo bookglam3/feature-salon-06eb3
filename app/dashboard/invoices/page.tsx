@@ -43,6 +43,7 @@ export default function InvoicesPage() {
   const [selected, setSelected] = useState<Invoice | null>(null);
   const [form, setForm] = useState({ client_name: "", client_email: "", due_date: "", notes: "", tax_rate: 20 });
   const [items, setItems] = useState([{ name: "", price: "", qty: 1 }]);
+  const [sendingEmail, setSendingEmail] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -85,6 +86,40 @@ export default function InvoicesPage() {
     setInvoices(p => p.map(i => i.id === id ? { ...i, status } : i));
     if (selected?.id === id) setSelected(prev => prev ? { ...prev, status } : null);
     toast.success(`Invoice marked as ${status}`);
+  };
+
+  const sendInvoiceEmail = async (inv: Invoice) => {
+    if (!inv.client_email) { toast.error("No email address for this client"); return; }
+    setSendingEmail(inv.id);
+    try {
+      const res = await fetch("/api/send-invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          invoiceNumber: inv.invoice_number,
+          clientName: inv.client_name,
+          clientEmail: inv.client_email,
+          salonName,
+          items: inv.items,
+          subtotal: inv.subtotal,
+          taxRate: inv.tax_rate,
+          taxAmount: inv.tax_amount,
+          total: inv.total,
+          dueDate: inv.due_date,
+          notes: inv.notes,
+          status: inv.status,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      toast.success(`Invoice emailed to ${inv.client_email}!`);
+      // Auto-mark as sent if still draft
+      if (inv.status === "draft") await updateStatus(inv.id, "sent");
+    } catch {
+      toast.error("Failed to send email — check client email address");
+    } finally {
+      setSendingEmail(null);
+    }
   };
 
   const printInvoice = (inv: Invoice) => {
@@ -179,9 +214,14 @@ export default function InvoicesPage() {
                       <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9" }}><StatusBadge status={inv.status} /></td>
                       <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9", fontSize: 12.5, color: "#64748B" }}>{inv.due_date ? new Date(inv.due_date + "T00:00:00").toLocaleDateString("en-GB") : "—"}</td>
                       <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9" }} onClick={e => e.stopPropagation()}>
-                        <div style={{ display: "flex", gap: 6 }}>
+                        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                           <button onClick={() => printInvoice(inv)} style={{ padding: "5px 10px", background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#475569" }}>🖨️</button>
-                          {inv.status !== "paid" && <button onClick={() => updateStatus(inv.id, inv.status === "draft" ? "sent" : "paid")} style={{ padding: "5px 10px", background: "#ECFDF5", border: "1.5px solid #A7F3D0", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#059669" }}>{inv.status === "draft" ? "Send" : "Mark Paid"}</button>}
+                          <button
+                            onClick={() => sendInvoiceEmail(inv)}
+                            disabled={!inv.client_email || sendingEmail === inv.id}
+                            style={{ padding: "5px 10px", background: inv.client_email ? "#EEF2FF" : "#F8FAFC", border: `1.5px solid ${inv.client_email ? "#C7D2FE" : "#E2E8F0"}`, borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: inv.client_email ? "pointer" : "not-allowed", color: inv.client_email ? "#4F46E5" : "#CBD5E1", opacity: sendingEmail === inv.id ? 0.6 : 1 }}
+                          >{sendingEmail === inv.id ? "Sending…" : "📧 Email"}</button>
+                          {inv.status !== "paid" && <button onClick={() => updateStatus(inv.id, inv.status === "draft" ? "sent" : "paid")} style={{ padding: "5px 10px", background: "#ECFDF5", border: "1.5px solid #A7F3D0", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", color: "#059669" }}>{inv.status === "draft" ? "Sent" : "Mark Paid"}</button>}
                         </div>
                       </td>
                     </tr>
@@ -221,9 +261,14 @@ export default function InvoicesPage() {
               <div style={{ fontSize: 13, color: "#64748B" }}>VAT ({selected.tax_rate}%): £{selected.tax_amount.toFixed(2)}</div>
               <div style={{ fontSize: 20, fontWeight: 900, color: "#10B981", marginTop: 4 }}>Total: £{selected.total.toFixed(2)}</div>
             </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => printInvoice(selected)} style={{ flex: 1, padding: 12, background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 12, fontSize: 13, fontWeight: 700, color: "#475569", cursor: "pointer" }}>🖨️ Print / PDF</button>
-              {selected.status !== "paid" && <button onClick={() => updateStatus(selected.id, selected.status === "draft" ? "sent" : "paid")} style={{ flex: 1, padding: 12, background: "linear-gradient(135deg,#10B981,#059669)", border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer" }}>{selected.status === "draft" ? "Mark as Sent" : "Mark as Paid"}</button>}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button onClick={() => printInvoice(selected)} style={{ flex: 1, minWidth: 120, padding: 12, background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 12, fontSize: 13, fontWeight: 700, color: "#475569", cursor: "pointer" }}>🖨️ Print / PDF</button>
+              <button
+                onClick={() => sendInvoiceEmail(selected)}
+                disabled={!selected.client_email || sendingEmail === selected.id}
+                style={{ flex: 1, minWidth: 120, padding: 12, background: selected.client_email ? "linear-gradient(135deg,#6366F1,#4F46E5)" : "#F1F5F9", border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, color: selected.client_email ? "#fff" : "#94A3B8", cursor: selected.client_email ? "pointer" : "not-allowed", opacity: sendingEmail === selected.id ? 0.7 : 1 }}
+              >{sendingEmail === selected.id ? "Sending…" : "📧 Email to Client"}</button>
+              {selected.status !== "paid" && <button onClick={() => updateStatus(selected.id, selected.status === "draft" ? "sent" : "paid")} style={{ flex: 1, minWidth: 120, padding: 12, background: "linear-gradient(135deg,#10B981,#059669)", border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer" }}>{selected.status === "draft" ? "Mark as Sent" : "Mark as Paid"}</button>}
             </div>
           </div>
         </div>
