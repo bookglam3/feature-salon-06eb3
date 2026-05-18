@@ -358,9 +358,10 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
                 </div>
                 {group.items
                   .filter(item => {
-                    // Partners is admin-only — hide for all non-admins
+                    // Partners is admin-only
+                    // If auth hasn't loaded yet → always hide (no flash)
                     if (item.path === "/dashboard/partners" || item.label === "Partners") {
-                      return isAdmin;
+                      return adminLoaded && userEmail === SUPER_ADMIN_EMAIL;
                     }
                     return true;
                   })

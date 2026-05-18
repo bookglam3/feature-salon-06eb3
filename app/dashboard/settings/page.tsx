@@ -25,6 +25,8 @@ interface SalonData {
   id: string;
   name: string;
   slug: string;
+  plan?: string;
+  owner_email?: string;
   logo_url?: string;
   description?: string;
   reminders_enabled?: boolean;
