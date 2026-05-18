@@ -9,6 +9,19 @@ import { useToast } from "../components/Toast";
 import { ToastProvider } from "../components/Toast";
 
 // ─── Types ─────────────────────────────────────────────────────
+interface LoginLog {
+  id: string;
+  salon_name: string;
+  owner_email: string;
+  ip_address: string;
+  city: string;
+  country: string;
+  country_code: string;
+  isp: string;
+  device: string;
+  logged_at: string;
+}
+
 interface Agent {
   id: string;
   created_at: string;
@@ -66,6 +79,8 @@ function PartnersPageInner() {
   const [saving, setSaving] = useState(false);
   const [salonName, setSalonName] = useState("");
   const [copiedCode, setCopiedCode] = useState("");
+  const [loginLogs, setLoginLogs] = useState<LoginLog[]>([]);
+  const [logsFilter, setLogsFilter] = useState("");
 
   const getToken = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -97,6 +112,13 @@ function PartnersPageInner() {
       const { data: salon } = await supabase.from("salons").select("name").eq("owner_id", user.id).single();
       setSalonName(salon?.name || "");
       await loadAgents();
+      // Load login logs (newest first, last 100)
+      const { data: logs } = await supabase
+        .from("login_logs")
+        .select("id,salon_name,owner_email,ip_address,city,country,country_code,isp,device,logged_at")
+        .order("logged_at", { ascending: false })
+        .limit(100);
+      setLoginLogs(logs || []);
       setLoading(false);
     };
     init();
@@ -389,6 +411,72 @@ function PartnersPageInner() {
           </>
         )}
       </Modal>
+
+      {/* ── Login History ─────────────────────────────────────── */}
+      <div style={{ padding: "0 24px 40px", maxWidth: 1200, margin: "0 auto" }}>
+        <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, overflow: "hidden" }}>
+          {/* Header */}
+          <div style={{ padding: "18px 22px", borderBottom: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#F1F5F9" }}>🌍 Salon Login History</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>{loginLogs.length} recent logins · IP + location tracked</div>
+            </div>
+            <input
+              value={logsFilter}
+              onChange={e => setLogsFilter(e.target.value)}
+              placeholder="Search salon, email, IP, city…"
+              style={{ padding: "8px 14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, fontSize: 13, color: "#F1F5F9", outline: "none", width: 260 }}
+            />
+          </div>
+
+          {/* Table */}
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 700 }}>
+              <thead>
+                <tr>
+                  {["Salon", "Email", "IP Address", "Location", "ISP", "Device", "Time"].map(h => (
+                    <th key={h} style={{ padding: "10px 16px", fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.3)", textAlign: "left", letterSpacing: "0.8px", textTransform: "uppercase", background: "rgba(255,255,255,0.02)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {loginLogs
+                  .filter(l => !logsFilter.trim() || [
+                    l.salon_name, l.owner_email, l.ip_address, l.city, l.country, l.isp
+                  ].some(v => v?.toLowerCase().includes(logsFilter.toLowerCase())))
+                  .map(log => {
+                    const flag = log.country_code ? String.fromCodePoint(...[...log.country_code.toUpperCase()].map(c => 0x1F1E6 + c.charCodeAt(0) - 65)) : "🌐";
+                    const isMobile = log.device?.includes("Mobile");
+                    return (
+                      <tr key={log.id}
+                        onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
+                        onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                        style={{ transition: "background 0.1s" }}
+                      >
+                        <td style={{ padding: "11px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 13, fontWeight: 700, color: "#F1F5F9" }}>{log.salon_name || "—"}</td>
+                        <td style={{ padding: "11px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 12, color: "rgba(255,255,255,0.45)" }}>{log.owner_email}</td>
+                        <td style={{ padding: "11px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                          <span style={{ fontFamily: "monospace", fontSize: 12.5, color: "#67E8F9", background: "rgba(6,182,212,0.08)", padding: "2px 8px", borderRadius: 5, border: "1px solid rgba(6,182,212,0.2)" }}>{log.ip_address}</span>
+                        </td>
+                        <td style={{ padding: "11px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 12.5, color: "rgba(255,255,255,0.6)" }}>{flag} {log.city}{log.city && log.country ? ", " : ""}{log.country}</td>
+                        <td style={{ padding: "11px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 11.5, color: "rgba(255,255,255,0.35)" }}>{log.isp || "—"}</td>
+                        <td style={{ padding: "11px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                          <span style={{ fontSize: 11.5, fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: isMobile ? "rgba(236,72,153,0.12)" : "rgba(99,102,241,0.12)", color: isMobile ? "#F472B6" : "#A78BFA", border: `1px solid ${isMobile ? "rgba(236,72,153,0.25)" : "rgba(99,102,241,0.25)"}` }}>{log.device || "Unknown"}</span>
+                        </td>
+                        <td style={{ padding: "11px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 11.5, color: "rgba(255,255,255,0.3)", whiteSpace: "nowrap" }}>
+                          {new Date(log.logged_at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                {loginLogs.length === 0 && (
+                  <tr><td colSpan={7} style={{ padding: "32px", textAlign: "center", color: "rgba(255,255,255,0.2)", fontSize: 13 }}>No login history yet — logs appear after first salon login</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </DashboardShell>
   );
 }

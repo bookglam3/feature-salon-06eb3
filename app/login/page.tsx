@@ -28,6 +28,16 @@ export default function LoginPage() {
       }
       setLoading(false);
     } else if (data.user) {
+      // Fire-and-forget login log (IP + geo + device) — non-blocking
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) {
+          fetch("/api/log-login", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          }).catch(() => {}); // non-fatal
+        }
+      } catch { /* non-fatal */ }
       window.location.href = "/dashboard";
     }
   };
