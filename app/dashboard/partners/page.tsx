@@ -22,6 +22,24 @@ interface LoginLog {
   logged_at: string;
 }
 
+interface SalonEntry {
+  id: string;
+  name: string;
+  slug: string;
+  owner_email: string;
+  plan: string;
+  subscription_status: string;
+  subscription_plan: string;
+  trial_ends_at: string | null;
+  created_at: string;
+  last_ip: string | null;
+  last_city: string | null;
+  last_country: string | null;
+  country_code: string | null;
+  last_device: string | null;
+  last_login_at: string | null;
+}
+
 interface Agent {
   id: string;
   created_at: string;
@@ -82,6 +100,15 @@ function PartnersPageInner() {
   const [loginLogs, setLoginLogs] = useState<LoginLog[]>([]);
   const [logsFilter, setLogsFilter] = useState("");
 
+  // All Salons
+  const [allSalons, setAllSalons] = useState<SalonEntry[]>([]);
+  const [salonLoading, setSalonLoading] = useState(true);
+  const [countryFilter, setCountryFilter] = useState("all");
+  const [salonSearch, setSalonSearch] = useState("");
+  const [editSalon, setEditSalon] = useState<SalonEntry | null>(null);
+  const [editForm, setEditForm] = useState({ subscription_status: "", subscription_plan: "", name: "" });
+  const [editSaving, setEditSaving] = useState(false);
+
   const getToken = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
     return session?.access_token || "";
@@ -123,6 +150,18 @@ function PartnersPageInner() {
     };
     init();
   }, [router, loadAgents]);
+
+  // Load all salons separately
+  useEffect(() => {
+    const loadSalons = async () => {
+      const token = await getToken();
+      const res = await fetch("/api/admin/salons", { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) { const json = await res.json(); setAllSalons(json.salons || []); }
+      setSalonLoading(false);
+    };
+    loadSalons();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!loading) loadAgents();
@@ -176,6 +215,55 @@ function PartnersPageInner() {
     referred: agents.reduce((s, a) => s + (a.referred_salons || 0), 0),
   };
 
+  const openEdit = (s: SalonEntry) => {
+    setEditSalon(s);
+    setEditForm({ subscription_status: s.subscription_status || "trial", subscription_plan: s.subscription_plan || "starter", name: s.name });
+  };
+
+  const handleSaveSalon = async () => {
+    if (!editSalon) return;
+    setEditSaving(true);
+    const token = await getToken();
+    const res = await fetch("/api/admin/salons", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ id: editSalon.id, ...editForm }),
+    });
+    if (res.ok) {
+      setAllSalons(prev => prev.map(s => s.id === editSalon.id ? { ...s, ...editForm } : s));
+      toast.success("Salon updated!");
+      setEditSalon(null);
+    } else { toast.error("Update failed"); }
+    setEditSaving(false);
+  };
+
+  const COUNTRY_TABS = [
+    { key: "all",  label: "🌍 All" },
+    { key: "UK",   label: "🇬🇧 UK" },
+    { key: "PK",   label: "🇵🇰 Pakistan" },
+    { key: "AE",   label: "🇦🇪 UAE" },
+    { key: "SA",   label: "🇸🇦 Saudi Arabia" },
+    { key: "none", label: "❓ No Login" },
+  ];
+
+  const visibleSalons = allSalons.filter(s => {
+    const matchCountry = countryFilter === "all" ? true
+      : countryFilter === "none" ? !s.last_country
+      : s.country_code === countryFilter;
+    const q = salonSearch.toLowerCase();
+    const matchSearch = !q || [s.name, s.owner_email, s.last_ip, s.last_city, s.last_country].some(v => v?.toLowerCase().includes(q));
+    return matchCountry && matchSearch;
+  });
+
+  const SUB_BADGE: Record<string, { bg: string; color: string; border: string; label: string }> = {
+    trial:     { bg: "rgba(99,102,241,0.12)",  color: "#A78BFA", border: "rgba(99,102,241,0.3)",  label: "🎁 Trial" },
+    trialing:  { bg: "rgba(99,102,241,0.12)",  color: "#A78BFA", border: "rgba(99,102,241,0.3)",  label: "⏳ Trialing" },
+    active:    { bg: "rgba(16,185,129,0.12)",  color: "#34D399", border: "rgba(16,185,129,0.3)",  label: "✅ Active" },
+    past_due:  { bg: "rgba(245,158,11,0.12)",  color: "#FCD34D", border: "rgba(245,158,11,0.3)",  label: "⚠️ Past Due" },
+    cancelled: { bg: "rgba(239,68,68,0.12)",   color: "#FCA5A5", border: "rgba(239,68,68,0.3)",   label: "❌ Cancelled" },
+    unpaid:    { bg: "rgba(239,68,68,0.12)",   color: "#FCA5A5", border: "rgba(239,68,68,0.3)",   label: "🔴 Unpaid" },
+  };
+
   if (loading) return <DashboardShell salonName=""><SkeletonDashboard /></DashboardShell>;
 
   const Topbar = (
@@ -200,6 +288,144 @@ function PartnersPageInner() {
   return (
     <DashboardShell salonName={salonName} topbar={Topbar}>
       <div style={{ padding: "24px 20px" }}>
+
+        {/* All Salons — Country Intelligence Panel */}
+        <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, overflow: "hidden", marginBottom: 24 }}>
+          {/* Header */}
+          <div style={{ padding: "18px 22px", borderBottom: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#F1F5F9" }}>🏢 All Salons</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>{allSalons.length} total · filter by country</div>
+            </div>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+              <input value={salonSearch} onChange={e => setSalonSearch(e.target.value)} placeholder="Search name, email, IP…" style={{ padding: "7px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, fontSize: 13, color: "#F1F5F9", outline: "none", width: 220 }} />
+              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>{visibleSalons.length} shown</span>
+            </div>
+          </div>
+
+          {/* Country Tabs */}
+          <div style={{ display: "flex", gap: 4, padding: "12px 18px", borderBottom: "1px solid rgba(255,255,255,0.06)", overflowX: "auto" }}>
+            {COUNTRY_TABS.map(t => {
+              const count = t.key === "all" ? allSalons.length
+                : t.key === "none" ? allSalons.filter(s => !s.last_country).length
+                : allSalons.filter(s => s.country_code === t.key).length;
+              return (
+                <button key={t.key} onClick={() => setCountryFilter(t.key)}
+                  style={{ padding: "6px 14px", borderRadius: 99, fontSize: 12.5, fontWeight: countryFilter === t.key ? 800 : 500, whiteSpace: "nowrap", cursor: "pointer", border: `1px solid ${countryFilter === t.key ? "rgba(139,92,246,0.5)" : "rgba(255,255,255,0.08)"}`, background: countryFilter === t.key ? "rgba(139,92,246,0.18)" : "transparent", color: countryFilter === t.key ? "#C4B5FD" : "rgba(255,255,255,0.4)", transition: "all 0.15s" }}
+                >{t.label} <span style={{ opacity: 0.6, fontSize: 11 }}>({count})</span></button>
+              );
+            })}
+          </div>
+
+          {/* Table */}
+          <div style={{ overflowX: "auto" }}>
+            {salonLoading ? (
+              <div style={{ padding: 32, textAlign: "center", color: "rgba(255,255,255,0.3)", fontSize: 13 }}>Loading salons…</div>
+            ) : (
+              <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 820 }}>
+                <thead>
+                  <tr>
+                    {["Salon", "Owner Email", "Plan", "Status", "Last Login Location", "IP", "Device", "Joined", "Actions"].map(h => (
+                      <th key={h} style={{ padding: "10px 14px", fontSize: 9.5, fontWeight: 800, color: "rgba(255,255,255,0.3)", textAlign: "left", letterSpacing: "0.8px", textTransform: "uppercase", background: "rgba(255,255,255,0.02)", borderBottom: "1px solid rgba(255,255,255,0.06)", whiteSpace: "nowrap" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibleSalons.map(s => {
+                    const badge = SUB_BADGE[s.subscription_status] || SUB_BADGE.trial;
+                    const flag = s.country_code ? String.fromCodePoint(...[...s.country_code.toUpperCase()].map(c => 0x1F1E6 + c.charCodeAt(0) - 65)) : "";
+                    const isMobile = s.last_device?.includes("Mobile");
+                    return (
+                      <tr key={s.id}
+                        onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.025)")}
+                        onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                        style={{ transition: "background 0.1s" }}
+                      >
+                        <td style={{ padding: "11px 14px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                          <div style={{ fontSize: 13, fontWeight: 800, color: "#F1F5F9" }}>{s.name}</div>
+                          <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>/book/{s.slug}</div>
+                        </td>
+                        <td style={{ padding: "11px 14px", borderBottom: "1px solid rgba(255,255,255,0.04)", fontSize: 12, color: "rgba(255,255,255,0.45)", maxWidth: 180 }}>{s.owner_email}</td>
+                        <td style={{ padding: "11px 14px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                          <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 99, background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.5)", textTransform: "capitalize" }}>{s.subscription_plan || s.plan || "starter"}</span>
+                        </td>
+                        <td style={{ padding: "11px 14px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                          <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: badge.bg, color: badge.color, border: `1px solid ${badge.border}`, whiteSpace: "nowrap" }}>{badge.label}</span>
+                        </td>
+                        <td style={{ padding: "11px 14px", borderBottom: "1px solid rgba(255,255,255,0.04)", fontSize: 12.5, color: "rgba(255,255,255,0.55)", whiteSpace: "nowrap" }}>
+                          {s.last_country ? `${flag} ${s.last_city || ""}, ${s.last_country}` : <span style={{ color: "rgba(255,255,255,0.2)" }}>No login yet</span>}
+                        </td>
+                        <td style={{ padding: "11px 14px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                          {s.last_ip ? <span style={{ fontFamily: "monospace", fontSize: 12, color: "#67E8F9", background: "rgba(6,182,212,0.08)", padding: "2px 7px", borderRadius: 5, border: "1px solid rgba(6,182,212,0.2)" }}>{s.last_ip}</span> : <span style={{ color: "rgba(255,255,255,0.18)", fontSize: 12 }}>—</span>}
+                        </td>
+                        <td style={{ padding: "11px 14px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                          {s.last_device ? <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 99, background: isMobile ? "rgba(236,72,153,0.1)" : "rgba(99,102,241,0.1)", color: isMobile ? "#F472B6" : "#A78BFA", border: `1px solid ${isMobile ? "rgba(236,72,153,0.2)" : "rgba(99,102,241,0.2)"}` }}>{s.last_device}</span> : <span style={{ color: "rgba(255,255,255,0.18)", fontSize: 12 }}>—</span>}
+                        </td>
+                        <td style={{ padding: "11px 14px", borderBottom: "1px solid rgba(255,255,255,0.04)", fontSize: 11, color: "rgba(255,255,255,0.28)", whiteSpace: "nowrap" }}>
+                          {new Date(s.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "2-digit" })}
+                        </td>
+                        <td style={{ padding: "11px 14px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                          <button onClick={() => openEdit(s)}
+                            style={{ padding: "5px 12px", background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.25)", color: "#A78BFA", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.12s" }}
+                            onMouseEnter={e => { e.currentTarget.style.background = "rgba(139,92,246,0.22)"; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = "rgba(139,92,246,0.12)"; }}
+                          >Edit</button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {visibleSalons.length === 0 && (
+                    <tr><td colSpan={9} style={{ padding: 32, textAlign: "center", color: "rgba(255,255,255,0.2)", fontSize: 13 }}>No salons found for this filter</td></tr>
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        {/* Edit Salon Modal */}
+        {editSalon && (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 16 }}>
+            <div style={{ background: "#13111F", border: "1px solid rgba(139,92,246,0.3)", borderRadius: 20, padding: 28, width: "100%", maxWidth: 440, boxShadow: "0 24px 80px rgba(0,0,0,0.7)" }}>
+              <div style={{ fontSize: 17, fontWeight: 800, color: "#F1F5F9", marginBottom: 4 }}>Edit Salon</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginBottom: 22 }}>{editSalon.name} · {editSalon.owner_email}</div>
+
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", fontWeight: 600, display: "block", marginBottom: 6, letterSpacing: "0.5px", textTransform: "uppercase" }}>Salon Name</label>
+                <input value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} style={{ width: "100%", padding: "9px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 9, fontSize: 14, color: "#F1F5F9", outline: "none", boxSizing: "border-box" }} />
+              </div>
+
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", fontWeight: 600, display: "block", marginBottom: 6, letterSpacing: "0.5px", textTransform: "uppercase" }}>Subscription Status</label>
+                <select value={editForm.subscription_status} onChange={e => setEditForm(f => ({ ...f, subscription_status: e.target.value }))} style={{ width: "100%", padding: "9px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 9, fontSize: 14, color: "#F1F5F9", outline: "none" }}>
+                  <option value="trial">🎁 Trial</option>
+                  <option value="trialing">⏳ Trialing</option>
+                  <option value="active">✅ Active</option>
+                  <option value="past_due">⚠️ Past Due</option>
+                  <option value="cancelled">❌ Cancelled</option>
+                  <option value="unpaid">🔴 Unpaid</option>
+                </select>
+              </div>
+
+              <div style={{ marginBottom: 22 }}>
+                <label style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", fontWeight: 600, display: "block", marginBottom: 6, letterSpacing: "0.5px", textTransform: "uppercase" }}>Plan</label>
+                <select value={editForm.subscription_plan} onChange={e => setEditForm(f => ({ ...f, subscription_plan: e.target.value }))} style={{ width: "100%", padding: "9px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 9, fontSize: 14, color: "#F1F5F9", outline: "none" }}>
+                  <option value="starter">Starter — £29/mo</option>
+                  <option value="pro">Pro — £59/mo</option>
+                  <option value="business">Business — £99/mo</option>
+                  <option value="enterprise">Enterprise — Custom</option>
+                </select>
+              </div>
+
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => setEditSalon(null)} style={{ flex: 1, padding: 11, background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+                <button onClick={handleSaveSalon} disabled={editSaving} style={{ flex: 1, padding: 11, background: editSaving ? "rgba(139,92,246,0.4)" : "linear-gradient(135deg,#7C3AED,#6D28D9)", color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: editSaving ? "not-allowed" : "pointer", boxShadow: "0 4px 16px rgba(124,58,237,0.4)" }}>
+                  {editSaving ? "Saving…" : "Save Changes"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 12, marginBottom: 24 }}>
