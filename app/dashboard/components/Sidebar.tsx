@@ -230,7 +230,7 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
           flexShrink: 0,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {/* App logo mark */}
+            {/* App logo mark — new brand SVG */}
             <div style={{
               width: 36, height: 36, borderRadius: 11, position: "relative",
               display: "flex", alignItems: "center", justifyContent: "center",
@@ -238,7 +238,7 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
               flexShrink: 0, overflow: "hidden",
             }}>
               <Image
-                src="/icons/icon-192.png"
+                src="/brand/logo-app-icon.svg"
                 alt="Feature Salon"
                 width={36}
                 height={36}
@@ -254,8 +254,8 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
               }} />
             </div>
             <div>
-              <div style={{ fontSize: 16, fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 600, color: "#F1F5F9", letterSpacing: "-0.3px", lineHeight: 1, fontStyle: "italic" }}>feature</div>
-              <div style={{ fontSize: 8.5, fontWeight: 700, color: "rgba(255,255,255,0.22)", letterSpacing: "2px", textTransform: "uppercase", marginTop: 2 }}>SALON OS</div>
+              <div style={{ fontSize: 16, fontFamily: "var(--font-inter, 'Inter', sans-serif)", fontWeight: 600, color: "#F1F5F9", letterSpacing: "-0.5px", lineHeight: 1 }}>feature</div>
+              <div style={{ fontSize: 8.5, fontWeight: 600, color: "rgba(167,139,250,0.5)", letterSpacing: "2.5px", textTransform: "uppercase", marginTop: 3 }}>SALON OS</div>
             </div>
           </div>
           {onClose && (
