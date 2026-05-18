@@ -1,11 +1,11 @@
 "use client";
 import Link from "next/link";
-
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { NAV_ICON_MAP, LogOutIcon } from "./DashboardIcons";
 import type { LucideProps } from "lucide-react";
+import { useSalon } from "../context/SalonContext";
 
 const SUPER_ADMIN_EMAIL = "adilgill2008@gmail.com";
 
@@ -92,6 +92,9 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
   const pathname = usePathname();
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [adminLoaded, setAdminLoaded] = useState(false);
+  const [branchOpen, setBranchOpen] = useState(false);
+  const { salons, activeSalon, switchSalon } = useSalon();
+  const hasMultiBranch = salons.length > 1;
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -116,8 +119,6 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap');
-
         .sb-wrap {
           width: 100%;
           max-width: var(--sidebar-w);
@@ -271,6 +272,80 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
             >✕</button>
           )}
         </div>
+
+        {/* ── Branch Switcher (only if owner has 2+ salons) ── */}
+        {hasMultiBranch && (
+          <div style={{ padding: "0 12px 10px", position: "relative" }}>
+            <button
+              onClick={() => setBranchOpen(o => !o)}
+              style={{
+                width: "100%", display: "flex", alignItems: "center", gap: 9,
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(139,92,246,0.2)",
+                borderRadius: 11, padding: "8px 11px",
+                cursor: "pointer", transition: "all 0.15s",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(139,92,246,0.1)"; e.currentTarget.style.borderColor = "rgba(139,92,246,0.4)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = "rgba(139,92,246,0.2)"; }}
+            >
+              <div style={{
+                width: 26, height: 26, borderRadius: 7, flexShrink: 0,
+                background: "linear-gradient(135deg,#7C3AED,#6D28D9)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 10, fontWeight: 900, color: "#fff",
+              }}>
+                {(activeSalon?.name || "S").slice(0, 1).toUpperCase()}
+              </div>
+              <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#F1F5F9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {activeSalon?.name || "Select Branch"}
+                </div>
+                <div style={{ fontSize: 9.5, color: "rgba(167,139,250,0.6)", marginTop: 1 }}>Branch</div>
+              </div>
+              <div style={{ fontSize: 10, color: "rgba(167,139,250,0.5)", transition: "transform 0.2s", transform: branchOpen ? "rotate(180deg)" : "none", flexShrink: 0 }}>▼</div>
+            </button>
+
+            {/* Dropdown */}
+            {branchOpen && (
+              <div style={{
+                position: "absolute", top: "calc(100% - 2px)", left: 12, right: 12,
+                background: "rgba(16,15,40,0.98)",
+                border: "1px solid rgba(139,92,246,0.25)",
+                borderRadius: 12, overflow: "hidden",
+                boxShadow: "0 16px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(139,92,246,0.1)",
+                zIndex: 200, backdropFilter: "blur(16px)",
+              }}>
+                {salons.map(s => (
+                  <button
+                    key={s.id}
+                    onClick={() => { setBranchOpen(false); if (s.id !== activeSalon?.id) switchSalon(s.id); }}
+                    style={{
+                      width: "100%", display: "flex", alignItems: "center", gap: 9,
+                      padding: "9px 12px",
+                      background: s.id === activeSalon?.id ? "rgba(139,92,246,0.12)" : "transparent",
+                      border: "none", cursor: "pointer",
+                      borderBottom: "1px solid rgba(255,255,255,0.04)",
+                      transition: "background 0.12s",
+                    }}
+                    onMouseEnter={e => { if (s.id !== activeSalon?.id) e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
+                    onMouseLeave={e => { if (s.id !== activeSalon?.id) e.currentTarget.style.background = "transparent"; }}
+                  >
+                    <div style={{
+                      width: 22, height: 22, borderRadius: 6, flexShrink: 0,
+                      background: s.id === activeSalon?.id ? "linear-gradient(135deg,#7C3AED,#6D28D9)" : "rgba(255,255,255,0.07)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 9, fontWeight: 900, color: "#fff",
+                    }}>{s.name.slice(0, 1).toUpperCase()}</div>
+                    <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
+                      <div style={{ fontSize: 12, fontWeight: s.id === activeSalon?.id ? 700 : 500, color: s.id === activeSalon?.id ? "#A78BFA" : "rgba(255,255,255,0.6)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</div>
+                    </div>
+                    {s.id === activeSalon?.id && <div style={{ fontSize: 10, color: "#7C3AED" }}>✓</div>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── Nav ── */}
         <nav className="sb-nav-scroll">

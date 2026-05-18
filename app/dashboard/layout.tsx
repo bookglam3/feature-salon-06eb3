@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { supabase } from "../lib/supabase";
+import { SalonProvider } from "./context/SalonContext";
 
 type SubStatus = "trial" | "trialing" | "active" | "past_due" | "cancelled" | "unpaid" | null;
 
@@ -139,11 +140,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const showPastDue  = status === "past_due";
 
   return (
-    <>
+    <SalonProvider>
       {isLocked && salon  && <LockedOverlay salon={salon} />}
       {showTrial && salon  && <TrialBanner   salon={salon} />}
       {showPastDue && salon && <PastDueBanner salon={salon} />}
       {children}
-    </>
+    </SalonProvider>
   );
 }
