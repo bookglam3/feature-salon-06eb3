@@ -59,13 +59,14 @@ export async function PATCH(req: NextRequest) {
   if (!await verifyAdmin(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json();
-  const { id, subscription_status, subscription_plan, name } = body;
+  const { id, subscription_status, subscription_plan, name, timezone } = body;
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
   const updates: Record<string, string> = {};
   if (subscription_status) updates.subscription_status = subscription_status;
   if (subscription_plan)   updates.subscription_plan   = subscription_plan;
   if (name)                updates.name                = name;
+  if (timezone)            updates.timezone            = timezone;
 
   const { error } = await supabaseAdmin.from("salons").update(updates).eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

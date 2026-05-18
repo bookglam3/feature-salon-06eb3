@@ -69,6 +69,35 @@ function isSlotInRange(slot: string, staff: StaffMember | null, date: Date): boo
   return slot >= hours.start && slot <= hours.end;
 }
 
+// ── Country → Timezone map ───────────────────────────────────
+const COUNTRY_TIMEZONES: Record<string, string> = {
+  GB: "Europe/London",
+  PK: "Asia/Karachi",
+  AE: "Asia/Dubai",
+  SA: "Asia/Riyadh",
+};
+
+// Convert YYYY-MM-DD + HH:MM in the salon's timezone → UTC ISO string
+function localTimeToUTC(dateStr: string, timeStr: string, timezone: string): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const [h, min] = timeStr.split(":").map(Number);
+  // Get offset: create noon UTC on that date, see what local noon looks like
+  const noonUTC = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
+  const localNoonStr = noonUTC.toLocaleString("en-US", { timeZone: timezone });
+  const localNoon = new Date(localNoonStr);
+  const offsetMs = noonUTC.getTime() - localNoon.getTime();
+  // Create target in "fake UTC" (as if timezone were UTC) then apply offset
+  const fakeUTC = new Date(Date.UTC(y, m - 1, d, h, min, 0));
+  return new Date(fakeUTC.getTime() + offsetMs).toISOString();
+}
+
+// Format UTC datetime string in salon's local timezone → HH:MM
+function utcToSalonTime(isoStr: string, timezone: string): string {
+  return new Date(isoStr).toLocaleTimeString("en-GB", {
+    timeZone: timezone, hour: "2-digit", minute: "2-digit", hour12: false,
+  });
+}
+
 // ── Country definitions ───────────────────────────────────────
 const COUNTRIES = [
   {
@@ -206,8 +235,9 @@ export default function BookingPage() {
   // Track already-booked time slots for selected date/staff
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
 
-  const loadBookedSlots = useCallback(async (date: Date, staffId: string | null, salonId: string) => {
+  const loadBookedSlots = useCallback(async (date: Date, staffId: string | null, salonId: string, salonTz = "Europe/London") => {
     const dateStr = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+    // Query wider window to account for timezone differences
     let q = supabase.from("appointments")
       .select("date_time")
       .eq("salon_id", salonId)
@@ -216,7 +246,8 @@ export default function BookingPage() {
       .not("status", "eq", "cancelled");
     if (staffId) q = q.eq("staff_id", staffId);
     const { data } = await q;
-    setBookedSlots((data || []).map(a => new Date(a.date_time).toTimeString().slice(0,5)));
+    // Convert UTC times back to salon local time for slot comparison
+    setBookedSlots((data || []).map(a => utcToSalonTime(a.date_time, salonTz)));
   }, []);
 
   // Auto-detect country from IP — tries two services, falls back to PK
@@ -316,10 +347,12 @@ export default function BookingPage() {
     if (!validateForm()) return;
     setSubmitting(true);
 
-    const [hours, minutes] = selTime.split(":");
-    const bookingDateTime = new Date(selDate);
-    bookingDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-    const iso = bookingDateTime.toISOString();
+    // Determine salon timezone: from salon data or fallback to Europe/London
+    const salonTz: string = (salon as Record<string, unknown>).timezone as string
+      || COUNTRY_TIMEZONES[(salon as Record<string, unknown>).country as string || ""]
+      || "Europe/London";
+    const dateStr = `${selDate.getFullYear()}-${String(selDate.getMonth()+1).padStart(2,"0")}-${String(selDate.getDate()).padStart(2,"0")}`;
+    const iso = localTimeToUTC(dateStr, selTime, salonTz);
 
     let availQuery = supabase.from("appointments").select("id")
       .eq("salon_id", salon.id)
@@ -552,10 +585,12 @@ export default function BookingPage() {
                 <div className="input-group">
                   <label className="input-label">Select Date</label>
                   <input type="date" className="input" min={todayStr} onChange={e=>{
-                    const d = new Date(e.target.value);
+                    const d = new Date(e.target.value + "T12:00:00Z"); // noon UTC avoids date-shift
                     setSelDate(d);
-                    setSelTime(""); // reset time on date change
-                    if (salon) loadBookedSlots(d, selectedStaff?.id || null, salon.id);
+                    setSelTime("");
+                    const salonTz: string = (salon as Record<string, unknown>).timezone as string
+                      || COUNTRY_TIMEZONES[(salon as Record<string, unknown>).country as string || ""] || "Europe/London";
+                    if (salon) loadBookedSlots(d, selectedStaff?.id || null, salon.id, salonTz);
                   }}/>
                 </div>
                 {selDate && (() => {

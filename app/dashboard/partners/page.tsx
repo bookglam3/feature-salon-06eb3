@@ -106,7 +106,7 @@ function PartnersPageInner() {
   const [countryFilter, setCountryFilter] = useState("all");
   const [salonSearch, setSalonSearch] = useState("");
   const [editSalon, setEditSalon] = useState<SalonEntry | null>(null);
-  const [editForm, setEditForm] = useState({ subscription_status: "", subscription_plan: "", name: "" });
+  const [editForm, setEditForm] = useState({ subscription_status: "", subscription_plan: "", name: "", timezone: "Europe/London" });
   const [editSaving, setEditSaving] = useState(false);
 
   const getToken = useCallback(async () => {
@@ -217,7 +217,12 @@ function PartnersPageInner() {
 
   const openEdit = (s: SalonEntry) => {
     setEditSalon(s);
-    setEditForm({ subscription_status: s.subscription_status || "trial", subscription_plan: s.subscription_plan || "starter", name: s.name });
+    setEditForm({
+      subscription_status: s.subscription_status || "trial",
+      subscription_plan: s.subscription_plan || "starter",
+      name: s.name,
+      timezone: (s as Record<string, unknown>).timezone as string || "Europe/London",
+    });
   };
 
   const handleSaveSalon = async () => {
@@ -414,6 +419,16 @@ function PartnersPageInner() {
                   <option value="pro">Pro — £59/mo</option>
                   <option value="business">Business — £99/mo</option>
                   <option value="enterprise">Enterprise — Custom</option>
+                </select>
+              </div>
+
+              <div style={{ marginBottom: 22 }}>
+                <label style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", fontWeight: 600, display: "block", marginBottom: 6, letterSpacing: "0.5px", textTransform: "uppercase" }}>Timezone</label>
+                <select value={editForm.timezone} onChange={e => setEditForm(f => ({ ...f, timezone: e.target.value }))} style={{ width: "100%", padding: "9px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 9, fontSize: 14, color: "#F1F5F9", outline: "none" }}>
+                  <option value="Europe/London">🇬🇧 UK — Europe/London (GMT/BST)</option>
+                  <option value="Asia/Karachi">🇵🇰 Pakistan — Asia/Karachi (PKT +5)</option>
+                  <option value="Asia/Dubai">🇦🇪 UAE — Asia/Dubai (GST +4)</option>
+                  <option value="Asia/Riyadh">🇸🇦 Saudi Arabia — Asia/Riyadh (AST +3)</option>
                 </select>
               </div>
 
