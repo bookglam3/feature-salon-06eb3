@@ -78,8 +78,8 @@ export default function LoginPage() {
         boxShadow: "0 4px 24px rgba(15,23,42,0.08)",
       }}>
         <div style={{ textAlign: "center", marginBottom: "28px" }}>
-          <Link href="/" style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: "italic", fontSize: "26px", color: "#0F172A", letterSpacing: "-0.3px", textDecoration: "none" }}>
-            feature
+          <Link href="/">
+            <img src="/brand/logo-light.svg" alt="Feature Salon" style={{ height: 48, width: "auto", display: "inline-block" }} />
           </Link>
           <p style={{ fontSize: "14px", color: "#64748B", marginTop: "8px" }}>
             {resetMode ? "Reset your password" : "Sign in to your salon"}

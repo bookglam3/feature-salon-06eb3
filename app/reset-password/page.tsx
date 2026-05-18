@@ -50,7 +50,7 @@ function ResetContent() {
     <main style={{ minHeight: "100vh", background: "#F2F4F7", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{ background: "#fff", border: "0.5px solid #E8EAF0", borderRadius: "16px", padding: "48px", width: "100%", maxWidth: "420px" }}>
         <div style={{ textAlign: "center", marginBottom: "32px" }}>
-          <div style={{ fontFamily: "Georgia, serif", fontSize: "28px", color: "#0F172A" }}>feature</div>
+          <a href="/"><img src="/brand/logo-light.svg" alt="Feature Salon" style={{ height: 48, width: "auto", display: "inline-block" }} /></a>
           <p style={{ fontSize: "14px", color: "#64748B", marginTop: "8px" }}>Set your new password</p>
         </div>
 
