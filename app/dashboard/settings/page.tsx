@@ -193,6 +193,7 @@ export default function SettingsPage() {
   const [pwForm, setPwForm] = useState({ newPw: "", confirm: "" });
   const [pwStep, setPwStep] = useState<"form" | "otp">("form");
   const [otpCode, setOtpCode] = useState("");
+  const [otpChallenge, setOtpChallenge] = useState("");
   const [pwSending, setPwSending] = useState(false);
   const [pwVerifying, setPwVerifying] = useState(false);
   const [pwError, setPwError] = useState("");
@@ -429,6 +430,7 @@ export default function SettingsPage() {
     });
     const json = await res.json();
     if (!res.ok) { setPwError(json.error || "Failed to send code."); setPwSending(false); return; }
+    setOtpChallenge(json.challenge || "");
     setPwStep("otp");
     setPwSending(false);
     startOtpTimer();
@@ -443,7 +445,7 @@ export default function SettingsPage() {
     const res = await fetch("/api/auth/verify-pw-otp", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ code: otpCode, newPassword: pwForm.newPw }),
+      body: JSON.stringify({ code: otpCode, challenge: otpChallenge, newPassword: pwForm.newPw }),
     });
     const json = await res.json();
     if (!res.ok) { setPwError(json.error || "Invalid code."); setPwVerifying(false); return; }
