@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useEffect, useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -196,6 +196,13 @@ export default function SettingsPage() {
   const [pwSuccess, setPwSuccess] = useState(false);
   const [showPw, setShowPw] = useState({ current: false, newPw: false, confirm: false });
 
+  // Multi-branch
+  const [branches, setBranches] = useState<{ id: string; name: string; slug: string }[]>([]);
+  const [showAddBranch, setShowAddBranch] = useState(false);
+  const [newBranchName, setNewBranchName] = useState("");
+  const [addingBranch, setAddingBranch] = useState(false);
+  const [branchError, setBranchError] = useState("");
+
   useEffect(() => {
     const loadData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -226,6 +233,14 @@ export default function SettingsPage() {
         const res = await fetch("/api/services", { headers: { Authorization: `Bearer ${token}` } });
         if (res.ok) { const json = await res.json(); setServices(json.services || []); }
       }
+      // Load all branches for this owner
+      const { data: branchData } = await supabase
+        .from("salons")
+        .select("id,name,slug")
+        .eq("owner_id", user.id)
+        .order("created_at", { ascending: true });
+      setBranches(branchData || []);
+
       setLoading(false);
     };
     loadData();
@@ -412,6 +427,36 @@ export default function SettingsPage() {
     setTimeout(() => setPwSuccess(false), 4000);
   };
 
+  const handleAddBranch = async () => {
+    if (!newBranchName.trim()) { setBranchError("Branch name required."); return; }
+    setBranchError("");
+    setAddingBranch(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    // Generate unique slug
+    const slug = newBranchName.trim().toLowerCase()
+      .replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")
+      + "-" + Date.now().toString().slice(-5);
+    const { data, error } = await supabase.from("salons").insert({
+      name: newBranchName.trim(),
+      slug,
+      owner_id: user.id,
+      owner_email: user.email,
+      plan: salon?.plan || "Starter",
+      subscription_status: "trial",
+      subscription_plan: "starter",
+      trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+    }).select("id,name,slug").single();
+    if (error) {
+      setBranchError(error.message.includes("unique") ? "Slug already taken — try a different name." : error.message);
+    } else if (data) {
+      setBranches(prev => [...prev, data]);
+      setNewBranchName("");
+      setShowAddBranch(false);
+    }
+    setAddingBranch(false);
+  };
+
   if (loading) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
       <div style={{ fontFamily: "Georgia, serif", fontSize: "24px", color: "#4F6EF7" }}>feature</div>
@@ -468,6 +513,73 @@ export default function SettingsPage() {
             Preview ↗
           </button>
         </div>
+      </div>
+
+      {/* ── Branches ── */}
+      <div style={cardStyle}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+          <div style={{ fontSize: "14px", fontWeight: 600, color: "#0F172A" }}>🏢 Branches</div>
+          <button
+            onClick={() => { setShowAddBranch(true); setBranchError(""); setNewBranchName(""); }}
+            style={{ padding: "7px 16px", background: "#4F6EF7", color: "#fff", border: "none", borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}
+          >
+            + Add Branch
+          </button>
+        </div>
+        <p style={{ fontSize: "13px", color: "#64748B", marginBottom: 16 }}>
+          Manage multiple salon locations under one account.
+        </p>
+
+        {/* Branch list */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {branches.map((b, i) => (
+            <div key={b.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", border: "0.5px solid #E8EAF0", borderRadius: 10, background: i === 0 ? "#F5F7FF" : "#FAFAFA" }}>
+              <div style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(135deg,#4F6EF7,#7C3AED)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 13, fontWeight: 900, flexShrink: 0 }}>
+                {b.name.slice(0, 1).toUpperCase()}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: "#0F172A" }}>{b.name}</div>
+                <div style={{ fontSize: 11.5, color: "#94A3B8", marginTop: 1 }}>/book/{b.slug}</div>
+              </div>
+              {i === 0 && <span style={{ fontSize: 10.5, fontWeight: 700, background: "#EEF2FF", color: "#4F6EF7", padding: "3px 10px", borderRadius: 99, border: "0.5px solid #C7D2FE" }}>Main</span>}
+            </div>
+          ))}
+        </div>
+
+        {/* Add Branch Modal */}
+        {showAddBranch && (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 16 }}>
+            <div style={{ background: "#fff", borderRadius: 18, padding: 28, width: "100%", maxWidth: 420, boxShadow: "0 24px 64px rgba(15,23,42,0.18)" }}>
+              <div style={{ fontSize: 18, fontWeight: 700, color: "#0F172A", marginBottom: 6 }}>Add New Branch</div>
+              <p style={{ fontSize: 13, color: "#64748B", marginBottom: 20 }}>A new booking page will be created for this location.</p>
+              <label style={{ fontSize: 12, color: "#64748B", fontWeight: 500, display: "block", marginBottom: 6 }}>Branch Name *</label>
+              <input
+                value={newBranchName}
+                onChange={e => setNewBranchName(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleAddBranch()}
+                placeholder="e.g. Bloom Beauty Manchester"
+                style={{ width: "100%", padding: "10px 14px", border: `1.5px solid ${branchError ? "#EF4444" : "#E2E8F0"}`, borderRadius: 8, fontSize: 14, outline: "none", boxSizing: "border-box", marginBottom: 6 }}
+                autoFocus
+              />
+              {branchError && <div style={{ fontSize: 12, color: "#EF4444", marginBottom: 8 }}>{branchError}</div>}
+              {newBranchName.trim() && (
+                <div style={{ fontSize: 12, color: "#94A3B8", marginBottom: 16 }}>
+                  Booking URL: /book/{newBranchName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")}-XXXXX
+                </div>
+              )}
+              <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+                <button onClick={() => setShowAddBranch(false)} style={{ flex: 1, padding: "11px", background: "#F1F5F9", color: "#475569", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
+                <button
+                  onClick={handleAddBranch}
+                  disabled={addingBranch || !newBranchName.trim()}
+                  style={{ flex: 1, padding: "11px", background: addingBranch ? "#93C5FD" : "#4F6EF7", color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: addingBranch ? "not-allowed" : "pointer", transition: "background 0.15s" }}
+                >
+                  {addingBranch ? "Creating…" : "Create Branch"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Salon Brand ── */}
