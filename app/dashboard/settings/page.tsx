@@ -450,13 +450,20 @@ export default function SettingsPage() {
       trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
     }).select("id,name,slug").single();
     if (error) {
-      setBranchError(error.message.includes("unique") ? "Slug already taken — try a different name." : error.message);
+      // UNIQUE constraint on owner_id means only 1 salon allowed — user must run SQL migration first
+      const isUniqueViolation = error.message.toLowerCase().includes("unique") || error.code === "23505";
+      setBranchError(
+        isUniqueViolation
+          ? "⚠️ Run this SQL in Supabase first: ALTER TABLE salons DROP CONSTRAINT IF EXISTS salons_owner_id_key;"
+          : error.message
+      );
+      setAddingBranch(false);
     } else if (data) {
-      setBranches(prev => [...prev, data]);
-      setNewBranchName("");
-      setShowAddBranch(false);
+      // Auto-switch to new branch so staff/services add to it immediately
+      localStorage.setItem("feature_active_salon_id", data.id);
+      // Reload so SalonContext, sidebar, all pages use new branch
+      window.location.href = "/dashboard/settings";
     }
-    setAddingBranch(false);
   };
 
   if (loading) return (
