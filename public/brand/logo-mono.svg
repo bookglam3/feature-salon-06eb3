@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 160" width="720" height="160">
+  <!-- Full background -->
+  <rect width="720" height="160" fill="#FFFFFF" />
+
+  <!-- Icon container -->
+  <rect x="28" y="24" width="112" height="112" rx="22" fill="#0a0a0f" />
+
+  <!-- F mark - vertical bar -->
+  <rect x="54" y="43" width="18" height="74" rx="3" fill="#FFFFFF" />
+
+  <!-- F top bar -->
+  <rect x="54" y="43" width="62" height="18" rx="3" fill="#FFFFFF" />
+  <!-- Notch -->
+  <polygon points="102,43 116,43 116,61 90,43" fill="#0a0a0f" />
+
+  <!-- F middle bar -->
+  <rect x="54" y="73" width="44" height="16" rx="3" fill="#FFFFFF" />
+
+  <!-- Accent line (monochrome - white) -->
+  <rect x="54" y="103" width="30" height="3" rx="1.5" fill="#CCCCCC" opacity="0.7" />
+
+  <!-- Wordmark: "feature" -->
+  <text
+    x="162"
+    y="93"
+    font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+    font-size="46"
+    font-weight="600"
+    letter-spacing="-1.5"
+    fill="#0a0a0f"
+  >feature</text>
+
+  <!-- Tagline -->
+  <text
+    x="164"
+    y="118"
+    font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+    font-size="13"
+    font-weight="400"
+    letter-spacing="3.5"
+    fill="#666666"
+  >SALON MANAGEMENT</text>
+</svg>

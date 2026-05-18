@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Feature – Brand Identity</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #08080d;
+      --surface: #0f0f18;
+      --surface2: #16162a;
+      --border: rgba(255,255,255,0.07);
+      --purple: #7C3AED;
+      --purple-light: #A78BFA;
+      --gold: #C9A84C;
+      --white: #FFFFFF;
+      --muted: #6b7280;
+      --text: #e5e7eb;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 60px 40px;
+    }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: 72px;
+    }
+
+    .page-header h1 {
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 4px;
+      color: var(--purple-light);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .page-header h2 {
+      font-size: 42px;
+      font-weight: 700;
+      color: var(--white);
+      letter-spacing: -1.5px;
+    }
+
+    .page-header p {
+      margin-top: 12px;
+      font-size: 16px;
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .divider {
+      width: 48px;
+      height: 2px;
+      background: linear-gradient(90deg, var(--purple), var(--purple-light));
+      margin: 24px auto 0;
+      border-radius: 2px;
+    }
+
+    /* Section */
+    .section {
+      margin-bottom: 64px;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 3px;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 24px;
+      padding-left: 4px;
+    }
+
+    /* Grid */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    /* Logo card */
+    .logo-card {
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .logo-card__canvas {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 32px;
+      min-height: 180px;
+    }
+
+    .logo-card__canvas.dark   { background: #0a0a0f; }
+    .logo-card__canvas.light  { background: #FFFFFF; }
+    .logo-card__canvas.check  { background: repeating-conic-gradient(#e5e5f7 0% 25%, #ffffff 0% 50%) 0 0 / 16px 16px; }
+    .logo-card__canvas.purple { background: linear-gradient(135deg, #1e1040 0%, #2d1569 100%); }
+    .logo-card__canvas.gold   { background: linear-gradient(135deg, #1a1409 0%, #2c2210 100%); }
+
+    .logo-card__canvas img,
+    .logo-card__canvas svg,
+    .logo-card__canvas object {
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    .logo-card__meta {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo-card__name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .logo-card__tag {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 3px 10px;
+      border-radius: 100px;
+    }
+
+    /* Icon grid */
+    .icon-sizes {
+      display: flex;
+      align-items: flex-end;
+      gap: 32px;
+      flex-wrap: wrap;
+      padding: 40px;
+      background: var(--surface);
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .icon-size-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .icon-size-item img {
+      display: block;
+    }
+
+    .icon-size-label {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 1px;
+    }
+
+    /* Colours */
+    .color-palette {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .color-swatch {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .color-swatch__block {
+      height: 64px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .color-swatch__name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .color-swatch__hex {
+      font-size: 12px;
+      color: var(--muted);
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    /* Typography section */
+    .type-showcase {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .type-row {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 24px;
+    }
+
+    .type-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .type-row__sample {
+      color: var(--white);
+      margin-bottom: 6px;
+    }
+
+    .type-row__meta {
+      font-size: 12px;
+      color: var(--muted);
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    /* Inline SVG containers */
+    .svg-inline {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      body { padding: 40px 20px; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .page-header h2 { font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="page-header">
+    <h1>Brand Identity</h1>
+    <h2>Feature</h2>
+    <p>Salon Management Platform · Brand Guidelines</p>
+    <div class="divider"></div>
+  </header>
+
+  <!-- ─── Logo Variants ─────────────────────────────────────────── -->
+  <section class="section">
+    <p class="section-label">Logo Variants</p>
+    <div class="grid-2">
+
+      <!-- Dark mode -->
+      <div class="logo-card">
+        <div class="logo-card__canvas dark">
+          <img src="logo-dark.svg" alt="Feature dark logo" height="80" />
+        </div>
+        <div class="logo-card__meta">
+          <span class="logo-card__name">Dark Mode</span>
+          <span class="logo-card__tag">Primary</span>
+        </div>
+      </div>
+
+      <!-- Light mode -->
+      <div class="logo-card">
+        <div class="logo-card__canvas light">
+          <img src="logo-light.svg" alt="Feature light logo" height="80" />
+        </div>
+        <div class="logo-card__meta">
+          <span class="logo-card__name">Light Mode</span>
+          <span class="logo-card__tag">Primary</span>
+        </div>
+      </div>
+
+      <!-- Purple bg -->
+      <div class="logo-card">
+        <div class="logo-card__canvas purple">
+          <img src="logo-dark.svg" alt="Feature logo on purple" height="80" />
+        </div>
+        <div class="logo-card__meta">
+          <span class="logo-card__name">On Brand Color</span>
+          <span class="logo-card__tag">Alt</span>
+        </div>
+      </div>
+
+      <!-- Monochrome -->
+      <div class="logo-card">
+        <div class="logo-card__canvas light">
+          <img src="logo-mono.svg" alt="Feature monochrome logo" height="80" />
+        </div>
+        <div class="logo-card__meta">
+          <span class="logo-card__name">Monochrome</span>
+          <span class="logo-card__tag">Print / Emboss</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ─── App Icon Sizes ────────────────────────────────────────── -->
+  <section class="section">
+    <p class="section-label">App Icon · Scalability Test</p>
+    <div class="icon-sizes">
+      <div class="icon-size-item">
+        <img src="logo-app-icon.svg" width="128" height="128" alt="128px icon" />
+        <span class="icon-size-label">128px</span>
+      </div>
+      <div class="icon-size-item">
+        <img src="logo-app-icon.svg" width="80" height="80" alt="80px icon" />
+        <span class="icon-size-label">80px</span>
+      </div>
+      <div class="icon-size-item">
+        <img src="logo-app-icon.svg" width="60" height="60" alt="60px icon" />
+        <span class="icon-size-label">60px</span>
+      </div>
+      <div class="icon-size-item">
+        <img src="logo-app-icon.svg" width="44" height="44" alt="44px icon" />
+        <span class="icon-size-label">44px</span>
+      </div>
+      <div class="icon-size-item">
+        <img src="logo-app-icon.svg" width="32" height="32" alt="32px icon" />
+        <span class="icon-size-label">32px</span>
+      </div>
+      <div class="icon-size-item">
+        <img src="logo-app-icon.svg" width="20" height="20" alt="20px icon" />
+        <span class="icon-size-label">20px</span>
+      </div>
+      <div class="icon-size-item">
+        <img src="favicon.svg" width="32" height="32" alt="favicon" />
+        <span class="icon-size-label">favicon</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Colour Palette ───────────────────────────────────────── -->
+  <section class="section">
+    <p class="section-label">Colour Palette</p>
+    <div class="color-palette">
+      <div class="color-swatch">
+        <div class="color-swatch__block" style="background:#0a0a0f;"></div>
+        <div class="color-swatch__name">Matte Black</div>
+        <div class="color-swatch__hex">#0A0A0F</div>
+      </div>
+      <div class="color-swatch">
+        <div class="color-swatch__block" style="background:#5B21B6;"></div>
+        <div class="color-swatch__name">Deep Purple</div>
+        <div class="color-swatch__hex">#5B21B6</div>
+      </div>
+      <div class="color-swatch">
+        <div class="color-swatch__block" style="background:#7C3AED;"></div>
+        <div class="color-swatch__name">Brand Purple</div>
+        <div class="color-swatch__hex">#7C3AED</div>
+      </div>
+      <div class="color-swatch">
+        <div class="color-swatch__block" style="background:#A78BFA;"></div>
+        <div class="color-swatch__name">Soft Lavender</div>
+        <div class="color-swatch__hex">#A78BFA</div>
+      </div>
+      <div class="color-swatch">
+        <div class="color-swatch__block" style="background:#C9A84C;border:1px solid #2a2a2a;"></div>
+        <div class="color-swatch__name">Soft Gold</div>
+        <div class="color-swatch__hex">#C9A84C</div>
+      </div>
+      <div class="color-swatch">
+        <div class="color-swatch__block" style="background:#FFFFFF;border:1px solid #e5e5e5;"></div>
+        <div class="color-swatch__name">Pure White</div>
+        <div class="color-swatch__hex">#FFFFFF</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Typography ───────────────────────────────────────────── -->
+  <section class="section">
+    <p class="section-label">Typography</p>
+    <div class="type-showcase">
+      <div class="type-row">
+        <div class="type-row__sample" style="font-size:48px;font-weight:700;letter-spacing:-2px;">feature</div>
+        <div class="type-row__meta">Inter 700 · Wordmark · -2px tracking</div>
+      </div>
+      <div class="type-row">
+        <div class="type-row__sample" style="font-size:32px;font-weight:600;letter-spacing:-1px;">Salon Management Platform</div>
+        <div class="type-row__meta">Inter 600 · H1 · -1px tracking</div>
+      </div>
+      <div class="type-row">
+        <div class="type-row__sample" style="font-size:16px;font-weight:400;">Empowering salons to deliver extraordinary experiences.</div>
+        <div class="type-row__meta">Inter 400 · Body · Default tracking</div>
+      </div>
+      <div class="type-row">
+        <div class="type-row__sample" style="font-size:12px;font-weight:500;letter-spacing:3px;text-transform:uppercase;color:#A78BFA;">SALON MANAGEMENT</div>
+        <div class="type-row__meta">Inter 500 · Label / Tagline · +3px tracking</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Usage Rules ───────────────────────────────────────────── -->
+  <section class="section">
+    <p class="section-label">Brand Rules</p>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px;display:grid;grid-template-columns:1fr 1fr;gap:32px;">
+      <div>
+        <p style="font-size:13px;font-weight:600;color:#4ade80;margin-bottom:16px;">✓ DO</p>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:10px;font-size:14px;color:var(--text);">
+          <li>· Use on dark or white backgrounds only</li>
+          <li>· Maintain minimum clear space (= icon height × 0.5)</li>
+          <li>· Use SVG for all digital applications</li>
+          <li>· Keep proportions locked — never stretch</li>
+          <li>· Use monochrome version for embossing / print</li>
+          <li>· Use favicon.svg for browser tab icons</li>
+        </ul>
+      </div>
+      <div>
+        <p style="font-size:13px;font-weight:600;color:#f87171;margin-bottom:16px;">✗ DON'T</p>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:10px;font-size:14px;color:var(--text);">
+          <li>· Place on busy or coloured backgrounds</li>
+          <li>· Add drop shadows or outer glow effects</li>
+          <li>· Use old raster (PNG/JPG) for large formats</li>
+          <li>· Change the typeface or alter letterforms</li>
+          <li>· Use the icon mark alone without approval</li>
+          <li>· Recreate the logo in other software</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer style="text-align:center;margin-top:80px;padding-top:32px;border-top:1px solid var(--border);">
+    <p style="font-size:12px;color:var(--muted);letter-spacing:1px;">FEATURE SALON MANAGEMENT · BRAND IDENTITY © 2026</p>
+  </footer>
+
+</body>
+</html>
