@@ -88,6 +88,12 @@ function PartnersPageInner() {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
+      // ── Super Admin only ─────────────────────────────────────
+      if (user.email !== "adilgill2008@gmail.com") {
+        router.replace("/dashboard");
+        return;
+      }
+      // ─────────────────────────────────────────────────────────
       const { data: salon } = await supabase.from("salons").select("name").eq("owner_id", user.id).single();
       setSalonName(salon?.name || "");
       await loadAgents();

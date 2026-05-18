@@ -91,14 +91,17 @@ type IconComp = React.FC<{ size?: number; className?: string; strokeWidth?: numb
 export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) {
   const pathname = usePathname();
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [adminLoaded, setAdminLoaded] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setUserEmail(data?.user?.email ?? null);
+      setAdminLoaded(true);
     });
   }, []);
 
-  const isAdmin = userEmail === SUPER_ADMIN_EMAIL;
+  // Partners is only visible to super admin — hide until check resolves
+  const isAdmin = adminLoaded && userEmail === SUPER_ADMIN_EMAIL;
 
   const isActive = (path: string) =>
     path === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(path);
@@ -279,7 +282,13 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
                   {group.group}
                 </div>
                 {group.items
-                  .filter(item => item.label !== "Partners" || isAdmin)
+                  .filter(item => {
+                    // Partners is admin-only — hide for all non-admins
+                    if (item.path === "/dashboard/partners" || item.label === "Partners") {
+                      return isAdmin;
+                    }
+                    return true;
+                  })
                   .map(item => {
                   const active = isActive(item.path);
                   const Icon = NAV_ICON_MAP[item.label] as IconComp | undefined;
