@@ -19,6 +19,8 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
   const [subStatus, setSubStatus] = useState<string | null>(null);
   const [subPlan, setSubPlan] = useState<string | null>(null);
   const [resolvedSalonName, setResolvedSalonName] = useState(salonName || "");
+  const [announcement, setAnnouncement] = useState<string | null>(null);
+  const [annDismissed, setAnnDismissed] = useState(false);
 
   const handleLogout = useCallback(async () => {
     await supabase.auth.signOut();
@@ -36,13 +38,21 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const { data: salon } = await supabase.from("salons")
-        .select("subscription_status,subscription_plan,name")
+        .select("subscription_status,subscription_plan,name,announcement")
         .eq("owner_id", user.id)
         .single();
       if (salon) {
         setSubStatus(salon.subscription_status);
         setSubPlan(salon.subscription_plan);
         if (!salonName && salon.name) setResolvedSalonName(salon.name);
+        // Show announcement if set and not yet dismissed this session
+        const ann = (salon as Record<string, unknown>).announcement as string | null;
+        if (ann && ann.trim()) {
+          const dismissKey = `ann_dismissed_${btoa(ann).slice(0, 16)}`;
+          const wasDismissed = typeof window !== "undefined" && localStorage.getItem(dismissKey) === "1";
+          setAnnouncement(ann.trim());
+          setAnnDismissed(wasDismissed);
+        }
       }
     })();
   }, [salonName]);
@@ -279,6 +289,32 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
           )}
 
           <div className="ds-content fade-in">
+            {/* ── Announcement Banner ── */}
+            {announcement && !annDismissed && (
+              <div style={{
+                margin: "16px 20px 0",
+                background: "linear-gradient(135deg,rgba(245,158,11,0.15),rgba(217,119,6,0.1))",
+                border: "1px solid rgba(245,158,11,0.35)",
+                borderRadius: 14,
+                padding: "13px 16px",
+                display: "flex", alignItems: "flex-start", gap: 12,
+                backdropFilter: "blur(8px)",
+              }}>
+                <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>📢</span>
+                <div style={{ flex: 1, fontSize: 13.5, fontWeight: 600, color: "#FCD34D", lineHeight: 1.5 }}>
+                  {announcement}
+                </div>
+                <button
+                  onClick={() => {
+                    const dismissKey = `ann_dismissed_${btoa(announcement).slice(0, 16)}`;
+                    localStorage.setItem(dismissKey, "1");
+                    setAnnDismissed(true);
+                  }}
+                  style={{ background: "none", border: "none", color: "rgba(255,255,255,0.35)", fontSize: 18, cursor: "pointer", flexShrink: 0, lineHeight: 1, padding: 0 }}
+                  title="Dismiss"
+                >×</button>
+              </div>
+            )}
             {children}
           </div>
         </div>
