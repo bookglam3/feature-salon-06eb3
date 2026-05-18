@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import Image from "next/image";
+
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
@@ -237,13 +237,10 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
               boxShadow: "0 4px 18px rgba(124,58,237,0.55)",
               flexShrink: 0, overflow: "hidden",
             }}>
-              <Image
+              <img
                 src="/brand/logo-app-icon.svg"
                 alt="Feature Salon"
-                width={36}
-                height={36}
-                style={{ width: 36, height: 36, objectFit: "cover", borderRadius: 11 }}
-                priority
+                style={{ width: 36, height: 36, objectFit: "cover", borderRadius: 11, display: "block" }}
               />
               {/* Pulse ring */}
               <div style={{
