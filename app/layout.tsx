@@ -94,8 +94,8 @@ export default function RootLayout({
       <head>
         <link rel="manifest" href="/manifest.json" />
         {/* iOS Home Screen Icons */}
-        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192.png" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
         <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-192.png" />
         <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-192.png" />
         {/* SVG favicon — crisp at all sizes */}
