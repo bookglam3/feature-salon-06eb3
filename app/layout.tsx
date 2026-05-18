@@ -94,8 +94,11 @@ export default function RootLayout({
       <head>
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/logo.png" />
-        <link rel="icon" href="/logo.png" type="image/png" />
-        <meta name="theme-color" content="#4F6EF7" />
+        {/* SVG favicon — crisp at all sizes, tiny file vs 905KB PNG */}
+        <link rel="icon" href="/brand/favicon.svg" type="image/svg+xml" />
+        {/* PNG fallback for older browsers */}
+        <link rel="icon" href="/logo.png" type="image/png" sizes="any" />
+        <meta name="theme-color" content="#7C3AED" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-title" content="Feature" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
