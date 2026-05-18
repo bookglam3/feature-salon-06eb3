@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import SchemaMarkup from "./components/SchemaMarkup";
 import WhatsAppWidget from "./components/WhatsAppWidget";
@@ -9,6 +9,15 @@ const inter = Inter({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-inter",
+  preload: true,
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-playfair",
+  style: ["normal", "italic"],
+  weight: ["400", "600", "700"],
   preload: true,
 });
 
@@ -89,7 +98,7 @@ export default function RootLayout({
   return (
     <html
       lang="en-GB"
-      className={`${inter.variable} h-full antialiased`}
+      className={`${inter.variable} ${playfair.variable} h-full antialiased`}
     >
       <head>
         <link rel="manifest" href="/manifest.json" />
