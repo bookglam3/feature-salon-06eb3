@@ -188,13 +188,19 @@ export default function SettingsPage() {
   const [pmSaving, setPmSaving] = useState(false);
   const [pmSaved, setPmSaved] = useState(false);
 
-  // Account / password
+  // Account / password — 2-step OTP flow
   const [userEmail, setUserEmail] = useState("");
-  const [pwForm, setPwForm] = useState({ current: "", newPw: "", confirm: "" });
-  const [pwSaving, setPwSaving] = useState(false);
+  const [pwForm, setPwForm] = useState({ newPw: "", confirm: "" });
+  const [pwStep, setPwStep] = useState<"form" | "otp">("form");
+  const [otpCode, setOtpCode] = useState("");
+  const [pwSending, setPwSending] = useState(false);
+  const [pwVerifying, setPwVerifying] = useState(false);
   const [pwError, setPwError] = useState("");
   const [pwSuccess, setPwSuccess] = useState(false);
-  const [showPw, setShowPw] = useState({ current: false, newPw: false, confirm: false });
+  const [showPw, setShowPw] = useState({ newPw: false, confirm: false });
+  const [otpExpiry, setOtpExpiry] = useState<number | null>(null); // seconds remaining
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const otpTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -395,19 +401,62 @@ export default function SettingsPage() {
     router.push("/login");
   };
 
-  const handleChangePassword = async () => {
+  const startOtpTimer = () => {
+    setOtpExpiry(600); // 10 min
+    setResendCooldown(60);
+    if (otpTimerRef.current) clearInterval(otpTimerRef.current);
+    otpTimerRef.current = setInterval(() => {
+      setOtpExpiry(s => {
+        if (s === null) return null;
+        if (s <= 1) { clearInterval(otpTimerRef.current!); return 0; }
+        return s - 1;
+      });
+      setResendCooldown(c => Math.max(0, c - 1));
+    }, 1000);
+  };
+
+  const handleSendOtp = async () => {
     setPwError("");
-    if (!pwForm.newPw) { setPwError("New password is required."); return; }
+    if (!pwForm.newPw) { setPwError("Enter your new password first."); return; }
     if (pwForm.newPw.length < 8) { setPwError("Password must be at least 8 characters."); return; }
     if (pwForm.newPw !== pwForm.confirm) { setPwError("Passwords do not match."); return; }
-    setPwSaving(true);
-    const { error } = await supabase.auth.updateUser({ password: pwForm.newPw });
-    if (error) { setPwError(error.message); setPwSaving(false); return; }
-    setPwSuccess(true);
-    setPwForm({ current: "", newPw: "", confirm: "" });
-    setPwSaving(false);
-    setTimeout(() => setPwSuccess(false), 3000);
+    setPwSending(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token || "";
+    const res = await fetch("/api/auth/send-pw-otp", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const json = await res.json();
+    if (!res.ok) { setPwError(json.error || "Failed to send code."); setPwSending(false); return; }
+    setPwStep("otp");
+    setPwSending(false);
+    startOtpTimer();
   };
+
+  const handleVerifyOtp = async () => {
+    setPwError("");
+    if (otpCode.length !== 6) { setPwError("Enter the 6-digit code from your email."); return; }
+    setPwVerifying(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token || "";
+    const res = await fetch("/api/auth/verify-pw-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ code: otpCode, newPassword: pwForm.newPw }),
+    });
+    const json = await res.json();
+    if (!res.ok) { setPwError(json.error || "Invalid code."); setPwVerifying(false); return; }
+    setPwSuccess(true);
+    setPwVerifying(false);
+    setPwStep("form");
+    setPwForm({ newPw: "", confirm: "" });
+    setOtpCode("");
+    if (otpTimerRef.current) clearInterval(otpTimerRef.current);
+    setTimeout(() => setPwSuccess(false), 4000);
+  };
+
+  const handleChangePassword = handleSendOtp;
 
   if (loading) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
@@ -927,75 +976,127 @@ export default function SettingsPage() {
         <div style={{ fontSize: "14px", fontWeight: 600, color: "#0F172A", marginBottom: "4px" }}>👤 Account</div>
         <p style={{ fontSize: "13px", color: "#64748B", marginBottom: "20px" }}>Manage your login credentials.</p>
 
-        {/* Current email */}
-        <div style={{ marginBottom: 20, padding: "12px 16px", background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 10 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#94A3B8", letterSpacing: "1px", textTransform: "uppercase", marginBottom: 4 }}>Logged in as</div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: "#0F172A" }}>{userEmail}</div>
+        {/* Email chip */}
+        <div style={{ marginBottom: 20, padding: "12px 16px", background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 10, display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 18 }}>📧</span>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#94A3B8", letterSpacing: "1px", textTransform: "uppercase", marginBottom: 2 }}>Logged in as</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#0F172A" }}>{userEmail}</div>
+          </div>
         </div>
 
-        {/* Change password */}
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#0F172A", marginBottom: 12 }}>Change Password</div>
-
+        {/* Error / Success */}
         {pwError && (
-          <div style={{ padding: "10px 14px", background: "#FEF2F2", border: "1.5px solid #FECACA", borderRadius: 10, fontSize: 13, color: "#DC2626", marginBottom: 14 }}>
-            ⚠️ {pwError}
-          </div>
+          <div style={{ padding: "10px 14px", background: "#FEF2F2", border: "1.5px solid #FECACA", borderRadius: 10, fontSize: 13, color: "#DC2626", marginBottom: 14 }}>⚠️ {pwError}</div>
         )}
         {pwSuccess && (
           <div style={{ padding: "10px 14px", background: "#ECFDF5", border: "1.5px solid #A7F3D0", borderRadius: 10, fontSize: 13, color: "#059669", marginBottom: 14 }}>
-            ✓ Password updated successfully!
+            ✅ Password changed successfully! Please use your new password next time you log in.
           </div>
         )}
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 360, marginBottom: 20 }}>
-          {/* New password */}
+        {/* STEP 1 — New password form */}
+        {pwStep === "form" && (
           <div>
-            <label style={{ ...labelStyle }}>New Password</label>
-            <div style={{ position: "relative" }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#0F172A", marginBottom: 12 }}>🔐 Change Password</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 360, marginBottom: 16 }}>
+              <div>
+                <label style={labelStyle}>New Password</label>
+                <div style={{ position: "relative" }}>
+                  <input
+                    type={showPw.newPw ? "text" : "password"}
+                    value={pwForm.newPw}
+                    onChange={e => setPwForm({ ...pwForm, newPw: e.target.value })}
+                    placeholder="Min. 8 characters"
+                    style={{ ...inputStyle, maxWidth: "100%", paddingRight: 44 }}
+                  />
+                  <button type="button" onClick={() => setShowPw(p => ({ ...p, newPw: !p.newPw }))} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#94A3B8" }}>{showPw.newPw ? "🙈" : "👁️"}</button>
+                </div>
+                {pwForm.newPw && pwForm.newPw.length < 8 && (
+                  <div style={{ fontSize: 11.5, color: "#F59E0B", marginTop: 4 }}>At least 8 characters required</div>
+                )}
+              </div>
+              <div>
+                <label style={labelStyle}>Confirm New Password</label>
+                <div style={{ position: "relative" }}>
+                  <input
+                    type={showPw.confirm ? "text" : "password"}
+                    value={pwForm.confirm}
+                    onChange={e => setPwForm({ ...pwForm, confirm: e.target.value })}
+                    placeholder="Repeat new password"
+                    style={{ ...inputStyle, maxWidth: "100%", paddingRight: 44, borderColor: pwForm.confirm && pwForm.newPw !== pwForm.confirm ? "#EF4444" : undefined }}
+                  />
+                  <button type="button" onClick={() => setShowPw(p => ({ ...p, confirm: !p.confirm }))} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#94A3B8" }}>{showPw.confirm ? "🙈" : "👁️"}</button>
+                </div>
+                {pwForm.confirm && pwForm.newPw !== pwForm.confirm && (
+                  <div style={{ fontSize: 11.5, color: "#EF4444", marginTop: 4 }}>Passwords do not match</div>
+                )}
+              </div>
+            </div>
+            {/* Security info */}
+            <div style={{ background: "#F8F5FF", border: "1px solid #DDD6FE", borderRadius: 10, padding: "10px 14px", marginBottom: 16, fontSize: 12, color: "#5B21B6", lineHeight: 1.6 }}>
+              🛡️ A <strong>6-digit verification code</strong> will be sent to <strong>{userEmail}</strong> before your password is changed.
+            </div>
+            <button
+              onClick={handleSendOtp}
+              disabled={pwSending || !pwForm.newPw || !pwForm.confirm || pwForm.newPw !== pwForm.confirm || pwForm.newPw.length < 8}
+              style={{ padding: "10px 22px", background: "linear-gradient(135deg,#5B21B6,#7C3AED)", color: "#fff", border: "none", borderRadius: "10px", fontSize: "13px", cursor: "pointer", fontWeight: 700, opacity: (!pwForm.newPw || !pwForm.confirm || pwForm.newPw !== pwForm.confirm || pwForm.newPw.length < 8) ? 0.4 : 1, boxShadow: "0 4px 14px rgba(124,58,237,0.3)" }}
+            >{pwSending ? "Sending code…" : "📧 Send Verification Code"}</button>
+          </div>
+        )}
+
+        {/* STEP 2 — OTP verification */}
+        {pwStep === "otp" && (
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#0F172A", marginBottom: 6 }}>📨 Enter Verification Code</div>
+            <div style={{ fontSize: 13, color: "#64748B", marginBottom: 16, lineHeight: 1.6 }}>
+              We sent a <strong>6-digit code</strong> to <strong>{userEmail}</strong>.<br/>
+              It expires in <strong style={{ color: (otpExpiry ?? 600) < 60 ? "#EF4444" : "#059669" }}>
+                {otpExpiry !== null ? `${Math.floor((otpExpiry ?? 0) / 60)}:${String((otpExpiry ?? 0) % 60).padStart(2, "0")}` : "10:00"}
+              </strong>
+            </div>
+
+            {/* OTP input */}
+            <div style={{ marginBottom: 16 }}>
+              <label style={labelStyle}>Verification Code</label>
               <input
-                type={showPw.newPw ? "text" : "password"}
-                value={pwForm.newPw}
-                onChange={e => setPwForm({ ...pwForm, newPw: e.target.value })}
-                placeholder="Min. 8 characters"
-                style={{ ...inputStyle, maxWidth: "100%", paddingRight: 40 }}
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={otpCode}
+                onChange={e => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="000000"
+                style={{ ...inputStyle, maxWidth: 160, fontSize: 22, fontWeight: 800, letterSpacing: 8, textAlign: "center", fontFamily: "monospace" }}
+                autoFocus
               />
-              <button type="button" onClick={() => setShowPw(p => ({ ...p, newPw: !p.newPw }))} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#94A3B8" }}>
-                {showPw.newPw ? "🙈" : "👁️"}
-              </button>
+            </div>
+
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
+              <button
+                onClick={handleVerifyOtp}
+                disabled={pwVerifying || otpCode.length !== 6 || otpExpiry === 0}
+                style={{ padding: "10px 22px", background: "linear-gradient(135deg,#059669,#047857)", color: "#fff", border: "none", borderRadius: "10px", fontSize: "13px", cursor: "pointer", fontWeight: 700, opacity: (otpCode.length !== 6 || otpExpiry === 0) ? 0.4 : 1, boxShadow: "0 4px 14px rgba(5,150,105,0.3)" }}
+              >{pwVerifying ? "Verifying…" : "✔ Verify & Change Password"}</button>
+
+              <button
+                onClick={() => { setPwStep("form"); setOtpCode(""); setPwError(""); if (otpTimerRef.current) clearInterval(otpTimerRef.current); }}
+                style={{ padding: "10px 16px", background: "#F1F5F9", color: "#64748B", border: "none", borderRadius: "10px", fontSize: "13px", cursor: "pointer", fontWeight: 600 }}
+              >← Back</button>
+            </div>
+
+            {/* Resend */}
+            <div style={{ fontSize: 12.5, color: "#94A3B8" }}>
+              Didn’t receive it?{" "}
+              {resendCooldown > 0
+                ? <span>Resend in {resendCooldown}s</span>
+                : <button onClick={handleSendOtp} disabled={pwSending} style={{ background: "none", border: "none", color: "#7C3AED", fontWeight: 700, cursor: "pointer", fontSize: 12.5, padding: 0 }}>{pwSending ? "Sending…" : "Resend Code"}</button>
+              }
             </div>
           </div>
+        )}
 
-          {/* Confirm password */}
-          <div>
-            <label style={{ ...labelStyle }}>Confirm New Password</label>
-            <div style={{ position: "relative" }}>
-              <input
-                type={showPw.confirm ? "text" : "password"}
-                value={pwForm.confirm}
-                onChange={e => setPwForm({ ...pwForm, confirm: e.target.value })}
-                placeholder="Repeat new password"
-                style={{ ...inputStyle, maxWidth: "100%", paddingRight: 40, borderColor: pwForm.confirm && pwForm.newPw !== pwForm.confirm ? "#EF4444" : undefined }}
-              />
-              <button type="button" onClick={() => setShowPw(p => ({ ...p, confirm: !p.confirm }))} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#94A3B8" }}>
-                {showPw.confirm ? "🙈" : "👁️"}
-              </button>
-            </div>
-            {pwForm.confirm && pwForm.newPw !== pwForm.confirm && (
-              <div style={{ fontSize: 11.5, color: "#EF4444", marginTop: 4 }}>Passwords do not match</div>
-            )}
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-          <button
-            onClick={handleChangePassword}
-            disabled={pwSaving || !pwForm.newPw || !pwForm.confirm}
-            style={{ padding: "10px 20px", background: pwSuccess ? "#059669" : "#4F6EF7", color: "#fff", border: "none", borderRadius: "8px", fontSize: "13px", cursor: "pointer", fontWeight: 600, opacity: (!pwForm.newPw || !pwForm.confirm) ? 0.5 : 1, transition: "all 0.2s" }}
-          >{pwSaving ? "Updating…" : pwSuccess ? "Updated ✓" : "Update Password"}</button>
-
-          <div style={{ width: 1, height: 28, background: "#E2E8F0" }} />
-
-          <button onClick={handleLogout} style={{ padding: "10px 20px", background: "#FEF2F2", color: "#EF4444", border: "1px solid #FECACA", borderRadius: "8px", fontSize: "13px", cursor: "pointer", fontWeight: 500 }}>Sign out</button>
+        <div style={{ marginTop: 24, paddingTop: 20, borderTop: "1px solid #F1F5F9", display: "flex", alignItems: "center", gap: 12 }}>
+          <button onClick={handleLogout} style={{ padding: "9px 18px", background: "#FEF2F2", color: "#EF4444", border: "1px solid #FECACA", borderRadius: "8px", fontSize: "13px", cursor: "pointer", fontWeight: 500 }}>Sign out</button>
         </div>
       </div>
     </div>
