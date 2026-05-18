@@ -188,10 +188,19 @@ export default function SettingsPage() {
   const [pmSaving, setPmSaving] = useState(false);
   const [pmSaved, setPmSaved] = useState(false);
 
+  // Account / password
+  const [userEmail, setUserEmail] = useState("");
+  const [pwForm, setPwForm] = useState({ current: "", newPw: "", confirm: "" });
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwError, setPwError] = useState("");
+  const [pwSuccess, setPwSuccess] = useState(false);
+  const [showPw, setShowPw] = useState({ current: false, newPw: false, confirm: false });
+
   useEffect(() => {
     const loadData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
+      setUserEmail(user.email || "");
 
       const { data: salonData } = await supabase
         .from("salons").select("*").eq("owner_id", user.id).single();
@@ -384,6 +393,20 @@ export default function SettingsPage() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/login");
+  };
+
+  const handleChangePassword = async () => {
+    setPwError("");
+    if (!pwForm.newPw) { setPwError("New password is required."); return; }
+    if (pwForm.newPw.length < 8) { setPwError("Password must be at least 8 characters."); return; }
+    if (pwForm.newPw !== pwForm.confirm) { setPwError("Passwords do not match."); return; }
+    setPwSaving(true);
+    const { error } = await supabase.auth.updateUser({ password: pwForm.newPw });
+    if (error) { setPwError(error.message); setPwSaving(false); return; }
+    setPwSuccess(true);
+    setPwForm({ current: "", newPw: "", confirm: "" });
+    setPwSaving(false);
+    setTimeout(() => setPwSuccess(false), 3000);
   };
 
   if (loading) return (
@@ -899,11 +922,81 @@ export default function SettingsPage() {
         </button>
       </div>
 
-      {/* ── Account ── */}
+      {/* ── Account / Password ── */}
       <div style={cardStyle}>
-        <div style={{ fontSize: "14px", fontWeight: 600, color: "#0F172A", marginBottom: "12px" }}>Account</div>
-        <div style={{ fontSize: "13px", color: "#64748B", marginBottom: "16px" }}>{salon?.name}</div>
-        <button onClick={handleLogout} style={{ padding: "10px 20px", background: "#FEF2F2", color: "#EF4444", border: "0.5px solid #FECACA", borderRadius: "8px", fontSize: "13px", cursor: "pointer", fontWeight: 500 }}>Sign out</button>
+        <div style={{ fontSize: "14px", fontWeight: 600, color: "#0F172A", marginBottom: "4px" }}>👤 Account</div>
+        <p style={{ fontSize: "13px", color: "#64748B", marginBottom: "20px" }}>Manage your login credentials.</p>
+
+        {/* Current email */}
+        <div style={{ marginBottom: 20, padding: "12px 16px", background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 10 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#94A3B8", letterSpacing: "1px", textTransform: "uppercase", marginBottom: 4 }}>Logged in as</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "#0F172A" }}>{userEmail}</div>
+        </div>
+
+        {/* Change password */}
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#0F172A", marginBottom: 12 }}>Change Password</div>
+
+        {pwError && (
+          <div style={{ padding: "10px 14px", background: "#FEF2F2", border: "1.5px solid #FECACA", borderRadius: 10, fontSize: 13, color: "#DC2626", marginBottom: 14 }}>
+            ⚠️ {pwError}
+          </div>
+        )}
+        {pwSuccess && (
+          <div style={{ padding: "10px 14px", background: "#ECFDF5", border: "1.5px solid #A7F3D0", borderRadius: 10, fontSize: 13, color: "#059669", marginBottom: 14 }}>
+            ✓ Password updated successfully!
+          </div>
+        )}
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 360, marginBottom: 20 }}>
+          {/* New password */}
+          <div>
+            <label style={{ ...labelStyle }}>New Password</label>
+            <div style={{ position: "relative" }}>
+              <input
+                type={showPw.newPw ? "text" : "password"}
+                value={pwForm.newPw}
+                onChange={e => setPwForm({ ...pwForm, newPw: e.target.value })}
+                placeholder="Min. 8 characters"
+                style={{ ...inputStyle, maxWidth: "100%", paddingRight: 40 }}
+              />
+              <button type="button" onClick={() => setShowPw(p => ({ ...p, newPw: !p.newPw }))} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#94A3B8" }}>
+                {showPw.newPw ? "🙈" : "👁️"}
+              </button>
+            </div>
+          </div>
+
+          {/* Confirm password */}
+          <div>
+            <label style={{ ...labelStyle }}>Confirm New Password</label>
+            <div style={{ position: "relative" }}>
+              <input
+                type={showPw.confirm ? "text" : "password"}
+                value={pwForm.confirm}
+                onChange={e => setPwForm({ ...pwForm, confirm: e.target.value })}
+                placeholder="Repeat new password"
+                style={{ ...inputStyle, maxWidth: "100%", paddingRight: 40, borderColor: pwForm.confirm && pwForm.newPw !== pwForm.confirm ? "#EF4444" : undefined }}
+              />
+              <button type="button" onClick={() => setShowPw(p => ({ ...p, confirm: !p.confirm }))} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#94A3B8" }}>
+                {showPw.confirm ? "🙈" : "👁️"}
+              </button>
+            </div>
+            {pwForm.confirm && pwForm.newPw !== pwForm.confirm && (
+              <div style={{ fontSize: 11.5, color: "#EF4444", marginTop: 4 }}>Passwords do not match</div>
+            )}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+          <button
+            onClick={handleChangePassword}
+            disabled={pwSaving || !pwForm.newPw || !pwForm.confirm}
+            style={{ padding: "10px 20px", background: pwSuccess ? "#059669" : "#4F6EF7", color: "#fff", border: "none", borderRadius: "8px", fontSize: "13px", cursor: "pointer", fontWeight: 600, opacity: (!pwForm.newPw || !pwForm.confirm) ? 0.5 : 1, transition: "all 0.2s" }}
+          >{pwSaving ? "Updating…" : pwSuccess ? "Updated ✓" : "Update Password"}</button>
+
+          <div style={{ width: 1, height: 28, background: "#E2E8F0" }} />
+
+          <button onClick={handleLogout} style={{ padding: "10px 20px", background: "#FEF2F2", color: "#EF4444", border: "1px solid #FECACA", borderRadius: "8px", fontSize: "13px", cursor: "pointer", fontWeight: 500 }}>Sign out</button>
+        </div>
       </div>
     </div>
   );
