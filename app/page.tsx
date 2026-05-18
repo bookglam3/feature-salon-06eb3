@@ -3,8 +3,8 @@ import Link from "next/link";
 import Image from "next/image";
 
 export const metadata: Metadata = {
-  title: "Feature Salon | UK's #1 Salon Management Software",
-  description: "Free salon booking software for UK salons. Online bookings, payments, reminders. Better than Fresha. Start free trial.",
+  title: "Feature Salon | UK's #1 Salon Management Software — Free Trial",
+  description: "Feature Salon is the UK's best salon management software. Online booking, WhatsApp reminders, Stripe payments, staff scheduling & CRM. 14-day free trial. No commission fees. Better than Fresha & Treatwell.",
   alternates: { canonical: "https://www.featuresalon.co.uk" },
 };
 
@@ -17,7 +17,165 @@ const faqItems = [
   { question: "What payment methods are supported?", answer: "Feature Salon uses Stripe for payments, supporting all major credit and debit cards. You can take deposits or full payments at booking time to reduce no-shows." },
   { question: "Is there a long-term contract?", answer: "No contracts at all. All plans are monthly and you can cancel at any time from your dashboard. We also offer a 30-day money-back guarantee." },
   { question: "Do you send automated appointment reminders?", answer: "Yes — Feature Salon sends automated SMS, WhatsApp, and email reminders to clients before their appointments. Salons using reminders report a 60% reduction in no-shows." },
+  { question: "How much does Feature Salon cost?", answer: "Feature Salon starts from £29/month for the Starter plan (up to 3 staff), £59/month for Pro (up to 10 staff), and £99/month for Business (unlimited staff). All plans include a 14-day free trial with no credit card required." },
+  { question: "What features does Feature Salon include?", answer: "Feature Salon includes: online booking system, staff management & scheduling, automated WhatsApp/SMS/email reminders, Stripe payment processing, client CRM, revenue analytics, gift cards, loyalty program, waitlist management, and multi-location support." },
 ];
+
+// ── Schema: FAQ ───────────────────────────────────────────────────
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "@id": "https://www.featuresalon.co.uk/#faq",
+  mainEntity: faqItems.map((item, i) => ({
+    "@type": "Question",
+    "@id": `https://www.featuresalon.co.uk/#faq-${i + 1}`,
+    name: item.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: item.answer,
+    },
+  })),
+};
+
+// ── Schema: SoftwareApplication ──────────────────────────────────
+const softwareSchema = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "@id": "https://www.featuresalon.co.uk/#software",
+  name: "Feature Salon",
+  url: "https://www.featuresalon.co.uk",
+  applicationCategory: "BusinessApplication",
+  applicationSubCategory: "Salon Management Software",
+  operatingSystem: "Web, iOS, Android",
+  browserRequirements: "Requires JavaScript. Requires HTML5.",
+  description: "Feature Salon is the UK's leading salon management platform. Manage online bookings, staff scheduling, WhatsApp & SMS reminders, Stripe payments, client CRM, revenue analytics, gift cards, and loyalty programs — all from one dashboard.",
+  featureList: [
+    "Online booking system with 24/7 client self-booking",
+    "Automated WhatsApp appointment reminders",
+    "Automated SMS and email reminders",
+    "Stripe payment processing with deposit collection",
+    "Staff scheduling and management",
+    "Client CRM with visit history",
+    "Revenue analytics and reports",
+    "Multi-location salon management",
+    "Gift card system",
+    "Loyalty rewards program",
+    "Waitlist management",
+    "Calendar and booking management",
+    "Mobile-first PWA design",
+    "No booking commission fees",
+    "Branded public booking page",
+  ],
+  screenshot: "https://www.featuresalon.co.uk/og-image.png",
+  aggregateRating: {
+    "@type": "AggregateRating",
+    ratingValue: "4.9",
+    reviewCount: "214",
+    bestRating: "5",
+    worstRating: "1",
+  },
+  offers: [
+    {
+      "@type": "Offer",
+      name: "Starter Plan",
+      price: "29.00",
+      priceCurrency: "GBP",
+      priceSpecification: {
+        "@type": "UnitPriceSpecification",
+        price: "29.00",
+        priceCurrency: "GBP",
+        billingDuration: "P1M",
+      },
+      description: "For independent stylists. Up to 3 staff, online booking, email reminders.",
+      url: "https://www.featuresalon.co.uk/signup",
+    },
+    {
+      "@type": "Offer",
+      name: "Pro Plan",
+      price: "59.00",
+      priceCurrency: "GBP",
+      priceSpecification: {
+        "@type": "UnitPriceSpecification",
+        price: "59.00",
+        priceCurrency: "GBP",
+        billingDuration: "P1M",
+      },
+      description: "For growing salons. Up to 10 staff, SMS & WhatsApp reminders, analytics.",
+      url: "https://www.featuresalon.co.uk/signup",
+    },
+    {
+      "@type": "Offer",
+      name: "Business Plan",
+      price: "99.00",
+      priceCurrency: "GBP",
+      priceSpecification: {
+        "@type": "UnitPriceSpecification",
+        price: "99.00",
+        priceCurrency: "GBP",
+        billingDuration: "P1M",
+      },
+      description: "For multi-location salons. Unlimited staff, advanced reports, priority support.",
+      url: "https://www.featuresalon.co.uk/signup",
+    },
+  ],
+  publisher: {
+    "@type": "Organization",
+    name: "Feature Salon",
+    url: "https://www.featuresalon.co.uk",
+    logo: {
+      "@type": "ImageObject",
+      url: "https://www.featuresalon.co.uk/brand/logo-light.svg",
+    },
+  },
+};
+
+// ── Schema: Organization ─────────────────────────────────────────
+const orgSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": "https://www.featuresalon.co.uk/#organization",
+  name: "Feature Salon",
+  url: "https://www.featuresalon.co.uk",
+  logo: {
+    "@type": "ImageObject",
+    url: "https://www.featuresalon.co.uk/brand/logo-light.svg",
+    width: 200,
+    height: 60,
+  },
+  description: "Feature Salon provides UK salons with an all-in-one management platform including online booking, payments, reminders, and CRM.",
+  contactPoint: {
+    "@type": "ContactPoint",
+    contactType: "customer support",
+    availableLanguage: "English",
+    areaServed: "GB",
+  },
+  areaServed: {
+    "@type": "Country",
+    name: "United Kingdom",
+  },
+  sameAs: [
+    "https://www.instagram.com/featuresalon",
+    "https://www.facebook.com/featuresalon",
+  ],
+};
+
+// ── Schema: WebSite ──────────────────────────────────────────────
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": "https://www.featuresalon.co.uk/#website",
+  url: "https://www.featuresalon.co.uk",
+  name: "Feature Salon",
+  description: "UK Salon Management Software",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: "https://www.featuresalon.co.uk/book/{search_term_string}",
+    },
+    "query-input": "required name=search_term_string",
+  },
+};
 
 const comparisonData = [
   { feature: "Monthly subscription fee",   feature_: true,  fresha: false, treatwell: false },
@@ -32,28 +190,13 @@ const comparisonData = [
   { feature: "No hidden marketplace fees", feature_: true,  fresha: false, treatwell: false },
 ];
 
-const faqSchema = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  "@id": "https://www.featuresalon.co.uk/#faq",
-  url: "https://www.featuresalon.co.uk",
-  name: "Feature Salon — Frequently Asked Questions",
-  mainEntity: faqItems.map((item, i) => ({
-    "@type": "Question",
-    "@id": `https://www.featuresalon.co.uk/#faq-${i + 1}`,
-    name: item.question,
-    acceptedAnswer: {
-      "@type": "Answer",
-      "@id": `https://www.featuresalon.co.uk/#faq-${i + 1}-answer`,
-      text: item.answer,
-    },
-  })),
-};
-
 export default function Home() {
   return (
     <main className="landing">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }} />
 
       {/* ── Navbar ── */}
       <nav className="nav">
