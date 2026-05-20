@@ -9,7 +9,7 @@ import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-
 
 interface SalonData {
   id: string; name: string; slug: string; description?: string;
-  logo_url?: string; payment_methods?: Record<string, boolean | number>;
+  logo_url?: string; payment_methods?: any;
   timezone?: string; country?: string;
 }
 interface ServiceItem { id: string; name: string; price: number; duration?: number; duration_minutes?: number; description?: string; }
