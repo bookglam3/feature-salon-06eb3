@@ -10,6 +10,7 @@ import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-
 interface SalonData {
   id: string; name: string; slug: string; description?: string;
   logo_url?: string; payment_methods?: Record<string, boolean | number>;
+  timezone?: string; country?: string;
 }
 interface ServiceItem { id: string; name: string; price: number; duration?: number; duration_minutes?: number; description?: string; }
 interface StaffMember {
@@ -348,8 +349,8 @@ export default function BookingPage() {
     setSubmitting(true);
 
     // Determine salon timezone: from salon data or fallback to Europe/London
-    const salonTz: string = (salon as Record<string, unknown>).timezone as string
-      || COUNTRY_TIMEZONES[(salon as Record<string, unknown>).country as string || ""]
+    const salonTz: string = salon.timezone
+      || COUNTRY_TIMEZONES[salon.country || ""]
       || "Europe/London";
     const dateStr = `${selDate.getFullYear()}-${String(selDate.getMonth()+1).padStart(2,"0")}-${String(selDate.getDate()).padStart(2,"0")}`;
     const iso = localTimeToUTC(dateStr, selTime, salonTz);
@@ -588,8 +589,8 @@ export default function BookingPage() {
                     const d = new Date(e.target.value + "T12:00:00Z"); // noon UTC avoids date-shift
                     setSelDate(d);
                     setSelTime("");
-                    const salonTz: string = (salon as Record<string, unknown>).timezone as string
-                      || COUNTRY_TIMEZONES[(salon as Record<string, unknown>).country as string || ""] || "Europe/London";
+                    const salonTz: string = salon.timezone
+                      || COUNTRY_TIMEZONES[salon.country || ""] || "Europe/London";
                     if (salon) loadBookedSlots(d, selectedStaff?.id || null, salon.id, salonTz);
                   }}/>
                 </div>
