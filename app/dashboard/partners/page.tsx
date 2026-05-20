@@ -221,7 +221,7 @@ function PartnersPageInner() {
       subscription_status: s.subscription_status || "trial",
       subscription_plan: s.subscription_plan || "starter",
       name: s.name,
-      timezone: (s as Record<string, unknown>).timezone as string || "Europe/London",
+      timezone: (s as any).timezone as string || "Europe/London",
     });
   };
 

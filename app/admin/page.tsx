@@ -337,7 +337,7 @@ export default function AdminPage() {
 
   const saveAnnouncement = async () => {
     setAnnSaving(true);
-    await supabase.from("salons").update({ announcement } as Record<string, unknown>).neq("id", "00000000-0000-0000-0000-000000000000");
+    await supabase.from("salons").update({ announcement } as any).neq("id", "00000000-0000-0000-0000-000000000000");
     setTimeout(() => setAnnSaving(false), 1000);
   };
 

@@ -46,7 +46,7 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
         setSubPlan(salon.subscription_plan);
         if (!salonName && salon.name) setResolvedSalonName(salon.name);
         // Show announcement if set and not yet dismissed this session
-        const ann = (salon as Record<string, unknown>).announcement as string | null;
+        const ann = (salon as any).announcement as string | null;
         if (ann && ann.trim()) {
           const dismissKey = `ann_dismissed_${btoa(ann).slice(0, 16)}`;
           const wasDismissed = typeof window !== "undefined" && localStorage.getItem(dismissKey) === "1";
