@@ -3,6 +3,7 @@ import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import SchemaMarkup from "./components/SchemaMarkup";
 import WhatsAppWidget from "./components/WhatsAppWidget";
+import ServiceWorkerRegistration from "./components/ServiceWorkerRegistration";
 
 // next/font/google — self-hosted, zero layout shift, no external request
 const inter = Inter({
@@ -126,6 +127,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">
         <SchemaMarkup />
+        <ServiceWorkerRegistration />
         {children}
         <WhatsAppWidget />
       </body>
