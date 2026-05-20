@@ -165,10 +165,10 @@ export async function POST(req: NextRequest) {
   const recipientType: string    = body.recipientType;
   const countriesRaw: string[]   = Array.isArray(body.countries) ? body.countries : ["ALL"];
 
-  if (!subject)                                     return NextResponse.json({ error: "Subject is required" }, { status: 400 });
-  if (!message)                                     return NextResponse.json({ error: "Message body is required" }, { status: 400 });
-  if (requestedChannels.length === 0)               return NextResponse.json({ error: "Select at least one channel" }, { status: 400 });
-  if (!["registered", "all"].includes(recipientType)) return NextResponse.json({ error: "Invalid recipient type" }, { status: 400 });
+  if (!subject)                                              return NextResponse.json({ error: "Subject is required" }, { status: 400 });
+  if (!message)                                              return NextResponse.json({ error: "Message body is required" }, { status: 400 });
+  if (requestedChannels.length === 0)                        return NextResponse.json({ error: "Select at least one channel" }, { status: 400 });
+  if (!["registered", "all", "custom"].includes(recipientType)) return NextResponse.json({ error: "Invalid recipient type" }, { status: 400 });
 
   // Strip channels whose env keys aren't present
   const channels = requestedChannels.filter((c): c is Channel => {
@@ -181,36 +181,65 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "None of the selected channels are configured in this environment" }, { status: 400 });
   }
 
+  function splitPasted(raw: string): string[] {
+    return (raw || "").split(/[\s,;\n]+/).map(x => x.trim()).filter(Boolean);
+  }
+
   // ── Build recipient list ──────────────────────────────────────────
-  let query = adminSupabase
-    .from("salons")
-    .select("owner_email, phone, name, country, marketing_consent");
+  let recipients: SalonRow[] = [];
+  let wantsAll = false;
 
-  if (recipientType === "registered") {
-    // registered tab: honour marketing_consent (null treated as true)
-    query = query.neq("marketing_consent", false);
-  }
-  // "all" tab: no consent filter — admin override
+  if (recipientType === "custom") {
+    // Build from pasted emails + phones — no DB query needed
+    const emailList = splitPasted(body.customEmails || "");
+    const phoneList = splitPasted(body.customPhones || "");
+    if (emailList.length === 0 && phoneList.length === 0) {
+      return NextResponse.json({ error: "No emails or phone numbers provided" }, { status: 400 });
+    }
+    const seen = new Set<string>();
+    for (const e of emailList) {
+      const key = e.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      recipients.push({ owner_email: e, phone: null, name: null, country: null, marketing_consent: null });
+    }
+    for (const p of phoneList) {
+      const key = p.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      recipients.push({ owner_email: null, phone: p, name: null, country: null, marketing_consent: null });
+    }
+    wantsAll = true; // logged as countries=["ALL"] since custom list is not country-filtered
+  } else {
+    let query = adminSupabase
+      .from("salons")
+      .select("owner_email, phone, name, country, marketing_consent");
 
-  const wantsAll = countriesRaw.includes("ALL") || countriesRaw.length === 0;
-  if (!wantsAll) {
-    query = query.in("country", countriesRaw);
-  }
+    if (recipientType === "registered") {
+      // honour marketing_consent — null treated as opted-in
+      query = query.neq("marketing_consent", false);
+    }
+    // "all": no consent filter — admin override
 
-  const { data: rows, error: rowsErr } = await query;
-  if (rowsErr) {
-    console.error("[/api/admin/broadcast] recipient load failed:", rowsErr.message);
-    return NextResponse.json({ error: rowsErr.message }, { status: 500 });
-  }
+    wantsAll = countriesRaw.includes("ALL") || countriesRaw.length === 0;
+    if (!wantsAll) {
+      query = query.in("country", countriesRaw);
+    }
 
-  // Deduplicate by email or phone
-  const seen = new Set<string>();
-  const recipients: SalonRow[] = [];
-  for (const r of ((rows || []) as SalonRow[])) {
-    const key = (r.owner_email || r.phone || "").toLowerCase().trim();
-    if (!key || seen.has(key)) continue;
-    seen.add(key);
-    recipients.push(r);
+    const { data: rows, error: rowsErr } = await query;
+    if (rowsErr) {
+      console.error("[/api/admin/broadcast] recipient load failed:", rowsErr.message);
+      return NextResponse.json({ error: rowsErr.message }, { status: 500 });
+    }
+
+    // Deduplicate by email or phone
+    const seen = new Set<string>();
+    for (const r of ((rows || []) as SalonRow[])) {
+      const key = (r.owner_email || r.phone || "").toLowerCase().trim();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      recipients.push(r);
+    }
   }
 
   if (recipients.length === 0) {
@@ -290,7 +319,8 @@ export async function POST(req: NextRequest) {
       message,
       channels,
       countries:        wantsAll ? ["ALL"] : countriesRaw,
-      recipient_type:   recipientType,
+      // DB CHECK allows only 'registered'|'all' — map 'custom' to 'all'
+      recipient_type:   recipientType === "custom" ? "all" : recipientType,
       total_sent:       totalSent,
       total_failed:     totalFailed,
       sent_by_admin_id: user.id,
