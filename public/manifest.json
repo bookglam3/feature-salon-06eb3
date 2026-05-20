@@ -11,12 +11,6 @@
   "id": "com.featuresalon.app",
   "icons": [
     {
-      "src": "/brand/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
       "src": "/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
@@ -41,26 +35,10 @@
       "purpose": "maskable"
     },
     {
-      "src": "/logo.png",
-      "sizes": "1024x1024",
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/og-image.png",
-      "sizes": "1200x630",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Feature Salon — UK's #1 Salon Management Software"
-    },
-    {
-      "src": "/icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Feature Salon App"
     }
   ]
 }
