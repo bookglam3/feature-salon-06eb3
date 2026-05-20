@@ -589,9 +589,10 @@ export default function BookingPage() {
                     const d = new Date(e.target.value + "T12:00:00Z"); // noon UTC avoids date-shift
                     setSelDate(d);
                     setSelTime("");
+                    if (!salon) return;
                     const salonTz: string = salon.timezone
                       || COUNTRY_TIMEZONES[salon.country || ""] || "Europe/London";
-                    if (salon) loadBookedSlots(d, selectedStaff?.id || null, salon.id, salonTz);
+                    loadBookedSlots(d, selectedStaff?.id || null, salon.id, salonTz);
                   }}/>
                 </div>
                 {selDate && (() => {
