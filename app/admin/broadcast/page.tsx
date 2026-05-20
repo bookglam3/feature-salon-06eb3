@@ -119,6 +119,7 @@ export default function BroadcastPage() {
   const router = useRouter();
   const [authChecked, setAuthChecked] = useState(false);
   const [authorised,  setAuthorised]  = useState(false);
+  const [loggedInAs,  setLoggedInAs]  = useState<string | null>(null);
 
   // Tab
   const [tab, setTab] = useState<Tab>("registered");
@@ -151,8 +152,9 @@ export default function BroadcastPage() {
     (async () => {
       const { data } = await supabase.auth.getUser();
       const user = data?.user;
+      setLoggedInAs(user?.email ?? null);
       if (!user || user.email !== ADMIN_EMAIL) {
-        router.push("/dashboard");
+        setAuthChecked(true); // show access-denied screen instead of silent redirect
         return;
       }
       setAuthorised(true);
@@ -303,7 +305,26 @@ export default function BroadcastPage() {
     );
   }
 
-  if (!authorised) return null;
+  if (!authorised) return (
+    <div style={{
+      minHeight: "100vh", background: T.nav,
+      display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16,
+      fontFamily: "'Plus Jakarta Sans','Segoe UI',sans-serif",
+    }}>
+      <div style={{ fontSize: 36 }}>🔒</div>
+      <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>Access Denied</div>
+      <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", textAlign: "center", maxWidth: 340 }}>
+        This page requires the super admin account.<br/>
+        Currently logged in as: <strong style={{ color: "#F59E0B" }}>{loggedInAs || "not logged in"}</strong><br/>
+        Required: <strong style={{ color: "#10B981" }}>{ADMIN_EMAIL}</strong>
+      </div>
+      <a href="/login" style={{
+        marginTop: 8, padding: "10px 24px", borderRadius: 10,
+        background: "#6366F1", color: "#fff", textDecoration: "none",
+        fontSize: 13, fontWeight: 700,
+      }}>Login with correct account →</a>
+    </div>
+  );
 
   const anyChannel = caps.email || caps.sms || caps.whatsapp;
 
