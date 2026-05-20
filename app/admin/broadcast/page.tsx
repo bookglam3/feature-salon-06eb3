@@ -4,127 +4,126 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
 const ADMIN_EMAIL = "adilgill2008@gmail.com";
+const TEMPLATE_STORE_KEY = "fs_broadcast_templates_v1";
 
-// ─── Design tokens (mirrors /admin styling) ───────────────────────────────────
 const T = {
-  bg: "#F6F8FC",
-  surface: "#FFFFFF",
-  nav: "#0A0F1C",
-  navBorder: "rgba(255,255,255,0.07)",
-  navText: "rgba(255,255,255,0.45)",
-  navActive: "#FFFFFF",
-  border: "#E2E8F0",
-  text: "#0F172A",
-  text2: "#64748B",
-  text3: "#94A3B8",
-  indigo: "#6366F1",
-  indigoSoft: "#EEF2FF",
-  green: "#10B981",
-  greenSoft: "#ECFDF5",
-  amber: "#F59E0B",
-  amberSoft: "#FFFBEB",
-  red: "#EF4444",
-  redSoft: "#FEF2F2",
+  bg: "#F6F8FC", surface: "#FFFFFF", nav: "#0A0F1C",
+  navBorder: "rgba(255,255,255,0.07)", navText: "rgba(255,255,255,0.45)", navActive: "#FFFFFF",
+  border: "#E2E8F0", text: "#0F172A", text2: "#64748B", text3: "#94A3B8",
+  indigo: "#6366F1", indigoSoft: "#EEF2FF",
+  green: "#10B981", greenSoft: "#ECFDF5",
+  amber: "#F59E0B", amberSoft: "#FFFBEB",
+  red: "#EF4444", redSoft: "#FEF2F2",
   shadow: "0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04)",
 };
 
-type Channel      = "email" | "whatsapp" | "sms";
-type RecipientType = "registered" | "all" | "custom";
-type CountryCode   = "GB" | "PK" | "AE" | "SA";
-type Tab           = "custom" | "registered" | "all";
+type Channel    = "email" | "whatsapp" | "sms";
+type CountryCode = "GB" | "PK" | "AE" | "SA";
+type SendStatus  = "idle" | "sending" | "success" | "partial" | "failed" | "skipped";
 
+interface Template {
+  id: string; name: string; subject: string; body: string; builtIn?: boolean;
+}
+interface CountryConfig {
+  code: CountryCode; flag: string; label: string;
+  recipients: string; channels: Record<Channel, boolean>; enabled: boolean;
+}
+interface CountryResult {
+  code: CountryCode; status: SendStatus; sent: number; failed: number; error?: string;
+}
 interface BroadcastLog {
-  id: string;
-  subject: string;
-  channels: Channel[];
-  countries: string[];
-  recipient_type: RecipientType;
-  total_sent: number;
-  total_failed: number;
-  sent_at: string;
-  status: "success" | "partial" | "failed" | "sending";
+  id: string; subject: string; channels: Channel[]; countries: string[];
+  recipient_type: string; total_sent: number; total_failed: number; sent_at: string; status: string;
 }
 
-interface CapabilitiesResponse {
-  capabilities: { email: boolean; sms: boolean; whatsapp: boolean };
-  countsByCountry: Record<string, number>;
-  consentedTotal: number;
-  totalUsers: number;
-  logs: BroadcastLog[];
-}
+// ── Built-in templates ────────────────────────────────────────────────────────
+const BUILT_IN: Template[] = [
+  {
+    id: "bi-sms", name: "We Miss You (WhatsApp/SMS)", subject: "We Miss You!", builtIn: true,
+    body: "Hi {name}! 💕\nWe miss you at Anita Love Hair! 🌸\nAs a valued client, we'd love to welcome you back with an exclusive 20% OFF your next visit! \n📍 Book your appointment here:\nhttps://www.fresha.com/a/anita-love-hair-tunbridge-wells-119-camden-road-c8tlr8ew/booking?menu=true&pId=30502&cartId=8e4b384c-4e30-47a7-ae21-cb31b19e30e4\nUse code: WELCOME20 at checkout 💛\nSee you soon! \nAnita Love Hair Team 💇‍♀️",
+  },
+  {
+    id: "bi-email", name: "We Miss You (Email)", subject: "We Miss You! Here's 20% OFF Just for You 💕", builtIn: true,
+    body: "Hi {name},\n\nIt's been a while and we'd love to see you again at Anita Love Hair!\n\nAs a thank you for being such a valued client, we're offering you an exclusive 20% OFF your next appointment.\n\n✂️ Book Now & Save 20%:\nhttps://www.fresha.com/a/anita-love-hair-tunbridge-wells-119-camden-road-c8tlr8ew/booking?menu=true&pId=30502&cartId=8e4b384c-4e30-47a7-ae21-cb31b19e30e4\n\nWe can't wait to make you look and feel amazing again! 🌸\n\nWith love,\nAnita Love Hair Team 💇‍♀️",
+  },
+];
 
-const COUNTRY_META: { code: CountryCode; flag: string; label: string }[] = [
-  { code: "GB", flag: "🇬🇧", label: "UK" },
+const COUNTRY_DEFS: Pick<CountryConfig, "code" | "flag" | "label">[] = [
+  { code: "GB", flag: "🇬🇧", label: "United Kingdom" },
   { code: "PK", flag: "🇵🇰", label: "Pakistan" },
   { code: "AE", flag: "🇦🇪", label: "UAE" },
   { code: "SA", flag: "🇸🇦", label: "Saudi Arabia" },
 ];
 
-// Variables that can be inserted into the message
-const MSG_VARS: { tag: string; sample: string; desc: string }[] = [
-  { tag: "{name}",       sample: "Sarah",       desc: "Recipient name" },
-  { tag: "{salon_name}", sample: "Glow Studio",  desc: "Salon name" },
+const NAV_ITEMS = [
+  { key: "overview", label: "Overview", icon: "▣", href: "/admin" },
+  { key: "salons", label: "Salons", icon: "✂", href: "/admin" },
+  { key: "revenue", label: "Revenue", icon: "₤", href: "/admin" },
+  { key: "users", label: "Users", icon: "⊙", href: "/admin" },
+  { key: "applications", label: "Applications", icon: "✦", href: "/admin" },
+  { key: "verifications", label: "Verifications", icon: "🪪", href: "/admin" },
+  { key: "announcements", label: "Announcements", icon: "◉", href: "/admin" },
+  { key: "broadcast", label: "Broadcast", icon: "📣", href: "/admin/broadcast" },
+  { key: "flags", label: "Feature Flags", icon: "⚑", href: "/admin" },
+  { key: "settings", label: "Settings", icon: "◎", href: "/admin" },
+];
+
+const STATUS_META: Record<SendStatus, { bg: string; color: string; label: string; icon: string }> = {
+  idle:    { bg: T.bg,         color: T.text3,  label: "Not sent",  icon: "○" },
+  sending: { bg: T.indigoSoft, color: T.indigo, label: "Sending…",  icon: "●" },
+  success: { bg: T.greenSoft,  color: T.green,  label: "Sent",      icon: "✓" },
+  partial: { bg: T.amberSoft,  color: T.amber,  label: "Partial",   icon: "!" },
+  failed:  { bg: T.redSoft,    color: T.red,    label: "Failed",    icon: "✗" },
+  skipped: { bg: T.bg,         color: T.text3,  label: "Skipped",   icon: "—" },
+};
+
+const MSG_VARS = [
+  { tag: "{name}",       sample: "Sarah",      desc: "Recipient name" },
+  { tag: "{salon_name}", sample: "Glow Studio", desc: "Salon name" },
   { tag: "{link}",       sample: "featuresalon.co.uk/book/glow", desc: "Booking link" },
 ];
 
-const NAV_ITEMS = [
-  { key: "overview",      label: "Overview",        icon: "▣", href: "/admin" },
-  { key: "salons",        label: "Salons",          icon: "✂", href: "/admin" },
-  { key: "revenue",       label: "Revenue",         icon: "₤", href: "/admin" },
-  { key: "users",         label: "Users",           icon: "⊙", href: "/admin" },
-  { key: "applications",  label: "Applications",    icon: "✦", href: "/admin" },
-  { key: "verifications", label: "Verifications",   icon: "🪪", href: "/admin" },
-  { key: "announcements", label: "Announcements",   icon: "◉", href: "/admin" },
-  { key: "broadcast",     label: "Broadcast",       icon: "📣", href: "/admin/broadcast" },
-  { key: "flags",         label: "Feature Flags",   icon: "⚑", href: "/admin" },
-  { key: "settings",      label: "Settings",        icon: "◎", href: "/admin" },
-];
-
-const STATUS_META: Record<string, { bg: string; color: string; label: string }> = {
-  success: { bg: "#ECFDF5", color: "#059669", label: "Success" },
-  partial: { bg: "#FFFBEB", color: "#D97706", label: "Partial" },
-  failed:  { bg: "#FEF2F2", color: "#DC2626", label: "Failed" },
-  sending: { bg: "#EEF2FF", color: "#6366F1", label: "Sending" },
-};
-
-function isRTL(s: string): boolean {
-  return /[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]/.test(s);
-}
-
-function applyVarSamples(text: string): string {
-  return text
-    .replace(/\{name\}/g,       "Sarah")
-    .replace(/\{salon_name\}/g, "Glow Studio")
-    .replace(/\{link\}/g,       "featuresalon.co.uk/book/glow");
-}
-
+// ── Utilities ────────────────────────────────────────────────────────────────
 function splitList(raw: string): string[] {
   return raw.split(/[\s,;\n]+/).map(x => x.trim()).filter(Boolean);
 }
+function partitionList(raw: string) {
+  const items = splitList(raw);
+  return { emails: items.filter(x => x.includes("@")), phones: items.filter(x => !x.includes("@")) };
+}
+function isRTL(s: string): boolean { return /[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]/.test(s); }
+function applyVarSamples(t: string) {
+  return t.replace(/\{name\}/g, "Sarah").replace(/\{salon_name\}/g, "Glow Studio").replace(/\{link\}/g, "featuresalon.co.uk/book/glow");
+}
+function initCountries(): CountryConfig[] {
+  return COUNTRY_DEFS.map(d => ({
+    ...d, recipients: "", enabled: true,
+    channels: { email: d.code === "GB", whatsapp: d.code !== "GB", sms: false },
+  }));
+}
+function loadCustomTemplates(): Template[] {
+  if (typeof window === "undefined") return [];
+  try { const r = localStorage.getItem(TEMPLATE_STORE_KEY); return r ? JSON.parse(r) : []; } catch { return []; }
+}
+function persistCustomTemplates(ts: Template[]) {
+  try { localStorage.setItem(TEMPLATE_STORE_KEY, JSON.stringify(ts.filter(t => !t.builtIn))); } catch {}
+}
 
-// ─── Tiny shared components ───────────────────────────────────────────────────
+// ── Shared components ────────────────────────────────────────────────────────
 const Card = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
-  <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16, padding: 20, boxShadow: T.shadow, ...style }}>
-    {children}
-  </div>
+  <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16, boxShadow: T.shadow, ...style }}>{children}</div>
 );
-
 const Label = ({ children }: { children: React.ReactNode }) => (
-  <div style={{ fontSize: 11.5, fontWeight: 700, color: T.text2, textTransform: "uppercase" as const, letterSpacing: "0.5px", marginBottom: 6 }}>
-    {children}
-  </div>
+  <div style={{ fontSize: 11.5, fontWeight: 700, color: T.text2, textTransform: "uppercase" as const, letterSpacing: "0.5px", marginBottom: 6 }}>{children}</div>
 );
-
 const Th = ({ children }: { children: React.ReactNode }) => (
-  <th style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.7px", textTransform: "uppercase" as const, color: T.text3, padding: "11px 16px", textAlign: "left" as const, borderBottom: `1px solid ${T.border}`, background: T.bg }}>
-    {children}
-  </th>
+  <th style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.7px", textTransform: "uppercase" as const, color: T.text3, padding: "11px 16px", textAlign: "left" as const, borderBottom: `1px solid ${T.border}`, background: T.bg }}>{children}</th>
 );
 const Td = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => (
   <td style={{ padding: "13px 16px", fontSize: 13.5, color: T.text, verticalAlign: "middle" as const, ...style }}>{children}</td>
 );
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// ── Main Component ────────────────────────────────────────────────────────────
 export default function BroadcastPage() {
   const router = useRouter();
   const msgRef = useRef<HTMLTextAreaElement>(null);
@@ -133,217 +132,213 @@ export default function BroadcastPage() {
   const [authorised,  setAuthorised]  = useState(false);
   const [loggedInAs,  setLoggedInAs]  = useState<string | null>(null);
 
-  // Audience tab
-  const [tab, setTab] = useState<Tab>("registered");
+  const [caps, setCaps]               = useState({ email: true, sms: false, whatsapp: false });
+  const [logs, setLogs]               = useState<BroadcastLog[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
 
-  // Custom list inputs
-  const [customEmails, setCustomEmails] = useState("");
-  const [customPhones, setCustomPhones] = useState("");
+  const [subject, setSubject]         = useState("");
+  const [message, setMessage]         = useState("");
 
-  // Capabilities + data
-  const [caps, setCaps]                   = useState({ email: true, sms: false, whatsapp: false });
-  const [countsByCountry, setCountsByCountry] = useState<Record<string, number>>({});
-  const [consentedTotal, setConsentedTotal]   = useState(0);
-  const [totalUsers, setTotalUsers]           = useState(0);
-  const [logs, setLogs]                   = useState<BroadcastLog[]>([]);
-  const [logsLoading, setLogsLoading]     = useState(false);
+  const [countries, setCountries]     = useState<CountryConfig[]>(initCountries);
+  const [results,   setResults]       = useState<CountryResult[]>(
+    COUNTRY_DEFS.map(d => ({ code: d.code, status: "idle" as SendStatus, sent: 0, failed: 0 }))
+  );
+  const [isSendingAll, setIsSendingAll] = useState(false);
 
-  // Compose form
-  const [subject, setSubject] = useState("");
-  const [message, setMessage] = useState("");
-  const [channels, setChannels] = useState<Record<Channel, boolean>>({ email: true, whatsapp: false, sms: false });
-  const [country,  setCountry]  = useState<"ALL" | CountryCode>("ALL");
+  const [customTemplates,    setCustomTemplates]    = useState<Template[]>([]);
+  const [appliedTemplateId,  setAppliedTemplateId]  = useState<string | null>(null);
 
-  // UI state
-  const [showPreview, setShowPreview] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [sending,     setSending]     = useState(false);
-  const [progress,    setProgress]    = useState(0);
-  const [feedback, setFeedback] = useState<{ kind: "success" | "error"; text: string } | null>(null);
+  const [showPreview,      setShowPreview]      = useState(false);
+  const [showConfirmAll,   setShowConfirmAll]   = useState(false);
+  const [confirmCountry,   setConfirmCountry]   = useState<CountryCode | null>(null);
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
+  const [newTemplateName,  setNewTemplateName]  = useState("");
+  const [feedback,         setFeedback]         = useState<{ kind: "success" | "error"; text: string } | null>(null);
 
-  // ── Auth gate ──────────────────────────────────────────────────────────────
+  // ── Auth ─────────────────────────────────────────────────────────────────
   useEffect(() => {
     (async () => {
       const { data } = await supabase.auth.getUser();
       const user = data?.user;
       setLoggedInAs(user?.email ?? null);
-      if (!user || user.email !== ADMIN_EMAIL) {
-        setAuthChecked(true);
-        return;
-      }
-      setAuthorised(true);
+      if (user?.email === ADMIN_EMAIL) setAuthorised(true);
       setAuthChecked(true);
     })();
   }, [router]);
 
-  // ── Load capabilities + logs ───────────────────────────────────────────────
+  useEffect(() => { setCustomTemplates(loadCustomTemplates()); }, []);
+
+  // ── Load capabilities + logs ─────────────────────────────────────────────
   const loadAll = useCallback(async () => {
     setLogsLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token || "";
-      const res = await fetch("/api/admin/broadcast", { headers: { Authorization: `Bearer ${token}` } });
-      const json: CapabilitiesResponse = await res.json();
+      const res = await fetch("/api/admin/broadcast", { headers: { Authorization: `Bearer ${session?.access_token || ""}` } });
       if (res.ok) {
+        const json = await res.json();
         setCaps(json.capabilities || { email: false, sms: false, whatsapp: false });
-        setCountsByCountry(json.countsByCountry || {});
-        setConsentedTotal(json.consentedTotal || 0);
-        setTotalUsers(json.totalUsers || 0);
         setLogs(json.logs || []);
-        setChannels(prev => {
-          const next = { ...prev };
-          if (!json.capabilities.email)    next.email    = false;
-          if (!json.capabilities.sms)      next.sms      = false;
-          if (!json.capabilities.whatsapp) next.whatsapp = false;
-          if (!next.email && !next.sms && !next.whatsapp) {
-            if (json.capabilities.email)         next.email    = true;
-            else if (json.capabilities.sms)      next.sms      = true;
-            else if (json.capabilities.whatsapp) next.whatsapp = true;
-          }
-          return next;
-        });
       }
     } catch (e) { console.error("[broadcast] loadAll", e); }
-    finally     { setLogsLoading(false); }
+    finally { setLogsLoading(false); }
   }, []);
 
   useEffect(() => { if (authorised) loadAll(); }, [authorised, loadAll]);
 
-  // ── Insert variable tag at cursor ──────────────────────────────────────────
+  // ── Variable insertion ───────────────────────────────────────────────────
   const insertVar = (tag: string) => {
     const el = msgRef.current;
     if (!el) { setMessage(m => m + tag); return; }
-    const start = el.selectionStart ?? message.length;
-    const end   = el.selectionEnd   ?? message.length;
-    const next  = message.slice(0, start) + tag + message.slice(end);
+    const s = el.selectionStart ?? message.length;
+    const e = el.selectionEnd   ?? message.length;
+    const next = message.slice(0, s) + tag + message.slice(e);
     setMessage(next);
-    requestAnimationFrame(() => {
-      el.focus();
-      el.setSelectionRange(start + tag.length, start + tag.length);
-    });
+    requestAnimationFrame(() => { el.focus(); el.setSelectionRange(s + tag.length, s + tag.length); });
   };
 
-  // ── Progress bar animation ─────────────────────────────────────────────────
-  const startProgress = () => {
-    setProgress(0);
-    let p = 0;
-    const interval = setInterval(() => {
-      // advance quickly at first, then slow down near 90%
-      p += p < 40 ? 8 : p < 70 ? 4 : p < 85 ? 1.5 : 0.3;
-      if (p >= 90) { clearInterval(interval); p = 90; }
-      setProgress(Math.min(p, 90));
-    }, 300);
-    return interval;
+  // ── Templates ────────────────────────────────────────────────────────────
+  const allTemplates = useMemo(() => [...BUILT_IN, ...customTemplates], [customTemplates]);
+
+  const applyTemplate = (t: Template) => {
+    setSubject(t.subject);
+    setMessage(t.body);
+    setAppliedTemplateId(t.id);
   };
 
-  // ── Validation ─────────────────────────────────────────────────────────────
-  const validateForm = (): string | null => {
-    if (!subject.trim()) return "Subject is required.";
-    if (!message.trim()) return "Message body is required.";
-    const picked = (Object.keys(channels) as Channel[]).filter(c => channels[c]);
-    if (picked.length === 0) return "Pick at least one channel.";
-    if (tab === "custom") {
-      const emails = splitList(customEmails);
-      const phones = splitList(customPhones);
-      if (emails.length === 0 && phones.length === 0) return "Enter at least one email or phone number.";
-    }
-    return null;
+  const saveTemplate = () => {
+    if (!newTemplateName.trim()) return;
+    const t: Template = { id: `custom-${Date.now()}`, name: newTemplateName.trim(), subject: subject.trim(), body: message.trim() };
+    const updated = [...customTemplates, t];
+    setCustomTemplates(updated);
+    persistCustomTemplates(updated);
+    setShowSaveTemplate(false);
+    setNewTemplateName("");
+    setFeedback({ kind: "success", text: `Template "${t.name}" saved.` });
   };
 
-  const handleAskConfirm = () => {
-    setFeedback(null);
-    const err = validateForm();
-    if (err) { setFeedback({ kind: "error", text: err }); return; }
-    setShowConfirm(true);
+  const deleteTemplate = (id: string) => {
+    const updated = customTemplates.filter(t => t.id !== id);
+    setCustomTemplates(updated);
+    persistCustomTemplates(updated);
+    if (appliedTemplateId === id) setAppliedTemplateId(null);
   };
 
-  // ── Send ───────────────────────────────────────────────────────────────────
-  const handleSend = async () => {
-    setShowConfirm(false);
-    setSending(true);
-    setFeedback(null);
+  // ── Country updates ──────────────────────────────────────────────────────
+  const updateCountry = (code: CountryCode, patch: Partial<CountryConfig>) =>
+    setCountries(prev => prev.map(c => c.code === code ? { ...c, ...patch } : c));
 
-    const progressInterval = startProgress();
+  const toggleChannel = (code: CountryCode, ch: Channel) =>
+    setCountries(prev => prev.map(c => c.code === code ? { ...c, channels: { ...c.channels, [ch]: !c.channels[ch] } } : c));
+
+  // ── Send one country ─────────────────────────────────────────────────────
+  const sendToCountry = async (code: CountryCode) => {
+    const country = countries.find(c => c.code === code);
+    if (!country) return;
+    setConfirmCountry(null);
+
+    const { emails, phones } = partitionList(country.recipients);
+    const picked = (Object.keys(country.channels) as Channel[]).filter(ch => country.channels[ch] && caps[ch]);
+
+    setResults(prev => prev.map(r => r.code === code ? { ...r, status: "sending", sent: 0, failed: 0, error: undefined } : r));
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token || "";
-      const picked = (Object.keys(channels) as Channel[]).filter(c => channels[c]);
-
-      const body: Record<string, unknown> = {
-        subject: subject.trim(),
-        message: message.trim(),
-        channels: picked,
-        recipientType: tab === "custom" ? "custom" : tab === "all" ? "all" : "registered",
-        countries:     tab === "registered" && country !== "ALL" ? [country] : ["ALL"],
-      };
-      if (tab === "custom") {
-        body.customEmails = customEmails;
-        body.customPhones = customPhones;
-      }
-
-      const res  = await fetch("/api/admin/broadcast", {
+      const res = await fetch("/api/admin/broadcast", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(body),
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session?.access_token || ""}` },
+        body: JSON.stringify({ subject: subject.trim(), message: message.trim(), channels: picked, recipientType: "custom", countries: [code], customEmails: emails.join("\n"), customPhones: phones.join("\n") }),
       });
       const json = await res.json();
-
-      clearInterval(progressInterval);
-      setProgress(100);
-
-      setTimeout(() => {
-        setSending(false);
-        setProgress(0);
-      }, 800);
-
-      if (!res.ok) {
-        setFeedback({ kind: "error", text: json.error || "Send failed." });
+      if (res.ok) {
+        const st: SendStatus = json.totalFailed === 0 && json.totalSent > 0 ? "success" : json.totalSent === 0 ? "failed" : "partial";
+        setResults(prev => prev.map(r => r.code === code ? { ...r, status: st, sent: json.totalSent, failed: json.totalFailed } : r));
+        setFeedback({ kind: st === "failed" ? "error" : "success", text: `${country.flag} ${country.label}: ${json.totalSent} sent, ${json.totalFailed} failed` });
       } else {
-        const breakdown = (json.perChannel || [])
-          .map((r: { channel: string; sent: number; failed: number }) =>
-            `${r.channel}: ${r.sent} sent${r.failed ? `, ${r.failed} failed` : ""}`)
-          .join(" · ");
-        setFeedback({ kind: "success", text: `✓ Sent to ${json.totalRecipients} recipients — ${breakdown}` });
-        setSubject("");
-        setMessage("");
-        setCustomEmails("");
-        setCustomPhones("");
-        loadAll();
+        setResults(prev => prev.map(r => r.code === code ? { ...r, status: "failed", error: json.error } : r));
+        setFeedback({ kind: "error", text: json.error || "Send failed" });
       }
     } catch (e) {
-      clearInterval(progressInterval);
-      setSending(false);
-      setProgress(0);
-      setFeedback({ kind: "error", text: (e as Error).message || "Network error." });
+      setResults(prev => prev.map(r => r.code === code ? { ...r, status: "failed", error: "Network error" } : r));
+      setFeedback({ kind: "error", text: "Network error" });
     }
+    loadAll();
   };
+
+  // ── Send all countries ───────────────────────────────────────────────────
+  const handleSendAll = async () => {
+    setShowConfirmAll(false);
+    setIsSendingAll(true);
+    setFeedback(null);
+    setResults(COUNTRY_DEFS.map(d => ({ code: d.code, status: "idle" as SendStatus, sent: 0, failed: 0 })));
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token || "";
+    let totalSent = 0, totalFailed = 0;
+
+    for (const country of countries) {
+      const { emails, phones } = partitionList(country.recipients);
+      const picked = (Object.keys(country.channels) as Channel[]).filter(ch => country.channels[ch] && caps[ch]);
+
+      if (!country.enabled || (emails.length === 0 && phones.length === 0)) {
+        setResults(prev => prev.map(r => r.code === country.code ? { ...r, status: "skipped" } : r));
+        continue;
+      }
+      if (picked.length === 0) {
+        setResults(prev => prev.map(r => r.code === country.code ? { ...r, status: "skipped", error: "No channels" } : r));
+        continue;
+      }
+
+      setResults(prev => prev.map(r => r.code === country.code ? { ...r, status: "sending" } : r));
+
+      try {
+        const res = await fetch("/api/admin/broadcast", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ subject: subject.trim(), message: message.trim(), channels: picked, recipientType: "custom", countries: [country.code], customEmails: emails.join("\n"), customPhones: phones.join("\n") }),
+        });
+        const json = await res.json();
+        if (res.ok) {
+          const st: SendStatus = json.totalFailed === 0 && json.totalSent > 0 ? "success" : json.totalSent === 0 ? "failed" : "partial";
+          setResults(prev => prev.map(r => r.code === country.code ? { ...r, status: st, sent: json.totalSent, failed: json.totalFailed } : r));
+          totalSent   += json.totalSent   || 0;
+          totalFailed += json.totalFailed || 0;
+        } else {
+          setResults(prev => prev.map(r => r.code === country.code ? { ...r, status: "failed", error: json.error } : r));
+        }
+      } catch {
+        setResults(prev => prev.map(r => r.code === country.code ? { ...r, status: "failed", error: "Network error" } : r));
+      }
+    }
+
+    setIsSendingAll(false);
+    setFeedback({ kind: totalFailed === 0 ? "success" : "error", text: `All countries processed — ${totalSent} sent, ${totalFailed} failed.` });
+    loadAll();
+  };
+
+  // ── Derived ──────────────────────────────────────────────────────────────
+  const msgIsRTL = useMemo(() => isRTL(message) || isRTL(subject), [message, subject]);
+
+  const enabledWithRecipients = useMemo(
+    () => countries.filter(c => c.enabled && splitList(c.recipients).length > 0),
+    [countries]
+  );
+  const totalEnabledRecipients = useMemo(
+    () => enabledWithRecipients.reduce((acc, c) => acc + splitList(c.recipients).length, 0),
+    [enabledWithRecipients]
+  );
+  const sendAllProgress = useMemo(() => {
+    const total = countries.length;
+    if (total === 0) return 0;
+    const done = results.filter(r => r.status !== "idle" && r.status !== "sending").length;
+    return Math.round((done / total) * 100);
+  }, [countries, results]);
 
   const handleLogout = async () => { await supabase.auth.signOut(); router.push("/login"); };
 
-  // ── Derived ────────────────────────────────────────────────────────────────
-  const targetAudience = useMemo(() => {
-    if (tab === "all")    return totalUsers;
-    if (tab === "custom") return Math.max(splitList(customEmails).length, splitList(customPhones).length);
-    if (country === "ALL") return consentedTotal;
-    return countsByCountry[country] || 0;
-  }, [tab, country, totalUsers, consentedTotal, countsByCountry, customEmails, customPhones]);
-
-  const pickedChannels = useMemo(
-    () => (Object.keys(channels) as Channel[]).filter(c => channels[c]),
-    [channels]
-  );
-  const anyChannel    = caps.email || caps.sms || caps.whatsapp;
-  const msgIsRTL      = useMemo(() => isRTL(message) || isRTL(subject), [message, subject]);
-  const previewMsg    = useMemo(() => applyVarSamples(message), [message]);
-  const previewSubject = useMemo(() => applyVarSamples(subject), [subject]);
-  const charCount     = message.length;
-
-  // ── Loading / auth screens ─────────────────────────────────────────────────
+  // ── Loading / auth screens ────────────────────────────────────────────────
   if (!authChecked) return (
     <div style={{ minHeight: "100vh", background: T.nav, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16 }}>
       <div style={{ width: 40, height: 40, border: "3px solid rgba(99,102,241,0.2)", borderTopColor: T.indigo, borderRadius: "50%", animation: "spin 0.7s linear infinite" }} />
-      <div style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", letterSpacing: 2 }}>LOADING</div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
@@ -353,16 +348,14 @@ export default function BroadcastPage() {
       <div style={{ fontSize: 36 }}>🔒</div>
       <div style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>Access Denied</div>
       <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", textAlign: "center", maxWidth: 340 }}>
-        Currently logged in as: <strong style={{ color: "#F59E0B" }}>{loggedInAs || "not logged in"}</strong><br/>
+        Logged in as: <strong style={{ color: "#F59E0B" }}>{loggedInAs || "not logged in"}</strong><br/>
         Required: <strong style={{ color: "#10B981" }}>{ADMIN_EMAIL}</strong>
       </div>
-      <a href="/login" style={{ marginTop: 8, padding: "10px 24px", borderRadius: 10, background: "#6366F1", color: "#fff", textDecoration: "none", fontSize: 13, fontWeight: 700 }}>
-        Login with correct account →
-      </a>
+      <a href="/login" style={{ marginTop: 8, padding: "10px 24px", borderRadius: 10, background: "#6366F1", color: "#fff", textDecoration: "none", fontSize: 13, fontWeight: 700 }}>Login →</a>
     </div>
   );
 
-  // ── Main render ────────────────────────────────────────────────────────────
+  // ── Main render ───────────────────────────────────────────────────────────
   return (
     <div style={{ minHeight: "100vh", background: T.bg, display: "flex", fontFamily: "'Plus Jakarta Sans','Segoe UI',sans-serif" }}>
       <style>{`
@@ -370,21 +363,23 @@ export default function BroadcastPage() {
         *{box-sizing:border-box;margin:0;padding:0}
         @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
         @keyframes spin{to{transform:rotate(360deg)}}
-        @keyframes progressPulse{0%,100%{opacity:1}50%{opacity:0.7}}
-        .tab-content{animation:fadeUp 0.25s ease both}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
         .nav-item{transition:all 0.15s;cursor:pointer;text-decoration:none}
         .nav-item:hover{background:rgba(255,255,255,0.06)!important;color:#fff!important}
         input,textarea,select{font-family:inherit}
-        input:focus,textarea:focus,select:focus{border-color:${T.indigo}!important;box-shadow:0 0 0 3px rgba(99,102,241,0.1)!important;outline:none}
+        input:focus,textarea:focus{border-color:${T.indigo}!important;box-shadow:0 0 0 3px rgba(99,102,241,0.1)!important;outline:none}
         ::-webkit-scrollbar{width:5px;height:5px}
         ::-webkit-scrollbar-thumb{background:${T.border};border-radius:3px}
         .chip{cursor:pointer;transition:all 0.12s;user-select:none}
         .chip:hover{border-color:${T.indigo}!important;background:${T.indigoSoft}!important;color:${T.indigo}!important}
-        .row-hover:hover td{background:#F8FAFC!important}
+        .tpl-card{cursor:pointer;transition:all 0.15s;border:1.5px solid ${T.border};border-radius:12px}
+        .tpl-card:hover{border-color:${T.indigo}!important;box-shadow:0 0 0 3px rgba(99,102,241,0.1)}
+        .tpl-applied{border-color:${T.indigo}!important;background:${T.indigoSoft}!important}
         .ch-btn{transition:all 0.15s;cursor:pointer;user-select:none}
+        .row-hover:hover td{background:#F8FAFC!important}
       `}</style>
 
-      {/* ── Sidebar ───────────────────────────────────────────────────────── */}
+      {/* Sidebar */}
       <aside style={{ width: 232, minHeight: "100vh", background: T.nav, flexShrink: 0, display: "flex", flexDirection: "column", position: "sticky", top: 0, height: "100vh" }}>
         <div style={{ padding: "22px 20px 18px", borderBottom: `1px solid ${T.navBorder}` }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -399,13 +394,7 @@ export default function BroadcastPage() {
           {NAV_ITEMS.map(item => {
             const active = item.key === "broadcast";
             return (
-              <a key={item.key} href={item.href} className="nav-item" style={{
-                display: "flex", alignItems: "center", gap: 10,
-                padding: "9px 10px", borderRadius: 8, marginBottom: 2,
-                color: active ? T.navActive : T.navText,
-                background: active ? "rgba(99,102,241,0.18)" : "transparent",
-                fontSize: 13.5, fontWeight: active ? 600 : 500, position: "relative",
-              }}>
+              <a key={item.key} href={item.href} className="nav-item" style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 10px", borderRadius: 8, marginBottom: 2, color: active ? T.navActive : T.navText, background: active ? "rgba(99,102,241,0.18)" : "transparent", fontSize: 13.5, fontWeight: active ? 600 : 500, position: "relative" }}>
                 {active && <div style={{ position: "absolute", left: -10, top: "50%", transform: "translateY(-50%)", width: 3, height: 20, background: T.indigo, borderRadius: "0 3px 3px 0" }} />}
                 <span style={{ fontSize: 14, width: 18, textAlign: "center", flexShrink: 0 }}>{item.icon}</span>
                 {item.label}
@@ -415,211 +404,103 @@ export default function BroadcastPage() {
         </nav>
         <div style={{ padding: "14px 10px", borderTop: `1px solid ${T.navBorder}` }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px" }}>
-            <div style={{ width: 32, height: 32, borderRadius: 32/3, background: "linear-gradient(135deg,#6366F1,#8B5CF6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff" }}>A</div>
+            <div style={{ width: 32, height: 32, borderRadius: 10, background: "linear-gradient(135deg,#6366F1,#8B5CF6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff" }}>A</div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: "#fff" }}>Adil Gill</div>
               <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)" }}>Super Admin</div>
             </div>
-            <button onClick={handleLogout} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.3)", fontSize: 13, padding: 4 }} title="Sign out">⏻</button>
+            <button onClick={handleLogout} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.3)", fontSize: 13, padding: 4 }}>⏻</button>
           </div>
         </div>
       </aside>
 
-      {/* ── Main ──────────────────────────────────────────────────────────── */}
+      {/* Main */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, overflow: "hidden" }}>
 
         {/* Header */}
-        <header style={{ background: T.surface, borderBottom: `1px solid ${T.border}`, padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10, boxShadow: "0 1px 0 #E2E8F0" }}>
+        <header style={{ background: T.surface, borderBottom: `1px solid ${T.border}`, padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 }}>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: T.text, letterSpacing: "-0.3px" }}>Broadcast Notifications</div>
-            <div style={{ fontSize: 11.5, color: T.text3 }}>Send messages to registered users, all users, or a custom list</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: T.text }}>Broadcast Notifications</div>
+            <div style={{ fontSize: 11.5, color: T.text3 }}>Send targeted messages by country with templates</div>
           </div>
+          <button onClick={() => setShowSaveTemplate(true)} disabled={!subject && !message}
+            style={{ height: 36, padding: "0 16px", borderRadius: 9, border: `1px solid ${T.border}`, background: T.surface, fontSize: 12.5, fontWeight: 600, color: T.indigo, cursor: (!subject && !message) ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: (!subject && !message) ? 0.4 : 1 }}>
+            💾 Save as Template
+          </button>
         </header>
 
-        {/* Progress bar — appears during send */}
-        {sending && (
-          <div style={{ height: 3, background: T.bg, position: "relative", zIndex: 20 }}>
-            <div style={{
-              position: "absolute", left: 0, top: 0, height: "100%",
-              width: `${progress}%`,
-              background: `linear-gradient(90deg,${T.indigo},#8B5CF6)`,
-              transition: "width 0.3s ease",
-              animation: "progressPulse 1.5s ease-in-out infinite",
-            }} />
+        {/* Send-all progress bar */}
+        {isSendingAll && (
+          <div style={{ height: 3, background: T.bg }}>
+            <div style={{ height: "100%", width: `${sendAllProgress}%`, background: `linear-gradient(90deg,${T.indigo},#8B5CF6)`, transition: "width 0.5s ease", animation: "pulse 1.5s infinite" }} />
           </div>
         )}
 
         <main style={{ flex: 1, overflowY: "auto", padding: 24 }}>
-          <div className="tab-content" style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 1100 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 1200 }}>
 
             {/* Feedback */}
             {feedback && (
-              <div style={{
-                padding: "12px 16px", borderRadius: 10, fontSize: 13,
-                background: feedback.kind === "success" ? T.greenSoft : T.redSoft,
-                border: `1px solid ${feedback.kind === "success" ? "#A7F3D0" : "#FECACA"}`,
-                color: feedback.kind === "success" ? "#065F46" : "#991B1B",
-                display: "flex", alignItems: "center", gap: 8,
-              }}>
+              <div style={{ padding: "12px 16px", borderRadius: 10, fontSize: 13, display: "flex", alignItems: "center", gap: 8, background: feedback.kind === "success" ? T.greenSoft : T.redSoft, border: `1px solid ${feedback.kind === "success" ? "#A7F3D0" : "#FECACA"}`, color: feedback.kind === "success" ? "#065F46" : "#991B1B" }}>
                 {feedback.text}
                 <button onClick={() => setFeedback(null)} style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", color: "inherit", fontSize: 16 }}>×</button>
               </div>
             )}
 
-            {/* No channel warning */}
-            {!anyChannel && (
-              <Card style={{ background: T.amberSoft, borderColor: "#FDE68A" }}>
-                <div style={{ fontSize: 13, color: "#92400E", fontWeight: 600 }}>
-                  ⚠ No messaging channels configured. Set RESEND_API_KEY or Twilio env vars to enable channels.
-                </div>
-              </Card>
-            )}
-
-            {/* ── Audience Tabs ─────────────────────────────────────────── */}
-            <div style={{ display: "flex", gap: 2, background: T.surface, border: `1px solid ${T.border}`, borderRadius: 12, padding: 4, width: "fit-content" }}>
-              {([
-                { key: "custom",     icon: "📋", label: "Custom List",      desc: "Paste emails / phones" },
-                { key: "registered", icon: "👥", label: "Registered Users", desc: `${consentedTotal} with consent` },
-                { key: "all",        icon: "⚡", label: "All Users",        desc: `${totalUsers} total` },
-              ] as { key: Tab; icon: string; label: string; desc: string }[]).map(t => {
-                const active = tab === t.key;
-                return (
-                  <button key={t.key} onClick={() => setTab(t.key)} style={{
-                    padding: "9px 16px", borderRadius: 9, border: "none",
-                    background: active ? T.indigo : "transparent",
-                    color: active ? "#fff" : T.text2,
-                    fontWeight: 700, fontSize: 12.5, cursor: "pointer", fontFamily: "inherit",
-                    display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 1,
-                  }}>
-                    <span>{t.icon} {t.label}</span>
-                    <span style={{ fontSize: 10, fontWeight: 500, color: active ? "rgba(255,255,255,0.75)" : T.text3 }}>{t.desc}</span>
-                  </button>
-                );
-              })}
+            {/* ── Templates ───────────────────────────────────────────── */}
+            <div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text }}>📋 Message Templates</div>
+                <div style={{ fontSize: 11.5, color: T.text3 }}>Click any template to auto-fill the message</div>
+              </div>
+              <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4 }}>
+                {allTemplates.map(t => (
+                  <div key={t.id} onClick={() => applyTemplate(t)}
+                    className={`tpl-card${appliedTemplateId === t.id ? " tpl-applied" : ""}`}
+                    style={{ flexShrink: 0, width: 220, padding: "14px 16px", background: T.surface, position: "relative" }}>
+                    {t.builtIn
+                      ? <div style={{ position: "absolute", top: 10, right: 10, fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 99, background: T.indigoSoft, color: T.indigo, textTransform: "uppercase" }}>Built-in</div>
+                      : <button onClick={e => { e.stopPropagation(); deleteTemplate(t.id); }}
+                          style={{ position: "absolute", top: 8, right: 8, width: 20, height: 20, borderRadius: 99, border: "none", background: T.redSoft, color: T.red, fontSize: 11, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>×</button>
+                    }
+                    <div style={{ fontSize: 12.5, fontWeight: 700, color: T.text, marginBottom: 5, paddingRight: 40, lineHeight: 1.3 }}>{t.name}</div>
+                    <div style={{ fontSize: 11, color: T.text3, lineHeight: 1.5, overflow: "hidden", maxHeight: 36 }}>{t.body.slice(0, 80)}…</div>
+                    {appliedTemplateId === t.id && <div style={{ marginTop: 8, fontSize: 10.5, fontWeight: 700, color: T.indigo }}>✓ Applied</div>}
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* ── Custom List inputs ─────────────────────────────────────── */}
-            {tab === "custom" && (
-              <Card>
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>Custom Recipient List</div>
-                  <div style={{ fontSize: 12, color: T.text3, marginTop: 2 }}>Paste or type emails and/or phone numbers. Separate by comma, space, or new line.</div>
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                  <div>
-                    <Label>Email Addresses</Label>
-                    <textarea
-                      value={customEmails}
-                      onChange={e => setCustomEmails(e.target.value)}
-                      rows={5}
-                      placeholder={"jane@example.com\nbob@salon.co.uk\nanita@hair.com"}
-                      style={{ width: "100%", padding: "10px 12px", borderRadius: 9, border: `1px solid ${T.border}`, fontSize: 12.5, color: T.text, resize: "vertical", background: T.bg, fontFamily: "monospace" }}
-                    />
-                    <div style={{ fontSize: 11, color: T.text3, marginTop: 4 }}>
-                      {splitList(customEmails).length} email{splitList(customEmails).length !== 1 ? "s" : ""} detected
-                    </div>
-                  </div>
-                  <div>
-                    <Label>Phone Numbers</Label>
-                    <textarea
-                      value={customPhones}
-                      onChange={e => setCustomPhones(e.target.value)}
-                      rows={5}
-                      placeholder={"+447911123456\n+923001234567\n07700123456"}
-                      style={{ width: "100%", padding: "10px 12px", borderRadius: 9, border: `1px solid ${T.border}`, fontSize: 12.5, color: T.text, resize: "vertical", background: T.bg, fontFamily: "monospace" }}
-                    />
-                    <div style={{ fontSize: 11, color: T.text3, marginTop: 4 }}>
-                      {splitList(customPhones).length} number{splitList(customPhones).length !== 1 ? "s" : ""} detected
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            )}
-
-            {/* ── Registered tab — country breakdown ────────────────────── */}
-            {tab === "registered" && (
-              <Card>
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>Audience by Country</div>
-                  <div style={{ fontSize: 12, color: T.text3, marginTop: 2 }}>Only users with marketing consent. Click to filter.</div>
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))", gap: 10 }}>
-                  <button onClick={() => setCountry("ALL")} style={{ padding: "14px 16px", borderRadius: 12, border: `1.5px solid ${country === "ALL" ? T.indigo : T.border}`, background: country === "ALL" ? T.indigoSoft : T.surface, textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
-                    <div style={{ fontSize: 11, color: T.text3, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>All countries</div>
-                    <div style={{ fontSize: 22, fontWeight: 800, color: country === "ALL" ? T.indigo : T.text, marginTop: 4 }}>{consentedTotal}</div>
-                  </button>
-                  {COUNTRY_META.map(c => {
-                    const active = country === c.code;
-                    return (
-                      <button key={c.code} onClick={() => setCountry(c.code)} style={{ padding: "14px 16px", borderRadius: 12, border: `1.5px solid ${active ? T.indigo : T.border}`, background: active ? T.indigoSoft : T.surface, textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
-                        <div style={{ fontSize: 11, color: T.text3, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}><span style={{ fontSize: 14, marginRight: 4 }}>{c.flag}</span>{c.label}</div>
-                        <div style={{ fontSize: 22, fontWeight: 800, color: active ? T.indigo : T.text, marginTop: 4 }}>{countsByCountry[c.code] || 0}</div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </Card>
-            )}
-
-            {/* ── All Users warning ──────────────────────────────────────── */}
-            {tab === "all" && (
-              <Card style={{ background: T.redSoft, borderColor: "#FECACA" }}>
-                <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                  <div style={{ fontSize: 22 }}>⚠</div>
-                  <div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "#991B1B" }}>Admin Override — Sending to ALL {totalUsers} users</div>
-                    <div style={{ fontSize: 12.5, color: "#7F1D1D", marginTop: 4, lineHeight: 1.6 }}>Marketing consent is ignored. Use only for critical platform announcements.</div>
-                  </div>
-                </div>
-              </Card>
-            )}
-
-            {/* ── Compose Form ───────────────────────────────────────────── */}
-            <Card>
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>Compose Message</div>
-                <div style={{ fontSize: 12, color: T.text3, marginTop: 2 }}>Supports English, Urdu, Arabic. Use variables to personalise.</div>
-              </div>
-
-              {/* Country filter (registered only) */}
-              {tab === "registered" && (
-                <div style={{ marginBottom: 14 }}>
-                  <Label>Country Filter</Label>
-                  <select value={country} onChange={e => setCountry(e.target.value as "ALL" | CountryCode)} style={{ height: 40, padding: "0 12px", border: `1px solid ${T.border}`, borderRadius: 9, fontSize: 13.5, color: T.text, background: T.bg, width: 260, cursor: "pointer" }}>
-                    <option value="ALL">All countries ({consentedTotal})</option>
-                    {COUNTRY_META.map(c => <option key={c.code} value={c.code}>{c.flag} {c.label} ({countsByCountry[c.code] || 0})</option>)}
-                  </select>
-                </div>
-              )}
-
-              {/* Subject */}
+            {/* ── Compose ─────────────────────────────────────────────── */}
+            <Card style={{ padding: 20 }}>
               <div style={{ marginBottom: 14 }}>
-                <Label>Subject</Label>
-                <input
-                  type="text" value={subject} onChange={e => setSubject(e.target.value)}
-                  placeholder="e.g. Special offer just for you, {name}!"
-                  dir={msgIsRTL ? "rtl" : "ltr"}
-                  style={{ width: "100%", height: 42, padding: "0 14px", border: `1px solid ${T.border}`, borderRadius: 9, fontSize: 13.5, color: T.text, background: T.bg }}
-                />
+                <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>Compose Message</div>
+                <div style={{ fontSize: 12, color: T.text3, marginTop: 2 }}>Shared across all countries. Supports English, Urdu, Arabic.</div>
               </div>
 
-              {/* Message */}
+              <div style={{ marginBottom: 14 }}>
+                <Label>Subject (for Email channel)</Label>
+                <input type="text" value={subject} onChange={e => setSubject(e.target.value)}
+                  placeholder="e.g. We Miss You! Here's 20% OFF Just for You 💕"
+                  dir={msgIsRTL ? "rtl" : "ltr"}
+                  style={{ width: "100%", height: 42, padding: "0 14px", border: `1px solid ${T.border}`, borderRadius: 9, fontSize: 13.5, color: T.text, background: T.bg }} />
+              </div>
+
               <div style={{ marginBottom: 8 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
                   <Label>Message Body</Label>
-                  <div style={{ fontSize: 11, color: T.text3 }}>{charCount} chars</div>
+                  <div style={{ fontSize: 11, color: T.text3 }}>
+                    {message.length} chars
+                    {message.length > 160 && <span style={{ color: T.amber }}> · {Math.ceil(message.length / 160)} SMS parts</span>}
+                  </div>
                 </div>
-                <textarea
-                  ref={msgRef}
-                  value={message} onChange={e => setMessage(e.target.value)}
-                  rows={7} placeholder={"Hi {name}, we have a special announcement from {salon_name}…"}
-                  dir={msgIsRTL ? "rtl" : "ltr"}
-                  style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${T.border}`, fontSize: 13.5, color: T.text, resize: "vertical", background: T.bg, lineHeight: 1.6 }}
-                />
+                <textarea ref={msgRef} value={message} onChange={e => setMessage(e.target.value)}
+                  rows={7} dir={msgIsRTL ? "rtl" : "ltr"}
+                  placeholder={"Hi {name}! 💕\nWe miss you at Anita Love Hair!…"}
+                  style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${T.border}`, fontSize: 13.5, color: T.text, resize: "vertical", background: T.bg, lineHeight: 1.6 }} />
               </div>
 
-              {/* Variable chips */}
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 18, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                 <span style={{ fontSize: 11.5, color: T.text3, fontWeight: 600 }}>Insert variable:</span>
                 {MSG_VARS.map(v => (
                   <button key={v.tag} onClick={() => insertVar(v.tag)} className="chip" title={v.desc}
@@ -627,63 +508,142 @@ export default function BroadcastPage() {
                     {v.tag}
                   </button>
                 ))}
-                {msgIsRTL && <span style={{ fontSize: 11, color: T.amber, fontWeight: 600, marginLeft: 4 }}>RTL detected</span>}
-              </div>
-
-              {/* Channels */}
-              <div style={{ marginBottom: 20 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                  <Label>Channels</Label>
-                  {/* Select all button */}
-                  <button onClick={() => {
-                    const allOn = pickedChannels.length === Object.values(caps).filter(Boolean).length;
-                    setChannels({ email: !allOn && caps.email, whatsapp: !allOn && caps.whatsapp, sms: !allOn && caps.sms });
-                  }} style={{ height: 24, padding: "0 10px", borderRadius: 99, border: `1px solid ${T.border}`, background: "transparent", fontSize: 11, color: T.text2, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>
-                    {pickedChannels.length === Object.values(caps).filter(Boolean).length ? "Deselect all" : "Select all"}
-                  </button>
-                </div>
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  {([
-                    { key: "email",    label: "Email",    icon: "✉",  color: T.indigo, soft: T.indigoSoft, enabled: caps.email },
-                    { key: "whatsapp", label: "WhatsApp", icon: "💬", color: T.green,  soft: T.greenSoft,  enabled: caps.whatsapp },
-                    { key: "sms",      label: "SMS",      icon: "📱", color: T.amber,  soft: T.amberSoft,  enabled: caps.sms },
-                  ] as { key: Channel; label: string; icon: string; color: string; soft: string; enabled: boolean }[])
-                    .filter(ch => ch.enabled)
-                    .map(ch => {
-                      const on = channels[ch.key];
-                      return (
-                        <button key={ch.key} onClick={() => setChannels(p => ({ ...p, [ch.key]: !p[ch.key] }))} className="ch-btn"
-                          style={{ flex: "1 1 160px", padding: "12px 14px", borderRadius: 12, border: `1.5px solid ${on ? ch.color : T.border}`, background: on ? ch.soft : T.surface, display: "flex", alignItems: "center", gap: 10, fontFamily: "inherit", textAlign: "left" as const, cursor: "pointer" }}>
-                          <div style={{ width: 18, height: 18, borderRadius: 5, border: `1.5px solid ${on ? ch.color : T.text3}`, background: on ? ch.color : "transparent", color: "#fff", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                            {on ? "✓" : ""}
-                          </div>
-                          <span style={{ fontSize: 17 }}>{ch.icon}</span>
-                          <span style={{ fontSize: 13.5, fontWeight: 600, color: on ? ch.color : T.text }}>{ch.label}</span>
-                        </button>
-                      );
-                    })
-                  }
-                  {!anyChannel && <div style={{ fontSize: 12, color: T.red, fontWeight: 600 }}>No channels configured.</div>}
-                </div>
-              </div>
-
-              {/* Action row */}
-              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                 <button onClick={() => setShowPreview(true)} disabled={!subject && !message}
-                  style={{ height: 40, padding: "0 18px", borderRadius: 10, border: `1px solid ${T.border}`, background: T.surface, color: T.text2, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+                  style={{ marginLeft: "auto", height: 30, padding: "0 14px", borderRadius: 8, border: `1px solid ${T.border}`, background: T.surface, fontSize: 12, color: T.text2, cursor: (!subject && !message) ? "not-allowed" : "pointer", fontWeight: 600, fontFamily: "inherit" }}>
                   👁 Preview
                 </button>
-                <button onClick={handleAskConfirm} disabled={sending || !anyChannel}
-                  style={{ height: 44, padding: "0 28px", borderRadius: 10, border: "none", background: sending ? T.text3 : T.indigo, color: "#fff", fontSize: 14, fontWeight: 700, cursor: sending ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: sending ? 0.7 : 1, boxShadow: sending ? "none" : "0 6px 18px rgba(99,102,241,0.35)" }}>
-                  {sending ? `Sending… ${Math.round(progress)}%` : `▶ Send Now${pickedChannels.length > 1 ? ` (${pickedChannels.length} channels)` : ""}`}
-                </button>
-                <div style={{ fontSize: 12, color: T.text3 }}>
-                  ~<strong>{targetAudience}</strong> recipient{targetAudience !== 1 ? "s" : ""}
-                </div>
+                {msgIsRTL && <span style={{ fontSize: 11, color: T.amber, fontWeight: 600 }}>RTL detected</span>}
               </div>
             </Card>
 
-            {/* ── Broadcast Logs ─────────────────────────────────────────── */}
+            {/* ── Countries Grid ───────────────────────────────────────── */}
+            <div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: T.text }}>🌍 Recipients by Country</div>
+                <div style={{ fontSize: 11.5, color: T.text3 }}>Paste emails or phone numbers — auto-detected per line</div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
+                {countries.map(country => {
+                  const { emails, phones } = partitionList(country.recipients);
+                  const count = emails.length + phones.length;
+                  const result = results.find(r => r.code === country.code);
+                  const stMeta = STATUS_META[result?.status ?? "idle"];
+                  const enabledChs = (Object.keys(country.channels) as Channel[]).filter(ch => country.channels[ch] && caps[ch]);
+                  const canSend = count > 0 && enabledChs.length > 0 && !!subject.trim() && !!message.trim();
+
+                  return (
+                    <Card key={country.code} style={{ padding: 0, overflow: "hidden" }}>
+                      {/* Country header */}
+                      <div style={{ padding: "14px 16px 12px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 22 }}>{country.flag}</span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{country.label}</div>
+                          <div style={{ fontSize: 10.5, color: T.text3 }}>
+                            {count > 0
+                              ? [emails.length > 0 && `${emails.length} email${emails.length !== 1 ? "s" : ""}`, phones.length > 0 && `${phones.length} phone${phones.length !== 1 ? "s" : ""}`].filter(Boolean).join(" · ")
+                              : "No recipients yet"}
+                          </div>
+                        </div>
+                        {/* Enable toggle */}
+                        <button onClick={() => updateCountry(country.code, { enabled: !country.enabled })}
+                          style={{ padding: "4px 10px", borderRadius: 99, border: `1px solid ${country.enabled ? T.green : T.border}`, background: country.enabled ? T.greenSoft : "transparent", fontSize: 11, fontWeight: 700, color: country.enabled ? T.green : T.text3, cursor: "pointer", fontFamily: "inherit" }}>
+                          {country.enabled ? "✓ On" : "Off"}
+                        </button>
+                        {/* Status badge */}
+                        {(result?.status ?? "idle") !== "idle" && (
+                          <span style={{ fontSize: 10.5, fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: stMeta.bg, color: stMeta.color }}>
+                            {stMeta.icon} {stMeta.label}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Recipient textarea */}
+                      <div style={{ padding: "12px 16px 8px" }}>
+                        <textarea value={country.recipients} onChange={e => updateCountry(country.code, { recipients: e.target.value })}
+                          rows={5} placeholder={country.code === "GB" ? "jane@salon.co.uk\nbob@example.com\n07700123456" : "+923001234567\n+923211234567\nname@example.com"}
+                          style={{ width: "100%", padding: "10px 12px", borderRadius: 9, border: `1px solid ${T.border}`, fontSize: 12, color: T.text, resize: "vertical", background: T.bg, fontFamily: "monospace", lineHeight: 1.5 }} />
+                      </div>
+
+                      {/* Channel toggles */}
+                      <div style={{ padding: "0 16px 12px", display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        {([
+                          { key: "email" as Channel,    icon: "✉",  label: "Email",    color: T.indigo },
+                          { key: "whatsapp" as Channel, icon: "💬", label: "WhatsApp", color: T.green },
+                          { key: "sms" as Channel,      icon: "📱", label: "SMS",      color: T.amber },
+                        ]).filter(ch => caps[ch.key]).map(ch => {
+                          const on = country.channels[ch.key];
+                          return (
+                            <button key={ch.key} onClick={() => toggleChannel(country.code, ch.key)} className="ch-btn"
+                              style={{ height: 28, padding: "0 10px", borderRadius: 99, border: `1.5px solid ${on ? ch.color : T.border}`, background: on ? ch.color + "18" : "transparent", fontSize: 11.5, fontWeight: 600, color: on ? ch.color : T.text3, cursor: "pointer", fontFamily: "inherit" }}>
+                              {ch.icon} {ch.label}
+                            </button>
+                          );
+                        })}
+                        {!caps.email && !caps.sms && !caps.whatsapp && <span style={{ fontSize: 11, color: T.red }}>No channels configured</span>}
+                      </div>
+
+                      {/* Result info */}
+                      {result && !["idle", "sending", "skipped"].includes(result.status) && (
+                        <div style={{ padding: "8px 16px", borderTop: `1px solid ${T.border}`, fontSize: 11.5 }}>
+                          {result.error
+                            ? <span style={{ color: T.red }}>Error: {result.error}</span>
+                            : <>{result.sent > 0 && <span style={{ color: T.green, fontWeight: 700 }}>✓ {result.sent} sent</span>}{result.failed > 0 && <span style={{ color: T.red, fontWeight: 700, marginLeft: 6 }}>✗ {result.failed} failed</span>}</>}
+                        </div>
+                      )}
+
+                      {/* Send button */}
+                      <div style={{ padding: "0 16px 16px" }}>
+                        <button onClick={() => setConfirmCountry(country.code)}
+                          disabled={!canSend || result?.status === "sending" || isSendingAll}
+                          style={{ width: "100%", height: 38, borderRadius: 9, border: "none", fontFamily: "inherit", fontSize: 13, fontWeight: 700, cursor: canSend && result?.status !== "sending" && !isSendingAll ? "pointer" : "not-allowed", transition: "all 0.15s", background: canSend && result?.status !== "sending" && !isSendingAll ? T.indigo : T.border, color: canSend && result?.status !== "sending" && !isSendingAll ? "#fff" : T.text3 }}>
+                          {result?.status === "sending" ? "Sending…" : `▶ Send to ${country.label}`}
+                        </button>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ── Send All ─────────────────────────────────────────────── */}
+            <Card style={{ padding: 24, background: enabledWithRecipients.length > 0 ? "linear-gradient(135deg,#1e1b4b,#312e81)" : T.surface, border: "none" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 14 }}>
+                <div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: enabledWithRecipients.length > 0 ? "#fff" : T.text }}>
+                    🌍 Send to All Enabled Countries
+                  </div>
+                  <div style={{ fontSize: 12.5, marginTop: 3, color: enabledWithRecipients.length > 0 ? "rgba(255,255,255,0.6)" : T.text3 }}>
+                    {enabledWithRecipients.length > 0
+                      ? `${enabledWithRecipients.map(c => `${c.flag} ${c.label}`).join(" · ")} — ${totalEnabledRecipients} recipients total`
+                      : "Add recipients to at least one country to enable"}
+                  </div>
+                </div>
+                <button onClick={() => setShowConfirmAll(true)}
+                  disabled={enabledWithRecipients.length === 0 || isSendingAll || !subject.trim() || !message.trim()}
+                  style={{ height: 48, padding: "0 32px", borderRadius: 12, border: "none", fontFamily: "inherit", fontSize: 15, fontWeight: 800, cursor: (enabledWithRecipients.length > 0 && !isSendingAll && subject.trim() && message.trim()) ? "pointer" : "not-allowed", background: "linear-gradient(135deg,#6366F1,#8B5CF6)", color: "#fff", boxShadow: "0 8px 24px rgba(99,102,241,0.4)", opacity: (enabledWithRecipients.length === 0 || isSendingAll || !subject.trim() || !message.trim()) ? 0.4 : 1 }}>
+                  {isSendingAll ? `Sending… ${sendAllProgress}%` : "▶ Send All"}
+                </button>
+              </div>
+
+              {/* Per-country status during send-all */}
+              {isSendingAll && (
+                <div style={{ marginTop: 16, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {countries.filter(c => c.enabled).map(c => {
+                    const r = results.find(x => x.code === c.code);
+                    const m = STATUS_META[r?.status ?? "idle"];
+                    return (
+                      <div key={c.code} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 99, background: "rgba(255,255,255,0.1)" }}>
+                        <span style={{ fontSize: 14 }}>{c.flag}</span>
+                        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", fontWeight: 600 }}>{c.label}</span>
+                        <span style={{ fontSize: 12, color: m.color, fontWeight: 800 }}>{m.icon}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
+
+            {/* ── Broadcast Logs ───────────────────────────────────────── */}
             <Card style={{ padding: 0, overflow: "hidden" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: `1px solid ${T.border}` }}>
                 <div>
@@ -702,15 +662,16 @@ export default function BroadcastPage() {
               ) : (
                 <div style={{ overflowX: "auto" }}>
                   <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                    <thead><tr>{["Date", "Subject", "Countries", "Channels", "Sent", "Failed", "Status"].map(h => <Th key={h}>{h}</Th>)}</tr></thead>
+                    <thead><tr>{["Date", "Subject", "Channels", "Sent", "Failed", "Status"].map(h => <Th key={h}>{h}</Th>)}</tr></thead>
                     <tbody>
                       {logs.map(log => {
-                        const meta = STATUS_META[log.status] || STATUS_META.success;
-                        const countryLabel = (log.countries || []).map(c => {
-                          if (c === "ALL") return "All";
-                          const m = COUNTRY_META.find(x => x.code === c);
-                          return m ? `${m.flag} ${m.label}` : c;
-                        }).join(", ");
+                        const logMeta: Record<string, { bg: string; color: string; label: string }> = {
+                          success: { bg: "#ECFDF5", color: "#059669", label: "Success" },
+                          partial: { bg: "#FFFBEB", color: "#D97706", label: "Partial" },
+                          failed:  { bg: "#FEF2F2", color: "#DC2626", label: "Failed" },
+                          sending: { bg: "#EEF2FF", color: "#6366F1", label: "Sending" },
+                        };
+                        const lm = logMeta[log.status] || logMeta.success;
                         return (
                           <tr key={log.id} className="row-hover">
                             <Td style={{ color: T.text2, fontSize: 12.5, whiteSpace: "nowrap" }}>
@@ -720,7 +681,6 @@ export default function BroadcastPage() {
                               <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{log.subject}</div>
                               <div style={{ fontSize: 11, color: T.text3, textTransform: "capitalize" }}>{log.recipient_type}</div>
                             </Td>
-                            <Td style={{ fontSize: 12, color: T.text2 }}>{countryLabel || "—"}</Td>
                             <Td>
                               <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
                                 {(log.channels || []).map(c => (
@@ -730,9 +690,7 @@ export default function BroadcastPage() {
                             </Td>
                             <Td style={{ fontWeight: 700 }}>{log.total_sent}</Td>
                             <Td style={{ fontWeight: 700, color: log.total_failed ? T.red : T.text2 }}>{log.total_failed}</Td>
-                            <Td>
-                              <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 99, background: meta.bg, color: meta.color }}>{meta.label}</span>
-                            </Td>
+                            <Td><span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 99, background: lm.bg, color: lm.color }}>{lm.label}</span></Td>
                           </tr>
                         );
                       })}
@@ -741,6 +699,7 @@ export default function BroadcastPage() {
                 </div>
               )}
             </Card>
+
           </div>
         </main>
       </div>
@@ -750,66 +709,101 @@ export default function BroadcastPage() {
         <div onClick={e => { if (e.target === e.currentTarget) setShowPreview(false); }}
           style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(10,15,28,0.6)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
           <div style={{ background: T.surface, borderRadius: 20, width: "100%", maxWidth: 620, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 24px 80px rgba(0,0,0,0.2)", animation: "fadeUp 0.2s ease" }}>
-            <div style={{ background: T.nav, borderRadius: "20px 20px 0 0", padding: "18px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ background: T.nav, borderRadius: "20px 20px 0 0", padding: "18px 24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>Message Preview</div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>Variables shown with sample values</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Variables shown with sample values</div>
               </div>
               <button onClick={() => setShowPreview(false)} style={{ background: "rgba(255,255,255,0.1)", border: "none", borderRadius: 8, padding: "6px 12px", color: "#fff", cursor: "pointer", fontSize: 16 }}>×</button>
             </div>
             <div style={{ padding: 24 }}>
-              {/* Rendered email-style preview */}
               <div style={{ background: "#F4F4F5", borderRadius: 12, overflow: "hidden", border: `1px solid ${T.border}` }}>
                 <div style={{ background: "linear-gradient(135deg,#6366F1,#8B5CF6)", padding: "28px 22px", textAlign: "center" }}>
                   <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 10, letterSpacing: 2, textTransform: "uppercase", marginBottom: 6 }}>Feature Salon</div>
                   <div dir={msgIsRTL ? "rtl" : "ltr"} style={{ color: "#fff", fontSize: 20, fontWeight: 700 }}>
-                    {previewSubject || <em style={{ opacity: 0.6 }}>(subject)</em>}
+                    {applyVarSamples(subject) || "(subject)"}
                   </div>
                 </div>
                 <div dir={msgIsRTL ? "rtl" : "ltr"} style={{ padding: 22, fontSize: 13.5, color: T.text, lineHeight: 1.7, whiteSpace: "pre-wrap", background: "#fff" }}>
-                  {previewMsg || <em style={{ color: T.text3 }}>(message body)</em>}
+                  {applyVarSamples(message) || "(message body)"}
                 </div>
               </div>
-              {/* Variable legend */}
-              <div style={{ marginTop: 14, padding: "12px 14px", background: T.indigoSoft, borderRadius: 10, border: `1px solid #C7D2FE` }}>
-                <div style={{ fontSize: 11.5, fontWeight: 700, color: T.indigo, marginBottom: 8 }}>Variable substitution (sample values used above)</div>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {MSG_VARS.map(v => (
-                    <span key={v.tag} style={{ fontSize: 11.5, color: T.text2, fontFamily: "monospace" }}>
-                      <strong>{v.tag}</strong> → &ldquo;{v.sample}&rdquo;
-                    </span>
-                  ))}
+              <div style={{ marginTop: 12, padding: "12px 14px", background: T.indigoSoft, borderRadius: 10, border: `1px solid #C7D2FE` }}>
+                <div style={{ fontSize: 11.5, fontWeight: 700, color: T.indigo, marginBottom: 6 }}>Variable samples</div>
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  {MSG_VARS.map(v => <span key={v.tag} style={{ fontSize: 11.5, color: T.text2, fontFamily: "monospace" }}><strong>{v.tag}</strong> → &ldquo;{v.sample}&rdquo;</span>)}
                 </div>
-              </div>
-              <div style={{ marginTop: 12, fontSize: 12, color: T.text3 }}>
-                Channels: <strong>{pickedChannels.join(", ") || "none selected"}</strong> · Audience: <strong>~{targetAudience}</strong>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Confirmation Modal ────────────────────────────────────────────── */}
-      {showConfirm && (
-        <div onClick={e => { if (e.target === e.currentTarget) setShowConfirm(false); }}
+      {/* ── Confirm Single Country ─────────────────────────────────────────── */}
+      {confirmCountry && (() => {
+        const c = countries.find(x => x.code === confirmCountry)!;
+        const { emails, phones } = partitionList(c.recipients);
+        const cnt = emails.length + phones.length;
+        const chs = (Object.keys(c.channels) as Channel[]).filter(ch => c.channels[ch] && caps[ch]);
+        return (
+          <div onClick={e => { if (e.target === e.currentTarget) setConfirmCountry(null); }}
+            style={{ position: "fixed", inset: 0, zIndex: 1001, background: "rgba(10,15,28,0.6)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+            <div style={{ background: T.surface, borderRadius: 18, width: "100%", maxWidth: 420, boxShadow: "0 24px 80px rgba(0,0,0,0.2)", padding: 28, animation: "fadeUp 0.2s ease" }}>
+              <div style={{ fontSize: 32, textAlign: "center", marginBottom: 12 }}>{c.flag}</div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: T.text, marginBottom: 8, textAlign: "center" }}>Send to {c.label}?</div>
+              <div style={{ fontSize: 13.5, color: T.text2, lineHeight: 1.65, marginBottom: 20, textAlign: "center" }}>
+                <strong>{cnt}</strong> recipient{cnt !== 1 ? "s" : ""} via <strong>{chs.join(", ")}</strong>.<br/>This cannot be undone.
+              </div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={() => setConfirmCountry(null)} style={{ flex: 1, height: 44, borderRadius: 10, border: `1px solid ${T.border}`, background: T.surface, color: T.text2, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+                <button onClick={() => sendToCountry(confirmCountry)} style={{ flex: 1, height: 44, borderRadius: 10, border: "none", background: T.indigo, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Yes, Send</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── Confirm Send All ───────────────────────────────────────────────── */}
+      {showConfirmAll && (
+        <div onClick={e => { if (e.target === e.currentTarget) setShowConfirmAll(false); }}
           style={{ position: "fixed", inset: 0, zIndex: 1001, background: "rgba(10,15,28,0.6)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
           <div style={{ background: T.surface, borderRadius: 18, width: "100%", maxWidth: 460, boxShadow: "0 24px 80px rgba(0,0,0,0.2)", padding: 28, animation: "fadeUp 0.2s ease" }}>
-            <div style={{ fontSize: 32, textAlign: "center", marginBottom: 12 }}>{tab === "all" ? "⚠" : "📣"}</div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: T.text, marginBottom: 8, textAlign: "center" }}>
-              {tab === "all" ? "Send to ALL users?" : "Confirm broadcast?"}
+            <div style={{ fontSize: 32, textAlign: "center", marginBottom: 12 }}>🌍</div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: T.text, marginBottom: 8, textAlign: "center" }}>Send to All Countries?</div>
+            <div style={{ fontSize: 13.5, color: T.text2, lineHeight: 1.65, marginBottom: 16, textAlign: "center" }}>
+              <strong>{totalEnabledRecipients}</strong> total recipients across:
             </div>
-            <div style={{ fontSize: 13.5, color: T.text2, lineHeight: 1.65, marginBottom: 20, textAlign: "center" }}>
-              Sending to <strong>~{targetAudience}</strong> recipient{targetAudience !== 1 ? "s" : ""} via{" "}
-              <strong>{pickedChannels.join(", ")}</strong>.{" "}
-              {tab === "all" && <span style={{ color: T.red, fontWeight: 600 }}>Marketing consent ignored. </span>}
-              This cannot be undone.
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", marginBottom: 20 }}>
+              {enabledWithRecipients.map(c => (
+                <span key={c.code} style={{ padding: "5px 12px", borderRadius: 99, background: T.indigoSoft, color: T.indigo, fontSize: 12.5, fontWeight: 600 }}>
+                  {c.flag} {c.label} ({splitList(c.recipients).length})
+                </span>
+              ))}
             </div>
             <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => setShowConfirm(false)} style={{ flex: 1, height: 44, borderRadius: 10, border: `1px solid ${T.border}`, background: T.surface, color: T.text2, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
-                Cancel
-              </button>
-              <button onClick={handleSend} style={{ flex: 1, height: 44, borderRadius: 10, border: "none", background: tab === "all" ? T.red : T.indigo, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-                Yes, Send Now
+              <button onClick={() => setShowConfirmAll(false)} style={{ flex: 1, height: 44, borderRadius: 10, border: `1px solid ${T.border}`, background: T.surface, color: T.text2, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+              <button onClick={handleSendAll} style={{ flex: 1, height: 44, borderRadius: 10, border: "none", background: T.indigo, color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Yes, Send All</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Save Template Modal ────────────────────────────────────────────── */}
+      {showSaveTemplate && (
+        <div onClick={e => { if (e.target === e.currentTarget) setShowSaveTemplate(false); }}
+          style={{ position: "fixed", inset: 0, zIndex: 1001, background: "rgba(10,15,28,0.6)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ background: T.surface, borderRadius: 18, width: "100%", maxWidth: 380, boxShadow: "0 24px 80px rgba(0,0,0,0.2)", padding: 28, animation: "fadeUp 0.2s ease" }}>
+            <div style={{ fontSize: 17, fontWeight: 800, color: T.text, marginBottom: 6 }}>💾 Save Template</div>
+            <div style={{ fontSize: 12.5, color: T.text3, marginBottom: 16 }}>Name this template for quick reuse.</div>
+            <input type="text" value={newTemplateName} onChange={e => setNewTemplateName(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") saveTemplate(); }}
+              placeholder="e.g. Black Friday Promo" autoFocus
+              style={{ width: "100%", height: 44, padding: "0 14px", border: `1px solid ${T.border}`, borderRadius: 10, fontSize: 14, color: T.text, marginBottom: 16 }} />
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setShowSaveTemplate(false)} style={{ flex: 1, height: 44, borderRadius: 10, border: `1px solid ${T.border}`, background: T.surface, color: T.text2, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+              <button onClick={saveTemplate} disabled={!newTemplateName.trim()}
+                style={{ flex: 1, height: 44, borderRadius: 10, border: "none", background: newTemplateName.trim() ? T.indigo : T.border, color: "#fff", fontSize: 14, fontWeight: 700, cursor: newTemplateName.trim() ? "pointer" : "not-allowed", fontFamily: "inherit" }}>
+                Save
               </button>
             </div>
           </div>
