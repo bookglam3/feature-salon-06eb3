@@ -1,45 +1,73 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
-import { sendSMS } from "@/app/lib/sms";
-import { sendWhatsApp } from "@/app/lib/whatsapp";
+import twilio from "twilio";
+import { normalisePhone } from "@/app/lib/sms"; // reuse existing normaliser — no duplication
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-// Large recipient lists may take a while — allow up to 5 minutes
 export const maxDuration = 300;
 
 const ADMIN_EMAIL = "adilgill2008@gmail.com";
 
-// ── Same DB connection / env keys as the rest of the project ────
+// ── Same DB connection as the rest of the project ─────────────────
 const adminSupabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Resend (existing email service)
+// ── Same email service (Resend) already used project-wide ─────────
 const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
 const FROM_EMAIL = process.env.FROM_EMAIL || "noreply@featuresalon.co.uk";
 
-// ── Channel availability — derived purely from existing env keys ─
+// ── Same Twilio client already used project-wide ──────────────────
+// We call Twilio directly here so we can detect per-send failures.
+// (The lib/sms and lib/whatsapp helpers swallow errors internally,
+// which would cause failed sends to be counted as successes.)
+const twilioClient = (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN)
+  ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+  : null;
+const TWILIO_SMS_FROM      = process.env.TWILIO_PHONE_NUMBER || "";
+const TWILIO_WHATSAPP_FROM = process.env.TWILIO_WHATSAPP_FROM || "";
+
+// ── Channel availability — derived from existing env keys only ─────
 const HAS_EMAIL    = !!process.env.RESEND_API_KEY;
-const HAS_SMS      = !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER);
-const HAS_WHATSAPP = !!(process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_WHATSAPP_FROM);
+const HAS_SMS      = !!(twilioClient && TWILIO_SMS_FROM);
+const HAS_WHATSAPP = !!(twilioClient && TWILIO_WHATSAPP_FROM);
 
-type Channel = "email" | "whatsapp" | "sms";
+type Channel      = "email" | "whatsapp" | "sms";
 type RecipientType = "registered" | "all";
-type CountryCode = "GB" | "PK" | "AE" | "SA";
 
-interface Recipient {
-  email?: string | null;
-  phone?: string | null;
-  name?: string | null;
-  country?: string | null;
+interface SalonRow {
+  owner_email:        string | null;
+  phone:              string | null;
+  name:               string | null;
+  country:            string | null;
+  marketing_consent:  boolean | null;
 }
 
-// ── Admin auth (same pattern as /api/partners) ──────────────────
+// ── Country-code dial prefix map ───────────────────────────────────
+const COUNTRY_DIAL: Record<string, string> = {
+  GB: "44", PK: "92", AE: "971", SA: "966",
+};
+
+function normaliseForBroadcast(raw: string, country: string | null | undefined): string | null {
+  // First try the existing lib normaliser (handles most common formats)
+  const fromLib = normalisePhone(raw);
+  if (fromLib) return fromLib;
+
+  // Fallback: prefix with country dial code if we know the country
+  const dialCode = COUNTRY_DIAL[(country || "GB").toUpperCase()];
+  if (!dialCode) return null;
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return null;
+  const stripped = digits.startsWith("0") ? digits.slice(1) : digits;
+  return `+${dialCode}${stripped}`;
+}
+
+// ── Admin auth (same pattern as /api/partners) ─────────────────────
 async function verifyAdmin(req: NextRequest) {
   const token = (req.headers.get("authorization") || "").replace("Bearer ", "").trim();
   if (!token) return null;
@@ -55,72 +83,36 @@ function escapeHtml(s: string): string {
   ));
 }
 
-// Detect Arabic/Urdu so we can render RTL in the email template
 function isRTL(text: string): boolean {
   return /[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]/.test(text);
 }
 
 function buildEmailHtml(subject: string, message: string): string {
   const rtl = isRTL(message) || isRTL(subject);
-  const body = escapeHtml(message).replace(/\n/g, "<br/>");
-  return `
-  <!DOCTYPE html>
-  <html lang="en-GB" dir="${rtl ? "rtl" : "ltr"}">
-  <head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/></head>
-  <body style="margin:0;padding:0;background:#F4F4F5;font-family:Arial,sans-serif;">
-    <div style="max-width:600px;margin:32px auto;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #E5E7EB;">
-      <div style="background:linear-gradient(135deg,#6366F1 0%,#8B5CF6 100%);padding:32px 28px;text-align:center;">
-        <p style="color:rgba(255,255,255,0.7);margin:0 0 6px;font-size:11px;letter-spacing:2px;text-transform:uppercase;">Feature Salon</p>
-        <h1 style="color:#fff;margin:0;font-size:22px;font-weight:700;" dir="${rtl ? "rtl" : "ltr"}">${escapeHtml(subject)}</h1>
-      </div>
-      <div style="padding:28px;font-size:14px;color:#374151;line-height:1.7;" dir="${rtl ? "rtl" : "ltr"}">
-        ${body}
-      </div>
-      <div style="padding:14px 28px;background:#F9FAFB;text-align:center;border-top:1px solid #E5E7EB;font-size:11px;color:#9CA3AF;">
-        Sent by Feature Salon
-      </div>
+  const bodyHtml = escapeHtml(message).replace(/\n/g, "<br/>");
+  return `<!DOCTYPE html>
+<html lang="en-GB" dir="${rtl ? "rtl" : "ltr"}">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/></head>
+<body style="margin:0;padding:0;background:#F4F4F5;font-family:Arial,sans-serif;">
+  <div style="max-width:600px;margin:32px auto;background:#fff;border-radius:14px;overflow:hidden;border:1px solid #E5E7EB;">
+    <div style="background:linear-gradient(135deg,#6366F1 0%,#8B5CF6 100%);padding:32px 28px;text-align:center;">
+      <p style="color:rgba(255,255,255,0.7);margin:0 0 6px;font-size:11px;letter-spacing:2px;text-transform:uppercase;">Feature Salon</p>
+      <h1 style="color:#fff;margin:0;font-size:22px;font-weight:700;" dir="${rtl ? "rtl" : "ltr"}">${escapeHtml(subject)}</h1>
     </div>
-  </body>
-  </html>`;
+    <div style="padding:28px;font-size:14px;color:#374151;line-height:1.7;" dir="${rtl ? "rtl" : "ltr"}">${bodyHtml}</div>
+    <div style="padding:14px 28px;background:#F9FAFB;text-align:center;border-top:1px solid #E5E7EB;font-size:11px;color:#9CA3AF;">
+      Sent by Feature Salon · noreply@featuresalon.co.uk
+    </div>
+  </div>
+</body>
+</html>`;
 }
 
-// ── Country code → dial-code phone normaliser ─────────────────────
-const COUNTRY_DIAL: Record<CountryCode, { code: string; expectLen: number }> = {
-  GB: { code: "44",  expectLen: 10 }, // after country code → 10 digits
-  PK: { code: "92",  expectLen: 10 },
-  AE: { code: "971", expectLen: 9  },
-  SA: { code: "966", expectLen: 9  },
-};
-
-function normaliseForCountry(raw: string, country: string | null | undefined): string | null {
-  if (!raw) return null;
-  let digits = raw.replace(/\D/g, "");
-  if (!digits) return null;
-
-  // Already includes any country code
-  if (raw.trim().startsWith("+") || digits.length >= 11) {
-    // Trust as E.164 if length looks plausible
-    if (digits.length >= 10 && digits.length <= 15) return `+${digits}`;
-  }
-
-  const c = (country || "GB").toUpperCase() as CountryCode;
-  const cfg = COUNTRY_DIAL[c] || COUNTRY_DIAL.GB;
-
-  // strip leading zero
-  if (digits.startsWith("0")) digits = digits.slice(1);
-
-  // If digits already start with this dial code, accept
-  if (digits.startsWith(cfg.code)) return `+${digits}`;
-
-  return `+${cfg.code}${digits}`;
-}
-
-// ── GET — capabilities + recent logs + per-country counts ────────
+// ── GET — capabilities, per-country counts, recent logs ─────────────
 export async function GET(req: NextRequest) {
   const user = await verifyAdmin(req);
   if (!user) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
 
-  // Per-country counts of consented registered users
   const { data: countRows, error: countErr } = await adminSupabase
     .from("salons")
     .select("country, marketing_consent");
@@ -132,9 +124,10 @@ export async function GET(req: NextRequest) {
   const countsByCountry: Record<string, number> = { GB: 0, PK: 0, AE: 0, SA: 0, OTHER: 0 };
   let consentedTotal = 0;
   let totalUsers = 0;
-  for (const row of (countRows || []) as { country: string | null; marketing_consent: boolean | null }[]) {
+
+  for (const row of ((countRows || []) as { country: string | null; marketing_consent: boolean | null }[])) {
     totalUsers++;
-    if (row.marketing_consent === false) continue;
+    if (row.marketing_consent === false) continue; // null → opted-in by default
     consentedTotal++;
     const c = (row.country || "GB").toUpperCase();
     if (c in countsByCountry) countsByCountry[c]++;
@@ -143,7 +136,7 @@ export async function GET(req: NextRequest) {
 
   const { data: logs, error: logErr } = await adminSupabase
     .from("broadcast_logs")
-    .select("*")
+    .select("id, subject, channels, countries, recipient_type, total_sent, total_failed, sent_at, status")
     .order("sent_at", { ascending: false })
     .limit(200);
 
@@ -160,42 +153,44 @@ export async function GET(req: NextRequest) {
   });
 }
 
-// ── POST — dispatch a broadcast ──────────────────────────────────
+// ── POST — dispatch broadcast ───────────────────────────────────────
 export async function POST(req: NextRequest) {
   const user = await verifyAdmin(req);
   if (!user) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
 
   const body = await req.json();
-  const subject: string              = (body.subject || "").trim();
-  const message: string              = (body.message || "").trim();
-  const requestedChannels: Channel[] = Array.isArray(body.channels) ? body.channels : [];
-  const recipientType: RecipientType = body.recipientType;
-  const countriesRaw: string[]       = Array.isArray(body.countries) ? body.countries : ["ALL"];
+  const subject: string          = (body.subject || "").trim();
+  const message: string          = (body.message || "").trim();
+  const requestedChannels: string[] = Array.isArray(body.channels) ? body.channels : [];
+  const recipientType: string    = body.recipientType;
+  const countriesRaw: string[]   = Array.isArray(body.countries) ? body.countries : ["ALL"];
 
-  if (!subject) return NextResponse.json({ error: "Subject is required" }, { status: 400 });
-  if (!message) return NextResponse.json({ error: "Message body is required" }, { status: 400 });
-  if (requestedChannels.length === 0) return NextResponse.json({ error: "Select at least one channel" }, { status: 400 });
-  if (!["registered", "all"].includes(recipientType)) {
-    return NextResponse.json({ error: "Invalid recipient type" }, { status: 400 });
-  }
+  if (!subject)                                     return NextResponse.json({ error: "Subject is required" }, { status: 400 });
+  if (!message)                                     return NextResponse.json({ error: "Message body is required" }, { status: 400 });
+  if (requestedChannels.length === 0)               return NextResponse.json({ error: "Select at least one channel" }, { status: 400 });
+  if (!["registered", "all"].includes(recipientType)) return NextResponse.json({ error: "Invalid recipient type" }, { status: 400 });
 
-  // Strip any channel whose env keys aren't configured
-  const channels: Channel[] = requestedChannels.filter(c => {
+  // Strip channels whose env keys aren't present
+  const channels = requestedChannels.filter((c): c is Channel => {
     if (c === "email")    return HAS_EMAIL;
     if (c === "sms")      return HAS_SMS;
     if (c === "whatsapp") return HAS_WHATSAPP;
     return false;
   });
   if (channels.length === 0) {
-    return NextResponse.json({ error: "None of the selected channels are configured" }, { status: 400 });
+    return NextResponse.json({ error: "None of the selected channels are configured in this environment" }, { status: 400 });
   }
 
-  // ── Build recipient list ─────────────────────────────────────
-  let query = adminSupabase.from("salons").select("owner_email, phone, name, country, marketing_consent");
+  // ── Build recipient list ──────────────────────────────────────────
+  let query = adminSupabase
+    .from("salons")
+    .select("owner_email, phone, name, country, marketing_consent");
+
   if (recipientType === "registered") {
-    // Honour marketing consent
-    query = query.eq("marketing_consent", true);
+    // registered tab: honour marketing_consent (null treated as true)
+    query = query.neq("marketing_consent", false);
   }
+  // "all" tab: no consent filter — admin override
 
   const wantsAll = countriesRaw.includes("ALL") || countriesRaw.length === 0;
   if (!wantsAll) {
@@ -208,26 +203,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: rowsErr.message }, { status: 500 });
   }
 
+  // Deduplicate by email or phone
   const seen = new Set<string>();
-  const recipients: Recipient[] = [];
-  for (const r of (rows || []) as { owner_email: string | null; phone: string | null; name: string | null; country: string | null; marketing_consent: boolean | null }[]) {
-    const key = (r.owner_email || r.phone || "").toLowerCase();
+  const recipients: SalonRow[] = [];
+  for (const r of ((rows || []) as SalonRow[])) {
+    const key = (r.owner_email || r.phone || "").toLowerCase().trim();
     if (!key || seen.has(key)) continue;
     seen.add(key);
-    recipients.push({
-      email:   r.owner_email,
-      phone:   r.phone,
-      name:    r.name,
-      country: r.country,
-    });
+    recipients.push(r);
   }
 
   if (recipients.length === 0) {
     return NextResponse.json({ error: "No recipients matched the filters" }, { status: 400 });
   }
 
-  // ── Dispatch ────────────────────────────────────────────────
-  let totalSent = 0;
+  // ── Dispatch per channel ──────────────────────────────────────────
+  let totalSent   = 0;
   let totalFailed = 0;
   const perChannel: { channel: Channel; sent: number; failed: number }[] = [];
 
@@ -237,29 +228,48 @@ export async function POST(req: NextRequest) {
     for (const r of recipients) {
       try {
         if (channel === "email") {
-          if (!r.email || !resend) { continue; }
+          if (!r.owner_email || !resend) continue;
           const { error: mailErr } = await resend.emails.send({
             from: FROM_EMAIL,
-            to: r.email,
+            to: r.owner_email,
             subject,
             html: buildEmailHtml(subject, message),
           });
-          if (mailErr) { failed++; console.error("[broadcast email]", r.email, mailErr); }
-          else sent++;
+          if (mailErr) {
+            failed++;
+            console.error("[broadcast email] failed:", r.owner_email, mailErr);
+          } else {
+            sent++;
+          }
+
         } else if (channel === "sms") {
-          if (!r.phone) continue;
-          const num = normaliseForCountry(r.phone, r.country) || r.phone;
-          await sendSMS(num, `${subject}\n\n${message}`);
+          if (!r.phone || !twilioClient) continue;
+          const to = normaliseForBroadcast(r.phone, r.country);
+          if (!to) { failed++; continue; }
+          // Direct Twilio call — errors are not swallowed
+          await twilioClient.messages.create({
+            from: TWILIO_SMS_FROM,
+            to,
+            body: `${subject}\n\n${message}\n\nReply STOP to opt out.`,
+          });
           sent++;
+
         } else if (channel === "whatsapp") {
-          if (!r.phone) continue;
-          const num = normaliseForCountry(r.phone, r.country) || r.phone;
-          await sendWhatsApp(num, `*${subject}*\n\n${message}`);
+          if (!r.phone || !twilioClient) continue;
+          const to = normaliseForBroadcast(r.phone, r.country);
+          if (!to) { failed++; continue; }
+          const waTo = to.startsWith("whatsapp:") ? to : `whatsapp:${to}`;
+          // Direct Twilio call — errors are not swallowed
+          await twilioClient.messages.create({
+            from: TWILIO_WHATSAPP_FROM,
+            to: waTo,
+            body: `*${subject}*\n\n${message}`,
+          });
           sent++;
         }
       } catch (e) {
         failed++;
-        console.error(`[broadcast ${channel}] failed for`, r.email || r.phone, e);
+        console.error(`[broadcast ${channel}] failed for`, r.owner_email || r.phone, e);
       }
     }
 
@@ -268,18 +278,17 @@ export async function POST(req: NextRequest) {
     totalFailed += failed;
   }
 
-  const status = totalFailed === 0 && totalSent > 0
-    ? "success"
-    : totalSent === 0
-    ? "failed"
-    : "partial";
+  const status =
+    totalFailed === 0 && totalSent > 0  ? "success"
+    : totalSent === 0                   ? "failed"
+    :                                     "partial";
 
   const { data: log, error: logErr } = await adminSupabase
     .from("broadcast_logs")
     .insert({
       subject,
       message,
-      channels:         channels,
+      channels,
       countries:        wantsAll ? ["ALL"] : countriesRaw,
       recipient_type:   recipientType,
       total_sent:       totalSent,
@@ -290,7 +299,9 @@ export async function POST(req: NextRequest) {
     .select()
     .single();
 
-  if (logErr) console.error("[/api/admin/broadcast] log insert failed:", logErr.message);
+  if (logErr) {
+    console.error("[/api/admin/broadcast] log insert failed:", logErr.message);
+  }
 
   return NextResponse.json({
     success: true,
