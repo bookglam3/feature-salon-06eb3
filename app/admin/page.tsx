@@ -460,6 +460,16 @@ export default function AdminPage() {
               )}
             </div>
           ))}
+          {/* Broadcast — separate page */}
+          <a href="/admin/broadcast" className="nav-item" style={{
+            display: "flex", alignItems: "center", gap: 10,
+            padding: "9px 10px", borderRadius: 8, marginBottom: 2,
+            color: T.navText, background: "transparent",
+            fontSize: 13.5, fontWeight: 500, textDecoration: "none",
+          }}>
+            <span style={{ fontSize: 14, width: 18, textAlign: "center", flexShrink: 0 }}>📣</span>
+            Broadcast
+          </a>
         </nav>
 
         {/* Footer */}
