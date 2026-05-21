@@ -158,6 +158,7 @@ export async function GET(req: Request) {
           clientName: a.client_name,
           time: ukTime,
           salonName: a.salons?.name || "Your Salon",
+          senderName: a.salons?.name,
         });
       } catch (e) { errors.push(`24h SMS ${a.id}: ${e}`); }
     }
@@ -228,6 +229,7 @@ export async function GET(req: Request) {
           to: a.client_phone,
           clientName: a.client_name,
           time: ukTime,
+          senderName: a.salons?.name,
         });
       } catch (e) { errors.push(`2h SMS ${a.id}: ${e}`); }
     }
@@ -304,6 +306,7 @@ export async function GET(req: Request) {
           clientName: a.client_name,
           salonName: a.salons?.name || "Your Salon",
           reviewLink,
+          senderName: a.salons?.name,
         });
       } catch (e) { errors.push(`thankyou SMS ${a.id}: ${e}`); }
     }
@@ -416,6 +419,7 @@ export async function GET(req: Request) {
           clientName: a.client_name,
           salonName: a.salons?.name || "Your Salon",
           bookingLink,
+          senderName: a.salons?.name,
         });
       } catch (e) { errors.push(`winback SMS ${a.id}: ${e}`); }
     }

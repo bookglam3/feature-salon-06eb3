@@ -73,20 +73,31 @@ export function formatUKDate(dateTime: string): string {
 // ─────────────────────────────────────────────────────────
 // Core SMS sender
 // ─────────────────────────────────────────────────────────
-export async function sendSMS(to: string, body: string): Promise<void> {
+// UK numbers get alphanumeric sender (salon name), others get phone number
+function getSender(normalisedTo: string, salonName?: string): string {
+  if (salonName && normalisedTo.startsWith("+44")) {
+    // Max 11 chars, alphanumeric only, no spaces
+    return salonName.replace(/[^a-zA-Z0-9]/g, "").slice(0, 11) || FROM_NUMBER;
+  }
+  return FROM_NUMBER;
+}
+
+export async function sendSMS(to: string, body: string, salonName?: string): Promise<void> {
   const normalisedTo = normalisePhone(to);
   if (!normalisedTo) {
     console.warn(`[SMS] Skipping — could not normalise phone: ${to}`);
     return;
   }
 
+  const from = getSender(normalisedTo, salonName);
+
   try {
     await client.messages.create({
-      from: FROM_NUMBER,
+      from,
       to: normalisedTo,
       body: body + GDPR_FOOTER,
     });
-    console.log(`[SMS] Sent to ${normalisedTo}`);
+    console.log(`[SMS] Sent to ${normalisedTo} from ${from}`);
   } catch (err) {
     console.error(`[SMS] Failed to send to ${normalisedTo}:`, err);
   }
@@ -96,75 +107,47 @@ export async function sendSMS(to: string, body: string): Promise<void> {
 // 1. 24h Before — Appointment Reminder
 // ═══════════════════════════════════════════════════════════
 export async function send24hSMS({
-  to,
-  clientName,
-  time,
-  salonName,
+  to, clientName, time, salonName, senderName,
 }: {
-  to: string;
-  clientName: string;
-  time: string; // pre-formatted UK time string
-  salonName: string;
+  to: string; clientName: string; time: string; salonName: string; senderName?: string;
 }) {
-  const body =
-    `Hi ${clientName}, reminder: your appointment is tomorrow at ${time} at ${salonName}. See you then!`;
-  await sendSMS(to, body);
+  const body = `Hi ${clientName}, reminder: your appointment is tomorrow at ${time} at ${salonName}. See you then!`;
+  await sendSMS(to, body, senderName);
 }
 
 // ═══════════════════════════════════════════════════════════
 // 2. 2h Before — Appointment Reminder
 // ═══════════════════════════════════════════════════════════
 export async function send2hSMS({
-  to,
-  clientName,
-  time,
+  to, clientName, time, senderName,
 }: {
-  to: string;
-  clientName: string;
-  time: string;
+  to: string; clientName: string; time: string; senderName?: string;
 }) {
-  const body =
-    `Hi ${clientName}, just a reminder: your appointment is in 2 hours at ${time}. We look forward to seeing you!`;
-  await sendSMS(to, body);
+  const body = `Hi ${clientName}, just a reminder: your appointment is in 2 hours at ${time}. We look forward to seeing you!`;
+  await sendSMS(to, body, senderName);
 }
 
 // ═══════════════════════════════════════════════════════════
 // 3. 1h After — Thank You + Review Request
 // ═══════════════════════════════════════════════════════════
 export async function sendThankyouSMS({
-  to,
-  clientName,
-  salonName,
-  reviewLink,
+  to, clientName, salonName, reviewLink, senderName,
 }: {
-  to: string;
-  clientName: string;
-  salonName: string;
-  reviewLink?: string;
+  to: string; clientName: string; salonName: string; reviewLink?: string; senderName?: string;
 }) {
-  const reviewPart = reviewLink
-    ? ` We'd love to hear your feedback: ${reviewLink}`
-    : "";
-  const body =
-    `Hi ${clientName}, thank you for visiting ${salonName} today!${reviewPart}`;
-  await sendSMS(to, body);
+  const reviewPart = reviewLink ? ` We'd love to hear your feedback: ${reviewLink}` : "";
+  const body = `Hi ${clientName}, thank you for visiting ${salonName} today!${reviewPart}`;
+  await sendSMS(to, body, senderName);
 }
 
 // ═══════════════════════════════════════════════════════════
 // 4. 6 Weeks After — Win-back
 // ═══════════════════════════════════════════════════════════
 export async function sendWinbackSMS({
-  to,
-  clientName,
-  salonName,
-  bookingLink,
+  to, clientName, salonName, bookingLink, senderName,
 }: {
-  to: string;
-  clientName: string;
-  salonName: string;
-  bookingLink: string;
+  to: string; clientName: string; salonName: string; bookingLink: string; senderName?: string;
 }) {
-  const body =
-    `Hi ${clientName}, it's been 6 weeks since your last visit to ${salonName}! Ready for your next appointment? Book now: ${bookingLink}`;
-  await sendSMS(to, body);
+  const body = `Hi ${clientName}, it's been 6 weeks since your last visit to ${salonName}! Ready for your next appointment? Book now: ${bookingLink}`;
+  await sendSMS(to, body, senderName);
 }

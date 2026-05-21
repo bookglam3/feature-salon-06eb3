@@ -236,6 +236,13 @@ export default function BookingPage() {
   // Track already-booked time slots for selected date/staff
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
 
+  // Phone OTP verification
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [otpError, setOtpError] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+
   const loadBookedSlots = useCallback(async (date: Date, staffId: string | null, salonId: string, salonTz = "Europe/London") => {
     const dateStr = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
     // Query wider window to account for timezone differences
@@ -427,6 +434,47 @@ export default function BookingPage() {
     setSubmitting(false);
     setStep(4);
   }, [salon, selectedService, selectedStaff, selDate, selTime, form, selectedOption, isPayAtSalon, chargeAmount, validateForm]);
+
+  const handleSendOtp = useCallback(async () => {
+    if (!validateForm()) return;
+    setOtpLoading(true);
+    setOtpError("");
+    try {
+      const res = await fetch("/api/verify/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: form.phone }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setOtpError(data.error || "Failed to send code"); setOtpLoading(false); return; }
+      setOtpSent(true);
+      setOtpCode("");
+    } catch {
+      setOtpError("Could not send verification code. Please try again.");
+    }
+    setOtpLoading(false);
+  }, [form.phone, validateForm]);
+
+  const handleVerifyOtp = useCallback(async () => {
+    if (!otpCode.trim()) { setOtpError("Please enter the code"); return; }
+    setOtpLoading(true);
+    setOtpError("");
+    try {
+      const res = await fetch("/api/verify/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: form.phone, code: otpCode }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setOtpError(data.error || "Invalid code"); setOtpLoading(false); return; }
+      setPhoneVerified(true);
+      setOtpSent(false);
+      await handleProceedToPayment();
+    } catch {
+      setOtpError("Verification failed. Please try again.");
+    }
+    setOtpLoading(false);
+  }, [otpCode, form.phone, handleProceedToPayment]);
 
   const canNext0 = !!selectedService;
   const canNext1 = staffConfirmed;
@@ -761,9 +809,54 @@ export default function BookingPage() {
                   <div className="summary-row"><span className="summary-label">{isPayAtSalon ? "Due Now" : selectedOption?.pct === 100 ? "Total" : "Deposit Due"}</span><span className="summary-value" style={{color:"#667eea",fontSize:18}}>£{chargeAmount.toFixed(2)}{isPayAtSalon ? " (pay at salon)" : ""}</span></div>
                 </div>
 
-                <button className="btn" disabled={!canSubmit||submitting} onClick={handleProceedToPayment}>
-                  {submitting?"Setting up payment...":"Proceed to Payment →"}
-                </button>
+                {/* OTP Verification Screen */}
+                {otpSent && !phoneVerified ? (
+                  <div style={{ marginTop: 24, background: "#F8FAFF", border: "2px solid #667eea", borderRadius: 20, padding: "28px 24px", textAlign: "center" }}>
+                    <div style={{ fontSize: 48, marginBottom: 12 }}>📱</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: "#0F172A", marginBottom: 6 }}>Verify Your Phone</div>
+                    <div style={{ fontSize: 14, color: "#64748B", marginBottom: 20, lineHeight: 1.6 }}>
+                      We&apos;ve sent a 6-digit code to<br/>
+                      <strong style={{ color: "#0F172A" }}>{form.phone}</strong>
+                    </div>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      placeholder="000000"
+                      value={otpCode}
+                      onChange={e => { setOtpCode(e.target.value.replace(/\D/g, "")); setOtpError(""); }}
+                      style={{ width: "100%", padding: "16px", fontSize: 28, fontWeight: 800, letterSpacing: 12, textAlign: "center", border: `2px solid ${otpError ? "#EF4444" : "#667eea"}`, borderRadius: 14, outline: "none", background: "#fff", color: "#0F172A", boxSizing: "border-box", marginBottom: 8 }}
+                    />
+                    {otpError && <div style={{ fontSize: 13, color: "#EF4444", fontWeight: 600, marginBottom: 12 }}>{otpError}</div>}
+                    <button
+                      className="btn"
+                      disabled={otpCode.length < 4 || otpLoading || submitting}
+                      onClick={handleVerifyOtp}
+                      style={{ marginTop: 8 }}
+                    >
+                      {otpLoading || submitting ? "Verifying…" : "Verify & Continue →"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setOtpSent(false); setOtpError(""); setOtpCode(""); }}
+                      style={{ background: "none", border: "none", color: "#667eea", fontWeight: 700, cursor: "pointer", fontSize: 14, marginTop: 14, display: "block", width: "100%" }}
+                    >
+                      ← Edit Phone Number
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSendOtp}
+                      disabled={otpLoading}
+                      style={{ background: "none", border: "none", color: "#94A3B8", fontWeight: 600, cursor: "pointer", fontSize: 13, marginTop: 4, display: "block", width: "100%" }}
+                    >
+                      Resend Code
+                    </button>
+                  </div>
+                ) : (
+                  <button className="btn" disabled={!canSubmit || submitting || otpLoading} onClick={handleSendOtp}>
+                    {otpLoading ? "Sending code…" : submitting ? "Setting up payment…" : "Proceed to Payment →"}
+                  </button>
+                )}
               </>
             )}
 

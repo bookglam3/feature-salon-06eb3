@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
           });
           sent++;
         } else if (channel === "sms" && client.phone) {
-          await sendSMS(client.phone, personalised);
+          await sendSMS(client.phone, personalised, salonName);
           sent++;
         } else if (channel === "whatsapp" && client.phone) {
           await sendWhatsApp(client.phone, personalised);

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendBookingEmails } from "@/app/lib/email";
 import { sendWhatsAppConfirmation } from "@/app/lib/whatsapp";
+import { sendSMS, formatUKDate, formatUKTime } from "@/app/lib/sms";
 
 export const dynamic = "force-dynamic";
 
@@ -105,8 +106,24 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // ── SMS Confirmation ─────────────────────────────────────
+    let smsSent = false;
+    if (appt.client_phone) {
+      try {
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://featuresalon.co.uk";
+        const dateLabel = formatUKDate(appt.date_time);
+        const timeLabel = formatUKTime(appt.date_time);
+        const body = `Hi ${appt.client_name}, your booking at ${salon?.name || "the salon"} is confirmed!\n${appt.services?.name} on ${dateLabel} at ${timeLabel}.\nManage: ${appUrl}/reschedule/${appointmentId}`;
+        await sendSMS(appt.client_phone, body, salon?.name);
+        smsSent = true;
+        console.log(`[send-confirmation] ✅ SMS sent for appointment ${appointmentId}`);
+      } catch (smsErr) {
+        console.error("[send-confirmation] SMS error (non-fatal):", smsErr);
+      }
+    }
+
     console.log(`[send-confirmation] ✅ Emails sent for appointment ${appointmentId}`);
-    return NextResponse.json({ success: true, clientEmail, ownerEmail, whatsappSent });
+    return NextResponse.json({ success: true, clientEmail, ownerEmail, whatsappSent, smsSent });
 
   } catch (err) {
     console.error("[send-confirmation] Error:", err);
