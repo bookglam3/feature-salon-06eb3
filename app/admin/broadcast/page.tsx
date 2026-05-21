@@ -132,7 +132,7 @@ export default function BroadcastPage() {
   const [authorised,  setAuthorised]  = useState(false);
   const [loggedInAs,  setLoggedInAs]  = useState<string | null>(null);
 
-  const [caps, setCaps]               = useState({ email: true, sms: false, whatsapp: false });
+  const [caps, setCaps]               = useState({ email: true, sms: true, whatsapp: false });
   const [logs, setLogs]               = useState<BroadcastLog[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
 
