@@ -230,14 +230,14 @@ export default function BroadcastPage() {
   const toggleChannel = (code: CountryCode, ch: Channel) =>
     setCountries(prev => prev.map(c => c.code === code ? { ...c, channels: { ...c.channels, [ch]: !c.channels[ch] } } : c));
 
-  // ── Send one country ─────────────────────────────────────────────────────
-  const sendToCountry = async (code: CountryCode) => {
+  // ── Send one country (optionally force a single channel) ─────────────────
+  const sendToCountry = async (code: CountryCode, forceChannel?: Channel) => {
     const country = countries.find(c => c.code === code);
     if (!country) return;
     setConfirmCountry(null);
 
     const { emails, phones } = partitionList(country.recipients);
-    const picked = (Object.keys(country.channels) as Channel[]).filter(ch => country.channels[ch] && caps[ch]);
+    const picked: Channel[] = forceChannel ? [forceChannel] : (Object.keys(country.channels) as Channel[]).filter(ch => country.channels[ch] && caps[ch]);
 
     setResults(prev => prev.map(r => r.code === code ? { ...r, status: "sending", sent: 0, failed: 0, error: undefined } : r));
 
@@ -564,24 +564,6 @@ export default function BroadcastPage() {
                           style={{ width: "100%", padding: "10px 12px", borderRadius: 9, border: `1px solid ${T.border}`, fontSize: 12, color: T.text, resize: "vertical", background: T.bg, fontFamily: "monospace", lineHeight: 1.5 }} />
                       </div>
 
-                      {/* Channel toggles */}
-                      <div style={{ padding: "0 16px 12px", display: "flex", gap: 6, flexWrap: "wrap" }}>
-                        {([
-                          { key: "email" as Channel,    icon: "✉",  label: "Email",    color: T.indigo },
-                          { key: "whatsapp" as Channel, icon: "💬", label: "WhatsApp", color: T.green },
-                          { key: "sms" as Channel,      icon: "📱", label: "SMS",      color: T.amber },
-                        ]).filter(ch => caps[ch.key]).map(ch => {
-                          const on = country.channels[ch.key];
-                          return (
-                            <button key={ch.key} onClick={() => toggleChannel(country.code, ch.key)} className="ch-btn"
-                              style={{ height: 28, padding: "0 10px", borderRadius: 99, border: `1.5px solid ${on ? ch.color : T.border}`, background: on ? ch.color + "18" : "transparent", fontSize: 11.5, fontWeight: 600, color: on ? ch.color : T.text3, cursor: "pointer", fontFamily: "inherit" }}>
-                              {ch.icon} {ch.label}
-                            </button>
-                          );
-                        })}
-                        {!caps.email && !caps.sms && !caps.whatsapp && <span style={{ fontSize: 11, color: T.red }}>No channels configured</span>}
-                      </div>
-
                       {/* Result info */}
                       {result && !["idle", "sending", "skipped"].includes(result.status) && (
                         <div style={{ padding: "8px 16px", borderTop: `1px solid ${T.border}`, fontSize: 11.5 }}>
@@ -591,13 +573,23 @@ export default function BroadcastPage() {
                         </div>
                       )}
 
-                      {/* Send button */}
-                      <div style={{ padding: "0 16px 16px" }}>
-                        <button onClick={() => setConfirmCountry(country.code)}
-                          disabled={!canSend || result?.status === "sending" || isSendingAll}
-                          style={{ width: "100%", height: 38, borderRadius: 9, border: "none", fontFamily: "inherit", fontSize: 13, fontWeight: 700, cursor: canSend && result?.status !== "sending" && !isSendingAll ? "pointer" : "not-allowed", transition: "all 0.15s", background: canSend && result?.status !== "sending" && !isSendingAll ? T.indigo : T.border, color: canSend && result?.status !== "sending" && !isSendingAll ? "#fff" : T.text3 }}>
-                          {result?.status === "sending" ? "Sending…" : `▶ Send to ${country.label}`}
-                        </button>
+                      {/* Per-channel send buttons */}
+                      <div style={{ padding: "0 16px 16px", display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        {([
+                          { ch: "email"    as Channel, icon: "✉",  label: "Email",    color: T.indigo },
+                          { ch: "whatsapp" as Channel, icon: "💬", label: "WhatsApp", color: T.green  },
+                          { ch: "sms"      as Channel, icon: "📱", label: "SMS",      color: T.amber  },
+                        ]).filter(({ ch }) => caps[ch]).map(({ ch, icon, label, color }) => {
+                          const hasRecipients = ch === "email" ? partitionList(country.recipients).emails.length > 0 : partitionList(country.recipients).phones.length > 0;
+                          const active = hasRecipients && !!subject.trim() && !!message.trim() && result?.status !== "sending" && !isSendingAll;
+                          return (
+                            <button key={ch} onClick={() => active && sendToCountry(country.code, ch)}
+                              disabled={!active}
+                              style={{ flex: 1, minWidth: 80, height: 36, borderRadius: 8, border: "none", fontFamily: "inherit", fontSize: 12, fontWeight: 700, cursor: active ? "pointer" : "not-allowed", transition: "all 0.15s", background: active ? color : T.border, color: active ? "#fff" : T.text3 }}>
+                              {result?.status === "sending" ? "…" : `${icon} ${label}`}
+                            </button>
+                          );
+                        })}
                       </div>
                     </Card>
                   );
