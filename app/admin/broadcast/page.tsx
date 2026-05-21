@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
-const ADMIN_EMAIL = "bookfeature31@gmail.com";
+const ADMIN_EMAIL = "adilgill2008@gmail.com";
 const TEMPLATE_STORE_KEY = "fs_broadcast_templates_v1";
 
 const T = {

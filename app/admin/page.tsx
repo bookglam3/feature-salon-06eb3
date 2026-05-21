@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 
-const ADMIN_EMAIL = "bookfeature31@gmail.com";
+const ADMIN_EMAIL = "adilgill2008@gmail.com";
 const PLAN_OPTIONS = ["starter", "pro", "premium"];
 
 type Tab = "overview" | "salons" | "revenue" | "users" | "announcements" | "flags" | "settings" | "applications" | "verifications";
