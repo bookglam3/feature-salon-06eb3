@@ -212,7 +212,11 @@ export default function AdminPage() {
     const loadAdmin = async () => {
       const { data: authData } = await supabase.auth.getUser();
       const user = authData?.user;
-      if (!user || user.email !== ADMIN_EMAIL) { router.push("/dashboard"); return; }
+      if (!user || user.email !== ADMIN_EMAIL) {
+        setError(`Access denied. Logged in as: ${user?.email || "not logged in"}. Required: ${ADMIN_EMAIL}`);
+        setLoading(false);
+        return;
+      }
 
       const { data: salonData } = await supabase
         .from("salons")
