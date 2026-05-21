@@ -85,7 +85,7 @@ const MSG_VARS = [
 
 // ── Utilities ────────────────────────────────────────────────────────────────
 function splitList(raw: string): string[] {
-  return raw.split(/[\s,;\n]+/).map(x => x.trim()).filter(Boolean);
+  return raw.split(/[,;\n]+/).map(x => x.trim()).filter(Boolean);
 }
 function partitionList(raw: string) {
   const items = splitList(raw);
