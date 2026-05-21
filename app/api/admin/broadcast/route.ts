@@ -182,7 +182,7 @@ export async function POST(req: NextRequest) {
   }
 
   function splitPasted(raw: string): string[] {
-    return (raw || "").split(/[\s,;\n]+/).map(x => x.trim()).filter(Boolean);
+    return (raw || "").split(/[,;\n]+/).map(x => x.trim()).filter(Boolean);
   }
 
   // ── Build recipient list ──────────────────────────────────────────
