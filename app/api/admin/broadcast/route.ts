@@ -34,7 +34,7 @@ const TWILIO_WHATSAPP_FROM = process.env.TWILIO_WHATSAPP_FROM || "";
 
 // ── Channel availability — derived from existing env keys only ─────
 const HAS_EMAIL    = !!process.env.RESEND_API_KEY;
-const HAS_SMS      = !!(twilioClient && TWILIO_SMS_FROM);
+const HAS_SMS      = !!twilioClient; // SMS works as long as Twilio is configured
 const HAS_WHATSAPP = !!(twilioClient && TWILIO_WHATSAPP_FROM);
 
 type Channel      = "email" | "whatsapp" | "sms";
