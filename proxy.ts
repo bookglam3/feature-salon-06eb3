@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { verifyAdminToken, ADMIN_COOKIE } from "@/app/lib/adminAuth";
-import type { AdminRole } from "@/app/types/admin";
+import { verifyAdminToken, ADMIN_COOKIE } from "./app/lib/adminAuth";
+import type { AdminRole } from "./app/types/admin";
 
 const ROUTE_ROLES: Record<string, AdminRole[]> = {
   "/admin/users":     ["super_admin"],

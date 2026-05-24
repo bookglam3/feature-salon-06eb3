@@ -1,24 +1,34 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 
 export const metadata: Metadata = {
-  title: "Feature Salon | UK's #1 Salon Management Software — Free Trial",
-  description: "Feature Salon is the UK's best salon management software. Online booking, WhatsApp reminders, Stripe payments, staff scheduling & CRM. 14-day free trial. No commission fees. Better than Fresha & Treatwell.",
+  title: "Feature | Health & Wellbeing Booking Software — Free Trial",
+  description: "Feature is a booking & management platform for salons, gyms, spas, yoga studios, physiotherapy clinics and more. WhatsApp reminders, Stripe payments, staff scheduling & CRM. 14-day free trial. No commission fees.",
   alternates: { canonical: "https://www.featuresalon.co.uk" },
 };
 
+const industries = [
+  { icon: "💇", name: "Salons & Barbershops",       desc: "Hair, beauty, nails & brows" },
+  { icon: "🏋️", name: "Gyms & Fitness Studios",     desc: "Classes, PT sessions & memberships" },
+  { icon: "🧘", name: "Yoga & Pilates",              desc: "Group classes & 1-to-1 sessions" },
+  { icon: "🤸", name: "Physiotherapy",               desc: "Appointments, plans & follow-ups" },
+  { icon: "💆", name: "Massage Therapy",             desc: "Deep tissue, sports & holistic" },
+  { icon: "🌿", name: "Spas & Wellness Centres",    desc: "Full treatments & day packages" },
+  { icon: "🦷", name: "Dental & Aesthetic Clinics", desc: "Consultations & aftercare" },
+  { icon: "🏃", name: "Personal Trainers",           desc: "Sessions, packages & progress" },
+];
+
 const faqItems = [
-  { question: "Is Feature Salon free to start?", answer: "Yes — every plan includes a 14-day free trial with no credit card required. You get full access to all features from day one." },
-  { question: "Does Feature Salon work for UK salons?", answer: "Absolutely. Feature Salon is built specifically for the UK market. Pricing is in GBP, reminders are optimised for UK time zones, and our support team is UK-based." },
-  { question: "How does Feature compare to Fresha?", answer: "Unlike Fresha, Feature Salon charges a flat monthly subscription with zero commission on bookings or payments. Our Pro plan at £59/month replaces Fresha's hidden fees which can exceed £150/month for a busy salon." },
-  { question: "How does Feature compare to Treatwell?", answer: "Treatwell takes a commission on every booking made through their marketplace. Feature Salon gives you your own branded booking page with no marketplace fees — you keep 100% of your revenue." },
-  { question: "Can clients book online 24/7?", answer: "Yes. Every salon gets a public booking page where clients can browse services, choose a staff member, and book at any time — no phone calls needed." },
-  { question: "What payment methods are supported?", answer: "Feature Salon uses Stripe for payments, supporting all major credit and debit cards. You can take deposits or full payments at booking time to reduce no-shows." },
-  { question: "Is there a long-term contract?", answer: "No contracts at all. All plans are monthly and you can cancel at any time from your dashboard. We also offer a 30-day money-back guarantee." },
-  { question: "Do you send automated appointment reminders?", answer: "Yes — Feature Salon sends automated SMS, WhatsApp, and email reminders to clients before their appointments. Salons using reminders report a 60% reduction in no-shows." },
-  { question: "How much does Feature Salon cost?", answer: "Feature Salon starts from £29/month for the Starter plan (up to 3 staff), £59/month for Pro (up to 10 staff), and £99/month for Business (unlimited staff). All plans include a 14-day free trial with no credit card required." },
-  { question: "What features does Feature Salon include?", answer: "Feature Salon includes: online booking system, staff management & scheduling, automated WhatsApp/SMS/email reminders, Stripe payment processing, client CRM, revenue analytics, gift cards, loyalty program, waitlist management, and multi-location support." },
+  { question: "Is Feature free to start?",                          answer: "Yes — every plan includes a 14-day free trial with no credit card required. You get full access to all features from day one." },
+  { question: "Does Feature work for my type of business?",         answer: "Absolutely. Feature is built for any Health & Wellbeing business — salons, barbershops, gyms, yoga studios, physiotherapy clinics, spas, massage therapists, personal trainers, dental & aesthetic clinics, and more. If you take appointments, Feature works for you." },
+  { question: "How does Feature compare to Fresha?",                answer: "Unlike Fresha, Feature charges a flat monthly subscription with zero commission on bookings or payments. Feature also supports a much broader range of businesses — gyms, physio clinics, yoga studios — not just salons and spas. Our Pro plan at £59/month replaces Fresha's hidden fees which can exceed £150/month for a busy business." },
+  { question: "How does Feature compare to Treatwell?",             answer: "Treatwell takes a commission on every booking made through their marketplace. Feature gives you your own branded booking page with no marketplace fees — you keep 100% of your revenue. Feature also supports businesses far beyond salons and spas." },
+  { question: "Can clients book online 24/7?",                      answer: "Yes. Every business gets a public booking page where clients can browse services, choose a staff member, and book at any time — no phone calls needed." },
+  { question: "What payment methods are supported?",                answer: "Feature uses Stripe for payments, supporting all major credit and debit cards. You can take deposits or full payments at booking time to reduce no-shows." },
+  { question: "Is there a long-term contract?",                     answer: "No contracts at all. All plans are monthly and you can cancel at any time from your dashboard. We also offer a 30-day money-back guarantee." },
+  { question: "Do you send automated appointment reminders?",       answer: "Yes — Feature sends automated SMS, WhatsApp, and email reminders to clients before their appointments. Businesses using reminders report a 60% reduction in no-shows." },
+  { question: "How much does Feature cost?",                        answer: "Feature starts from £29/month for the Starter plan (up to 3 staff), £59/month for Pro (up to 10 staff), and £99/month for Business (unlimited staff). All plans include a 14-day free trial with no credit card required." },
+  { question: "What features does Feature include?",                answer: "Feature includes: online booking system, staff management & scheduling, automated WhatsApp/SMS/email reminders, Stripe payment processing, client CRM, revenue analytics, gift cards, loyalty program, waitlist management, class scheduling, and multi-location support." },
 ];
 
 // ── Schema: FAQ ───────────────────────────────────────────────────
@@ -30,10 +40,7 @@ const faqSchema = {
     "@type": "Question",
     "@id": `https://www.featuresalon.co.uk/#faq-${i + 1}`,
     name: item.question,
-    acceptedAnswer: {
-      "@type": "Answer",
-      text: item.answer,
-    },
+    acceptedAnswer: { "@type": "Answer", text: item.answer },
   })),
 };
 
@@ -42,51 +49,39 @@ const softwareSchema = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "@id": "https://www.featuresalon.co.uk/#software",
-  name: "Feature Salon",
+  name: "Feature",
   url: "https://www.featuresalon.co.uk",
   applicationCategory: "BusinessApplication",
-  applicationSubCategory: "Salon Management Software",
+  applicationSubCategory: "Health & Wellbeing Booking Software",
   operatingSystem: "Web, iOS, Android",
   browserRequirements: "Requires JavaScript. Requires HTML5.",
-  description: "Feature Salon is the UK's leading salon management platform. Manage online bookings, staff scheduling, WhatsApp & SMS reminders, Stripe payments, client CRM, revenue analytics, gift cards, and loyalty programs — all from one dashboard.",
+  description: "Feature is the UK's leading booking & management platform for Health & Wellbeing businesses. Manage online bookings, staff scheduling, WhatsApp & SMS reminders, Stripe payments, client CRM, revenue analytics, gift cards, and loyalty programs — all from one dashboard.",
   featureList: [
     "Online booking system with 24/7 client self-booking",
     "Automated WhatsApp appointment reminders",
     "Automated SMS and email reminders",
     "Stripe payment processing with deposit collection",
     "Staff scheduling and management",
+    "Class and group session scheduling",
     "Client CRM with visit history",
     "Revenue analytics and reports",
-    "Multi-location salon management",
+    "Multi-location management",
     "Gift card system",
     "Loyalty rewards program",
     "Waitlist management",
-    "Calendar and booking management",
     "Mobile-first PWA design",
     "No booking commission fees",
     "Branded public booking page",
   ],
   screenshot: "https://www.featuresalon.co.uk/og-image.png",
-  aggregateRating: {
-    "@type": "AggregateRating",
-    ratingValue: "4.9",
-    reviewCount: "214",
-    bestRating: "5",
-    worstRating: "1",
-  },
   offers: [
     {
       "@type": "Offer",
       name: "Starter Plan",
       price: "29.00",
       priceCurrency: "GBP",
-      priceSpecification: {
-        "@type": "UnitPriceSpecification",
-        price: "29.00",
-        priceCurrency: "GBP",
-        billingDuration: "P1M",
-      },
-      description: "For independent stylists. Up to 3 staff, online booking, email reminders.",
+      priceSpecification: { "@type": "UnitPriceSpecification", price: "29.00", priceCurrency: "GBP", billingDuration: "P1M" },
+      description: "For solo practitioners. Up to 3 staff, online booking, email reminders.",
       url: "https://www.featuresalon.co.uk/signup",
     },
     {
@@ -94,13 +89,8 @@ const softwareSchema = {
       name: "Pro Plan",
       price: "59.00",
       priceCurrency: "GBP",
-      priceSpecification: {
-        "@type": "UnitPriceSpecification",
-        price: "59.00",
-        priceCurrency: "GBP",
-        billingDuration: "P1M",
-      },
-      description: "For growing salons. Up to 10 staff, SMS & WhatsApp reminders, analytics.",
+      priceSpecification: { "@type": "UnitPriceSpecification", price: "59.00", priceCurrency: "GBP", billingDuration: "P1M" },
+      description: "For growing businesses. Up to 10 staff, SMS & WhatsApp reminders, analytics.",
       url: "https://www.featuresalon.co.uk/signup",
     },
     {
@@ -108,24 +98,16 @@ const softwareSchema = {
       name: "Business Plan",
       price: "99.00",
       priceCurrency: "GBP",
-      priceSpecification: {
-        "@type": "UnitPriceSpecification",
-        price: "99.00",
-        priceCurrency: "GBP",
-        billingDuration: "P1M",
-      },
-      description: "For multi-location salons. Unlimited staff, advanced reports, priority support.",
+      priceSpecification: { "@type": "UnitPriceSpecification", price: "99.00", priceCurrency: "GBP", billingDuration: "P1M" },
+      description: "For multi-location businesses. Unlimited staff, advanced reports, priority support.",
       url: "https://www.featuresalon.co.uk/signup",
     },
   ],
   publisher: {
     "@type": "Organization",
-    name: "Feature Salon",
+    name: "Feature",
     url: "https://www.featuresalon.co.uk",
-    logo: {
-      "@type": "ImageObject",
-      url: "https://www.featuresalon.co.uk/brand/logo-light.svg",
-    },
+    logo: { "@type": "ImageObject", url: "https://www.featuresalon.co.uk/brand/logo-light.svg" },
   },
 };
 
@@ -134,7 +116,7 @@ const orgSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
   "@id": "https://www.featuresalon.co.uk/#organization",
-  name: "Feature Salon",
+  name: "Feature",
   url: "https://www.featuresalon.co.uk",
   logo: {
     "@type": "ImageObject",
@@ -142,17 +124,9 @@ const orgSchema = {
     width: 200,
     height: 60,
   },
-  description: "Feature Salon provides UK salons with an all-in-one management platform including online booking, payments, reminders, and CRM.",
-  contactPoint: {
-    "@type": "ContactPoint",
-    contactType: "customer support",
-    availableLanguage: "English",
-    areaServed: "GB",
-  },
-  areaServed: {
-    "@type": "Country",
-    name: "United Kingdom",
-  },
+  description: "Feature provides UK Health & Wellbeing businesses with an all-in-one management platform including online booking, payments, reminders, and CRM.",
+  contactPoint: { "@type": "ContactPoint", contactType: "customer support", availableLanguage: "English", areaServed: "GB" },
+  areaServed: { "@type": "Country", name: "United Kingdom" },
   sameAs: [
     "https://www.instagram.com/featuresalon",
     "https://www.facebook.com/featuresalon",
@@ -165,29 +139,27 @@ const websiteSchema = {
   "@type": "WebSite",
   "@id": "https://www.featuresalon.co.uk/#website",
   url: "https://www.featuresalon.co.uk",
-  name: "Feature Salon",
-  description: "UK Salon Management Software",
+  name: "Feature",
+  description: "UK Health & Wellbeing Booking & Management Software",
   potentialAction: {
     "@type": "SearchAction",
-    target: {
-      "@type": "EntryPoint",
-      urlTemplate: "https://www.featuresalon.co.uk/book/{search_term_string}",
-    },
+    target: { "@type": "EntryPoint", urlTemplate: "https://www.featuresalon.co.uk/book/{search_term_string}" },
     "query-input": "required name=search_term_string",
   },
 };
 
 const comparisonData = [
-  { feature: "Monthly subscription fee",   feature_: true,  fresha: false, treatwell: false },
-  { feature: "Zero booking commission",    feature_: true,  fresha: false, treatwell: false },
-  { feature: "Zero payment commission",    feature_: true,  fresha: false, treatwell: false },
-  { feature: "Own branded booking page",   feature_: true,  fresha: true,  treatwell: false },
-  { feature: "WhatsApp reminders",         feature_: true,  fresha: false, treatwell: false },
-  { feature: "SMS & email reminders",      feature_: true,  fresha: true,  treatwell: true  },
-  { feature: "Stripe online payments",     feature_: true,  fresha: true,  treatwell: true  },
-  { feature: "UK-based customer support",  feature_: true,  fresha: false, treatwell: false },
-  { feature: "14-day free trial",          feature_: true,  fresha: false, treatwell: false },
-  { feature: "No hidden marketplace fees", feature_: true,  fresha: false, treatwell: false },
+  { feature: "Monthly subscription fee",       feature_: true,  fresha: false, treatwell: false },
+  { feature: "Zero booking commission",        feature_: true,  fresha: false, treatwell: false },
+  { feature: "Zero payment commission",        feature_: true,  fresha: false, treatwell: false },
+  { feature: "Own branded booking page",       feature_: true,  fresha: true,  treatwell: false },
+  { feature: "WhatsApp reminders",             feature_: true,  fresha: false, treatwell: false },
+  { feature: "SMS & email reminders",          feature_: true,  fresha: true,  treatwell: true  },
+  { feature: "Stripe online payments",         feature_: true,  fresha: true,  treatwell: true  },
+  { feature: "Gyms, physio & yoga support",   feature_: true,  fresha: false, treatwell: false },
+  { feature: "UK-based customer support",      feature_: true,  fresha: false, treatwell: false },
+  { feature: "14-day free trial",              feature_: true,  fresha: false, treatwell: false },
+  { feature: "No hidden marketplace fees",     feature_: true,  fresha: false, treatwell: false },
 ];
 
 export default function Home() {
@@ -200,20 +172,17 @@ export default function Home() {
 
       {/* ── Navbar ── */}
       <nav className="nav">
-        <span className="nav-logo">
-          feature
-        </span>
+        <span className="nav-logo">feature</span>
         <div className="nav-links">
+          <a href="#who">Who it&apos;s for</a>
           <a href="#features">Features</a>
           <a href="#how">How it works</a>
           <a href="#compare">vs Fresha</a>
           <a href="#pricing">Pricing</a>
-          <a href="#reviews">Reviews</a>
           <Link href="/partner" style={{ color: "#6366F1", fontWeight: 600 }}>Become a Partner</Link>
           <Link href="/login">Login</Link>
           <Link href="/signup" className="btn-primary">Start free trial</Link>
         </div>
-        {/* Mobile hamburger area — just show CTA */}
         <Link href="/signup" className="btn-primary mobile-nav-cta">Start free trial</Link>
       </nav>
 
@@ -221,12 +190,12 @@ export default function Home() {
       <section className="hero hero-v2">
         <div className="hero-inner">
           <div className="hero-content">
-            <div className="hero-badge">BUILT FOR UK &amp; EUROPEAN SALONS</div>
-            <h1 className="hero-title">Run your salon.<br/>Stop chasing clients.</h1>
-            <p className="hero-sub">Feature handles bookings, WhatsApp reminders, payments, and staff — so you can focus on the chair, not the chaos.</p>
+            <div className="hero-badge">BUILT FOR UK HEALTH &amp; WELLBEING BUSINESSES</div>
+            <h1 className="hero-title">One platform.<br/>Every wellness business.</h1>
+            <p className="hero-sub">Feature handles bookings, WhatsApp reminders, payments, and staff — whether you run a salon, gym, physio clinic, yoga studio, or spa.</p>
             <div className="hero-btns">
               <Link href="/signup" className="btn-primary btn-lg">Start Free 14-Day Trial</Link>
-              <a href="#how" className="btn-secondary btn-lg">See how it works</a>
+              <a href="#who" className="btn-secondary btn-lg">See who it&apos;s for</a>
             </div>
             <div className="hero-trust">
               {["No credit card required", "Cancel anytime", "UK support"].map(t => (
@@ -248,12 +217,11 @@ export default function Home() {
                 <div className="mockup-url">featuresalon.co.uk/dashboard</div>
               </div>
               <div className="mockup-body">
-                {/* Stats row */}
                 <div className="mock-stats">
                   {[
-                    { label:"Today's Bookings", val:"12", color:"#6366F1" },
-                    { label:"Revenue", val:"£840", color:"#10B981" },
-                    { label:"No-Shows", val:"0", color:"#F59E0B" },
+                    { label:"Today's Bookings", val:"18", color:"#6366F1" },
+                    { label:"Revenue",          val:"£1,240", color:"#10B981" },
+                    { label:"No-Shows",         val:"0",      color:"#F59E0B" },
                   ].map(s => (
                     <div key={s.label} className="mock-stat">
                       <div className="mock-stat-val" style={{color:s.color}}>{s.val}</div>
@@ -261,13 +229,12 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
-                {/* Appointments */}
                 <div className="mock-section-title">Today&apos;s Appointments</div>
                 {[
-                  { time:"09:00", name:"Sarah M.", service:"Balayage", staff:"Emma", status:"confirmed" },
-                  { time:"10:30", name:"James T.", service:"Haircut", staff:"Liam",  status:"confirmed" },
-                  { time:"11:00", name:"Aisha K.", service:"Blow-dry", staff:"Emma", status:"pending" },
-                  { time:"12:00", name:"Priya S.", service:"Colour",   staff:"Liam",  status:"confirmed" },
+                  { time:"09:00", name:"Sarah M.",  service:"Balayage",           staff:"Emma",  status:"confirmed" },
+                  { time:"10:00", name:"James T.",  service:"Physio Assessment",  staff:"Dr. K", status:"confirmed" },
+                  { time:"11:30", name:"Aisha K.",  service:"Yoga — Beginners",   staff:"Liam",  status:"pending"   },
+                  { time:"13:00", name:"Priya S.",  service:"Deep Tissue Massage", staff:"Nina",  status:"confirmed" },
                 ].map(a => (
                   <div key={a.time} className="mock-appt">
                     <span className="mock-time">{a.time}</span>
@@ -276,9 +243,8 @@ export default function Home() {
                     <span className={`mock-badge mock-badge-${a.status}`}>{a.status}</span>
                   </div>
                 ))}
-                {/* WhatsApp sent indicator */}
                 <div className="mock-reminder">
-                  <span style={{color:"#25D366",fontSize:12}}>✔</span> WhatsApp reminders sent to 4 clients
+                  <span style={{color:"#25D366",fontSize:12}}>✔</span> WhatsApp reminders sent to 8 clients
                 </div>
               </div>
             </div>
@@ -294,6 +260,25 @@ export default function Home() {
             {item}
           </div>
         ))}
+      </section>
+
+      {/* ── Who it's for ── */}
+      <section id="who" className="section section-white">
+        <div className="section-label">WHO IT&apos;S FOR</div>
+        <h2 className="section-title">Built for every Health &amp; Wellbeing business</h2>
+        <p className="section-sub">Whether you see 5 or 500 clients a week, Feature gives you one powerful platform to manage it all.</p>
+        <div className="features-grid features-grid-v2" style={{marginTop:40}}>
+          {industries.map(ind => (
+            <div key={ind.name} className="feature-card feature-card-v2" style={{cursor:"default"}}>
+              <div className="feature-icon-v2" style={{fontSize:32}}>{ind.icon}</div>
+              <h3 style={{fontSize:15,marginBottom:6}}>{ind.name}</h3>
+              <p style={{fontSize:13,color:"#64748B",margin:0}}>{ind.desc}</p>
+            </div>
+          ))}
+        </div>
+        <div style={{textAlign:"center",marginTop:40}}>
+          <Link href="/signup" className="btn-primary btn-lg">Start free — no card needed</Link>
+        </div>
       </section>
 
       {/* ── Problem → Solution ── */}
@@ -340,17 +325,17 @@ export default function Home() {
       {/* ── Features ── */}
       <section id="features" className="section section-white">
         <div className="section-label">WHAT YOU GET</div>
-        <h2 className="section-title">Everything your salon needs</h2>
+        <h2 className="section-title">Everything your business needs</h2>
         <div className="features-grid features-grid-v2">
           {[
-            { icon:"📲", title:"Online Booking System",      desc:"Clients book 24/7 from your branded page. No more missed calls or double bookings." },
-            { icon:"👥", title:"Staff Management",           desc:"Set hours, assign services, manage holidays and track each staff member's performance." },
-            { icon:"💬", title:"WhatsApp Reminders",         desc:"Automated WhatsApp, SMS & email reminders. Salons see 60% fewer no-shows within weeks." },
-            { icon:"💳", title:"Stripe Payments",            desc:"Take deposits or full payments at booking time. Reduce no-shows and get paid upfront." },
-            { icon:"📋", title:"Client CRM",                 desc:"Every client's visit history, preferences and notes — all in one searchable profile." },
-            { icon:"📊", title:"Revenue Analytics",          desc:"Know your busiest days, top services, and best staff members at a glance every morning." },
-            { icon:"🏢", title:"Multi-Salon Support",        desc:"Manage multiple locations from one dashboard. Perfect for growing salon chains." },
-            { icon:"📱", title:"Mobile-First Design",        desc:"Your entire salon runs from your phone. iOS and Android ready, no app to download." },
+            { icon:"📲", title:"Online Booking System",       desc:"Clients book 24/7 from your branded page. No more missed calls, no more double bookings." },
+            { icon:"🗓️", title:"Class & Session Scheduling", desc:"Run group classes, 1-to-1 sessions or both. Waitlists, capacity limits and cancellation policies built in." },
+            { icon:"👥", title:"Staff Management",            desc:"Set hours, assign services, manage holidays and track each team member's performance." },
+            { icon:"💬", title:"WhatsApp Reminders",          desc:"Automated WhatsApp, SMS & email reminders. Businesses see 60% fewer no-shows within weeks." },
+            { icon:"💳", title:"Stripe Payments",             desc:"Take deposits or full payments at booking time. Reduce no-shows and get paid upfront." },
+            { icon:"📋", title:"Client CRM",                  desc:"Every client's visit history, treatment notes and preferences — all in one searchable profile." },
+            { icon:"📊", title:"Revenue Analytics",           desc:"Know your busiest times, top services, and best staff at a glance every morning." },
+            { icon:"📱", title:"Mobile-First Design",         desc:"Your entire business runs from your phone. iOS and Android ready, no app to download." },
           ].map(f => (
             <div key={f.title} className="feature-card feature-card-v2">
               <div className="feature-icon-v2">{f.icon}</div>
@@ -367,9 +352,9 @@ export default function Home() {
         <h2 className="section-title">Up and running in under 10 minutes</h2>
         <div className="steps steps-v2">
           {[
-            { num:"1", title:"Create your account", desc:"Sign up free. No credit card needed. Takes 60 seconds.", icon:"🚀" },
-            { num:"2", title:"Add services & staff", desc:"Set your menu, team, and working hours. We guide you through everything.", icon:"⚙️" },
-            { num:"3", title:"Share your booking link", desc:"Send it to clients or add it to Instagram bio. Start receiving bookings instantly.", icon:"🔗" },
+            { num:"1", title:"Create your account",       desc:"Sign up free. No credit card needed. Takes 60 seconds.", icon:"🚀" },
+            { num:"2", title:"Add services & staff",      desc:"Set your menu, team, and working hours. We guide you through everything.", icon:"⚙️" },
+            { num:"3", title:"Share your booking link",   desc:"Send it to clients or add it to Instagram bio. Start receiving bookings instantly.", icon:"🔗" },
           ].map(s => (
             <div key={s.num} className="step step-v2">
               <div className="step-icon">{s.icon}</div>
@@ -388,12 +373,12 @@ export default function Home() {
       <section id="compare" className="section section-white">
         <div className="section-label">COMPETITOR COMPARISON</div>
         <h2 className="section-title">Feature vs Fresha vs Treatwell</h2>
-        <p className="section-sub">See why UK salon owners are switching to Feature</p>
+        <p className="section-sub">See why UK Health &amp; Wellbeing businesses are switching to Feature</p>
         <div className="compare-table-wrap">
-          <table className="compare-table" role="table" aria-label="Feature Salon vs Fresha vs Treatwell comparison">
+          <table className="compare-table" role="table" aria-label="Feature vs Fresha vs Treatwell comparison">
             <thead>
               <tr>
-                <th scope="col">Feature</th>
+                <th scope="col">What you need</th>
                 <th scope="col" className="compare-col-feature"><span className="compare-badge-our">Feature ✓</span></th>
                 <th scope="col" className="compare-col-other">Fresha</th>
                 <th scope="col" className="compare-col-other">Treatwell</th>
@@ -425,7 +410,7 @@ export default function Home() {
           <div className="plan-card">
             <div className="plan-name">STARTER</div>
             <div className="plan-price">£29<span>/month</span></div>
-            <p className="plan-desc">Perfect for independent stylists and small salons.</p>
+            <p className="plan-desc">Perfect for sole practitioners and small teams.</p>
             {["Online booking page","Up to 3 staff","Client profiles","Email reminders","50 messages/month"].map(f => (
               <div key={f} className="plan-feature"><span>✓</span> {f}</div>
             ))}
@@ -436,8 +421,8 @@ export default function Home() {
             <div className="plan-popular">MOST POPULAR</div>
             <div className="plan-name plan-name-blue">PRO</div>
             <div className="plan-price">£59<span>/month</span></div>
-            <p className="plan-desc">For growing salons that need more power and control.</p>
-            {["Everything in Starter","Up to 10 staff","SMS & email reminders","Reports & analytics","100 messages/month"].map(f => (
+            <p className="plan-desc">For growing businesses that need more power and control.</p>
+            {["Everything in Starter","Up to 10 staff","SMS & WhatsApp reminders","Reports & analytics","100 messages/month"].map(f => (
               <div key={f} className="plan-feature"><span>✓</span> {f}</div>
             ))}
             <Link href="/signup" className="plan-btn-filled">Start free trial</Link>
@@ -446,7 +431,7 @@ export default function Home() {
           <div className="plan-card">
             <div className="plan-name">BUSINESS</div>
             <div className="plan-price">£99<span>/month</span></div>
-            <p className="plan-desc">For multi-location salons and large teams.</p>
+            <p className="plan-desc">For multi-location businesses and large teams.</p>
             {["Everything in Pro","Unlimited staff","Priority support","Advanced reports","Unlimited messages"].map(f => (
               <div key={f} className="plan-feature"><span>✓</span> {f}</div>
             ))}
@@ -455,59 +440,29 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Reviews ── */}
-      <section id="reviews" className="section section-white">
-        <div className="section-label">WHAT SALON OWNERS SAY</div>
-        <h2 className="section-title">Trusted by salons across the UK</h2>
-        <div className="reviews-grid">
-          {[
-            { initials:"SB", name:"Sarah B.", salon:"Studio Bloom · Manchester", text:"Feature replaced three different apps we were using. Bookings, reminders, payments — all in one place. Our no-show rate dropped by half within a month." },
-            { initials:"RA", name:"Rania A.", salon:"Aura Hair & Beauty · London", text:"The automated WhatsApp reminders are a game changer. Clients actually turn up now. Setup took less than 20 minutes and our booking page looks incredibly professional." },
-            { initials:"JT", name:"James T.", salon:"The Barber Collective · Birmingham", text:"I was paying Fresha nearly £150 a month with hidden commission fees. Feature costs me £59, does everything Fresha does, and the support team actually replies within the hour.", featured: true },
-            { initials:"NK", name:"Nadia K.", salon:"Luxe Beauty Lounge · Leeds", text:"Managing 8 staff members used to be a nightmare. Now I can see everyone's schedule, block off holidays, and track revenue — all from my phone. Absolutely brilliant software." },
-          ].map(r => (
-            <div key={r.name} className={`review-card${r.featured ? " review-card-featured" : ""}`}>
-              <div className="review-stars">★★★★★</div>
-              <p className="review-text">&ldquo;{r.text}&rdquo;</p>
-              <div className="review-author">
-                <div className="review-avatar">{r.initials}</div>
-                <div>
-                  <div className="review-name">{r.name}</div>
-                  <div className="review-salon">{r.salon}</div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="reviews-summary">
-          <span className="reviews-score">4.9 / 5</span>
-          <span className="reviews-stars-sm">★★★★★</span>
-          <span className="reviews-count">Based on 200+ salon owner reviews</span>
-        </div>
-      </section>
 
       {/* ── Location Pages ── */}
       <section id="locations" className="section">
-        <div className="section-label">SALONS ACROSS THE UK</div>
-        <h2 className="section-title">Salon software for every UK city</h2>
-        <p className="section-sub">Feature Salon powers independent salons and large chains across the UK.</p>
+        <div className="section-label">BUSINESSES ACROSS THE UK</div>
+        <h2 className="section-title">Powering Health &amp; Wellbeing across every UK city</h2>
+        <p className="section-sub">Feature powers independent practitioners and large multi-location businesses across the UK.</p>
         <div className="locations-grid">
           <Link href="/salons/london" className="location-card">
             <div className="location-icon">🏙️</div>
-            <h3>London Salons</h3>
-            <p>Salon software for London&apos;s thriving beauty industry</p>
+            <h3>London</h3>
+            <p>Salons, spas, gyms &amp; clinics in London</p>
             <span className="location-link">Explore →</span>
           </Link>
           <Link href="/salons/manchester" className="location-card">
             <div className="location-icon">🌆</div>
-            <h3>Manchester Salons</h3>
-            <p>Powering Manchester&apos;s fastest-growing salons</p>
+            <h3>Manchester</h3>
+            <p>Powering Manchester&apos;s fastest-growing wellness businesses</p>
             <span className="location-link">Explore →</span>
           </Link>
           <Link href="/salons/birmingham" className="location-card">
             <div className="location-icon">🏘️</div>
-            <h3>Birmingham Salons</h3>
-            <p>Trusted by Birmingham&apos;s top hair &amp; beauty salons</p>
+            <h3>Birmingham</h3>
+            <p>Trusted by Birmingham&apos;s top health &amp; beauty businesses</p>
             <span className="location-link">Explore →</span>
           </Link>
         </div>
@@ -535,8 +490,8 @@ export default function Home() {
 
       {/* ── Final CTA ── */}
       <section className="section final-cta">
-        <h2 className="final-cta-title">Start your salon transformation today</h2>
-        <p className="final-cta-sub">Join salons across the UK using Feature to automate bookings, cut no-shows, and grow revenue.</p>
+        <h2 className="final-cta-title">Start your business transformation today</h2>
+        <p className="final-cta-sub">Join hundreds of Health &amp; Wellbeing businesses across the UK using Feature to automate bookings, cut no-shows, and grow revenue.</p>
         <Link href="/signup" className="btn-primary btn-lg btn-glow">Start Free 14-Day Trial →</Link>
         <div className="final-cta-trust">
           <span>No credit card required</span>
@@ -549,9 +504,7 @@ export default function Home() {
 
       {/* ── Footer ── */}
       <footer className="footer">
-        <span className="nav-logo footer-logo">
-          feature
-        </span>
+        <span className="nav-logo footer-logo">feature</span>
         <nav className="footer-links" aria-label="Footer navigation">
           <Link href="/pricing">Pricing</Link>
           <Link href="/partner">Become a Partner</Link>
@@ -561,7 +514,7 @@ export default function Home() {
           <Link href="/login">Login</Link>
           <Link href="/signup">Sign up</Link>
         </nav>
-        <span className="footer-copy">© 2025 Feature. Built for salons across the UK &amp; Europe.</span>
+        <span className="footer-copy">© 2025 Feature. Built for Health &amp; Wellbeing businesses across the UK &amp; Europe.</span>
       </footer>
 
       {/* ── Mobile sticky CTA ── */}
