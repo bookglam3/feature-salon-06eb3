@@ -7,6 +7,15 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.FROM_EMAIL || "noreply@featuresalon.co.uk";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://featuresalon.co.uk";
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 /**
  * POST /api/notify-owner
  * Called by the reschedule page when a client reschedules or cancels.
@@ -14,12 +23,16 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://featuresalon.co.uk";
  */
 export async function POST(req: NextRequest) {
   // Basic origin guard — only allow same-origin or internal calls
-  const origin = req.headers.get("origin") || "";
+  const origin  = req.headers.get("origin")  || "";
   const referer = req.headers.get("referer") || "";
-  const secret = req.headers.get("x-internal-secret");
-  const validOrigin = origin.startsWith(APP_URL) || referer.startsWith(APP_URL);
-  const validSecret = secret === (process.env.CRON_SECRET || "");
-  if (!validOrigin && !validSecret) {
+  const secret  = req.headers.get("x-internal-secret");
+
+  const appHostname = (() => { try { return new URL(APP_URL).hostname; } catch { return ""; } })();
+  const originOk  = !!origin  && (() => { try { return new URL(origin).hostname  === appHostname; } catch { return false; } })();
+  const refererOk = !!referer && (() => { try { return new URL(referer).hostname === appHostname; } catch { return false; } })();
+  const secretOk  = !!process.env.CRON_SECRET && secret === process.env.CRON_SECRET;
+
+  if (!originOk && !refererOk && !secretOk) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -63,7 +76,7 @@ export async function POST(req: NextRequest) {
       <tr><td style="padding:12px 16px;color:#64748B;border-bottom:1px solid #E2E8F0;">Service</td><td style="padding:12px 16px;font-weight:700;color:#0F172A;border-bottom:1px solid #E2E8F0;">${serviceName || "—"}</td></tr>
       <tr><td style="padding:12px 16px;color:#64748B;${newFmt ? "border-bottom:1px solid #E2E8F0;" : ""}">Original Date</td><td style="padding:12px 16px;font-weight:700;color:#0F172A;${newFmt ? "border-bottom:1px solid #E2E8F0;" : ""}">${oldFmt}</td></tr>
       ${newFmt ? `<tr><td style="padding:12px 16px;color:#64748B;">New Date</td><td style="padding:12px 16px;font-weight:700;color:#059669;">${newFmt}</td></tr>` : ""}
-      ${note ? `<tr><td style="padding:12px 16px;color:#64748B;border-top:1px solid #E2E8F0;" colspan="2"><em style="color:#64748B;">"${note}"</em></td></tr>` : ""}
+      ${note ? `<tr><td style="padding:12px 16px;color:#64748B;border-top:1px solid #E2E8F0;" colspan="2"><em style="color:#64748B;">"${escapeHtml(String(note))}"</em></td></tr>` : ""}
     </table>
     <div style="margin-top:20px;padding:14px 16px;background:${isCancel ? "#FEF2F2" : "#EEF2FF"};border-radius:10px;font-size:13px;color:${isCancel ? "#DC2626" : "#4338CA"};font-weight:600;">
       ${isCancel ? "⚠️ This slot is now free — you may want to offer it to another client." : "✅ Appointment is now pending your confirmation for the new time."}

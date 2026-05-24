@@ -19,8 +19,9 @@ export async function POST(req: NextRequest) {
     if (!email) {
       return NextResponse.json({ error: "Missing email" }, { status: 400 });
     }
-    if (!charge_amount && !amount) {
-      return NextResponse.json({ error: "Missing amount" }, { status: 400 });
+    const rawAmount = charge_amount ?? amount;
+    if (!rawAmount || isNaN(Number(rawAmount)) || Number(rawAmount) <= 0) {
+      return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
     }
 
     const chargeAmount = charge_amount

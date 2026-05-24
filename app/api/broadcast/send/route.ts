@@ -16,6 +16,17 @@ const supabase = createClient(
 
 export async function POST(req: NextRequest) {
   try {
+    // Verify the caller is an authenticated salon owner
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const token = authHeader.slice(7);
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const {
       broadcastId,
       salonId,
@@ -29,6 +40,16 @@ export async function POST(req: NextRequest) {
 
     if (!salonId || !channel || !message || !clients?.length) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    // Verify the authenticated user owns this salon
+    const { data: salonRow } = await supabase
+      .from("salons")
+      .select("owner_id")
+      .eq("id", salonId)
+      .single();
+    if (!salonRow || salonRow.owner_id !== user.id) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://featuresalon.co.uk";
