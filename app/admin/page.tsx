@@ -221,6 +221,7 @@ export default function AdminPage() {
       const { data: salonData } = await supabase
         .from("salons")
         .select("id, name, slug, plan, created_at, owner_id, owner_email")
+        .eq("is_demo_data", false)
         .order("created_at", { ascending: false });
 
       const { data: appointmentData } = await supabase
