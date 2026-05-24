@@ -5,7 +5,22 @@ import { supabase } from "../lib/supabase";
 import { POPULAR_COUNTRIES, ALL_COUNTRIES, type Country } from "../lib/countries";
 
 const C = { indigo:"#6366F1", indigoDark:"#4338CA", indigoSoft:"#EEF2FF", green:"#10B981", red:"#EF4444", text:"#0F172A", text2:"#475569", text3:"#94A3B8", border:"#E2E8F0", bg:"#F8F9FC" };
-const STEPS = ["Account", "Your Salon", "Done!"];
+const STEPS = ["Account", "Your Business", "Done!"];
+
+const BUSINESS_TYPES = [
+  { key:"hair",       label:"💇 Hair Salon"            },
+  { key:"barber",     label:"✂️ Barbershop"             },
+  { key:"beauty",     label:"💅 Beauty Salon"           },
+  { key:"spa",        label:"🌿 Spa / Wellness"         },
+  { key:"nail",       label:"💎 Nail Studio"            },
+  { key:"gym",        label:"🏋️ Gym & Fitness Studio"  },
+  { key:"yoga",       label:"🧘 Yoga & Pilates"         },
+  { key:"physio",     label:"🤸 Physiotherapy"          },
+  { key:"massage",    label:"💆 Massage Therapy"        },
+  { key:"dental",     label:"🦷 Dental & Aesthetic"     },
+  { key:"pt",         label:"🏃 Personal Trainer"       },
+  { key:"other",      label:"🏠 Other"                  },
+];
 
 function pwStrength(p: string) {
   if (p.length < 6) return { label:"Weak", color:"#EF4444", w:"30%" };
@@ -125,13 +140,13 @@ export default function SignupPage() {
 
   const step1 = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!salonName.trim()) { setError("Salon name is required."); return; }
+    if (!salonName.trim()) { setError("Business name is required."); return; }
     if (!country) { setError("Please select your country."); return; }
     if (!terms) { setError("Please accept the Terms & Conditions."); return; }
     setLoading(true); setError("");
 
     const { data, error: signupErr } = await supabase.auth.signUp({ email, password,
-      options: { data: { full_name: fullName, salon_name: salonName } } });
+      options: { data: { full_name: fullName, salon_name: salonName, business_type: category } } });
 
     if (signupErr) {
       const msg = signupErr.message;
@@ -191,8 +206,8 @@ export default function SignupPage() {
         <div style={{ marginBottom:40 }}>
           <img src="/brand/logo-dark.svg" alt="Feature Salon" style={{ height: 40, width: "auto", display: "block", marginBottom: 6, opacity: 0.95 }} />
         </div>
-        <h2 style={{ fontSize:24, fontWeight:900, color:"#fff", lineHeight:1.3, marginBottom:10 }}>The last salon software you&apos;ll ever need.</h2>
-        <p style={{ fontSize:13.5, color:"rgba(255,255,255,0.55)", lineHeight:1.7, marginBottom:32 }}>Join salons worldwide managing bookings, staff, and payments — all in one place.</p>
+        <h2 style={{ fontSize:24, fontWeight:900, color:"#fff", lineHeight:1.3, marginBottom:10 }}>The last booking software you&apos;ll ever need.</h2>
+        <p style={{ fontSize:13.5, color:"rgba(255,255,255,0.55)", lineHeight:1.7, marginBottom:32 }}>Join Health &amp; Wellbeing businesses worldwide managing bookings, staff, and payments — all in one place.</p>
         <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:36 }}>
           {["Online booking page in minutes","Automated WhatsApp & SMS reminders","Staff management & scheduling","Stripe payments & deposits","Client CRM & history","Revenue analytics dashboard"].map(f=>(
             <div key={f} style={{ display:"flex", alignItems:"center", gap:10, fontSize:13, color:"rgba(255,255,255,0.8)" }}>
@@ -235,7 +250,7 @@ export default function SignupPage() {
             <div style={{ fontSize:11, color:C.text3 }}>No credit card required</div>
           </div>
           <h1 style={{ fontSize:26, fontWeight:900, color:C.text, letterSpacing:"-0.8px", marginBottom:4, lineHeight:1.2 }}>
-            {step===0?"Create your account":"Tell us about your salon"}
+            {step===0?"Create your account":"Tell us about your business"}
           </h1>
           <p style={{ fontSize:13.5, color:C.text2, marginBottom:24 }}>
             {step===0?"Start your free trial in under 60 seconds.":"Help us personalise your experience."}
@@ -284,14 +299,14 @@ export default function SignupPage() {
           {/* Step 1 */}
           {step===1 && (
             <form onSubmit={step1}>
-              <Inp label="Salon Name" value={salonName} onChange={setSalonName} placeholder="The Cut Studio" required hint="Appears on your public booking page." />
+              <Inp label="Business Name" value={salonName} onChange={setSalonName} placeholder="e.g. The Cut Studio, Serenity Physio…" required hint="Appears on your public booking page." />
               <CountryDropdown value={country} onChange={c=>{ setCountry(c); if(!phone || phone.startsWith("+")) setPhone(c.dial+" "); }} />
-              <Inp label="Phone Number (optional)" type="tel" value={phone} onChange={setPhone} placeholder={country?.dial+" 000 000 0000"||"+1 000 000 0000"} />
-              <Inp label="Company Name (optional)" value={company} onChange={setCompany} placeholder="Your business name" />
+              <Inp label="Phone Number (optional)" type="tel" value={phone} onChange={setPhone} placeholder={country ? country.dial+" 000 000 0000" : "+44 000 000 0000"} />
+              <Inp label="Company Name (optional)" value={company} onChange={setCompany} placeholder="Your registered company name" />
               <div style={{ marginBottom:16 }}>
-                <label style={{ fontSize:12.5, fontWeight:700, color:C.text, display:"block", marginBottom:8 }}>Salon Type</label>
+                <label style={{ fontSize:12.5, fontWeight:700, color:C.text, display:"block", marginBottom:8 }}>Business Type</label>
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }} className="salon-grid">
-                  {[{key:"hair",label:"💇 Hair Salon"},{key:"barber",label:"✂️ Barbershop"},{key:"beauty",label:"💅 Beauty Salon"},{key:"spa",label:"🧖 Spa / Wellness"},{key:"nail",label:"💎 Nail Studio"},{key:"other",label:"🏠 Other"}].map(o=>(
+                  {BUSINESS_TYPES.map(o=>(
                     <button key={o.key} type="button" onClick={()=>setCategory(o.key)}
                       style={{ padding:"9px 12px", borderRadius:10, fontSize:13, fontWeight:600, cursor:"pointer", textAlign:"left", border:`1.5px solid ${category===o.key?C.indigo:C.border}`, background:category===o.key?C.indigoSoft:"#fff", color:category===o.key?C.indigoDark:C.text2, transition:"all .15s" }}>
                       {o.label}
