@@ -17,7 +17,7 @@ function LoginForm() {
   useEffect(() => {
     const err = searchParams.get("error");
     if (err === "session_expired") setNotice("Your session has expired. Please sign in again.");
-    if (err === "forbidden")       setNotice("You don't have permission to access that page.");
+    if (err === "forbidden")       setNotice("You don't have permission to access that page. Please sign in with an authorised account.");
     if (err === "demo_expired")    setNotice("Your demo session has expired. Contact the administrator for a new link.");
   }, [searchParams]);
 

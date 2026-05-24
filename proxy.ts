@@ -85,7 +85,7 @@ export async function proxy(req: NextRequest) {
   // ── Role check ─────────────────────────────────────────────
   const allowed = requiredRolesFor(pathname);
   if (allowed.length > 0 && !allowed.includes(payload.role as AdminRole)) {
-    return NextResponse.redirect(new URL("/admin?error=forbidden", req.url));
+    return NextResponse.redirect(new URL("/admin/login?error=forbidden", req.url));
   }
 
   // ── Forward identity headers to pages ─────────────────────
