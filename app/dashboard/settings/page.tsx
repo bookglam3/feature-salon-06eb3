@@ -3,6 +3,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import DashboardShell, { HamburgerBtn } from "../components/DashboardShell";
 
 // ─── Types ────────────────────────────────────────────────────
 interface PaymentMethods {
@@ -416,9 +417,11 @@ export default function SettingsPage() {
   };
 
   if (loading) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
-      <div style={{ fontFamily: "Georgia, serif", fontSize: "24px", color: "#4F6EF7" }}>feature</div>
-    </div>
+    <DashboardShell salonName="">
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
+        <div style={{ fontFamily: "Georgia, serif", fontSize: "24px", color: "#4F6EF7" }}>feature</div>
+      </div>
+    </DashboardShell>
   );
 
   const cardStyle: React.CSSProperties = {
@@ -444,13 +447,21 @@ export default function SettingsPage() {
     children: isSaved ? "Saved ✓" : isSaving ? "Saving…" : label,
   });
 
-  return (
-    <div style={{ backgroundColor: "#F2F4F7", minHeight: "100vh", padding: "28px 24px" }}>
-      {/* Header */}
-      <div style={{ marginBottom: "24px" }}>
-        <p style={{ margin: 0, fontSize: "14px", color: "#64748B" }}>Manage your salon</p>
-        <h1 style={{ margin: 0, fontSize: "28px", color: "#0F172A", fontWeight: 700 }}>Settings</h1>
+  const Topbar = (
+    <header className="elite-topbar">
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <HamburgerBtn />
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "#F1F5F9", letterSpacing: "-0.4px" }}>Settings</div>
+          <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.3)", marginTop: 1 }}>Manage your salon</div>
+        </div>
       </div>
+    </header>
+  );
+
+  return (
+    <DashboardShell salonName={salonName} topbar={Topbar}>
+      <div style={{ padding: "28px 24px", maxWidth: 740 }}>
 
       {/* ── Booking Link ── */}
       <div style={{ ...cardStyle, background: "linear-gradient(135deg,#0F0B2D 0%,#3730A3 60%,#6366F1 100%)", border: "none", marginBottom: 20 }}>
@@ -704,7 +715,7 @@ export default function SettingsPage() {
           </div>
         </div>
         <p style={{ fontSize: "13px", color: "#64748B", marginBottom: "20px" }}>
-          Automatically send SMS &amp; email reminders to clients via Twilio + Resend.
+          Automatically send WhatsApp &amp; email reminders to clients.
           All messages include a GDPR opt-out link. Timezone: <strong>Europe/London</strong> (GMT/BST auto).
         </p>
         <div style={{ background: "#F8FAFF", border: "0.5px solid #E0E7FF", borderRadius: "10px", padding: "16px", marginBottom: "20px" }}>
@@ -712,10 +723,10 @@ export default function SettingsPage() {
             Message Schedule
           </div>
           {[
-            { icon: "📅", time: "24 hours before", msg: "\"Your appointment is tomorrow at [time]\"", channel: "SMS + Email" },
-            { icon: "⏰", time: "2 hours before",  msg: "\"Your appointment is in 2 hours\"",          channel: "SMS + Email" },
-            { icon: "💕", time: "1 hour after",   msg: "\"Thank you for visiting! [review link]\"",  channel: "SMS + Email" },
-            { icon: "🔄", time: "6 weeks after",  msg: "\"Ready for your next appointment?\"",        channel: "SMS + Email" },
+            { icon: "📅", time: "24 hours before", msg: "\"Your appointment is tomorrow at [time]\"", channel: "WhatsApp + Email" },
+            { icon: "⏰", time: "2 hours before",  msg: "\"Your appointment is in 2 hours\"",          channel: "WhatsApp + Email" },
+            { icon: "💕", time: "1 hour after",   msg: "\"Thank you for visiting! [review link]\"",  channel: "WhatsApp + Email" },
+            { icon: "🔄", time: "6 weeks after",  msg: "\"Ready for your next appointment?\"",        channel: "WhatsApp + Email" },
           ].map((row, i) => (
             <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 0", borderBottom: i < 3 ? "0.5px solid #EEF0F8" : "none" }}>
               <span style={{ fontSize: 18, lineHeight: 1, marginTop: 1 }}>{row.icon}</span>
@@ -738,13 +749,13 @@ export default function SettingsPage() {
             style={{ ...inputStyle, maxWidth: "400px" }}
           />
           <p style={{ fontSize: "11.5px", color: "#94A3B8", margin: "6px 0 0" }}>
-            Sent in the 1h post-visit thank-you SMS &amp; email.
+            Sent in the 1h post-visit thank-you WhatsApp &amp; email.
           </p>
         </div>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 8, background: "#F0FDF4", border: "0.5px solid #BBF7D0", borderRadius: "8px", padding: "12px 14px", marginBottom: "20px" }}>
           <span style={{ fontSize: 16 }}>🛡️</span>
           <div style={{ fontSize: "12px", color: "#15803D", lineHeight: 1.6 }}>
-            <strong>GDPR Compliant</strong> &mdash; Every SMS includes &ldquo;Reply STOP to opt out&rdquo; and every email includes an unsubscribe link.
+            <strong>GDPR Compliant</strong> &mdash; Every WhatsApp message includes a STOP opt-out link and every email includes an unsubscribe link.
           </div>
         </div>
         <button id="save-reminders-btn" onClick={handleSaveReminders} disabled={reminderSaving} {...saveBtn(reminderSaved, reminderSaving, "Save Reminder Settings")} />
@@ -844,7 +855,7 @@ export default function SettingsPage() {
           <div style={{ fontSize: "12px", color: "#15803D", lineHeight: 1.6 }}>
             <strong>GDPR Compliant</strong> — Every WhatsApp message includes a STOP opt-out link.
             Configure the webhook in Twilio Console → Messaging → Senders → WhatsApp sandbox →
-            <code style={{ background: "#D1FAE5", padding: "1px 6px", borderRadius: 4, marginLeft: 4 }}>https://feature-saas.vercel.app/api/whatsapp-optout</code>
+            <code style={{ background: "#D1FAE5", padding: "1px 6px", borderRadius: 4, marginLeft: 4 }}>https://featuresalon.co.uk/api/whatsapp-optout</code>
           </div>
         </div>
       </div>
@@ -976,7 +987,8 @@ export default function SettingsPage() {
           <button onClick={handleLogout} style={{ padding: "10px 18px", background: "#FEF2F2", color: "#EF4444", border: "1px solid #FECACA", borderRadius: 8, fontSize: 13, cursor: "pointer", fontWeight: 500 }}>Sign out</button>
         </div>
       </div>
-    </div>
+      </div>
+    </DashboardShell>
   );
 }
 
