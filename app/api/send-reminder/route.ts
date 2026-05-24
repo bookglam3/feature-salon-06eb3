@@ -8,13 +8,6 @@ import {
   sendNoShowAlertEmail,
 } from "@/app/lib/email";
 import {
-  send24hSMS,
-  send2hSMS,
-  sendThankyouSMS,
-  sendWinbackSMS,
-  formatUKTime,
-} from "@/app/lib/sms";
-import {
   send24hWhatsApp,
   send2hWhatsApp,
   sendWinbackWhatsApp,
@@ -82,7 +75,6 @@ export async function GET(req: Request) {
     resendKey:        !!process.env.RESEND_API_KEY,
     twilioSid:        !!process.env.TWILIO_ACCOUNT_SID,
     twilioToken:      !!process.env.TWILIO_AUTH_TOKEN,
-    twilioPhone:      !!process.env.TWILIO_PHONE_NUMBER,
     twilioWhatsApp:   !!process.env.TWILIO_WHATSAPP_FROM,
     appUrl:           !!process.env.NEXT_PUBLIC_APP_URL,
   };
@@ -133,8 +125,6 @@ export async function GET(req: Request) {
     }
     console.log(`[Reminder] Processing 24h for appointment ${a.id} (${a.client_name})`);
 
-    const ukTime = formatUKTime(a.date_time);
-
     // Email
     if (a.client_email) {
       try {
@@ -150,21 +140,8 @@ export async function GET(req: Request) {
       } catch (e) { errors.push(`24h email ${a.id}: ${e}`); }
     }
 
-    // SMS
-    if (a.client_phone && !(await isOptedOut(a.client_phone))) {
-      try {
-        await send24hSMS({
-          to: a.client_phone,
-          clientName: a.client_name,
-          time: ukTime,
-          salonName: a.salons?.name || "Your Salon",
-          senderName: a.salons?.name,
-        });
-      } catch (e) { errors.push(`24h SMS ${a.id}: ${e}`); }
-    }
-
     // WhatsApp
-    if (a.client_phone && a.salons?.whatsapp_enabled && !(await isOptedOut(a.client_phone))) {
+    if (a.client_phone && !(await isOptedOut(a.client_phone))) {
       try {
         await send24hWhatsApp({
           to:          a.client_phone,
@@ -205,8 +182,6 @@ export async function GET(req: Request) {
     if (a.salons?.reminders_enabled === false) continue;
     console.log(`[Reminder] Processing 2h for appointment ${a.id} (${a.client_name})`);
 
-    const ukTime = formatUKTime(a.date_time);
-
     // Email
     if (a.client_email) {
       try {
@@ -222,20 +197,8 @@ export async function GET(req: Request) {
       } catch (e) { errors.push(`2h email ${a.id}: ${e}`); }
     }
 
-    // SMS
-    if (a.client_phone && !(await isOptedOut(a.client_phone))) {
-      try {
-        await send2hSMS({
-          to: a.client_phone,
-          clientName: a.client_name,
-          time: ukTime,
-          senderName: a.salons?.name,
-        });
-      } catch (e) { errors.push(`2h SMS ${a.id}: ${e}`); }
-    }
-
     // WhatsApp
-    if (a.client_phone && a.salons?.whatsapp_enabled && !(await isOptedOut(a.client_phone))) {
+    if (a.client_phone && !(await isOptedOut(a.client_phone))) {
       try {
         await send2hWhatsApp({
           to:         a.client_phone,
@@ -298,21 +261,8 @@ export async function GET(req: Request) {
       } catch (e) { errors.push(`thankyou email ${a.id}: ${e}`); }
     }
 
-    // SMS
-    if (a.client_phone && !(await isOptedOut(a.client_phone))) {
-      try {
-        await sendThankyouSMS({
-          to: a.client_phone,
-          clientName: a.client_name,
-          salonName: a.salons?.name || "Your Salon",
-          reviewLink,
-          senderName: a.salons?.name,
-        });
-      } catch (e) { errors.push(`thankyou SMS ${a.id}: ${e}`); }
-    }
-
     // WhatsApp
-    if (a.client_phone && a.salons?.whatsapp_enabled && !(await isOptedOut(a.client_phone))) {
+    if (a.client_phone && !(await isOptedOut(a.client_phone))) {
       try {
         await sendThankyouWhatsApp({
           to:         a.client_phone,
@@ -411,21 +361,8 @@ export async function GET(req: Request) {
       } catch (e) { errors.push(`winback email ${a.id}: ${e}`); }
     }
 
-    // SMS
-    if (a.client_phone && !(await isOptedOut(a.client_phone))) {
-      try {
-        await sendWinbackSMS({
-          to: a.client_phone,
-          clientName: a.client_name,
-          salonName: a.salons?.name || "Your Salon",
-          bookingLink,
-          senderName: a.salons?.name,
-        });
-      } catch (e) { errors.push(`winback SMS ${a.id}: ${e}`); }
-    }
-
     // WhatsApp
-    if (a.client_phone && a.salons?.whatsapp_enabled && !(await isOptedOut(a.client_phone))) {
+    if (a.client_phone && !(await isOptedOut(a.client_phone))) {
       try {
         await sendWinbackWhatsApp({
           to:              a.client_phone,
