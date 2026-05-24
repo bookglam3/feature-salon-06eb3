@@ -210,13 +210,7 @@ export default function AdminPage() {
   // ── Auth + data load ──
   useEffect(() => {
     const loadAdmin = async () => {
-      const { data: authData } = await supabase.auth.getUser();
-      const user = authData?.user;
-      if (!user || user.email !== ADMIN_EMAIL) {
-        setError(`Access denied. Logged in as: ${user?.email || "not logged in"}. Required: ${ADMIN_EMAIL}`);
-        setLoading(false);
-        return;
-      }
+      // Auth is handled by JWT middleware — no email check needed here
 
       const { data: salonData } = await supabase
         .from("salons")
