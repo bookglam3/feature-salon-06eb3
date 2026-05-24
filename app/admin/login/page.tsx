@@ -18,6 +18,7 @@ function LoginForm() {
     const err = searchParams.get("error");
     if (err === "session_expired") setNotice("Your session has expired. Please sign in again.");
     if (err === "forbidden")       setNotice("You don't have permission to access that page.");
+    if (err === "demo_expired")    setNotice("Your demo session has expired. Contact the administrator for a new link.");
   }, [searchParams]);
 
   const handleSubmit = async (e: { preventDefault(): void }) => {
@@ -34,6 +35,7 @@ function LoginForm() {
       });
       const json = await res.json();
       if (!res.ok) { setError(json.error || "Login failed. Please try again."); return; }
+      if (json.role === "guest") { router.push("/admin/demo"); return; }
       router.push("/admin");
     } catch {
       setError("Network error. Please check your connection.");

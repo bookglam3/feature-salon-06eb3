@@ -54,14 +54,15 @@ export async function signAdminToken(payload: {
   role:                string;
   mfa_verified:        boolean;
   mfa_setup_required:  boolean;
-}): Promise<string> {
+  demo_expires_at?:    number;  // unix epoch — only for guest role
+}, ttl = TOKEN_TTL_SECONDS): Promise<string> {
   const secret = process.env.ADMIN_SECRET;
   if (!secret || secret.length < 32) {
     throw new Error("ADMIN_SECRET must be set and at least 32 characters");
   }
 
   const now    = Math.floor(Date.now() / 1000);
-  const claims = { ...payload, iat: now, exp: now + TOKEN_TTL_SECONDS };
+  const claims = { ...payload, iat: now, exp: now + ttl };
 
   const header  = b64url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
   const body    = b64url(JSON.stringify(claims));
@@ -80,6 +81,7 @@ export async function verifyAdminToken(token: string): Promise<{
   role:                string;
   mfa_verified:        boolean;
   mfa_setup_required:  boolean;
+  demo_expires_at?:    number;
   iat:                 number;
   exp:                 number;
 } | null> {

@@ -82,9 +82,25 @@ export default function AdminUsersPage() {
   const [invNote,    setInvNote]    = useState("");
   const [sending,    setSending]    = useState(false);
   const [sendMsg,    setSendMsg]    = useState<{ type: "ok" | "err"; text: string } | null>(null);
-  const [revoking,   setRevoking]   = useState<string | null>(null);
+  const [revoking,     setRevoking]     = useState<string | null>(null);
   const [resetting2fa, setResetting2fa] = useState<string | null>(null);
-  const [tab,        setTab]        = useState<"team"|"invites">("team");
+  const [tab,          setTab]          = useState<"team"|"invites">("team");
+
+  // Demo account state
+  const [demoEnabled,    setDemoEnabled]    = useState<boolean | null>(null);
+  const [demoExpiresAt,  setDemoExpiresAt]  = useState<string | null>(null);
+  const [demoLastLogin,  setDemoLastLogin]  = useState<string | null>(null);
+  const [demoSaving,     setDemoSaving]     = useState(false);
+  const [demoMsg,        setDemoMsg]        = useState<{ type: "ok" | "err"; text: string } | null>(null);
+
+  const loadDemo = useCallback(async () => {
+    const res = await fetch("/api/admin/demo");
+    if (!res.ok) return;
+    const d = await res.json();
+    setDemoEnabled(d.demo_enabled ?? true);
+    setDemoExpiresAt(d.demo_expires_at ?? null);
+    setDemoLastLogin(d.last_login_at ?? null);
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -102,7 +118,29 @@ export default function AdminUsersPage() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); loadDemo(); }, [load, loadDemo]);
+
+  const handleDemoPatch = async (body: object) => {
+    setDemoSaving(true);
+    setDemoMsg(null);
+    try {
+      const res  = await fetch("/api/admin/demo", {
+        method:  "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify(body),
+      });
+      const json = await res.json();
+      if (!res.ok) { setDemoMsg({ type: "err", text: json.error }); return; }
+      setDemoEnabled(json.demo_enabled);
+      setDemoExpiresAt(json.demo_expires_at ?? null);
+      setDemoMsg({ type: "ok", text: "Demo settings updated." });
+      setTimeout(() => setDemoMsg(null), 3000);
+    } catch {
+      setDemoMsg({ type: "err", text: "Network error." });
+    } finally {
+      setDemoSaving(false);
+    }
+  };
 
   const handleReset2FA = async (id: string, name: string) => {
     if (!confirm(`Reset 2FA for ${name}? They will be required to re-enroll on next login.`)) return;
@@ -178,6 +216,84 @@ export default function AdminUsersPage() {
           }}>
           + Invite Employee
         </button>
+      </div>
+
+      {/* ── Demo Access Control ───────────────────────────── */}
+      <div style={{
+        background: "#13131F", border: "1px solid rgba(139,92,246,0.25)",
+        borderRadius: 16, padding: "20px 24px", marginBottom: 24,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: 12,
+              background: "rgba(139,92,246,0.15)", display: "flex",
+              alignItems: "center", justifyContent: "center", fontSize: 18,
+            }}>👁</div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#F1F5F9" }}>Investor Demo Account</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
+                hushhushkarl@gmail.com · read-only · fake data only
+              </div>
+            </div>
+            {demoEnabled !== null && (
+              <span style={{
+                fontSize: 11, fontWeight: 800, padding: "4px 12px", borderRadius: 99,
+                background: demoEnabled ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.1)",
+                color: demoEnabled ? "#34D399" : "#FCA5A5",
+                border: `1px solid ${demoEnabled ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.3)"}`,
+              }}>
+                {demoEnabled ? "Enabled" : "Disabled"}
+              </span>
+            )}
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            {demoExpiresAt && (
+              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>
+                Expires: {expiresIn(demoExpiresAt)}
+              </span>
+            )}
+            {demoLastLogin && (
+              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>
+                Last login: {timeAgo(demoLastLogin)}
+              </span>
+            )}
+            <button
+              disabled={demoSaving}
+              onClick={() => handleDemoPatch({ extend_hours: 24 })}
+              style={{
+                padding: "7px 14px", background: "rgba(99,102,241,0.1)",
+                border: "1px solid rgba(99,102,241,0.3)", color: "#A5B4FC",
+                borderRadius: 9, fontSize: 12, fontWeight: 600, cursor: demoSaving ? "not-allowed" : "pointer",
+              }}>
+              + Extend 24h
+            </button>
+            <button
+              disabled={demoSaving}
+              onClick={() => handleDemoPatch({ enabled: !demoEnabled })}
+              style={{
+                padding: "7px 14px",
+                background: demoEnabled ? "rgba(239,68,68,0.08)" : "rgba(16,185,129,0.08)",
+                border: `1px solid ${demoEnabled ? "rgba(239,68,68,0.25)" : "rgba(16,185,129,0.25)"}`,
+                color: demoEnabled ? "#FCA5A5" : "#34D399",
+                borderRadius: 9, fontSize: 12, fontWeight: 600, cursor: demoSaving ? "not-allowed" : "pointer",
+              }}>
+              {demoSaving ? "Saving…" : demoEnabled ? "Disable Access" : "Enable Access"}
+            </button>
+          </div>
+        </div>
+
+        {demoMsg && (
+          <div style={{
+            marginTop: 12, padding: "9px 14px", borderRadius: 9, fontSize: 12,
+            background: demoMsg.type === "ok" ? "rgba(16,185,129,0.08)" : "rgba(239,68,68,0.08)",
+            border: `1px solid ${demoMsg.type === "ok" ? "rgba(16,185,129,0.25)" : "rgba(239,68,68,0.25)"}`,
+            color: demoMsg.type === "ok" ? "#34D399" : "#FCA5A5",
+          }}>
+            {demoMsg.text}
+          </div>
+        )}
       </div>
 
       {/* Tabs */}

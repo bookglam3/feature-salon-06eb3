@@ -11,6 +11,7 @@ const ROUTE_ROLES: Record<string, AdminRole[]> = {
   "/admin/sales":     ["super_admin", "sales_agent"],
   "/admin/salons":    ["super_admin", "ops_manager", "sales_agent"],
   "/admin/analytics": ["super_admin", "ops_manager"],
+  "/admin/demo":      ["guest", "super_admin"],
   "/admin":           ["super_admin", "ops_manager", "support_agent", "sales_agent", "developer"],
 };
 
@@ -65,6 +66,20 @@ export async function proxy(req: NextRequest) {
       return NextResponse.redirect(new URL("/admin/setup-2fa", req.url));
     }
     return NextResponse.redirect(new URL("/admin/login/verify", req.url));
+  }
+
+  // ── Guest: enforce demo expiry + redirect to /admin/demo ──
+  if (payload.role === "guest") {
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.demo_expires_at && now > payload.demo_expires_at) {
+      const res = NextResponse.redirect(new URL("/admin/login?error=demo_expired", req.url));
+      res.cookies.delete(ADMIN_COOKIE);
+      return res;
+    }
+    if (!pathname.startsWith("/admin/demo") && !pathname.startsWith("/api/admin/demo")) {
+      return NextResponse.redirect(new URL("/admin/demo", req.url));
+    }
+    return NextResponse.next({ request: { headers: new Headers(req.headers) } });
   }
 
   // ── Role check ─────────────────────────────────────────────

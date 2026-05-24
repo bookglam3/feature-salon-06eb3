@@ -4,7 +4,8 @@ export type AdminRole =
   | "ops_manager"    // View all salons/appointments, no edits
   | "support_agent"  // Tickets and complaints only
   | "sales_agent"    // View + onboard new salons
-  | "developer";     // Staging/test environment only
+  | "developer"      // Staging/test environment only
+  | "guest";         // Demo/investor — read-only, fake data only
 
 // ─── Database row types ───────────────────────────────────────
 export interface AdminUser {
@@ -105,6 +106,10 @@ export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
     "view_staging",
     "view_analytics",
   ],
+  guest: [
+    "view_all_salons",
+    "view_analytics",
+  ],
 };
 
 // ─── UI helpers ───────────────────────────────────────────────
@@ -114,6 +119,7 @@ export const ROLE_LABELS: Record<AdminRole, string> = {
   support_agent: "Support Agent",
   sales_agent:   "Sales Agent",
   developer:     "Developer",
+  guest:         "Demo Guest",
 };
 
 export const ROLE_COLORS: Record<AdminRole, string> = {
@@ -122,6 +128,7 @@ export const ROLE_COLORS: Record<AdminRole, string> = {
   support_agent: "#F59E0B",
   sales_agent:   "#10B981",
   developer:     "#06B6D4",
+  guest:         "#8B5CF6",
 };
 
 // Which /admin/* routes each role may access
@@ -131,4 +138,5 @@ export const ROLE_ALLOWED_ROUTES: Record<AdminRole, string[]> = {
   support_agent: ["/admin", "/admin/support"],
   sales_agent:   ["/admin", "/admin/salons", "/admin/sales"],
   developer:     ["/admin", "/admin/dev"],
+  guest:         ["/admin/demo"],
 };

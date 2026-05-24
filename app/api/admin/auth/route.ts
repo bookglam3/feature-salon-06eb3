@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
   // 2. Check admin role — must be active
   const { data: adminUser, error: adminErr } = await supabaseAdmin
     .from("admin_users")
-    .select("id, role, full_name, is_active, totp_enabled")
+    .select("id, role, full_name, is_active, totp_enabled, demo_enabled, demo_expires_at")
     .eq("id", authData.user.id)
     .eq("is_active", true)
     .single();
@@ -44,14 +44,41 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "This account does not have admin access" }, { status: 403 });
   }
 
-  // 3. Update last login
+  // 3. Guest: check demo access is enabled
+  if (adminUser.role === "guest") {
+    if (!adminUser.demo_enabled) {
+      return NextResponse.json({ error: "Demo access has been disabled." }, { status: 403 });
+    }
+    const expiresAt = adminUser.demo_expires_at
+      ? Math.floor(new Date(adminUser.demo_expires_at).getTime() / 1000)
+      : Math.floor(Date.now() / 1000) + 24 * 60 * 60;
+
+    if (expiresAt < Math.floor(Date.now() / 1000)) {
+      return NextResponse.json({ error: "Demo session has expired. Contact the administrator." }, { status: 403 });
+    }
+
+    await supabaseAdmin.from("admin_users")
+      .update({ last_login_at: new Date().toISOString() })
+      .eq("id", adminUser.id);
+
+    const TTL_24H = 24 * 60 * 60;
+    const token = await signAdminToken(
+      { id: adminUser.id, role: adminUser.role, mfa_verified: true, mfa_setup_required: false, demo_expires_at: expiresAt },
+      TTL_24H,
+    );
+    const res = NextResponse.json({ success: true, role: adminUser.role, name: adminUser.full_name });
+    res.cookies.set(ADMIN_COOKIE, token, { ...adminCookieOptions, maxAge: TTL_24H });
+    return res;
+  }
+
+  // 4. Update last login
   await supabaseAdmin.from("admin_users")
     .update({ last_login_at: new Date().toISOString() })
     .eq("id", adminUser.id);
 
   const mfa_setup_required = !adminUser.totp_enabled;
 
-  // 4. Issue token (mfa_verified = false until 2FA is passed)
+  // 5. Issue token (mfa_verified = false until 2FA is passed)
   const token = await signAdminToken({
     id:                 adminUser.id,
     role:               adminUser.role,
