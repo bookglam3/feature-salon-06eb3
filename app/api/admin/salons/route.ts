@@ -39,7 +39,8 @@ export async function GET(req: NextRequest) {
 
   const { data: logs } = await logsQuery;
 
-  const logMap: Record<string, typeof logs[0]> = {};
+  type LogRow = NonNullable<typeof logs>[number];
+  const logMap: Record<string, LogRow> = {};
   (logs ?? []).forEach(l => { if (l.salon_id && !logMap[l.salon_id]) logMap[l.salon_id] = l; });
 
   const enriched = (salons ?? []).map(s => ({
