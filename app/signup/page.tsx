@@ -164,7 +164,7 @@ export default function SignupPage() {
         if (!ex) break;
         slug = `${baseSlug}-${++attempt}`;
       }
-      await supabase.from("salons").insert({ name: salonName, slug, owner_id: data.user.id, owner_email: email, plan:"starter" });
+      await supabase.from("salons").insert({ name: salonName, slug, owner_id: data.user.id, owner_email: email, plan:"starter", business_type: category });
       setStep(2);
     }
     setLoading(false);
