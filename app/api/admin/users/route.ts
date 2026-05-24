@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await supabaseAdmin
     .from("admin_users")
-    .select("id, full_name, email, role, is_active, created_at, last_login_at")
+    .select("id, full_name, email, role, is_active, created_at, last_login_at, totp_enabled")
     .order("created_at", { ascending: true });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

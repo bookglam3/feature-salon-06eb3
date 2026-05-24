@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { supabase } from "@/app/lib/supabase";
 import { ROLE_LABELS, ROLE_COLORS } from "@/app/types/admin";
 import type { AdminRole } from "@/app/types/admin";
 
@@ -13,6 +12,7 @@ interface AdminMember {
   is_active:     boolean;
   created_at:    string;
   last_login_at: string | null;
+  totp_enabled:  boolean;
 }
 
 interface Invite {
@@ -83,17 +83,12 @@ export default function AdminUsersPage() {
   const [sending,    setSending]    = useState(false);
   const [sendMsg,    setSendMsg]    = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [revoking,   setRevoking]   = useState<string | null>(null);
+  const [resetting2fa, setResetting2fa] = useState<string | null>(null);
   const [tab,        setTab]        = useState<"team"|"invites">("team");
-
-  const getToken = useCallback(async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    return session?.access_token || "";
-  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const token = await getToken();
       const [membersRes, invitesRes] = await Promise.all([
         fetch("/api/admin/users",   { headers: { Cookie: document.cookie } }),
         fetch("/api/admin/invites", { headers: { Cookie: document.cookie } }),
@@ -105,11 +100,24 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [getToken]);
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 
-  const handleSendInvite = async (e: React.FormEvent) => {
+  const handleReset2FA = async (id: string, name: string) => {
+    if (!confirm(`Reset 2FA for ${name}? They will be required to re-enroll on next login.`)) return;
+    setResetting2fa(id);
+    try {
+      const res = await fetch(`/api/admin/auth/2fa/reset/${id}`, { method: "DELETE" });
+      const json = await res.json();
+      if (!res.ok) { alert(json.error || "Failed to reset 2FA."); return; }
+      await load();
+    } finally {
+      setResetting2fa(null);
+    }
+  };
+
+  const handleSendInvite = async (e: { preventDefault(): void }) => {
     e.preventDefault();
     setSendMsg(null);
     setSending(true);
@@ -203,7 +211,7 @@ export default function AdminUsersPage() {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                    {["Member","Role","Last Login","Joined","Actions"].map(h => (
+                    {["Member","Role","2FA","Last Login","Joined","Actions"].map(h => (
                       <th key={h} style={{ padding: "14px 18px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.25)", textTransform: "uppercase", letterSpacing: "0.8px" }}>{h}</th>
                     ))}
                   </tr>
@@ -223,19 +231,36 @@ export default function AdminUsersPage() {
                         </div>
                       </td>
                       <td style={{ padding: "14px 18px" }}><RoleBadge role={m.role} /></td>
+                      <td style={{ padding: "14px 18px" }}>
+                        {m.totp_enabled ? (
+                          <span style={{ fontSize: 11, fontWeight: 700, color: "#34D399", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)", padding: "3px 9px", borderRadius: 99 }}>Enabled</span>
+                        ) : (
+                          <span style={{ fontSize: 11, fontWeight: 700, color: "#F59E0B", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.25)", padding: "3px 9px", borderRadius: 99 }}>Not set up</span>
+                        )}
+                      </td>
                       <td style={{ padding: "14px 18px", fontSize: 12.5, color: "rgba(255,255,255,0.4)" }}>{timeAgo(m.last_login_at)}</td>
                       <td style={{ padding: "14px 18px", fontSize: 12.5, color: "rgba(255,255,255,0.35)" }}>
                         {new Date(m.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                       </td>
                       <td style={{ padding: "14px 18px" }}>
-                        {m.role !== "super_admin" && (
-                          <button
-                            disabled={revoking === m.id}
-                            onClick={() => handleRevoke(m.id, m.full_name)}
-                            style={{ padding: "6px 14px", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#FCA5A5", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
-                            {revoking === m.id ? "Revoking…" : "Revoke"}
-                          </button>
-                        )}
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                          {m.role !== "super_admin" && m.totp_enabled && (
+                            <button
+                              disabled={resetting2fa === m.id}
+                              onClick={() => handleReset2FA(m.id, m.full_name)}
+                              style={{ padding: "6px 12px", background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)", color: "#FCD34D", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                              {resetting2fa === m.id ? "Resetting…" : "Reset 2FA"}
+                            </button>
+                          )}
+                          {m.role !== "super_admin" && (
+                            <button
+                              disabled={revoking === m.id}
+                              onClick={() => handleRevoke(m.id, m.full_name)}
+                              style={{ padding: "6px 14px", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#FCA5A5", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                              {revoking === m.id ? "Revoking…" : "Revoke"}
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
