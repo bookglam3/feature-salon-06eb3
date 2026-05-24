@@ -14,13 +14,13 @@ const supabaseAdmin = createClient(
 // ─────────────────────────────────────────────────────────────
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const admin = await verifyAdminRequest(req);
   if (!admin) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   if (admin.role !== "super_admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const { id } = params;
+  const { id } = await params;
 
   // Fetch the invite to know its current status
   const { data: invite, error: fetchErr } = await supabaseAdmin

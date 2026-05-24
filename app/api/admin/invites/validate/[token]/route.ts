@@ -15,9 +15,9 @@ const supabaseAdmin = createClient(
 // ─────────────────────────────────────────────────────────────
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { token: string } },
+  { params }: { params: Promise<{ token: string }> },
 ) {
-  const { token } = params;
+  const { token } = await params;
 
   if (!token || token.length !== 64) {
     return NextResponse.json({ valid: false, reason: "invalid" }, { status: 400 });
