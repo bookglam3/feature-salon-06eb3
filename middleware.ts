@@ -33,10 +33,11 @@ function requiredRolesFor(pathname: string): AdminRole[] {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // ── Let the login page and its assets through ──────────────
+  // ── Public admin routes (no session required) ─────────────
   if (
     pathname.startsWith("/admin/login") ||
-    pathname.startsWith("/api/admin/auth")
+    pathname.startsWith("/admin/invite") ||  // invite acceptance page
+    pathname.startsWith("/api/admin/auth")   // login/logout API
   ) {
     return NextResponse.next();
   }

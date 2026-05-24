@@ -4,7 +4,12 @@
  * Requires ADMIN_SECRET env var — must be at least 32 characters.
  */
 
-const ALGO = { name: "HMAC", hash: "SHA-256" } as const;
+import type { NextRequest } from "next/server";
+import type { AdminRole } from "@/app/types/admin";
+
+// ─── Internal crypto helpers ──────────────────────────────────
+
+const ALGO             = { name: "HMAC", hash: "SHA-256" } as const;
 const TOKEN_TTL_SECONDS = 8 * 60 * 60; // 8 hours
 
 function b64url(input: string): string {
@@ -15,7 +20,7 @@ function b64url(input: string): string {
 }
 
 function b64urlDecode(input: string): string {
-  const padded = input.replace(/-/g, "+").replace(/_/g, "/");
+  const padded    = input.replace(/-/g, "+").replace(/_/g, "/");
   const remainder = padded.length % 4;
   return atob(remainder ? padded + "=".repeat(4 - remainder) : padded);
 }
@@ -30,6 +35,18 @@ async function getKey(secret: string, usage: KeyUsage[]): Promise<CryptoKey> {
   );
 }
 
+// ─── Cookie name and options ──────────────────────────────────
+
+export const ADMIN_COOKIE = "admin_token";
+
+export const adminCookieOptions = {
+  httpOnly: true,
+  secure:   process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  path:     "/",
+  maxAge:   TOKEN_TTL_SECONDS,
+};
+
 // ─── Sign ─────────────────────────────────────────────────────
 
 export async function signAdminToken(payload: {
@@ -38,10 +55,10 @@ export async function signAdminToken(payload: {
 }): Promise<string> {
   const secret = process.env.ADMIN_SECRET;
   if (!secret || secret.length < 32) {
-    throw new Error("ADMIN_SECRET env var must be set and at least 32 characters");
+    throw new Error("ADMIN_SECRET must be set and at least 32 characters");
   }
 
-  const now = Math.floor(Date.now() / 1000);
+  const now    = Math.floor(Date.now() / 1000);
   const claims = { ...payload, iat: now, exp: now + TOKEN_TTL_SECONDS };
 
   const header  = b64url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
@@ -70,14 +87,12 @@ export async function verifyAdminToken(token: string): Promise<{
     if (parts.length !== 3) return null;
     const [header, body, sig] = parts;
 
-    // Verify signature
     const message  = new TextEncoder().encode(`${header}.${body}`);
     const key      = await getKey(secret, ["verify"]);
     const sigBytes = Uint8Array.from(b64urlDecode(sig), (c) => c.charCodeAt(0));
     const valid    = await crypto.subtle.verify(ALGO, key, sigBytes, message);
     if (!valid) return null;
 
-    // Decode and check expiry
     const claims = JSON.parse(b64urlDecode(body));
     if (!claims.exp || claims.exp < Math.floor(Date.now() / 1000)) return null;
     if (!claims.id || !claims.role) return null;
@@ -88,14 +103,19 @@ export async function verifyAdminToken(token: string): Promise<{
   }
 }
 
-// ─── Cookie name and options ──────────────────────────────────
+// ─── API route auth helper ────────────────────────────────────
 
-export const ADMIN_COOKIE = "admin_token";
-
-export const adminCookieOptions = {
-  httpOnly: true,
-  secure:   process.env.NODE_ENV === "production",
-  sameSite: "lax" as const,
-  path:     "/",
-  maxAge:   TOKEN_TTL_SECONDS,
-};
+/**
+ * Reads and verifies the admin_token cookie from an API route request.
+ * Returns { id, role } on success, or null if missing / invalid / expired.
+ * Call this at the top of every protected /api/admin/* route handler.
+ */
+export async function verifyAdminRequest(
+  req: NextRequest,
+): Promise<{ id: string; role: AdminRole } | null> {
+  const token = req.cookies.get(ADMIN_COOKIE)?.value;
+  if (!token) return null;
+  const payload = await verifyAdminToken(token);
+  if (!payload) return null;
+  return { id: payload.id, role: payload.role as AdminRole };
+}
