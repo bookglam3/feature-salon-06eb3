@@ -50,8 +50,10 @@ export const adminCookieOptions = {
 // ─── Sign ─────────────────────────────────────────────────────
 
 export async function signAdminToken(payload: {
-  id:   string;
-  role: string;
+  id:                  string;
+  role:                string;
+  mfa_verified:        boolean;
+  mfa_setup_required:  boolean;
 }): Promise<string> {
   const secret = process.env.ADMIN_SECRET;
   if (!secret || secret.length < 32) {
@@ -74,10 +76,12 @@ export async function signAdminToken(payload: {
 // ─── Verify ───────────────────────────────────────────────────
 
 export async function verifyAdminToken(token: string): Promise<{
-  id:   string;
-  role: string;
-  iat:  number;
-  exp:  number;
+  id:                  string;
+  role:                string;
+  mfa_verified:        boolean;
+  mfa_setup_required:  boolean;
+  iat:                 number;
+  exp:                 number;
 } | null> {
   try {
     const secret = process.env.ADMIN_SECRET;
@@ -97,6 +101,9 @@ export async function verifyAdminToken(token: string): Promise<{
     if (!claims.exp || claims.exp < Math.floor(Date.now() / 1000)) return null;
     if (!claims.id || !claims.role) return null;
 
+    // Tokens issued before 2FA migration have no mfa fields — treat as needing re-login
+    if (claims.mfa_verified === undefined) return null;
+
     return claims;
   } catch {
     return null;
@@ -112,10 +119,10 @@ export async function verifyAdminToken(token: string): Promise<{
  */
 export async function verifyAdminRequest(
   req: NextRequest,
-): Promise<{ id: string; role: AdminRole } | null> {
+): Promise<{ id: string; role: AdminRole; mfa_verified: boolean } | null> {
   const token = req.cookies.get(ADMIN_COOKIE)?.value;
   if (!token) return null;
   const payload = await verifyAdminToken(token);
   if (!payload) return null;
-  return { id: payload.id, role: payload.role as AdminRole };
+  return { id: payload.id, role: payload.role as AdminRole, mfa_verified: payload.mfa_verified };
 }

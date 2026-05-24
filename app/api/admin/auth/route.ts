@@ -12,8 +12,12 @@ const supabaseAdmin = createClient(
 );
 
 // ─────────────────────────────────────────────────────────────
-// POST /api/admin/auth  — Login
+// POST /api/admin/auth  — Login (step 1)
 // Body: { email, password }
+// Returns:
+//   { success, role, name, requires2fa: false }  → JWT set, go to /admin
+//   { success, requires2fa: true  }              → JWT set (mfa_verified=false), go to /admin/login/verify
+//   { success, requires_setup: true }            → JWT set (mfa_verified=false), go to /admin/setup-2fa
 // ─────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   const { email, password } = await req.json().catch(() => ({}));
@@ -23,45 +27,44 @@ export async function POST(req: NextRequest) {
   }
 
   // 1. Verify credentials with Supabase Auth
-  const { data: authData, error: authErr } = await supabaseAdmin.auth.signInWithPassword({
-    email,
-    password,
-  });
-
+  const { data: authData, error: authErr } = await supabaseAdmin.auth.signInWithPassword({ email, password });
   if (authErr || !authData.user) {
     return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
   }
 
-  // 2. Look up admin role — must be active
+  // 2. Check admin role — must be active
   const { data: adminUser, error: adminErr } = await supabaseAdmin
     .from("admin_users")
-    .select("id, role, full_name, is_active")
+    .select("id, role, full_name, is_active, totp_enabled")
     .eq("id", authData.user.id)
     .eq("is_active", true)
     .single();
 
   if (adminErr || !adminUser) {
-    return NextResponse.json(
-      { error: "This account does not have admin access" },
-      { status: 403 },
-    );
+    return NextResponse.json({ error: "This account does not have admin access" }, { status: 403 });
   }
 
-  // 3. Sign a short-lived HTTP-only token
-  const token = await signAdminToken({ id: adminUser.id, role: adminUser.role });
-
-  // 4. Record the login timestamp (non-fatal if this fails)
-  await supabaseAdmin
-    .from("admin_users")
+  // 3. Update last login
+  await supabaseAdmin.from("admin_users")
     .update({ last_login_at: new Date().toISOString() })
-    .eq("id", adminUser.id)
-    .then(() => null);
+    .eq("id", adminUser.id);
 
-  // 5. Write cookie + return role info to the client
+  const mfa_setup_required = !adminUser.totp_enabled;
+
+  // 4. Issue token (mfa_verified = false until 2FA is passed)
+  const token = await signAdminToken({
+    id:                 adminUser.id,
+    role:               adminUser.role,
+    mfa_verified:       false,
+    mfa_setup_required,
+  });
+
   const res = NextResponse.json({
-    success:  true,
-    role:     adminUser.role,
-    name:     adminUser.full_name,
+    success:       true,
+    role:          adminUser.role,
+    name:          adminUser.full_name,
+    requires2fa:   adminUser.totp_enabled,
+    requires_setup: mfa_setup_required,
   });
   res.cookies.set(ADMIN_COOKIE, token, adminCookieOptions);
   return res;

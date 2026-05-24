@@ -27,21 +27,19 @@ function requiredRolesFor(pathname: string): AdminRole[] {
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // ── Public admin routes (no session required) ─────────────
+  // ── Fully public — no token needed ────────────────────────
   if (
     pathname.startsWith("/admin/login") ||
     pathname.startsWith("/admin/invite") ||
-    pathname.startsWith("/api/admin/auth")
+    pathname.startsWith("/api/admin/auth")   // covers login, logout, 2fa/*
   ) {
     return NextResponse.next();
   }
 
-  // ── Only gate /admin/* routes ──────────────────────────────
-  if (!pathname.startsWith("/admin")) {
-    return NextResponse.next();
-  }
+  // ── Only gate /admin/* ─────────────────────────────────────
+  if (!pathname.startsWith("/admin")) return NextResponse.next();
 
-  // ── Check token ────────────────────────────────────────────
+  // ── Verify token ───────────────────────────────────────────
   const token = req.cookies.get(ADMIN_COOKIE)?.value;
   if (!token) {
     return NextResponse.redirect(
@@ -51,22 +49,31 @@ export async function proxy(req: NextRequest) {
 
   const payload = await verifyAdminToken(token);
   if (!payload) {
-    const res = NextResponse.redirect(
-      new URL("/admin/login?error=session_expired", req.url),
-    );
+    const res = NextResponse.redirect(new URL("/admin/login?error=session_expired", req.url));
     res.cookies.delete(ADMIN_COOKIE);
     return res;
   }
 
-  // ── Check role for this route ──────────────────────────────
-  const allowed = requiredRolesFor(pathname);
-  if (allowed.length > 0 && !allowed.includes(payload.role as AdminRole)) {
-    return NextResponse.redirect(
-      new URL("/admin?error=forbidden", req.url),
-    );
+  // ── Enforce 2FA ────────────────────────────────────────────
+  if (!payload.mfa_verified) {
+    // Pages these users ARE allowed on before passing 2FA
+    if (pathname.startsWith("/admin/setup-2fa"))   return NextResponse.next();
+    if (pathname.startsWith("/admin/login/verify")) return NextResponse.next();
+
+    // Route to the right step
+    if (payload.mfa_setup_required) {
+      return NextResponse.redirect(new URL("/admin/setup-2fa", req.url));
+    }
+    return NextResponse.redirect(new URL("/admin/login/verify", req.url));
   }
 
-  // ── Pass admin identity to page/layout via headers ─────────
+  // ── Role check ─────────────────────────────────────────────
+  const allowed = requiredRolesFor(pathname);
+  if (allowed.length > 0 && !allowed.includes(payload.role as AdminRole)) {
+    return NextResponse.redirect(new URL("/admin?error=forbidden", req.url));
+  }
+
+  // ── Forward identity headers to pages ─────────────────────
   const headers = new Headers(req.headers);
   headers.set("x-admin-id",   payload.id);
   headers.set("x-admin-role", payload.role);
