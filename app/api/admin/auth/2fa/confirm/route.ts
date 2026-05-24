@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   // Store backup code hashes
   await supabaseAdmin.from("admin_backup_codes").delete().eq("admin_id", admin.id);
   await supabaseAdmin.from("admin_backup_codes").insert(
-    hashes.map(h => ({ admin_id: admin.id, code_hash: h }))
+    hashes.map((h: string) => ({ admin_id: admin.id, code_hash: h }))
   );
 
   // Re-issue JWT with mfa_verified = true
