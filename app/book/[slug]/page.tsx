@@ -362,15 +362,12 @@ export default function BookingPage() {
     const dateStr = `${selDate.getFullYear()}-${String(selDate.getMonth()+1).padStart(2,"0")}-${String(selDate.getDate()).padStart(2,"0")}`;
     const iso = localTimeToUTC(dateStr, selTime, salonTz);
 
-    let availQuery = supabase.from("appointments").select("id")
-      .eq("salon_id", salon.id)
-      .eq("date_time", iso)
-      .not("status", "eq", "cancelled");
-    // If specific staff selected, check only that staff's slot
-    // If "any available", check if ALL staff are fully booked (for now: any conflict blocks)
-    if (selectedStaff?.id) { availQuery = availQuery.eq("staff_id", selectedStaff.id); }
-    const { data: existing } = await availQuery.limit(1).maybeSingle();
-    if (existing) { alert("This time slot is already booked. Please choose another time."); setSubmitting(false); return; }
+    const { data: slotFree } = await supabase.rpc("check_slot_available", {
+      p_salon_id:  salon.id,
+      p_date_time: iso,
+      p_staff_id:  selectedStaff?.id ?? null,
+    });
+    if (slotFree === false) { alert("This time slot is already booked. Please choose another time."); setSubmitting(false); return; }
 
     const pm = selectedOption?.id || "full_online";
 
