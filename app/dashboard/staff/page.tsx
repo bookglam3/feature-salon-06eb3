@@ -9,11 +9,12 @@ import EmptyState from "../components/EmptyState";
 import { SkeletonDashboard } from "../components/SkeletonLoader";
 import { useToast } from "../components/Toast";
 import type { StaffMember } from "../../types";
+import { useSalon } from "../context/SalonContext";
 
 const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
 
 const EMPTY_FORM = {
-  name: "", email: "", role: "stylist", active: true, services: [] as string[],
+  name: "", email: "", role: "", active: true, services: [] as string[],
   working_hours: { Mon:{enabled:true,start:"09:00",end:"18:00"}, Tue:{enabled:true,start:"09:00",end:"18:00"}, Wed:{enabled:true,start:"09:00",end:"18:00"}, Thu:{enabled:true,start:"09:00",end:"18:00"}, Fri:{enabled:true,start:"09:00",end:"18:00"}, Sat:{enabled:false,start:"10:00",end:"16:00"}, Sun:{enabled:false,start:"10:00",end:"16:00"} } as Record<string,{enabled:boolean;start:string;end:string}>,
 };
 
@@ -27,6 +28,7 @@ function Avatar({ name }: { name: string }) {
 export default function StaffPage() {
   const router = useRouter();
   const toast = useToast();
+  const { vc } = useSalon();
   const [salon, setSalon] = useState<{ id: string; name: string } | null>(null);
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -125,7 +127,7 @@ export default function StaffPage() {
 
   const handleEdit = useCallback((s: StaffMember) => {
     setEditingStaff(s);
-    setFormData({ name: s.name||"", email: s.email||"", role: s.role||"stylist", active: s.active??true, services: s.services||[], working_hours: s.working_hours||EMPTY_FORM.working_hours });
+    setFormData({ name: s.name||"", email: s.email||"", role: s.role || vc.staffSingular.toLowerCase(), active: s.active??true, services: s.services||[], working_hours: s.working_hours||EMPTY_FORM.working_hours });
     setFormTab("info"); setShowForm(true);
   }, []);
 
@@ -184,14 +186,14 @@ export default function StaffPage() {
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <HamburgerBtn onClick={() => {}} />
         <div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)", letterSpacing: "-0.3px" }}>Staff Management</div>
-          <div style={{ fontSize: 11.5, color: "var(--text-3)" }}>{staffList.length} team members</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)", letterSpacing: "-0.3px" }}>{vc.staffPlural} Management</div>
+          <div style={{ fontSize: 11.5, color: "var(--text-3)" }}>{staffList.length} {vc.staffPlural.toLowerCase()}</div>
         </div>
       </div>
-      <button onClick={() => { setEditingStaff(null); setFormData(EMPTY_FORM); setShowForm(true); }} style={{ background: "var(--indigo)", color: "#fff", fontSize: 13, fontWeight: 600, padding: "8px 16px", borderRadius: "var(--r-sm)", border: "none", cursor: "pointer", boxShadow: "var(--shadow-indigo)", whiteSpace: "nowrap", transition: "all 0.14s" }}
+      <button onClick={() => { setEditingStaff(null); setFormData({ ...EMPTY_FORM, role: vc.staffSingular.toLowerCase() }); setShowForm(true); }} style={{ background: "var(--indigo)", color: "#fff", fontSize: 13, fontWeight: 600, padding: "8px 16px", borderRadius: "var(--r-sm)", border: "none", cursor: "pointer", boxShadow: "var(--shadow-indigo)", whiteSpace: "nowrap", transition: "all 0.14s" }}
         onMouseEnter={e => { e.currentTarget.style.background = "var(--indigo-dark)"; }}
         onMouseLeave={e => { e.currentTarget.style.background = "var(--indigo)"; }}
-      >+ Add Staff</button>
+      >+ Add {vc.staffSingular}</button>
     </header>
   );
 
@@ -201,7 +203,7 @@ export default function StaffPage() {
 
         {/* Search */}
         <div style={{ marginBottom: 16 }}>
-          <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Search staff by name or email..." style={{ width: "100%", maxWidth: 360, padding: "9px 13px", border: "1px solid var(--border-2)", borderRadius: "var(--r-sm)", fontSize: 13.5, fontFamily: "var(--font)", outline: "none", color: "var(--text-1)" }}
+          <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder={`Search ${vc.staffPlural.toLowerCase()} by name or email…`} style={{ width: "100%", maxWidth: 360, padding: "9px 13px", border: "1px solid var(--border-2)", borderRadius: "var(--r-sm)", fontSize: 13.5, fontFamily: "var(--font)", outline: "none", color: "var(--text-1)" }}
             onFocus={e => { e.currentTarget.style.borderColor = "var(--indigo)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.12)"; }}
             onBlur={e => { e.currentTarget.style.borderColor = "var(--border-2)"; e.currentTarget.style.boxShadow = "none"; }}
           />
@@ -210,7 +212,7 @@ export default function StaffPage() {
         {/* Staff cards grid */}
         {filtered.length === 0 ? (
           <div style={{ background: "#fff", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", overflow: "hidden" }}>
-            <EmptyState icon="??" title={searchTerm ? "No staff found" : "No staff members yet"} description={searchTerm ? "Try a different search" : "Add your first team member to get started"} action={{ label: "+ Add Staff", onClick: () => setShowForm(true) }} />
+            <EmptyState icon="??" title={searchTerm ? `No ${vc.staffPlural.toLowerCase()} found` : `No ${vc.staffPlural.toLowerCase()} yet`} description={searchTerm ? "Try a different search" : `Add your first ${vc.staffSingular.toLowerCase()} to get started`} action={{ label: `+ Add ${vc.staffSingular}`, onClick: () => { setEditingStaff(null); setFormData({ ...EMPTY_FORM, role: vc.staffSingular.toLowerCase() }); setShowForm(true); } }} />
           </div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 14 }}>
@@ -268,7 +270,7 @@ export default function StaffPage() {
       </div>
 
       {/* Staff Form Modal */}
-      <Modal open={showForm} onClose={() => { setShowForm(false); setEditingStaff(null); }} title={editingStaff ? `Edit ✏️ ${editingStaff.name}` : "Add New Staff Member"} maxWidth={520}>
+      <Modal open={showForm} onClose={() => { setShowForm(false); setEditingStaff(null); }} title={editingStaff ? `Edit ✏️ ${editingStaff.name}` : `Add New ${vc.staffSingular}`} maxWidth={520}>
         {/* Tabs */}
         <div style={{ display: "flex", gap: 2, background: "var(--slate-100)", padding: 3, borderRadius: 8, marginBottom: 20 }}>
           {(["info","services","hours"] as const).map(tab => (
@@ -282,8 +284,15 @@ export default function StaffPage() {
           {formTab === "info" && (
             <>
               <FormGroup label="Name *"><Input placeholder="Jane Smith" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} required /></FormGroup>
-              <FormGroup label="Email *"><Input type="email" placeholder="jane@salon.com" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} required /></FormGroup>
-              <FormGroup label="Role"><Select value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })}><option value="stylist">Stylist</option><option value="makeup-artist">Makeup Artist</option><option value="esthetician">Esthetician</option><option value="receptionist">Receptionist</option><option value="manager">Manager</option></Select></FormGroup>
+              <FormGroup label="Email *"><Input type="email" placeholder="name@example.com" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} required /></FormGroup>
+              <FormGroup label="Role"><Select value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })}>
+                <option value={vc.staffSingular.toLowerCase()}>{vc.staffSingular}</option>
+                {editingStaff && formData.role && formData.role !== vc.staffSingular.toLowerCase() && !["receptionist","manager"].includes(formData.role) && (
+                  <option value={formData.role}>{formData.role.split("-").map((w: string) => w[0].toUpperCase()+w.slice(1)).join(" ")}</option>
+                )}
+                <option value="receptionist">Receptionist</option>
+                <option value="manager">Manager</option>
+              </Select></FormGroup>
               <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "var(--slate-50)", borderRadius: "var(--r-sm)", border: "1px solid var(--border)" }}>
                 <label style={{ position: "relative", width: 32, height: 17, cursor: "pointer" }}>
                   <input type="checkbox" checked={formData.active} onChange={e => setFormData({ ...formData, active: e.target.checked })} style={{ opacity: 0, width: 0, height: 0 }} />
@@ -300,7 +309,9 @@ export default function StaffPage() {
             <div>
               <p style={{ fontSize: 12.5, color: "var(--text-3)", marginBottom: 14 }}>Select services this staff member provides:</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {(salonServices.length > 0 ? salonServices : ["Haircut","Hair Color","Blowout","Makeup","Facial","Manicure","Pedicure","Waxing","Massage"]).map(svc => {
+              {salonServices.length === 0 ? (
+                <p style={{ fontSize: 12.5, color: "var(--text-3)", textAlign: "center", padding: "20px 0", width: "100%" }}>No services found. Add services in Settings first.</p>
+              ) : salonServices.map(svc => {
                   const sel = formData.services.includes(svc);
                   return (
                     <button key={svc} type="button" onClick={() => toggleService(svc)} style={{ padding: "7px 14px", fontSize: 13, borderRadius: 99, border: `1px solid ${sel ? "var(--indigo)" : "var(--border)"}`, background: sel ? "var(--indigo-light)" : "#fff", color: sel ? "var(--indigo)" : "var(--text-2)", cursor: "pointer", fontWeight: sel ? 600 : 400, transition: "all 0.12s", fontFamily: "var(--font)" }}>
@@ -342,7 +353,7 @@ export default function StaffPage() {
 
           <ModalActions>
             <BtnSecondary type="button" onClick={() => { setShowForm(false); setEditingStaff(null); setFormData(EMPTY_FORM); setFormTab("info"); }}>Cancel</BtnSecondary>
-            <BtnPrimary type="submit" disabled={submitting}>{submitting ? "Saving…" : editingStaff ? "Save Changes" : "Add Staff"}</BtnPrimary>
+            <BtnPrimary type="submit" disabled={submitting}>{submitting ? "Saving…" : editingStaff ? "Save Changes" : `Add ${vc.staffSingular}`}</BtnPrimary>
           </ModalActions>
         </form>
       </Modal>
