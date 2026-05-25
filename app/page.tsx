@@ -26,7 +26,7 @@ const faqItems = [
   { question: "Can clients book online 24/7?",                      answer: "Yes. Every business gets a public booking page where clients can browse services, choose a staff member, and book at any time — no phone calls needed." },
   { question: "What payment methods are supported?",                answer: "Feature uses Stripe for payments, supporting all major credit and debit cards. You can take deposits or full payments at booking time to reduce no-shows." },
   { question: "Is there a long-term contract?",                     answer: "No contracts at all. All plans are monthly and you can cancel at any time from your dashboard. We also offer a 30-day money-back guarantee." },
-  { question: "Do you send automated appointment reminders?",       answer: "Yes — Feature sends automated SMS, WhatsApp, and email reminders to clients before their appointments. Businesses using reminders report a 60% reduction in no-shows." },
+  { question: "Do you send automated appointment reminders?",       answer: "Yes — Feature sends automated SMS, WhatsApp, and email reminders to clients before their appointments." },
   { question: "How much does Feature cost?",                        answer: "Feature starts from £29/month for the Starter plan (up to 3 staff), £59/month for Pro (up to 10 staff), and £99/month for Business (unlimited staff). All plans include a 14-day free trial with no credit card required." },
   { question: "What features does Feature include?",                answer: "Feature includes: online booking system, staff management & scheduling, automated WhatsApp/SMS/email reminders, Stripe payment processing, client CRM, revenue analytics, gift cards, loyalty program, waitlist management, class scheduling, and multi-location support." },
 ];
@@ -55,7 +55,7 @@ const softwareSchema = {
   applicationSubCategory: "Health & Wellbeing Booking Software",
   operatingSystem: "Web, iOS, Android",
   browserRequirements: "Requires JavaScript. Requires HTML5.",
-  description: "Feature is the UK's leading booking & management platform for Health & Wellbeing businesses. Manage online bookings, staff scheduling, WhatsApp & SMS reminders, Stripe payments, client CRM, revenue analytics, gift cards, and loyalty programs — all from one dashboard.",
+  description: "Feature is a UK booking & management platform for Health & Wellbeing businesses. Manage online bookings, staff scheduling, WhatsApp & SMS reminders, Stripe payments, client CRM, revenue analytics, gift cards, and loyalty programs — all from one dashboard.",
   featureList: [
     "Online booking system with 24/7 client self-booking",
     "Automated WhatsApp appointment reminders",
@@ -157,7 +157,6 @@ const comparisonData = [
   { feature: "SMS & email reminders",          feature_: true,  fresha: true,  treatwell: true  },
   { feature: "Stripe online payments",         feature_: true,  fresha: true,  treatwell: true  },
   { feature: "Gyms, physio & yoga support",   feature_: true,  fresha: false, treatwell: false },
-  { feature: "UK-based customer support",      feature_: true,  fresha: false, treatwell: false },
   { feature: "14-day free trial",              feature_: true,  fresha: false, treatwell: false },
   { feature: "No hidden marketplace fees",     feature_: true,  fresha: false, treatwell: false },
 ];
@@ -254,7 +253,7 @@ export default function Home() {
 
       {/* ── Social proof bar ── */}
       <section className="trust-bar">
-        {["No setup fees", "Free 14-day trial", "Cancel anytime", "UK-based support", "60% fewer no-shows"].map(item => (
+        {["No setup fees", "Free 14-day trial", "Cancel anytime", "UK-based support", "Automated appointment reminders"].map(item => (
           <div key={item} className="trust-item">
             <div className="trust-dot"/>
             {item}
@@ -306,7 +305,7 @@ export default function Home() {
             <div className="ps-solution-header">Feature fixes all of this</div>
             {[
               { icon:"📲", text:"Clients book online 24/7 — you never pick up the phone" },
-              { icon:"💬", text:"WhatsApp reminders cut no-shows by 60%" },
+              { icon:"💬", text:"Automated WhatsApp, SMS & email reminders to help reduce no-shows" },
               { icon:"📅", text:"Smart calendar prevents double bookings" },
               { icon:"💳", text:"Stripe payments collected at booking" },
               { icon:"⚡", text:"Automated SMS, email & WhatsApp reminders" },
@@ -331,7 +330,7 @@ export default function Home() {
             { icon:"📲", title:"Online Booking System",       desc:"Clients book 24/7 from your branded page. No more missed calls, no more double bookings." },
             { icon:"🗓️", title:"Class & Session Scheduling", desc:"Run group classes, 1-to-1 sessions or both. Waitlists, capacity limits and cancellation policies built in." },
             { icon:"👥", title:"Staff Management",            desc:"Set hours, assign services, manage holidays and track each team member's performance." },
-            { icon:"💬", title:"WhatsApp Reminders",          desc:"Automated WhatsApp, SMS & email reminders. Businesses see 60% fewer no-shows within weeks." },
+            { icon:"💬", title:"WhatsApp Reminders",          desc:"Send automated WhatsApp, SMS & email reminders — so clients don't forget their appointment." },
             { icon:"💳", title:"Stripe Payments",             desc:"Take deposits or full payments at booking time. Reduce no-shows and get paid upfront." },
             { icon:"📋", title:"Client CRM",                  desc:"Every client's visit history, treatment notes and preferences — all in one searchable profile." },
             { icon:"📊", title:"Revenue Analytics",           desc:"Know your busiest times, top services, and best staff at a glance every morning." },
@@ -373,7 +372,7 @@ export default function Home() {
       <section id="compare" className="section section-white">
         <div className="section-label">COMPETITOR COMPARISON</div>
         <h2 className="section-title">Feature vs Fresha vs Treatwell</h2>
-        <p className="section-sub">See why UK Health &amp; Wellbeing businesses are switching to Feature</p>
+        <p className="section-sub">An honest side-by-side comparison</p>
         <div className="compare-table-wrap">
           <table className="compare-table" role="table" aria-label="Feature vs Fresha vs Treatwell comparison">
             <thead>
@@ -405,7 +404,7 @@ export default function Home() {
       <section id="pricing" className="section">
         <div className="section-label">PRICING</div>
         <h2 className="section-title">Simple, honest pricing</h2>
-        <div className="fresha-badge"><span>💰</span><span>Up to 30% cheaper than Fresha — with zero commission fees</span></div>
+        <div className="fresha-badge"><span>💰</span><span>No commission fees, ever — just one flat monthly price</span></div>
         <div className="pricing-grid">
           <div className="plan-card">
             <div className="plan-name">STARTER</div>
@@ -443,9 +442,9 @@ export default function Home() {
 
       {/* ── Location Pages ── */}
       <section id="locations" className="section">
-        <div className="section-label">BUSINESSES ACROSS THE UK</div>
-        <h2 className="section-title">Powering Health &amp; Wellbeing across every UK city</h2>
-        <p className="section-sub">Feature powers independent practitioners and large multi-location businesses across the UK.</p>
+        <div className="section-label">AVAILABLE ACROSS THE UK</div>
+        <h2 className="section-title">Available across every UK city</h2>
+        <p className="section-sub">Feature is open to any UK health &amp; wellbeing business — wherever you are.</p>
         <div className="locations-grid">
           <Link href="/salons/london" className="location-card">
             <div className="location-icon">🏙️</div>
@@ -456,13 +455,13 @@ export default function Home() {
           <Link href="/salons/manchester" className="location-card">
             <div className="location-icon">🌆</div>
             <h3>Manchester</h3>
-            <p>Powering Manchester&apos;s fastest-growing wellness businesses</p>
+            <p>Salon software for Manchester businesses</p>
             <span className="location-link">Explore →</span>
           </Link>
           <Link href="/salons/birmingham" className="location-card">
             <div className="location-icon">🏘️</div>
             <h3>Birmingham</h3>
-            <p>Trusted by Birmingham&apos;s top health &amp; beauty businesses</p>
+            <p>Salon software for Birmingham businesses</p>
             <span className="location-link">Explore →</span>
           </Link>
         </div>
@@ -491,7 +490,7 @@ export default function Home() {
       {/* ── Final CTA ── */}
       <section className="section final-cta">
         <h2 className="final-cta-title">Start your business transformation today</h2>
-        <p className="final-cta-sub">Join hundreds of Health &amp; Wellbeing businesses across the UK using Feature to automate bookings, cut no-shows, and grow revenue.</p>
+        <p className="final-cta-sub">Be among the first UK health &amp; wellbeing businesses to run on Feature. No commission, no contracts, no catch.</p>
         <Link href="/signup" className="btn-primary btn-lg btn-glow">Start Free 14-Day Trial →</Link>
         <div className="final-cta-trust">
           <span>No credit card required</span>
