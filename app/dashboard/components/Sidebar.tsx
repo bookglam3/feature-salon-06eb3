@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
-import { NAV_ICON_MAP, LogOutIcon } from "./DashboardIcons";
+import { NAV_ICON_MAP, StaffIconByKey, LogOutIcon } from "./DashboardIcons";
 import type { LucideProps } from "lucide-react";
 import { useSalon } from "../context/SalonContext";
 
@@ -93,7 +93,15 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [adminLoaded, setAdminLoaded] = useState(false);
   const [branchOpen, setBranchOpen] = useState(false);
-  const { salons, activeSalon, switchSalon } = useSalon();
+  const { salons, activeSalon, switchSalon, vc } = useSalon();
+
+  const displayLabel = (key: string) => {
+    if (key === "Staff")         return vc.staffPlural;
+    if (key === "Bookings")      return vc.bookingPlural;
+    if (key === "Clients")       return vc.clientPlural;
+    if (key === "Client Portal") return vc.portalName;
+    return key;
+  };
   const hasMultiBranch = salons.length > 1;
 
   useEffect(() => {
@@ -256,7 +264,7 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
             </div>
             <div>
               <div style={{ fontSize: 16, fontFamily: "var(--font-inter, 'Inter', sans-serif)", fontWeight: 600, color: "#F1F5F9", letterSpacing: "-0.5px", lineHeight: 1 }}>feature</div>
-              <div style={{ fontSize: 8.5, fontWeight: 600, color: "rgba(167,139,250,0.5)", letterSpacing: "2.5px", textTransform: "uppercase", marginTop: 3 }}>SALON OS</div>
+              <div style={{ fontSize: 8.5, fontWeight: 600, color: "rgba(167,139,250,0.5)", letterSpacing: "2.5px", textTransform: "uppercase", marginTop: 3 }}>{vc.productName}</div>
             </div>
           </div>
           {onClose && (
@@ -367,7 +375,9 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
                   })
                   .map(item => {
                   const active = isActive(item.path);
-                  const Icon = NAV_ICON_MAP[item.label] as IconComp | undefined;
+                  const Icon = (item.label === "Staff"
+                    ? (StaffIconByKey[vc.staffIcon] ?? NAV_ICON_MAP[item.label])
+                    : NAV_ICON_MAP[item.label]) as IconComp | undefined;
                   return (
                     <Link
                       key={item.path}
@@ -398,7 +408,7 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
                       </div>
 
                       {/* Label */}
-                      <span style={{ flex: 1, fontSize: 13, letterSpacing: "-0.1px" }}>{item.label}</span>
+                      <span style={{ flex: 1, fontSize: 13, letterSpacing: "-0.1px" }}>{displayLabel(item.label)}</span>
 
                       {/* Active indicator dot */}
                       {active && (
