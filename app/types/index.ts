@@ -43,6 +43,7 @@ export interface Service {
   price: number;
   duration?: number;
   description?: string;
+  category?: string | null;
 }
 
 export interface Offer {

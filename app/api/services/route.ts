@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
   if (!salon) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
 
   const body = await req.json();
-  const { name, price, duration_minutes, description } = body;
+  const { name, price, duration_minutes, description, category } = body;
 
   if (!name?.trim()) return NextResponse.json({ error: "Service name is required" }, { status: 400 });
   if (!price || parseFloat(price) <= 0) return NextResponse.json({ error: "Price must be greater than 0" }, { status: 400 });
@@ -82,6 +82,7 @@ export async function POST(req: NextRequest) {
     duration_minutes: parseInt(duration_minutes) || null,
   };
   if (description?.trim()) payload.description = description.trim();
+  payload.category = category?.trim() || null;
 
   const { data, error } = await adminSupabase.from("services").insert(payload).select().single();
   if (error) {
@@ -97,7 +98,7 @@ export async function PATCH(req: NextRequest) {
   if (!salon) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
 
   const body = await req.json();
-  const { id, name, price, duration_minutes, description } = body;
+  const { id, name, price, duration_minutes, description, category } = body;
 
   if (!id) return NextResponse.json({ error: "Service ID required" }, { status: 400 });
 
@@ -108,6 +109,7 @@ export async function PATCH(req: NextRequest) {
   };
   if (description?.trim()) payload.description = description.trim();
   else payload.description = null;
+  payload.category = category?.trim() || null;
 
   const { error } = await adminSupabase
     .from("services")

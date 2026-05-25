@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import DashboardShell, { HamburgerBtn } from "../components/DashboardShell";
+import { useSalon } from "../context/SalonContext";
 
 // ─── Types ────────────────────────────────────────────────────
 interface PaymentMethods {
@@ -147,6 +148,7 @@ function BookingPreview({ pm, price = 65 }: { pm: PaymentMethods; price?: number
 // ═════════════════════════════════════════════════════════════
 export default function SettingsPage() {
   const router = useRouter();
+  const { vc } = useSalon();
   const [salon, setSalon] = useState<SalonData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -158,10 +160,10 @@ export default function SettingsPage() {
   const [logoUploading, setLogoUploading] = useState(false);
   const [logoError, setLogoError] = useState("");
   const logoInputRef = useRef<HTMLInputElement>(null);
-  const [services, setServices] = useState<{ id: string; name: string; price: number; duration_minutes?: number; duration?: number; description?: string }[]>([]);
-  const [newService, setNewService] = useState({ name: "", price: "", duration_minutes: "", description: "" });
-  const [editingService, setEditingService] = useState<{ id: string; name: string; price: number; duration_minutes?: number; duration?: number; description?: string } | null>(null);
-  const [editServiceForm, setEditServiceForm] = useState({ name: "", price: "", duration_minutes: "", description: "" });
+  const [services, setServices] = useState<{ id: string; name: string; price: number; duration_minutes?: number; duration?: number; description?: string; category?: string | null }[]>([]);
+  const [newService, setNewService] = useState({ name: "", price: "", duration_minutes: "", description: "", category: "" });
+  const [editingService, setEditingService] = useState<{ id: string; name: string; price: number; duration_minutes?: number; duration?: number; description?: string; category?: string | null } | null>(null);
+  const [editServiceForm, setEditServiceForm] = useState({ name: "", price: "", duration_minutes: "", description: "", category: "" });
   const [serviceError, setServiceError] = useState("");
 
   // Booking link copy
@@ -310,11 +312,11 @@ export default function SettingsPage() {
     const res = await fetch("/api/services", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ name: newService.name, price: newService.price, duration_minutes: newService.duration_minutes, description: newService.description }),
+      body: JSON.stringify({ name: newService.name, price: newService.price, duration_minutes: newService.duration_minutes, description: newService.description, category: newService.category }),
     });
     const json = await res.json();
     if (!res.ok) { setServiceError("Failed to add: " + (json.error || res.statusText)); return; }
-    setNewService({ name: "", price: "", duration_minutes: "", description: "" });
+    setNewService({ name: "", price: "", duration_minutes: "", description: "", category: "" });
     await reloadServices();
   };
 
@@ -329,7 +331,7 @@ export default function SettingsPage() {
     const res = await fetch("/api/services", {
       method: "PATCH",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ id: editingService.id, name: editServiceForm.name, price: editServiceForm.price, duration_minutes: editServiceForm.duration_minutes, description: editServiceForm.description }),
+      body: JSON.stringify({ id: editingService.id, name: editServiceForm.name, price: editServiceForm.price, duration_minutes: editServiceForm.duration_minutes, description: editServiceForm.description, category: editServiceForm.category }),
     });
     const json = await res.json();
     if (!res.ok) { setServiceError("Failed to update: " + (json.error || res.statusText)); return; }
@@ -871,7 +873,17 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {services.map(s => (
+        {vc.serviceCategory && services.some(s => s.category) && (
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#94A3B8", letterSpacing: "0.8px", textTransform: "uppercase", marginBottom: 8 }}>
+            {Array.from(new Set(services.map(s => s.category || "General"))).map(cat => (
+              <span key={cat} style={{ marginRight: 12, color: "#6366F1", background: "#EEF2FF", borderRadius: 6, padding: "2px 8px", fontWeight: 700, fontSize: 10.5 }}>{cat}</span>
+            ))}
+          </div>
+        )}
+        {(vc.serviceCategory
+          ? [...services].sort((a, b) => (a.category || "General").localeCompare(b.category || "General"))
+          : services
+        ).map(s => (
           <div key={s.id}>
             {editingService?.id === s.id ? (
               /* Inline edit form */
@@ -881,6 +893,9 @@ export default function SettingsPage() {
                   <input type="number" value={editServiceForm.price} onChange={e => setEditServiceForm({ ...editServiceForm, price: e.target.value })} required placeholder="Price" min="0.01" step="0.01" style={{ padding: "7px 10px", fontSize: "13px", border: "1.5px solid #4F6EF7", borderRadius: "8px", width: 90, color: "#0F172A", outline: "none" }} />
                   <input type="number" value={editServiceForm.duration_minutes} onChange={e => setEditServiceForm({ ...editServiceForm, duration_minutes: e.target.value })} placeholder="Mins" min="1" style={{ padding: "7px 10px", fontSize: "13px", border: "1.5px solid #4F6EF7", borderRadius: "8px", width: 80, color: "#0F172A", outline: "none" }} />
                   <input value={editServiceForm.description} onChange={e => setEditServiceForm({ ...editServiceForm, description: e.target.value })} placeholder="Description (optional)" style={{ padding: "7px 10px", fontSize: "13px", border: "1.5px solid #4F6EF7", borderRadius: "8px", flex: "1 1 200px", color: "#0F172A", outline: "none" }} />
+                  {vc.serviceCategory && (
+                    <input value={editServiceForm.category} onChange={e => setEditServiceForm({ ...editServiceForm, category: e.target.value })} placeholder="Category (e.g. Classes)" style={{ padding: "7px 10px", fontSize: "13px", border: "1.5px solid #4F6EF7", borderRadius: "8px", flex: "1 1 160px", color: "#0F172A", outline: "none" }} />
+                  )}
                 </div>
                 <div style={{ display: "flex", gap: 6, alignSelf: "center" }}>
                   <button type="submit" style={{ padding: "7px 14px", background: "#4F6EF7", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>✓ Save</button>
@@ -898,9 +913,12 @@ export default function SettingsPage() {
                   {s.description && (
                     <div style={{ fontSize: "11.5px", color: "#64748B", marginTop: 2, fontStyle: "italic" }}>{s.description}</div>
                   )}
+                  {vc.serviceCategory && s.category && (
+                    <div style={{ display: "inline-block", marginTop: 4, fontSize: 10.5, fontWeight: 700, color: "#6366F1", background: "#EEF2FF", borderRadius: 6, padding: "2px 8px" }}>{s.category}</div>
+                  )}
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={() => { setEditingService(s); setEditServiceForm({ name: s.name, price: String(s.price), duration_minutes: String(s.duration_minutes || s.duration || ""), description: s.description || "" }); setServiceError(""); }} style={{ color: "#4F6EF7", background: "none", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>✏️ Edit</button>
+                  <button onClick={() => { setEditingService(s); setEditServiceForm({ name: s.name, price: String(s.price), duration_minutes: String(s.duration_minutes || s.duration || ""), description: s.description || "", category: s.category || "" }); setServiceError(""); }} style={{ color: "#4F6EF7", background: "none", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>✏️ Edit</button>
                   <button onClick={() => handleDeleteService(s.id)} style={{ color: "#EF4444", background: "none", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 500 }}>Delete</button>
                 </div>
               </div>
@@ -914,6 +932,9 @@ export default function SettingsPage() {
           <input placeholder="Price £ *" type="number" min="0.01" step="0.01" value={newService.price} onChange={e => setNewService({ ...newService, price: e.target.value })} required style={{ padding: "8px 12px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "8px", width: "100px", color: "#0F172A" }} />
           <input placeholder="Duration (min)" type="number" min="1" value={newService.duration_minutes} onChange={e => setNewService({ ...newService, duration_minutes: e.target.value })} style={{ padding: "8px 12px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "8px", width: "120px", color: "#0F172A" }} />
           <input placeholder="Description (optional)" value={newService.description} onChange={e => setNewService({ ...newService, description: e.target.value })} style={{ padding: "8px 12px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "8px", flex: "1 1 180px", color: "#0F172A" }} />
+          {vc.serviceCategory && (
+            <input placeholder="Category (e.g. Classes)" value={newService.category} onChange={e => setNewService({ ...newService, category: e.target.value })} style={{ padding: "8px 12px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "8px", flex: "1 1 160px", color: "#0F172A" }} />
+          )}
           <button type="submit" style={{ padding: "8px 18px", background: "#4F6EF7", color: "#fff", border: "none", borderRadius: "8px", fontSize: "13px", cursor: "pointer", fontWeight: 600 }}>+ Add Service</button>
         </form>
       </div>

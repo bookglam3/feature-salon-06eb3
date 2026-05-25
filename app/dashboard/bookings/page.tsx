@@ -8,6 +8,7 @@ import EmptyState from "../components/EmptyState";
 import { SkeletonDashboard } from "../components/SkeletonLoader";
 import { useToast } from "../components/Toast";
 import type { Appointment, Service } from "../../types";
+import { useSalon } from "../context/SalonContext";
 
 type StaffItem = { id: string; name: string };
 
@@ -24,11 +25,12 @@ function StatusPill({ status }: { status: string }) {
   return <span className={`dk-badge ${cls}`}>{status.replace("_"," ")}</span>;
 }
 
-const EMPTY_FORM = { client_name: "", client_email: "", client_phone: "", staff_id: "", service_id: "", date_time: "", status: "pending" };
+const EMPTY_FORM = { client_name: "", client_email: "", client_phone: "", staff_id: "", service_id: "", date_time: "", status: "pending", notes: "" };
 
 export default function BookingsPage() {
   const router = useRouter();
   const toast = useToast();
+  const { vc } = useSalon();
   const [salon, setSalon] = useState<{ id: string; name: string } | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,14 +76,14 @@ export default function BookingsPage() {
     e.preventDefault();
     if (!salon) return;
     if (editingId) {
-      const { error } = await supabase.from("appointments").update({ client_name: formData.client_name, client_email: formData.client_email, client_phone: formData.client_phone, staff_id: formData.staff_id || null, service_id: formData.service_id, date_time: formData.date_time, status: formData.status }).eq("id", editingId);
+      const { error } = await supabase.from("appointments").update({ client_name: formData.client_name, client_email: formData.client_email, client_phone: formData.client_phone, staff_id: formData.staff_id || null, service_id: formData.service_id, date_time: formData.date_time, status: formData.status, notes: formData.notes || null }).eq("id", editingId);
       if (error) { toast.error("Failed to update booking"); return; }
       toast.success("Booking updated!");
     } else {
       // Insert and get the new row's ID
       const { data: inserted, error } = await supabase
         .from("appointments")
-        .insert({ salon_id: salon.id, client_name: formData.client_name, client_email: formData.client_email, client_phone: formData.client_phone, staff_id: formData.staff_id || null, service_id: formData.service_id, date_time: formData.date_time, status: formData.status })
+        .insert({ salon_id: salon.id, client_name: formData.client_name, client_email: formData.client_email, client_phone: formData.client_phone, staff_id: formData.staff_id || null, service_id: formData.service_id, date_time: formData.date_time, status: formData.status, notes: formData.notes || null })
         .select("id")
         .single();
       if (error) { toast.error("Failed to create booking"); return; }
@@ -109,7 +111,7 @@ export default function BookingsPage() {
 
   const handleEdit = useCallback((a: Appointment) => {
     setEditingId(a.id);
-    setFormData({ client_name: a.client_name || "", client_email: a.client_email || "", client_phone: a.client_phone || "", staff_id: a.staff_id || "", service_id: a.service_id || "", date_time: a.date_time ? a.date_time.slice(0,16) : "", status: a.status || "pending" });
+    setFormData({ client_name: a.client_name || "", client_email: a.client_email || "", client_phone: a.client_phone || "", staff_id: a.staff_id || "", service_id: a.service_id || "", date_time: a.date_time ? a.date_time.slice(0,16) : "", status: a.status || "pending", notes: a.notes || "" });
     setShowForm(true);
   }, []);
 
@@ -290,6 +292,19 @@ export default function BookingsPage() {
           <FormGroup label="Service"><Select value={formData.service_id} onChange={e => setFormData({ ...formData, service_id: e.target.value })}><option value="">Select service</option>{services.map(s => <option key={s.id} value={s.id}>{s.name} - {s.price}</option>)}</Select></FormGroup>
           <FormGroup label="Staff"><Select value={formData.staff_id} onChange={e => setFormData({ ...formData, staff_id: e.target.value })}><option value="">Any Available Staff</option>{staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</Select></FormGroup>
           <FormGroup label="Status"><Select value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}><option value="pending">Pending</option><option value="confirmed">Confirmed</option><option value="completed">✓ Completed</option><option value="no_show">💤 No-show</option><option value="cancelled">Cancelled</option></Select></FormGroup>
+          {vc.treatmentNotes && (
+            <FormGroup label="Treatment Notes">
+              <textarea
+                value={formData.notes}
+                onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                placeholder="Clinical observations, treatment plan, follow-up notes…"
+                rows={4}
+                style={{ width: "100%", padding: "9px 12px", fontSize: 13, border: "1.5px solid #E2E8F0", borderRadius: 10, resize: "vertical", fontFamily: "inherit", color: "#0F172A", lineHeight: 1.6, outline: "none", boxSizing: "border-box" }}
+                onFocus={e => { e.currentTarget.style.borderColor = "#6366F1"; }}
+                onBlur={e => { e.currentTarget.style.borderColor = "#E2E8F0"; }}
+              />
+            </FormGroup>
+          )}
           {!editingId && formData.client_email && (
             <p style={{ fontSize: 12, color: "#059669", margin: "0 0 12px", fontWeight: 500 }}>✉️ Confirmation email will be sent to {formData.client_email}</p>
           )}
