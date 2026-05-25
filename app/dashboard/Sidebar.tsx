@@ -1,7 +1,7 @@
 "use client";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { NAV_ICON_MAP } from "./components/DashboardIcons";
+import { NAV_ICON_MAP, StaffIconByKey } from "./components/DashboardIcons";
 import { useSalon } from "./context/SalonContext";
 
 // ─────────────────────────────────────────────────────────────────
@@ -69,9 +69,11 @@ const MOBILE_NAV = [
 // ─────────────────────────────────────────────────────────────────
 // IconBox component
 // ─────────────────────────────────────────────────────────────────
-function IconBox({ label, group, active }: { label: string; group: string; active: boolean }) {
+function IconBox({ label, group, active, staffIconKey }: { label: string; group: string; active: boolean; staffIconKey?: string }) {
   const s = SECTION[group];
-  const Icon = NAV_ICON_MAP[label];
+  const Icon = label === "Staff" && staffIconKey
+    ? (StaffIconByKey[staffIconKey] ?? NAV_ICON_MAP[label])
+    : NAV_ICON_MAP[label];
 
   return (
     <div
@@ -264,7 +266,7 @@ export default function DashboardSidebar() {
                       boxShadow: active ? "inset 0 1px 0 rgba(255,255,255,0.07)" : "none",
                     }}
                   >
-                    <IconBox label={item.label} group={group.group} active={active} />
+                    <IconBox label={item.label} group={group.group} active={active} staffIconKey={item.label === "Staff" ? vc.staffIcon : undefined} />
 
                     <span
                       className={[

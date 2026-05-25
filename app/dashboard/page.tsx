@@ -381,7 +381,7 @@ export default function DashboardPage() {
           style={{ display: "flex", alignItems: "center", gap: 7, background: "linear-gradient(135deg,#7C3AED,#6D28D9)", color: "#fff", fontSize: 13, fontWeight: 700, padding: "10px 20px", borderRadius: 11, border: "1px solid rgba(255,255,255,0.12)", cursor: "pointer", boxShadow: "0 4px 18px rgba(124,58,237,0.45)", whiteSpace: "nowrap", letterSpacing: "-0.1px", transition: "all 0.18s" }}
           onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 30px rgba(124,58,237,0.65)"; }}
           onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 4px 18px rgba(124,58,237,0.45)"; }}
-        ><Plus size={15} strokeWidth={2.5} /> New Booking</button>
+        ><Plus size={15} strokeWidth={2.5} /> New {vc.bookingSingular}</button>
       </div>
     </header>
   );
@@ -692,7 +692,7 @@ export default function DashboardPage() {
           </div>
 
       {/* ── New Booking Modal ─────────────────────────────────────── */}
-      <Modal open={showModal} onClose={() => setShowModal(false)} title="New Booking">
+      <Modal open={showModal} onClose={() => setShowModal(false)} title={`New ${vc.bookingSingular}`}>
         <FormGroup label="Client Name *"><Input placeholder="Sarah Johnson" value={formData.client_name} onChange={e => setFormData({ ...formData, client_name: e.target.value })} /></FormGroup>
         <FormGroup label="Email"><Input type="email" placeholder="sarah@email.com" value={formData.client_email} onChange={e => setFormData({ ...formData, client_email: e.target.value })} /></FormGroup>
         <FormGroup label="Phone"><Input placeholder="+44 7700 900000" value={formData.client_phone} onChange={e => setFormData({ ...formData, client_phone: e.target.value })} /></FormGroup>

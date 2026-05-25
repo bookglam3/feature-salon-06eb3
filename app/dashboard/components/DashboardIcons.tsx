@@ -13,6 +13,10 @@ import {
   Clock3,
   Users,
   Scissors,
+  Dumbbell,
+  Stethoscope,
+  Sparkles,
+  Leaf,
   Wallet,
   BadgeDollarSign,
   ReceiptText,
@@ -101,6 +105,16 @@ export const MenuIcon         = makeIcon(Menu);
 // ─────────────────────────────────────────────────────────────────
 // Icon map — for dynamic lookup by nav label
 // ─────────────────────────────────────────────────────────────────
+// Staff icon variants keyed by verticalConfig.staffIcon value
+export const StaffIconByKey: Record<string, React.FC<IconProps>> = {
+  "scissors":    makeIcon(Scissors),
+  "sparkles":    makeIcon(Sparkles),
+  "leaf":        makeIcon(Leaf),
+  "dumbbell":    makeIcon(Dumbbell),
+  "stethoscope": makeIcon(Stethoscope),
+  "users":       makeIcon(Users),
+};
+
 export const NAV_ICON_MAP: Record<string, React.FC<IconProps>> = {
   "Dashboard":     DashboardIcon,
   "Calendar":      CalendarIcon,
