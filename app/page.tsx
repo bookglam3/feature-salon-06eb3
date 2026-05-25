@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Scissors, Dumbbell, Flower2, Stethoscope, Sparkles, Leaf, Smile, HeartPulse, PhoneOff, Banknote, BookOpen, CreditCard, BellOff, BarChart3, Smartphone, MessageCircle, CalendarCheck, Zap, CalendarClock, Users, ContactRound, Rocket, Settings2, Share2 } from "lucide-react";
+import { Scissors, Dumbbell, Flower2, Stethoscope, Sparkles, Leaf, Smile, HeartPulse, PhoneOff, Banknote, BookOpen, CreditCard, BellOff, BarChart3, Smartphone, MessageCircle, CalendarCheck, Zap, CalendarClock, Users, ContactRound, Rocket, Settings2, Share2, Building2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -455,19 +455,19 @@ export default function Home() {
         <p className="section-sub">Feature is open to any UK health &amp; wellbeing business — wherever you are.</p>
         <div className="locations-grid">
           <Link href="/salons/london" className="location-card">
-            <div className="location-icon">🏙️</div>
+            <div className="location-icon" style={{display:"flex",alignItems:"center",justifyContent:"center"}}><Building2 size={28} strokeWidth={1.5} color="#6366F1" /></div>
             <h3>London</h3>
             <p>Salons, spas, gyms &amp; clinics in London</p>
             <span className="location-link">Explore →</span>
           </Link>
           <Link href="/salons/manchester" className="location-card">
-            <div className="location-icon">🌆</div>
+            <div className="location-icon" style={{display:"flex",alignItems:"center",justifyContent:"center"}}><Building2 size={28} strokeWidth={1.5} color="#6366F1" /></div>
             <h3>Manchester</h3>
             <p>Salon software for Manchester businesses</p>
             <span className="location-link">Explore →</span>
           </Link>
           <Link href="/salons/birmingham" className="location-card">
-            <div className="location-icon">🏘️</div>
+            <div className="location-icon" style={{display:"flex",alignItems:"center",justifyContent:"center"}}><Building2 size={28} strokeWidth={1.5} color="#6366F1" /></div>
             <h3>Birmingham</h3>
             <p>Salon software for Birmingham businesses</p>
             <span className="location-link">Explore →</span>
