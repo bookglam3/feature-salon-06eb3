@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "@/app/lib/supabase";
-import { getBusinessLabels, type BusinessLabels } from "@/app/lib/businessLabels";
+import { getVerticalConfig, type VerticalConfig } from "@/app/lib/verticalConfig";
 
 const LS_KEY = "feature_active_salon_id";
 
@@ -16,7 +16,7 @@ interface SalonCtx {
   salons: SalonBasic[];
   activeSalonId: string | null;
   activeSalon: SalonBasic | null;
-  labels: BusinessLabels;
+  vc: VerticalConfig;
   switchSalon: (id: string) => void;
   ready: boolean;
 }
@@ -25,7 +25,7 @@ const SalonContext = createContext<SalonCtx>({
   salons: [],
   activeSalonId: null,
   activeSalon: null,
-  labels: getBusinessLabels("hair"),
+  vc: getVerticalConfig("hair"),
   switchSalon: () => {},
   ready: false,
 });
@@ -40,7 +40,6 @@ export function SalonProvider({ children }: { children: ReactNode }) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Fetch ALL salons for this owner (no .single() — multi-branch aware)
       const { data } = await supabase
         .from("salons")
         .select("id,name,slug,business_type")
@@ -50,7 +49,6 @@ export function SalonProvider({ children }: { children: ReactNode }) {
       if (!data?.length) { setReady(true); return; }
       setSalons(data);
 
-      // Restore previously selected branch or default to first
       const stored = localStorage.getItem(LS_KEY);
       const isValid = stored && data.some(s => s.id === stored);
       const activeId = isValid ? stored! : data[0].id;
@@ -65,15 +63,14 @@ export function SalonProvider({ children }: { children: ReactNode }) {
   const switchSalon = (id: string) => {
     localStorage.setItem(LS_KEY, id);
     setActiveSalonId(id);
-    // Reload so all page queries use the new salon_id
     window.location.reload();
   };
 
   const activeSalon = salons.find(s => s.id === activeSalonId) ?? null;
-  const labels = getBusinessLabels(activeSalon?.business_type);
+  const vc = getVerticalConfig(activeSalon?.business_type);
 
   return (
-    <SalonContext.Provider value={{ salons, activeSalonId, activeSalon, labels, switchSalon, ready }}>
+    <SalonContext.Provider value={{ salons, activeSalonId, activeSalon, vc, switchSalon, ready }}>
       {children}
     </SalonContext.Provider>
   );

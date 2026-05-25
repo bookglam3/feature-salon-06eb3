@@ -6,6 +6,7 @@ import {
   Search, Download, Plus,
   CheckCircle2, XCircle, Trash2,
   Link2, ExternalLink, BarChart2,
+  Sparkles, Leaf, Dumbbell, Stethoscope,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
@@ -17,6 +18,7 @@ import { SkeletonDashboard } from "./components/SkeletonLoader";
 import { useToast } from "./components/Toast";
 import type { Salon, Appointment, Service, Offer } from "../types";
 import OnboardingChecklist from "./components/OnboardingChecklist";
+import { useSalon } from "./context/SalonContext";
 
 type StaffItem = { id: string; name: string };
 
@@ -132,9 +134,22 @@ function RevenueMiniChart({ appointments }: { appointments: Appointment[] }) {
 }
 
 /* ─── MAIN PAGE ───────────────────────────────────────────────── */
+const STAFF_ICON_MAP: Record<string, React.ReactNode> = {
+  scissors:    <Scissors size={20} strokeWidth={1.8} />,
+  sparkles:    <Sparkles size={20} strokeWidth={1.8} />,
+  leaf:        <Leaf size={20} strokeWidth={1.8} />,
+  dumbbell:    <Dumbbell size={20} strokeWidth={1.8} />,
+  stethoscope: <Stethoscope size={20} strokeWidth={1.8} />,
+  users:       <Users size={20} strokeWidth={1.8} />,
+};
+const STAFF_EMOJI_MAP: Record<string, string> = {
+  scissors:"✂️", sparkles:"✨", leaf:"🌿", dumbbell:"🏋️", stethoscope:"🩺", users:"👥",
+};
+
 export default function DashboardPage() {
   const router = useRouter();
   const toast = useToast();
+  const { vc } = useSalon();
   const [salon, setSalon] = useState<Salon | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [staff, setStaff] = useState<StaffItem[]>([]);
@@ -386,10 +401,10 @@ export default function DashboardPage() {
 
           <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 20 }}>
             <div>
-              <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.4)", letterSpacing: "3px", textTransform: "uppercase", marginBottom: 8 }}>Salon Dashboard</div>
+              <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.4)", letterSpacing: "3px", textTransform: "uppercase", marginBottom: 8 }}>{vc.dashboardLabel}</div>
               <h1 style={{ fontSize: 30, fontWeight: 900, color: "#fff", letterSpacing: "-1px", margin: 0, lineHeight: 1.1 }}>{salon?.name}</h1>
               <p className="dash-banner-meta" style={{ fontSize: 13.5, color: "rgba(255,255,255,0.55)", margin: 0, marginTop: 8 }}>
-                {todayAppts.length} appointment{todayAppts.length !== 1 ? "s" : ""} today · £{revenue} earned so far
+                {todayAppts.length} {todayAppts.length !== 1 ? vc.bookingPlural.toLowerCase() : vc.bookingSingular.toLowerCase()} today · £{revenue} earned so far
               </p>
             </div>
             <div className="dash-banner-btns" style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -416,18 +431,18 @@ export default function DashboardPage() {
         <div className="dash-stats" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 20 }}>
           <MiniStat label="Upcoming" value={upcomingAppts.length} color="#6366F1" lucideIcon={<Clock size={17} strokeWidth={1.8} />} sub={`${confirmedAppts.length} confirmed`} />
           <MiniStat label="Total Revenue" value={`£${totalRevenue}`} color="#10B981" lucideIcon={<TrendingUp size={17} strokeWidth={1.8} />} sub="all confirmed" />
-          <MiniStat label="Total Bookings" value={appointments.length} color="#8B5CF6" lucideIcon={<BookOpen size={17} strokeWidth={1.8} />} sub={`${pendingAppts.length} pending`} />
-          <MiniStat label="Staff Members" value={staff.length} color="#EC4899" lucideIcon={<Users size={17} strokeWidth={1.8} />} sub="active team" />
+          <MiniStat label={`Total ${vc.bookingPlural}`} value={appointments.length} color="#8B5CF6" lucideIcon={<BookOpen size={17} strokeWidth={1.8} />} sub={`${pendingAppts.length} pending`} />
+          <MiniStat label={vc.staffPlural} value={staff.length} color="#EC4899" lucideIcon={<Users size={17} strokeWidth={1.8} />} sub="active team" />
         </div>
 
         {/* ── Quick Actions ──────────────────────────────────────── */}
         <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "20px 22px", marginBottom: 20, boxShadow: "0 4px 20px rgba(0,0,0,0.25)" }}>
           <div style={{ fontSize: 11, fontWeight: 900, color: "rgba(255,255,255,0.25)", letterSpacing: "1.2px", textTransform: "uppercase", marginBottom: 16 }}>Quick Actions</div>
           <div className="dash-quick-scroll" style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 2 }}>
-            <QuickAction lucideIcon={<CalendarPlus size={20} strokeWidth={1.8} />} label="New Booking" color="#6366F1" onClick={() => setShowModal(true)} />
+            <QuickAction lucideIcon={<CalendarPlus size={20} strokeWidth={1.8} />} label={`New ${vc.bookingSingular}`} color="#6366F1" onClick={() => setShowModal(true)} />
             <QuickAction lucideIcon={<Tag size={20} strokeWidth={1.8} />} label="Add Offer" color="#10B981" onClick={() => setShowOfferModal(true)} />
-            <QuickAction lucideIcon={<UserPlus size={20} strokeWidth={1.8} />} label="Add Client" color="#8B5CF6" onClick={() => router.push("/dashboard/clients")} />
-            <QuickAction lucideIcon={<Scissors size={20} strokeWidth={1.8} />} label="Add Staff" color="#EC4899" onClick={() => router.push("/dashboard/staff")} />
+            <QuickAction lucideIcon={<UserPlus size={20} strokeWidth={1.8} />} label={`Add ${vc.clientSingular}`} color="#8B5CF6" onClick={() => router.push("/dashboard/clients")} />
+            <QuickAction lucideIcon={STAFF_ICON_MAP[vc.staffIcon] ?? <Scissors size={20} strokeWidth={1.8} />} label={`Add ${vc.staffSingular}`} color="#EC4899" onClick={() => router.push("/dashboard/staff")} />
             <QuickAction lucideIcon={<BarChart3 size={20} strokeWidth={1.8} />} label="Reports" color="#F59E0B" onClick={() => router.push("/dashboard/reports")} />
             <QuickAction lucideIcon={<Settings2 size={20} strokeWidth={1.8} />} label="Settings" color="#06B6D4" onClick={() => router.push("/dashboard/settings")} />
           </div>
@@ -444,9 +459,9 @@ export default function DashboardPage() {
               {/* All Appointments Table */}
               <div style={{ background: "#100F1C", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.3)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.07)", flexWrap: "wrap", gap: 12 }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: "#F1F5F9" }}>All Appointments</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "#F1F5F9" }}>All {vc.bookingPlural}</div>
                   <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                    <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder="Search client, service..." />
+                    <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder={`Search ${vc.clientSingular.toLowerCase()}, service...`} />
                     <div style={{ display: "flex", gap: 2, background: "rgba(255,255,255,0.05)", padding: 3, borderRadius: 10 }}>
                       {["All", "Today", "Upcoming", "Confirmed", "Pending", "Completed", "Cancelled", "No-show"].map(t => (
                         <button key={t} onClick={() => setActiveTab(t)}
@@ -464,7 +479,7 @@ export default function DashboardPage() {
                     <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 600 }}>
                       <thead className="dash-table-head">
                         <tr>
-                          {["Status", "Client", "Service", "Staff", "Date & Time", "Amount", "Actions"].map(h => (
+                          {["Status", vc.clientSingular, "Service", vc.staffSingular, "Date & Time", "Amount", "Actions"].map(h => (
                             <th key={h} style={{ fontSize: 10, fontWeight: 900, color: "rgba(255,255,255,0.3)", textAlign: "left", padding: "11px 16px", letterSpacing: "0.8px", textTransform: "uppercase", borderBottom: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.03)" }}>{h}</th>
                           ))}
                         </tr>
@@ -530,7 +545,7 @@ export default function DashboardPage() {
                       </tbody>
                     </table>
                     <div className="dash-table-footer" style={{ padding: "12px 22px", fontSize: 12, color: "rgba(255,255,255,0.3)", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-                      Showing {filteredAppts.length} of {appointments.length} total appointments
+                      Showing {filteredAppts.length} of {appointments.length} total {vc.bookingPlural.toLowerCase()}
                     </div>
                   </div>
                 )}
@@ -642,11 +657,11 @@ export default function DashboardPage() {
               {/* Team Overview */}
               <div style={{ background: "#100F1C", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.3)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: "#F1F5F9" }}>Team Overview</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "#F1F5F9" }}>{vc.staffPlural} Overview</div>
                   <a href="/dashboard/staff" style={{ fontSize: 12.5, fontWeight: 700, color: "#A78BFA", textDecoration: "none", padding: "6px 14px", background: "rgba(139,92,246,0.12)", borderRadius: 8, border: "1px solid rgba(139,92,246,0.2)" }}>Manage →</a>
                 </div>
                 {staff.length === 0 ? (
-                  <EmptyState icon="✂️" title="No staff" description="Add team members to assign bookings" action={{ label: "Add Staff", onClick: () => router.push("/dashboard/staff") }} />
+                  <EmptyState icon={STAFF_EMOJI_MAP[vc.staffIcon] ?? "✂️"} title={`No ${vc.staffPlural.toLowerCase()}`} description={`Add ${vc.staffPlural.toLowerCase()} to assign ${vc.bookingPlural.toLowerCase()}`} action={{ label: `Add ${vc.staffSingular}`, onClick: () => router.push("/dashboard/staff") }} />
                 ) : (
                   <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
                     {staff.slice(0, 5).map(s => {
@@ -663,13 +678,13 @@ export default function DashboardPage() {
                           <div style={{ width: 38, height: 38, borderRadius: 12, background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: "#fff", flexShrink: 0, boxShadow: `0 4px 10px ${bg}55` }}>{initials}</div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 13.5, fontWeight: 800, color: "#F1F5F9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</div>
-                            <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.3)" }}>{staffAppts.length} confirmed booking{staffAppts.length !== 1 ? "s" : ""}</div>
+                            <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.3)" }}>{staffAppts.length} confirmed {staffAppts.length !== 1 ? vc.bookingPlural.toLowerCase() : vc.bookingSingular.toLowerCase()}</div>
                           </div>
                           <div style={{ fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 99, background: "rgba(16,185,129,0.12)", color: "#34D399", border: "1px solid rgba(16,185,129,0.25)", flexShrink: 0 }}>Active</div>
                         </div>
                       );
                     })}
-                    {staff.length > 5 && <div style={{ fontSize: 12, color: "#94A3B8", textAlign: "center", padding: "6px 0" }}>+{staff.length - 5} more staff members</div>}
+                    {staff.length > 5 && <div style={{ fontSize: 12, color: "#94A3B8", textAlign: "center", padding: "6px 0" }}>+{staff.length - 5} more {vc.staffPlural.toLowerCase()}</div>}
                   </div>
                 )}
               </div>
@@ -686,7 +701,7 @@ export default function DashboardPage() {
           <FormGroup label="Time *"><Select value={formData.time} onChange={e => setFormData({ ...formData, time: e.target.value })}><option value="">Select time</option>{TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}</Select></FormGroup>
         </div>
         <FormGroup label="Service"><Select value={formData.service_id} onChange={e => setFormData({ ...formData, service_id: e.target.value })}><option value="">Select service</option>{services.map(s => <option key={s.id} value={s.id}>{s.name} — £{s.price}</option>)}</Select></FormGroup>
-        <FormGroup label="Staff Member"><Select value={formData.staff_id} onChange={e => setFormData({ ...formData, staff_id: e.target.value })}><option value="">Assign staff (optional)</option>{staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</Select></FormGroup>
+        <FormGroup label={vc.staffSingular}><Select value={formData.staff_id} onChange={e => setFormData({ ...formData, staff_id: e.target.value })}><option value="">Assign {vc.staffSingular.toLowerCase()} (optional)</option>{staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</Select></FormGroup>
         <ModalActions><BtnSecondary onClick={() => setShowModal(false)}>Cancel</BtnSecondary><BtnPrimary onClick={handleNewBooking} disabled={!formData.client_name || !formData.date || !formData.time}>Create Booking</BtnPrimary></ModalActions>
       </Modal>
 

@@ -118,15 +118,14 @@ function IconBox({ label, group, active }: { label: string; group: string; activ
 export default function DashboardSidebar() {
   const router   = useRouter();
   const pathname = usePathname();
-  const { labels } = useSalon();
+  const { vc } = useSalon();
   const [isMobile, setIsMobile] = useState(false);
 
-  // Map static nav keys → context-aware display labels
   const displayLabel = (key: string) => {
-    if (key === "Staff")         return labels.staff;
-    if (key === "Bookings")      return labels.bookings;
-    if (key === "Clients")       return labels.clients;
-    if (key === "Client Portal") return `${labels.clients} Portal`;
+    if (key === "Staff")         return vc.staffPlural;
+    if (key === "Bookings")      return vc.bookingPlural;
+    if (key === "Clients")       return vc.clientPlural;
+    if (key === "Client Portal") return vc.portalName;
     return key;
   };
 
@@ -226,7 +225,7 @@ export default function DashboardSidebar() {
           feature
         </div>
         <div className="text-[10px] text-white/25 mt-[2px] tracking-[0.6px] uppercase">
-          {labels.business} Management
+          {vc.productName}
         </div>
       </div>
 
@@ -305,10 +304,10 @@ export default function DashboardSidebar() {
         }}
       >
         <div className="text-[10px] font-bold text-white/30 mb-1 tracking-[0.5px]">
-          FEATURE {labels.business.toUpperCase()}
+          {vc.footerBrand}
         </div>
         <div className="text-[10px] text-white/20 leading-relaxed">
-          v2.0 · UK {labels.business} Platform
+          v2.0 · {vc.footerTagline}
         </div>
       </div>
     </aside>
