@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Scissors, Dumbbell, Flower2, Stethoscope, Sparkles, Leaf, Smile, HeartPulse, PhoneOff, Banknote, BookOpen, CreditCard, BellOff, BarChart3, Smartphone, MessageCircle, CalendarCheck, Zap, CalendarClock, Users, ContactRound, Rocket, Settings2, Share2 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Feature | Health & Wellbeing Booking Software — Free Trial",
@@ -7,15 +9,15 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://www.featuresalon.co.uk" },
 };
 
-const industries = [
-  { icon: "💇", name: "Salons & Barbershops",       desc: "Hair, beauty, nails & brows" },
-  { icon: "🏋️", name: "Gyms & Fitness Studios",     desc: "Classes, PT sessions & memberships" },
-  { icon: "🧘", name: "Yoga & Pilates",              desc: "Group classes & 1-to-1 sessions" },
-  { icon: "🤸", name: "Physiotherapy",               desc: "Appointments, plans & follow-ups" },
-  { icon: "💆", name: "Massage Therapy",             desc: "Deep tissue, sports & holistic" },
-  { icon: "🌿", name: "Spas & Wellness Centres",    desc: "Full treatments & day packages" },
-  { icon: "🦷", name: "Dental & Aesthetic Clinics", desc: "Consultations & aftercare" },
-  { icon: "🏃", name: "Personal Trainers",           desc: "Sessions, packages & progress" },
+const industries: { Icon: LucideIcon; name: string; desc: string }[] = [
+  { Icon: Scissors,    name: "Salons & Barbershops",       desc: "Hair, beauty, nails & brows" },
+  { Icon: Dumbbell,    name: "Gyms & Fitness Studios",     desc: "Classes, PT sessions & memberships" },
+  { Icon: Flower2,     name: "Yoga & Pilates",              desc: "Group classes & 1-to-1 sessions" },
+  { Icon: Stethoscope, name: "Physiotherapy",               desc: "Appointments, plans & follow-ups" },
+  { Icon: Sparkles,    name: "Massage Therapy",             desc: "Deep tissue, sports & holistic" },
+  { Icon: Leaf,        name: "Spas & Wellness Centres",    desc: "Full treatments & day packages" },
+  { Icon: Smile,       name: "Dental & Aesthetic Clinics", desc: "Consultations & aftercare" },
+  { Icon: HeartPulse,  name: "Personal Trainers",           desc: "Sessions, packages & progress" },
 ];
 
 const faqItems = [
@@ -267,11 +269,13 @@ export default function Home() {
         <h2 className="section-title">Built for every Health &amp; Wellbeing business</h2>
         <p className="section-sub">Whether you see 5 or 500 clients a week, Feature gives you one powerful platform to manage it all.</p>
         <div className="features-grid features-grid-v2" style={{marginTop:40}}>
-          {industries.map(ind => (
-            <div key={ind.name} className="feature-card feature-card-v2" style={{cursor:"default"}}>
-              <div className="feature-icon-v2" style={{fontSize:32}}>{ind.icon}</div>
-              <h3 style={{fontSize:15,marginBottom:6}}>{ind.name}</h3>
-              <p style={{fontSize:13,color:"#64748B",margin:0}}>{ind.desc}</p>
+          {industries.map(({ Icon, name, desc }) => (
+            <div key={name} className="feature-card feature-card-v2" style={{cursor:"default"}}>
+              <div className="feature-icon-v2" style={{display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <Icon size={28} strokeWidth={1.5} color="#6366F1" />
+              </div>
+              <h3 style={{fontSize:15,marginBottom:6}}>{name}</h3>
+              <p style={{fontSize:13,color:"#64748B",margin:0}}>{desc}</p>
             </div>
           ))}
         </div>
@@ -286,34 +290,34 @@ export default function Home() {
         <h2 className="section-title">Sound familiar?</h2>
         <div className="ps-grid">
           <div className="ps-problems">
-            {[
-              { icon:"📞", text:"Phone ringing during appointments" },
-              { icon:"💸", text:"Clients ghosting after no-show" },
-              { icon:"📒", text:"Paper diary causing double bookings" },
-              { icon:"😤", text:"Chasing payments manually" },
-              { icon:"🔕", text:"No automated reminders" },
-              { icon:"😩", text:"No idea which services make money" },
-            ].map(p => (
-              <div key={p.text} className="ps-problem-item">
-                <span className="ps-icon">{p.icon}</span>
-                <span>{p.text}</span>
+            {([
+              { Icon: PhoneOff,  text:"Phone ringing during appointments" },
+              { Icon: Banknote,  text:"Clients ghosting after no-show" },
+              { Icon: BookOpen,  text:"Paper diary causing double bookings" },
+              { Icon: CreditCard,text:"Chasing payments manually" },
+              { Icon: BellOff,   text:"No automated reminders" },
+              { Icon: BarChart3, text:"No idea which services make money" },
+            ] as { Icon: LucideIcon; text: string }[]).map(({ Icon, text }) => (
+              <div key={text} className="ps-problem-item">
+                <span className="ps-icon"><Icon size={18} strokeWidth={1.5} color="#94A3B8" /></span>
+                <span>{text}</span>
               </div>
             ))}
           </div>
           <div className="ps-arrow">→</div>
           <div className="ps-solution">
             <div className="ps-solution-header">Feature fixes all of this</div>
-            {[
-              { icon:"📲", text:"Clients book online 24/7 — you never pick up the phone" },
-              { icon:"💬", text:"Automated WhatsApp, SMS & email reminders to help reduce no-shows" },
-              { icon:"📅", text:"Smart calendar prevents double bookings" },
-              { icon:"💳", text:"Stripe payments collected at booking" },
-              { icon:"⚡", text:"Automated SMS, email & WhatsApp reminders" },
-              { icon:"📊", text:"Revenue reports updated in real-time" },
-            ].map(s => (
-              <div key={s.text} className="ps-solution-item">
-                <span className="ps-icon">{s.icon}</span>
-                <span>{s.text}</span>
+            {([
+              { Icon: Smartphone,     text:"Clients book online 24/7 — you never pick up the phone" },
+              { Icon: MessageCircle,  text:"Automated WhatsApp, SMS & email reminders to help reduce no-shows" },
+              { Icon: CalendarCheck,  text:"Smart calendar prevents double bookings" },
+              { Icon: CreditCard,     text:"Stripe payments collected at booking" },
+              { Icon: Zap,            text:"Automated SMS, email & WhatsApp reminders" },
+              { Icon: BarChart3,      text:"Revenue reports updated in real-time" },
+            ] as { Icon: LucideIcon; text: string }[]).map(({ Icon, text }) => (
+              <div key={text} className="ps-solution-item">
+                <span className="ps-icon"><Icon size={18} strokeWidth={1.5} color="#6366F1" /></span>
+                <span>{text}</span>
               </div>
             ))}
             <Link href="/signup" className="btn-primary" style={{display:"inline-block",marginTop:20}}>Fix it free for 14 days →</Link>
@@ -326,20 +330,22 @@ export default function Home() {
         <div className="section-label">WHAT YOU GET</div>
         <h2 className="section-title">Everything your business needs</h2>
         <div className="features-grid features-grid-v2">
-          {[
-            { icon:"📲", title:"Online Booking System",       desc:"Clients book 24/7 from your branded page. No more missed calls, no more double bookings." },
-            { icon:"🗓️", title:"Class & Session Scheduling", desc:"Run group classes, 1-to-1 sessions or both. Waitlists, capacity limits and cancellation policies built in." },
-            { icon:"👥", title:"Staff Management",            desc:"Set hours, assign services, manage holidays and track each team member's performance." },
-            { icon:"💬", title:"WhatsApp Reminders",          desc:"Send automated WhatsApp, SMS & email reminders — so clients don't forget their appointment." },
-            { icon:"💳", title:"Stripe Payments",             desc:"Take deposits or full payments at booking time. Reduce no-shows and get paid upfront." },
-            { icon:"📋", title:"Client CRM",                  desc:"Every client's visit history, treatment notes and preferences — all in one searchable profile." },
-            { icon:"📊", title:"Revenue Analytics",           desc:"Know your busiest times, top services, and best staff at a glance every morning." },
-            { icon:"📱", title:"Mobile-First Design",         desc:"Your entire business runs from your phone. iOS and Android ready, no app to download." },
-          ].map(f => (
-            <div key={f.title} className="feature-card feature-card-v2">
-              <div className="feature-icon-v2">{f.icon}</div>
-              <h3>{f.title}</h3>
-              <p>{f.desc}</p>
+          {([
+            { Icon: CalendarCheck,  title:"Online Booking System",       desc:"Clients book 24/7 from your branded page. No more missed calls, no more double bookings." },
+            { Icon: CalendarClock,  title:"Class & Session Scheduling", desc:"Run group classes, 1-to-1 sessions or both. Waitlists, capacity limits and cancellation policies built in." },
+            { Icon: Users,          title:"Staff Management",            desc:"Set hours, assign services, manage holidays and track each team member's performance." },
+            { Icon: MessageCircle,  title:"WhatsApp Reminders",          desc:"Send automated WhatsApp, SMS & email reminders — so clients don't forget their appointment." },
+            { Icon: CreditCard,     title:"Stripe Payments",             desc:"Take deposits or full payments at booking time. Reduce no-shows and get paid upfront." },
+            { Icon: ContactRound,   title:"Client CRM",                  desc:"Every client's visit history, treatment notes and preferences — all in one searchable profile." },
+            { Icon: BarChart3,      title:"Revenue Analytics",           desc:"Know your busiest times, top services, and best staff at a glance every morning." },
+            { Icon: Smartphone,     title:"Mobile-First Design",         desc:"Your entire business runs from your phone. iOS and Android ready, no app to download." },
+          ] as { Icon: LucideIcon; title: string; desc: string }[]).map(({ Icon, title, desc }) => (
+            <div key={title} className="feature-card feature-card-v2">
+              <div className="feature-icon-v2" style={{display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <Icon size={28} strokeWidth={1.5} color="#6366F1" />
+              </div>
+              <h3>{title}</h3>
+              <p>{desc}</p>
             </div>
           ))}
         </div>
@@ -350,16 +356,18 @@ export default function Home() {
         <div className="section-label">HOW IT WORKS</div>
         <h2 className="section-title">Up and running in under 10 minutes</h2>
         <div className="steps steps-v2">
-          {[
-            { num:"1", title:"Create your account",       desc:"Sign up free. No credit card needed. Takes 60 seconds.", icon:"🚀" },
-            { num:"2", title:"Add services & staff",      desc:"Set your menu, team, and working hours. We guide you through everything.", icon:"⚙️" },
-            { num:"3", title:"Share your booking link",   desc:"Send it to clients or add it to Instagram bio. Start receiving bookings instantly.", icon:"🔗" },
-          ].map(s => (
-            <div key={s.num} className="step step-v2">
-              <div className="step-icon">{s.icon}</div>
-              <div className="step-num">{s.num}</div>
-              <h3>{s.title}</h3>
-              <p>{s.desc}</p>
+          {([
+            { num:"1", Icon: Rocket,   title:"Create your account",       desc:"Sign up free. No credit card needed. Takes 60 seconds." },
+            { num:"2", Icon: Settings2, title:"Add services & staff",      desc:"Set your menu, team, and working hours. We guide you through everything." },
+            { num:"3", Icon: Share2,   title:"Share your booking link",   desc:"Send it to clients or add it to Instagram bio. Start receiving bookings instantly." },
+          ] as { num: string; Icon: LucideIcon; title: string; desc: string }[]).map(({ num, Icon, title, desc }) => (
+            <div key={num} className="step step-v2">
+              <div className="step-icon" style={{display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <Icon size={24} strokeWidth={1.5} color="#6366F1" />
+              </div>
+              <div className="step-num">{num}</div>
+              <h3>{title}</h3>
+              <p>{desc}</p>
             </div>
           ))}
         </div>
