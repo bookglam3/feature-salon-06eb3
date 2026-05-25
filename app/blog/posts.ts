@@ -42,7 +42,7 @@ export const POSTS: BlogPost[] = [
         h2: "7 Proven Strategies to Reduce No-Shows",
         body: "Here are the most effective tactics used by high-performing UK salons:",
         h3Items: [
-          { h3: "1. Send Automated Reminders (The #1 Fix)", body: "This single change can cut no-shows by up to 60%. Automated SMS and WhatsApp reminders sent 24 hours and 2 hours before an appointment give clients plenty of notice to cancel or reschedule — rather than just not turning up. Feature Salon sends these automatically for every confirmed booking, with zero effort from you." },
+          { h3: "1. Send Automated Reminders (The Most Effective Fix)", body: "Automated SMS and WhatsApp reminders sent 24 hours and 2 hours before an appointment give clients plenty of notice to cancel or reschedule — rather than just not turning up. Feature Salon sends these automatically for every confirmed booking, with zero effort from you." },
           { h3: "2. Take a Deposit at Booking", body: "Requiring a 25–50% deposit when clients book online dramatically reduces no-shows. Clients who have money on the line are far more likely to turn up or give proper notice. With Stripe integration, Feature Salon lets you set flexible deposit rules — from 10% to 100% — per service." },
           { h3: "3. Use a Cancellation Policy", body: "A clear, written policy (e.g. '24 hours notice required or deposit is forfeit') sets expectations from day one. Display it on your booking page, in confirmation emails, and at your reception desk. Most clients will respect a fair policy when it's communicated clearly." },
           { h3: "4. Make Rebooking Easy", body: "Include a reschedule link in every confirmation and reminder message. When clients can reschedule in seconds — rather than having to call during opening hours — they're far more likely to rebook than simply not appear." },
@@ -53,7 +53,7 @@ export const POSTS: BlogPost[] = [
       },
       {
         h2: "What Results Can You Expect?",
-        body: "Salons using Feature Salon's automated reminder system report an average 60% reduction in no-shows within the first 30 days. For a salon losing £500/month to no-shows, that's £300/month recovered — more than enough to pay for the software several times over. The Barber Collective in Birmingham reduced their no-show rate from 22% to under 6% within six weeks of switching to Feature.",
+        body: "Results vary by business, but the principle is consistent: clients who receive a reminder are more likely to show up or give notice in time for you to rebook the slot. Combined with a deposit policy, automated reminders are one of the most effective tools available to reduce missed appointments — and both are built into Feature Salon.",
       },
       {
         h2: "The Bottom Line",
@@ -66,13 +66,13 @@ export const POSTS: BlogPost[] = [
     slug: "fresha-alternative-uk-2025",
     title: "Fresha Alternative UK 2025 — Why Salons Are Switching",
     metaTitle: "Best Fresha Alternative UK 2025 | Feature Salon",
-    metaDescription: "Looking for a Fresha alternative in the UK? See why hundreds of salons are switching to Feature Salon — flat monthly fee, zero commission, better support.",
+    metaDescription: "Looking for a Fresha alternative in the UK? Feature Salon offers a flat monthly fee with zero commission — no hidden fees, no marketplace cuts.",
     keyword: "fresha alternative",
     publishedDate: "2025-02-14",
     updatedDate: "2025-05-01",
     readingTime: 7,
     author: "Feature Salon Team",
-    excerpt: "Fresha's hidden commission fees are costing UK salons thousands. Here's why hundreds of salons are switching — and what they found on the other side.",
+    excerpt: "Fresha's hidden commission fees are costing UK salons thousands. Here's how Feature Salon compares — and why a flat monthly fee changes the maths.",
     sections: [
       {
         h2: "The Fresha Problem in 2025",
@@ -94,13 +94,13 @@ export const POSTS: BlogPost[] = [
         h3Items: [
           { h3: "Flat Monthly Fee — No Commission", body: "Feature Salon charges £29–£99/month depending on your plan. That's it. No commission on bookings, no payment processing markup, no per-message fees. Every pound your clients pay goes to you." },
           { h3: "Your Own Branded Booking Page", body: "Just like Fresha, Feature gives you a beautiful public booking page where clients can browse services, select staff, and book online 24/7. Unlike Fresha, it's not listed on a marketplace competing with other salons." },
-          { h3: "Automated WhatsApp, SMS & Email", body: "Feature Salon sends automated reminders via WhatsApp, SMS, and email — reducing no-shows by up to 60%. Fresha offers reminders too, but they don't include WhatsApp support on standard plans." },
+          { h3: "Automated WhatsApp, SMS & Email", body: "Feature Salon sends automated reminders via WhatsApp, SMS, and email to help reduce no-shows. Fresha offers reminders too, but they don't include WhatsApp support on standard plans." },
           { h3: "Stripe Payments — Your Account", body: "Feature Salon uses Stripe directly — connected to your own account. You see every transaction, every payout, with full transparency. No middleman taking a percentage." },
         ],
       },
       {
-        h2: "Real Savings — A Case Study",
-        body: "James T., owner of The Barber Collective in Birmingham, switched from Fresha to Feature Salon in early 2025. 'I was paying Fresha nearly £150 a month in hidden commission and payment fees,' he told us. 'I switched to Feature's Pro plan at £59 and my clients can't tell the difference — actually the booking experience is cleaner. I'm saving over £90 a month and the support team actually picks up the phone.' Over a year, that's £1,080 saved — just by switching platforms.",
+        h2: "The Maths — Does Switching Save Money?",
+        body: "For a salon doing £5,000/month in revenue with a mix of new and existing clients, Fresha's marketplace commission plus payment fees can easily reach £100–£150/month. Feature Salon's Pro plan is £59/month — flat, with no commission. The saving depends on your own revenue and how much of it comes through the Fresha marketplace, but the structure is transparent and predictable from day one.",
       },
       {
         h2: "How to Switch from Fresha to Feature Salon",
@@ -264,7 +264,7 @@ export const POSTS: BlogPost[] = [
         body: "Appointment reminders are the most effective tool for reducing no-shows. Here's how the platforms compare:",
         h3Items: [
           { h3: "Treatwell reminders", body: "Treatwell sends basic booking confirmation emails and appointment reminder emails. There is no WhatsApp reminder functionality. SMS reminders are limited and not customisable." },
-          { h3: "Feature Salon reminders", body: "Feature Salon sends fully automated reminders via Email, SMS, and WhatsApp — at 24 hours and 2 hours before every appointment. Post-visit thank you messages and win-back campaigns are also automated. Salons using Feature's reminder system report a 60% average reduction in no-shows within 30 days." },
+          { h3: "Feature Salon reminders", body: "Feature Salon sends fully automated reminders via Email, SMS, and WhatsApp — at 24 hours and 2 hours before every appointment. Post-visit thank you messages and win-back campaigns are also automated." },
         ],
       },
       {

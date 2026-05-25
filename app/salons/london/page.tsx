@@ -69,32 +69,11 @@ export default function LondonPage() {
         </div>
       </section>
 
-      <section className="section">
-        <div className="section-label">LONDON SALON OWNERS SAY</div>
-        <h2 className="section-title">Trusted by London salons</h2>
-        <div className="reviews-grid">
-          <div className="review-card">
-            <div className="review-stars">★★★★★</div>
-            <p className="review-text">&ldquo;The automated WhatsApp reminders are a game changer. Setup took less than 20 minutes and our booking page looks incredibly professional.&rdquo;</p>
-            <div className="review-author">
-              <div className="review-avatar">RA</div>
-              <div>
-                <div className="review-name">Rania A.</div>
-                <div className="review-salon">Aura Hair &amp; Beauty · Shoreditch, London</div>
-              </div>
-            </div>
-          </div>
-          <div className="review-card review-card-featured">
-            <div className="review-stars">★★★★★</div>
-            <p className="review-text">&ldquo;We switched from Fresha 6 months ago and haven&apos;t looked back. Feature is simpler, faster, and we&apos;re saving over £80/month in fees.&rdquo;</p>
-            <div className="review-author">
-              <div className="review-avatar">MC</div>
-              <div>
-                <div className="review-name">Marcus C.</div>
-                <div className="review-salon">The Cut Room · Brixton, London</div>
-              </div>
-            </div>
-          </div>
+      <section className="section" style={{ textAlign: "center" }}>
+        <h2 className="section-title">Be one of the first London salons on Feature</h2>
+        <p className="hero-sub">No commission, no contracts, no marketplace fees — just straightforward software at a flat monthly price.</p>
+        <div className="hero-btns" style={{ justifyContent: "center", marginTop: 24 }}>
+          <Link href="/signup" className="btn-primary btn-lg">Start free 14-day trial →</Link>
         </div>
       </section>
 

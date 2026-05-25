@@ -201,7 +201,7 @@ export default async function BlogPostPage({
             Ready to transform your salon?
           </h3>
           <p style={{ fontSize: 15, color: "#475569", marginBottom: 20 }}>
-            Join UK salons using <Link href="/" style={{ color: "#6366F1", fontWeight: 600 }}>Feature Salon</Link> to automate bookings, cut no-shows, and grow revenue.
+            Try <Link href="/" style={{ color: "#6366F1", fontWeight: 600 }}>Feature Salon</Link> free for 14 days — automated bookings, reminders, and payments with no commission fees.
           </p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
             <Link href="/signup" className="btn-primary">Start free trial — no card needed</Link>

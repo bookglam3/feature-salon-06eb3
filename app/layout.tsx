@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     google: "CIqk72hycnLUlX0LS-M6tuB2wbeCD6dwf8jColbtyp4",
   },
   title: {
-    default: "Feature Salon | UK's #1 Salon Management Software",
+    default: "Feature Salon | UK Salon Management Software",
     template: "%s | Feature Salon",
   },
   description:
@@ -69,7 +69,7 @@ export const metadata: Metadata = {
     locale: "en_GB",
     url: BASE_URL,
     siteName: "Feature Salon",
-    title: "Feature Salon | UK's #1 Salon Management Software",
+    title: "Feature Salon | UK Salon Management Software",
     description:
       "Free salon booking software for UK salons. Online bookings, payments, reminders. Better than Fresha. Start free trial.",
     images: [
@@ -77,13 +77,13 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Feature Salon — UK's #1 Salon Management Software",
+        alt: "Feature Salon — UK Salon Management Software",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Feature Salon | UK's #1 Salon Management Software",
+    title: "Feature Salon | UK Salon Management Software",
     description:
       "Free salon booking software for UK salons. Online bookings, payments, reminders. Better than Fresha.",
     images: ["/og-image.png"],

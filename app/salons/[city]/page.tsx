@@ -12,9 +12,7 @@ const CITY_DATA: Record<string, {
   emoji: string;
   tagline: string;
   desc: string;
-  salonCount: string;
   neighborhoods: string[];
-  reviews: { initials: string; name: string; salon: string; text: string }[];
   localNote: string;
 }> = {
   london: {
@@ -22,140 +20,90 @@ const CITY_DATA: Record<string, {
     region: "Greater London",
     emoji: "🏙️",
     tagline: "Built for the pace of London",
-    desc: "Hundreds of London hair salons, beauty salons, and barbershops use Feature to manage bookings, staff, and payments — without Fresha's hidden commission fees.",
-    salonCount: "200+",
+    desc: "London hair salons, beauty salons, and barbershops can use Feature to manage bookings, staff, and payments — without Fresha's hidden commission fees.",
     neighborhoods: ["Shoreditch", "Brixton", "Canary Wharf", "Chelsea", "Notting Hill"],
-    reviews: [
-      { initials: "RA", name: "Rania A.", salon: "Aura Hair & Beauty · Shoreditch", text: "The automated WhatsApp reminders are a game changer. Setup took less than 20 minutes and our booking page looks incredibly professional." },
-      { initials: "MC", name: "Marcus C.", salon: "The Cut Room · Brixton", text: "We switched from Fresha 6 months ago and haven't looked back. Feature is simpler, faster, and we're saving over £80/month in fees." },
-    ],
-    localNote: "Feature is trusted by salons from Shoreditch to Chelsea — helping London's busiest salons cut no-shows by 60%.",
+    localNote: "Feature is available to salons across London — from Shoreditch to Chelsea — with automated reminders, Stripe payments, and zero commission.",
   },
   manchester: {
     name: "Manchester",
     region: "Greater Manchester",
     emoji: "🌆",
-    tagline: "Powering Manchester's fastest-growing salons",
-    desc: "Manchester hair salons, beauty studios, and barbers rely on Feature to automate bookings, reminders, and payments — all from one dashboard.",
-    salonCount: "80+",
+    tagline: "Built for Manchester salons",
+    desc: "Manchester hair salons, beauty studios, and barbers can use Feature to automate bookings, reminders, and payments — all from one dashboard.",
     neighborhoods: ["Northern Quarter", "Didsbury", "Deansgate", "Chorlton", "Salford"],
-    reviews: [
-      { initials: "SB", name: "Sarah B.", salon: "Studio Bloom · Northern Quarter", text: "Feature replaced three different apps we were using. Bookings, reminders, payments — all in one place. Our no-show rate dropped by half." },
-      { initials: "AT", name: "Amy T.", salon: "Luxe Hair Studio · Didsbury", text: "I was sceptical but within a week my clients were booking online at midnight. The reminders alone are worth every penny." },
-    ],
-    localNote: "From the Northern Quarter to Didsbury, Feature helps Manchester salons fill their chairs and reduce no-shows.",
+    localNote: "From the Northern Quarter to Didsbury, Feature gives Manchester salons the tools to fill their chairs and reduce no-shows.",
   },
   birmingham: {
     name: "Birmingham",
     region: "West Midlands",
     emoji: "🏘️",
-    tagline: "Trusted by Birmingham's top hair & beauty salons",
-    desc: "Birmingham salons use Feature to replace Treatwell and Fresha — keeping 100% of their revenue with zero marketplace commission.",
-    salonCount: "60+",
+    tagline: "Built for Birmingham hair & beauty salons",
+    desc: "Birmingham salons can use Feature instead of Treatwell and Fresha — keeping 100% of their revenue with zero marketplace commission.",
     neighborhoods: ["Jewellery Quarter", "Moseley", "Edgbaston", "Digbeth", "Harborne"],
-    reviews: [
-      { initials: "JT", name: "James T.", salon: "The Barber Collective · Jewellery Quarter", text: "I was paying Fresha nearly £150 a month with hidden fees. Feature costs me £59, does everything Fresha does, and support actually replies." },
-      { initials: "PK", name: "Priya K.", salon: "Glam & Co · Moseley", text: "Setting up took 10 minutes. My clients love the online booking page and I love not paying commission on every appointment." },
-    ],
-    localNote: "Birmingham's independent salons are switching from Fresha and Treatwell to Feature — saving an average of £80/month.",
+    localNote: "Birmingham's independent salons can switch from Fresha and Treatwell to Feature — with a flat monthly fee and no per-booking commission.",
   },
   leeds: {
     name: "Leeds",
     region: "West Yorkshire",
     emoji: "🏛️",
-    tagline: "The salon software Leeds has been waiting for",
-    desc: "Leeds salons choose Feature for its flat-rate pricing, zero commission, and powerful automated reminders that keep clients coming back.",
-    salonCount: "50+",
+    tagline: "Salon software for Leeds salons",
+    desc: "Leeds salons can choose Feature for its flat-rate pricing, zero commission, and powerful automated reminders that keep clients coming back.",
     neighborhoods: ["Chapel Allerton", "Headingley", "Roundhay", "Leeds City Centre", "Horsforth"],
-    reviews: [
-      { initials: "NK", name: "Nadia K.", salon: "Luxe Beauty Lounge · Chapel Allerton", text: "Managing 8 staff members used to be a nightmare. Now I can see everyone's schedule, block off holidays, and track revenue from my phone." },
-      { initials: "CW", name: "Claire W.", salon: "The Beauty Room · Headingley", text: "Our no-show rate went from 20% to under 5% in the first month. The WhatsApp reminders are absolutely brilliant." },
-    ],
-    localNote: "Leeds salons from Headingley to the city centre are automating their bookings with Feature.",
+    localNote: "Leeds salons from Headingley to the city centre can automate their bookings with Feature.",
   },
   edinburgh: {
     name: "Edinburgh",
     region: "Scotland",
     emoji: "🏰",
-    tagline: "Scotland's favourite salon booking software",
-    desc: "Edinburgh salons use Feature to manage bookings year-round — from festival season spikes to quiet January weeks — with smart scheduling and automated reminders.",
-    salonCount: "40+",
+    tagline: "Salon software for Edinburgh salons",
+    desc: "Edinburgh salons can use Feature to manage bookings year-round — from festival season spikes to quiet January weeks — with smart scheduling and automated reminders.",
     neighborhoods: ["New Town", "Old Town", "Leith", "Morningside", "Stockbridge"],
-    reviews: [
-      { initials: "FM", name: "Fiona M.", salon: "The Mane Event · New Town", text: "During the Fringe we're fully booked weeks in advance. Feature handles it all seamlessly — clients can book 24/7 without calling us." },
-      { initials: "DS", name: "David S.", salon: "Sharp & Clean Barbers · Leith", text: "I tried Fresha for 6 months. Switched to Feature and cut my software costs in half with better features." },
-    ],
-    localNote: "From the Royal Mile to Morningside, Edinburgh salons trust Feature to handle their busiest days automatically.",
+    localNote: "From the Royal Mile to Morningside, Edinburgh salons can use Feature to handle their busiest days automatically.",
   },
   glasgow: {
     name: "Glasgow",
     region: "Scotland",
     emoji: "🌉",
-    tagline: "Glasgow salons deserve better software",
-    desc: "Glasgow's thriving salon scene uses Feature to automate bookings, cut no-shows with WhatsApp reminders, and take Stripe payments — all with no marketplace fees.",
-    salonCount: "45+",
+    tagline: "Salon software for Glasgow salons",
+    desc: "Glasgow's salon scene can use Feature to automate bookings, reduce no-shows with WhatsApp reminders, and take Stripe payments — all with no marketplace fees.",
     neighborhoods: ["West End", "Merchant City", "Southside", "Finnieston", "Shawlands"],
-    reviews: [
-      { initials: "LM", name: "Laura M.", salon: "Velvet Hair Studio · Finnieston", text: "Feature is the most straightforward salon software I've used. No bloat, just the essentials — and the reminders are fantastic." },
-      { initials: "RG", name: "Ryan G.", salon: "Blade & Burn Barbershop · Merchant City", text: "My clients are booking online now instead of calling. It's freed up so much of my time. Worth every penny." },
-    ],
-    localNote: "Glasgow's independent salons and barbershops are growing faster with Feature's zero-commission booking system.",
+    localNote: "Glasgow's independent salons and barbershops can grow faster with Feature's zero-commission booking system.",
   },
   bristol: {
     name: "Bristol",
     region: "South West England",
     emoji: "🌉",
-    tagline: "Bristol's most-loved salon management software",
-    desc: "Bristol salons, beauty studios, and barbershops use Feature to book clients online, send automatic reminders, and grow revenue — without Fresha's fees.",
-    salonCount: "35+",
+    tagline: "Salon software for Bristol salons",
+    desc: "Bristol salons, beauty studios, and barbershops can use Feature to book clients online, send automatic reminders, and grow revenue — without Fresha's fees.",
     neighborhoods: ["Clifton", "Stokes Croft", "Bedminster", "Bishopston", "Redland"],
-    reviews: [
-      { initials: "HB", name: "Holly B.", salon: "Bloom Hair · Clifton", text: "I went from 15 no-shows per month to 2. The automated reminders changed everything. My revenue has increased noticeably." },
-      { initials: "TN", name: "Tom N.", salon: "The Faded Barber · Stokes Croft", text: "Really easy to set up and my clients love the booking page. Looks far more professional than anything else I've tried." },
-    ],
-    localNote: "From Clifton to Stokes Croft, Bristol's creative salon community relies on Feature for modern booking management.",
+    localNote: "From Clifton to Stokes Croft, Bristol's creative salon community can use Feature for modern booking management.",
   },
   sheffield: {
     name: "Sheffield",
     region: "South Yorkshire",
     emoji: "⚙️",
-    tagline: "Sheffield salon software that actually works",
-    desc: "Sheffield salons use Feature to replace their paper diary, automate reminders, and take online payments — at a fraction of the cost of Fresha or Treatwell.",
-    salonCount: "30+",
+    tagline: "Salon software for Sheffield salons",
+    desc: "Sheffield salons can use Feature to replace their paper diary, automate reminders, and take online payments — at a fraction of the cost of Fresha or Treatwell.",
     neighborhoods: ["Ecclesall Road", "Broomhill", "Kelham Island", "Hillsborough", "Abbeydale"],
-    reviews: [
-      { initials: "SP", name: "Sophie P.", salon: "Steel City Salon · Ecclesall Road", text: "Feature is the reason I stopped answering calls at 9pm. Clients book themselves, get automatic reminders, and I get my evenings back." },
-      { initials: "MH", name: "Mike H.", salon: "The Barber Quarter · Kelham Island", text: "Switched from a paper diary to Feature in one afternoon. Best business decision I've made this year." },
-    ],
-    localNote: "Sheffield's independent salons on Ecclesall Road and across the city are modernising with Feature.",
+    localNote: "Sheffield's independent salons on Ecclesall Road and across the city can modernise with Feature.",
   },
   liverpool: {
     name: "Liverpool",
     region: "Merseyside",
     emoji: "🎵",
-    tagline: "Liverpool's #1 choice for salon software",
-    desc: "Liverpool salons trust Feature for online booking, automated WhatsApp reminders, and Stripe payments — with no commissions and no hidden fees.",
-    salonCount: "40+",
+    tagline: "Salon software built for Liverpool",
+    desc: "Liverpool salons can use Feature for online booking, automated WhatsApp reminders, and Stripe payments — with no commissions and no hidden fees.",
     neighborhoods: ["Bold Street", "Allerton", "Woolton", "Aigburth", "Crosby"],
-    reviews: [
-      { initials: "KR", name: "Kelly R.", salon: "Gloss Hair Studio · Bold Street", text: "Our clients absolutely love being able to book online at any time. The WhatsApp reminders have slashed our no-show rate dramatically." },
-      { initials: "JH", name: "Jay H.", salon: "The Fade Factory · Allerton", text: "I used to lose track of appointments all the time. Feature made everything so much cleaner. The dashboard is brilliant." },
-    ],
-    localNote: "From Bold Street to Allerton, Liverpool salons are automating their operations with Feature.",
+    localNote: "From Bold Street to Allerton, Liverpool salons can automate their operations with Feature.",
   },
   nottingham: {
     name: "Nottingham",
     region: "East Midlands",
     emoji: "🏹",
-    tagline: "Nottingham salons, meet your perfect software",
-    desc: "Nottingham salons and beauty studios use Feature to manage bookings online, send automated reminders, and grow their client base — all for a flat monthly fee.",
-    salonCount: "25+",
+    tagline: "Salon software for Nottingham salons",
+    desc: "Nottingham salons and beauty studios can use Feature to manage bookings online, send automated reminders, and grow their client base — all for a flat monthly fee.",
     neighborhoods: ["Hockley", "West Bridgford", "Beeston", "Arnold", "Mapperley"],
-    reviews: [
-      { initials: "ZA", name: "Zara A.", salon: "The Styling Suite · Hockley", text: "Feature is the simplest, cleanest salon software I've used. My clients can book from Instagram and I get a notification instantly." },
-      { initials: "BL", name: "Ben L.", salon: "Cuts & Co · West Bridgford", text: "I was using WhatsApp to manage bookings manually. Feature saved me hours every week and my clients love the professional experience." },
-    ],
-    localNote: "Nottingham's growing salon community from Hockley to West Bridgford is choosing Feature over outdated alternatives.",
+    localNote: "Nottingham's growing salon community from Hockley to West Bridgford can choose Feature over outdated alternatives.",
   },
 };
 
@@ -224,7 +172,7 @@ export default async function CityPage({
     "@type": "SoftwareApplication",
     "@id": `${pageUrl}#software`,
     name: "Feature Salon",
-    description: `Feature Salon is the leading salon management software for ${data.name} salons. Online bookings, automated WhatsApp & SMS reminders, Stripe payments — with zero commission fees.`,
+    description: `Feature Salon is a UK salon management platform for ${data.name} salons. Online bookings, automated WhatsApp & SMS reminders, Stripe payments — with zero commission fees.`,
     url: BASE,
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web, iOS, Android",
@@ -232,12 +180,6 @@ export default async function CityPage({
       "@type": "Offer",
       price: "29",
       priceCurrency: "GBP",
-    },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: "4.9",
-      reviewCount: "200",
-      bestRating: "5",
     },
     areaServed: {
       "@type": "City",
@@ -336,7 +278,7 @@ export default async function CityPage({
 
       {/* ── Trust bar ── */}
       <section className="trust-bar">
-        {["No commission fees", `${data.salonCount} ${data.name} salons`, "Free 14-day trial", "Cancel anytime", "UK-based support"].map((item) => (
+        {["No commission fees", "Free 14-day trial", "Cancel anytime", "UK-based support"].map((item) => (
           <div key={item} className="trust-item"><div className="trust-dot" />{item}</div>
         ))}
       </section>
@@ -389,24 +331,12 @@ export default async function CityPage({
         </div>
       </section>
 
-      {/* ── Reviews ── */}
-      <section className="section section-white">
-        <div className="section-label">{data.name.toUpperCase()} SALON OWNERS SAY</div>
-        <h2 className="section-title">Trusted by {data.name} salons</h2>
-        <div className="reviews-grid">
-          {data.reviews.map((r, i) => (
-            <div key={r.name} className={`review-card${i === 1 ? " review-card-featured" : ""}`}>
-              <div className="review-stars">★★★★★</div>
-              <p className="review-text">&ldquo;{r.text}&rdquo;</p>
-              <div className="review-author">
-                <div className="review-avatar">{r.initials}</div>
-                <div>
-                  <div className="review-name">{r.name}</div>
-                  <div className="review-salon">{r.salon}</div>
-                </div>
-              </div>
-            </div>
-          ))}
+      {/* ── Early adopter CTA ── */}
+      <section className="section section-white" style={{ textAlign: "center" }}>
+        <h2 className="section-title">Be one of the first {data.name} salons on Feature</h2>
+        <p className="hero-sub">No commission, no contracts, no marketplace fees — just straightforward software at a flat monthly price.</p>
+        <div className="hero-btns" style={{ justifyContent: "center", marginTop: 24 }}>
+          <Link href="/signup" className="btn-primary btn-lg">Start free 14-day trial →</Link>
         </div>
       </section>
 
@@ -447,7 +377,7 @@ export default async function CityPage({
       <section className="section final-cta">
         <h2 className="final-cta-title">Ready to grow your {data.name} salon?</h2>
         <p className="final-cta-sub">
-          Join {data.salonCount} {data.name} salons using Feature to automate bookings, cut no-shows, and grow revenue.
+          Automate bookings, send reminders, and manage your team — all from one dashboard, with no commission fees.
         </p>
         <Link href="/signup" className="btn-primary btn-lg btn-glow">Start Free 14-Day Trial →</Link>
         <div className="final-cta-trust">

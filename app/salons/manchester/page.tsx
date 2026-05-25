@@ -54,7 +54,7 @@ export default function ManchesterPage() {
         <div className="features-grid">
           {[
             { title: "Online booking 24/7", desc: "Your clients can book haircuts, colour treatments, and beauty appointments at any time from any device." },
-            { title: "Automated reminders", desc: "Send WhatsApp, SMS, and email reminders automatically — reduce no-shows by up to 60%." },
+            { title: "Automated reminders", desc: "Send WhatsApp, SMS, and email reminders automatically — so clients don't forget their appointment." },
             { title: "No marketplace commission", desc: "Unlike Treatwell, Feature charges a flat monthly fee. Keep 100% of your booking revenue." },
             { title: "Staff scheduling", desc: "Manage rotas, breaks, and shifts for your entire Manchester salon team in one place." },
             { title: "Online deposits & payments", desc: "Collect deposits via Stripe at booking time to protect against last-minute cancellations." },
@@ -69,32 +69,11 @@ export default function ManchesterPage() {
         </div>
       </section>
 
-      <section className="section">
-        <div className="section-label">MANCHESTER SALON OWNERS SAY</div>
-        <h2 className="section-title">Loved by Manchester salons</h2>
-        <div className="reviews-grid">
-          <div className="review-card">
-            <div className="review-stars">★★★★★</div>
-            <p className="review-text">&ldquo;Feature replaced three different apps we were using. Bookings, reminders, payments — all in one place. Our no-show rate dropped by half within a month.&rdquo;</p>
-            <div className="review-author">
-              <div className="review-avatar">SB</div>
-              <div>
-                <div className="review-name">Sarah B.</div>
-                <div className="review-salon">Studio Bloom · Manchester City Centre</div>
-              </div>
-            </div>
-          </div>
-          <div className="review-card review-card-featured">
-            <div className="review-stars">★★★★★</div>
-            <p className="review-text">&ldquo;Setting up was incredibly easy. Within an hour our booking page was live and clients started booking that same evening. The WhatsApp reminders alone paid for the subscription.&rdquo;</p>
-            <div className="review-author">
-              <div className="review-avatar">PW</div>
-              <div>
-                <div className="review-name">Priya W.</div>
-                <div className="review-salon">Velvet Beauty Studio · Didsbury, Manchester</div>
-              </div>
-            </div>
-          </div>
+      <section className="section" style={{ textAlign: "center" }}>
+        <h2 className="section-title">Be one of the first Manchester salons on Feature</h2>
+        <p className="hero-sub">No commission, no contracts, no marketplace fees — just straightforward software at a flat monthly price.</p>
+        <div className="hero-btns" style={{ justifyContent: "center", marginTop: 24 }}>
+          <Link href="/signup" className="btn-primary btn-lg">Start free 14-day trial →</Link>
         </div>
       </section>
 

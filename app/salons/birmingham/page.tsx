@@ -69,32 +69,11 @@ export default function BirminghamPage() {
         </div>
       </section>
 
-      <section className="section">
-        <div className="section-label">BIRMINGHAM SALON OWNERS SAY</div>
-        <h2 className="section-title">Loved by Birmingham salons</h2>
-        <div className="reviews-grid">
-          <div className="review-card review-card-featured">
-            <div className="review-stars">★★★★★</div>
-            <p className="review-text">&ldquo;I was paying Fresha nearly £150 a month with hidden commission fees. Feature costs me £59, does everything Fresha does, and the support team actually replies within the hour.&rdquo;</p>
-            <div className="review-author">
-              <div className="review-avatar">JT</div>
-              <div>
-                <div className="review-name">James T.</div>
-                <div className="review-salon">The Barber Collective · Digbeth, Birmingham</div>
-              </div>
-            </div>
-          </div>
-          <div className="review-card">
-            <div className="review-stars">★★★★★</div>
-            <p className="review-text">&ldquo;Managing 8 staff members used to be a nightmare. Now I can see everyone&apos;s schedule, block off holidays, and track revenue — all from my phone.&rdquo;</p>
-            <div className="review-author">
-              <div className="review-avatar">NK</div>
-              <div>
-                <div className="review-name">Nadia K.</div>
-                <div className="review-salon">Luxe Beauty Lounge · Jewellery Quarter, Birmingham</div>
-              </div>
-            </div>
-          </div>
+      <section className="section" style={{ textAlign: "center" }}>
+        <h2 className="section-title">Be one of the first Birmingham salons on Feature</h2>
+        <p className="hero-sub">No commission, no contracts, no marketplace fees — just straightforward software at a flat monthly price.</p>
+        <div className="hero-btns" style={{ justifyContent: "center", marginTop: 24 }}>
+          <Link href="/signup" className="btn-primary btn-lg">Start free 14-day trial →</Link>
         </div>
       </section>
 

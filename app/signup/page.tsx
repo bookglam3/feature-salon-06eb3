@@ -217,9 +217,7 @@ export default function SignupPage() {
           ))}
         </div>
         <div style={{ background:"rgba(255,255,255,0.07)", borderRadius:14, padding:"16px 18px", border:"1px solid rgba(255,255,255,0.1)" }}>
-          <div style={{ display:"flex", gap:2, marginBottom:8 }}>{"★★★★★".split("").map((s,i)=><span key={i} style={{color:"#F59E0B",fontSize:13}}>{s}</span>)}</div>
-          <p style={{ fontSize:12.5, color:"rgba(255,255,255,0.7)", lineHeight:1.65, margin:0 }}>&ldquo;Switched from Fresha. Saves money every month and the reminders cut our no-shows in half.&rdquo;</p>
-          <div style={{ fontSize:11.5, color:"rgba(255,255,255,0.4)", marginTop:10 }}>James T. · The Barber Collective, Birmingham</div>
+          <p style={{ fontSize:12.5, color:"rgba(255,255,255,0.7)", lineHeight:1.65, margin:0 }}>Be one of the first UK salons on Feature — no commission, no contracts, just straightforward software at a flat monthly price.</p>
         </div>
       </div>
 

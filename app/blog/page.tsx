@@ -152,7 +152,7 @@ export default function BlogIndexPage() {
       {/* CTA */}
       <section className="section final-cta">
         <h2 className="final-cta-title">Ready to transform your salon?</h2>
-        <p className="final-cta-sub">Join UK salons using Feature to automate bookings, cut no-shows, and grow revenue.</p>
+        <p className="final-cta-sub">Try Feature free for 14 days — automated bookings, reminders, and payments with no commission fees.</p>
         <Link href="/signup" className="btn-primary btn-lg btn-glow">Start Free 14-Day Trial →</Link>
         <div className="final-cta-trust">
           <span>No credit card required</span><span>·</span>

@@ -33,14 +33,6 @@ export default function SchemaMarkup() {
         referenceQuantity: { "@type": "QuantitativeValue", value: "1", unitCode: "MON" },
       },
     },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: "4.9",
-      ratingCount: "200",
-      reviewCount: "200",
-      bestRating: "5",
-      worstRating: "1",
-    },
     featureList: [
       "24/7 online booking system",
       "Staff management and scheduling",
@@ -78,7 +70,7 @@ export default function SchemaMarkup() {
       height: 630,
     },
     description:
-      "Feature Salon is the UK's leading salon management software, helping independent salons and chains manage online bookings, staff, payments, and client communications with zero commission fees.",
+      "Feature Salon is a UK salon management platform helping independent salons and chains manage online bookings, staff, payments, and client communications with zero commission fees.",
     foundingDate: "2024",
     areaServed: [
       { "@type": "Country", name: "United Kingdom" },
