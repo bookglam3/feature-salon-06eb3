@@ -2,6 +2,7 @@
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { NAV_ICON_MAP } from "./components/DashboardIcons";
+import { useSalon } from "./context/SalonContext";
 
 // ─────────────────────────────────────────────────────────────────
 // Section colors — gradient + glow per group
@@ -117,7 +118,17 @@ function IconBox({ label, group, active }: { label: string; group: string; activ
 export default function DashboardSidebar() {
   const router   = useRouter();
   const pathname = usePathname();
+  const { labels } = useSalon();
   const [isMobile, setIsMobile] = useState(false);
+
+  // Map static nav keys → context-aware display labels
+  const displayLabel = (key: string) => {
+    if (key === "Staff")         return labels.staff;
+    if (key === "Bookings")      return labels.bookings;
+    if (key === "Clients")       return labels.clients;
+    if (key === "Client Portal") return `${labels.clients} Portal`;
+    return key;
+  };
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -184,7 +195,7 @@ export default function DashboardSidebar() {
                   active ? "text-white font-semibold" : "text-white/38 font-normal",
                 ].join(" ")}
               >
-                {item.label}
+                {displayLabel(item.label)}
               </span>
             </button>
           );
@@ -215,7 +226,7 @@ export default function DashboardSidebar() {
           feature
         </div>
         <div className="text-[10px] text-white/25 mt-[2px] tracking-[0.6px] uppercase">
-          Salon Management
+          {labels.business} Management
         </div>
       </div>
 
@@ -263,7 +274,7 @@ export default function DashboardSidebar() {
                         active ? "text-white font-semibold" : "text-white/48 font-normal",
                       ].join(" ")}
                     >
-                      {item.label}
+                      {displayLabel(item.label)}
                     </span>
 
                     {/* Active dot indicator */}
@@ -294,10 +305,10 @@ export default function DashboardSidebar() {
         }}
       >
         <div className="text-[10px] font-bold text-white/30 mb-1 tracking-[0.5px]">
-          FEATURE SALON
+          FEATURE {labels.business.toUpperCase()}
         </div>
         <div className="text-[10px] text-white/20 leading-relaxed">
-          v2.0 · UK Salon Platform
+          v2.0 · UK {labels.business} Platform
         </div>
       </div>
     </aside>

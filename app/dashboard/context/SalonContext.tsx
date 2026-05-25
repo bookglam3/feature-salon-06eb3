@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { supabase } from "@/app/lib/supabase";
+import { getBusinessLabels, type BusinessLabels } from "@/app/lib/businessLabels";
 
 const LS_KEY = "feature_active_salon_id";
 
@@ -8,12 +9,14 @@ interface SalonBasic {
   id: string;
   name: string;
   slug: string;
+  business_type?: string | null;
 }
 
 interface SalonCtx {
   salons: SalonBasic[];
   activeSalonId: string | null;
   activeSalon: SalonBasic | null;
+  labels: BusinessLabels;
   switchSalon: (id: string) => void;
   ready: boolean;
 }
@@ -22,6 +25,7 @@ const SalonContext = createContext<SalonCtx>({
   salons: [],
   activeSalonId: null,
   activeSalon: null,
+  labels: getBusinessLabels("hair"),
   switchSalon: () => {},
   ready: false,
 });
@@ -39,7 +43,7 @@ export function SalonProvider({ children }: { children: ReactNode }) {
       // Fetch ALL salons for this owner (no .single() — multi-branch aware)
       const { data } = await supabase
         .from("salons")
-        .select("id,name,slug")
+        .select("id,name,slug,business_type")
         .eq("owner_id", user.id)
         .order("created_at", { ascending: true });
 
@@ -66,9 +70,10 @@ export function SalonProvider({ children }: { children: ReactNode }) {
   };
 
   const activeSalon = salons.find(s => s.id === activeSalonId) ?? null;
+  const labels = getBusinessLabels(activeSalon?.business_type);
 
   return (
-    <SalonContext.Provider value={{ salons, activeSalonId, activeSalon, switchSalon, ready }}>
+    <SalonContext.Provider value={{ salons, activeSalonId, activeSalon, labels, switchSalon, ready }}>
       {children}
     </SalonContext.Provider>
   );
