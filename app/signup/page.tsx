@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { supabase } from "../lib/supabase";
 import { POPULAR_COUNTRIES, ALL_COUNTRIES, type Country } from "../lib/countries";
+import { getDefaultServices } from "../lib/defaultServices";
 
 const C = { indigo:"#6366F1", indigoDark:"#4338CA", indigoSoft:"#EEF2FF", green:"#10B981", red:"#EF4444", text:"#0F172A", text2:"#475569", text3:"#94A3B8", border:"#E2E8F0", bg:"#F8F9FC" };
 const STEPS = ["Account", "Your Business", "Done!"];
@@ -164,7 +165,22 @@ export default function SignupPage() {
         if (!ex) break;
         slug = `${baseSlug}-${++attempt}`;
       }
-      await supabase.from("salons").insert({ name: salonName, slug, owner_id: data.user.id, owner_email: email, plan:"starter", business_type: category });
+      const { data: newSalon } = await supabase
+        .from("salons")
+        .insert({ name: salonName, slug, owner_id: data.user.id, owner_email: email, plan:"starter", business_type: category })
+        .select("id")
+        .single();
+
+      // Seed vertical-appropriate default services — silent fallback if anything fails
+      try {
+        const defaults = getDefaultServices(category);
+        if (defaults.length > 0 && newSalon?.id) {
+          await supabase.from("services").insert(
+            defaults.map(svc => ({ salon_id: newSalon.id, ...svc }))
+          );
+        }
+      } catch { /* non-fatal — signup always completes */ }
+
       setStep(2);
     }
     setLoading(false);

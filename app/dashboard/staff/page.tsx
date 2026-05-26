@@ -37,7 +37,8 @@ export default function StaffPage() {
   const [formTab, setFormTab] = useState<"info"|"services"|"hours">("info");
   const [searchTerm, setSearchTerm] = useState("");
   const [formData, setFormData] = useState(EMPTY_FORM);
-  const [salonServices, setSalonServices] = useState<string[]>([]);
+  const [salonServices, setSalonServices] = useState<{ id: string; name: string }[]>([]);
+  const [serviceNameMap, setServiceNameMap] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
   // Helper: get current user JWT for API calls
@@ -73,8 +74,13 @@ export default function StaffPage() {
         const res = await fetch("/api/services", { headers: { Authorization: `Bearer ${token}` } });
         if (res.ok) {
           const json = await res.json();
-          const names = (json.services || []).map((s: { name: string }) => s.name);
-          if (names.length > 0) setSalonServices(names);
+          const svcs: { id: string; name: string }[] = json.services || [];
+          setSalonServices(svcs);
+          // Build a map that resolves both UUID keys and name keys → display name.
+          // This makes the card render correct regardless of how the DB value was stored.
+          const map: Record<string, string> = {};
+          svcs.forEach(s => { map[s.id] = s.name; map[s.name] = s.name; });
+          setServiceNameMap(map);
         }
       } catch (e) { console.error("[StaffPage] load error:", e); } finally { setLoading(false); }
     };
@@ -127,9 +133,11 @@ export default function StaffPage() {
 
   const handleEdit = useCallback((s: StaffMember) => {
     setEditingStaff(s);
-    setFormData({ name: s.name||"", email: s.email||"", role: s.role || vc.staffSingular.toLowerCase(), active: s.active??true, services: s.services||[], working_hours: s.working_hours||EMPTY_FORM.working_hours });
+    // Translate any stored UUIDs to names so the Services checkboxes populate correctly.
+    const resolvedServices = (s.services || []).map((sv: string) => serviceNameMap[sv] ?? sv);
+    setFormData({ name: s.name||"", email: s.email||"", role: s.role || vc.staffSingular.toLowerCase(), active: s.active??true, services: resolvedServices, working_hours: s.working_hours||EMPTY_FORM.working_hours });
     setFormTab("info"); setShowForm(true);
-  }, []);
+  }, [serviceNameMap, vc.staffSingular]);
 
   const handleToggle = useCallback(async (id: string, active: boolean) => {
     const token = await getToken();
@@ -243,7 +251,7 @@ export default function StaffPage() {
                   {s.services?.length > 0 && (
                     <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: 14 }}>
                       {s.services.slice(0,3).map((sv: string) => (
-                        <span key={sv} style={{ fontSize: 10.5, padding: "2px 8px", borderRadius: 4, background: "var(--slate-50)", border: "1px solid var(--border)", color: "var(--text-2)" }}>{sv}</span>
+                        <span key={sv} style={{ fontSize: 10.5, padding: "2px 8px", borderRadius: 4, background: "var(--slate-50)", border: "1px solid var(--border)", color: "var(--text-2)" }}>{serviceNameMap[sv] ?? sv}</span>
                       ))}
                       {s.services.length > 3 && <span style={{ fontSize: 10.5, color: "var(--text-3)" }}>+{s.services.length - 3} more</span>}
                     </div>
@@ -312,10 +320,10 @@ export default function StaffPage() {
               {salonServices.length === 0 ? (
                 <p style={{ fontSize: 12.5, color: "var(--text-3)", textAlign: "center", padding: "20px 0", width: "100%" }}>No services found. Add services in Settings first.</p>
               ) : salonServices.map(svc => {
-                  const sel = formData.services.includes(svc);
+                  const sel = formData.services.includes(svc.name);
                   return (
-                    <button key={svc} type="button" onClick={() => toggleService(svc)} style={{ padding: "7px 14px", fontSize: 13, borderRadius: 99, border: `1px solid ${sel ? "var(--indigo)" : "var(--border)"}`, background: sel ? "var(--indigo-light)" : "#fff", color: sel ? "var(--indigo)" : "var(--text-2)", cursor: "pointer", fontWeight: sel ? 600 : 400, transition: "all 0.12s", fontFamily: "var(--font)" }}>
-                      {svc}
+                    <button key={svc.id} type="button" onClick={() => toggleService(svc.name)} style={{ padding: "7px 14px", fontSize: 13, borderRadius: 99, border: `1px solid ${sel ? "var(--indigo)" : "var(--border)"}`, background: sel ? "var(--indigo-light)" : "#fff", color: sel ? "var(--indigo)" : "var(--text-2)", cursor: "pointer", fontWeight: sel ? 600 : 400, transition: "all 0.12s", fontFamily: "var(--font)" }}>
+                      {svc.name}
                     </button>
                   );
                 })}
