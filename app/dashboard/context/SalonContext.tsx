@@ -67,7 +67,11 @@ export function SalonProvider({ children }: { children: ReactNode }) {
   };
 
   const activeSalon = salons.find(s => s.id === activeSalonId) ?? null;
-  const vc = getVerticalConfig(activeSalon?.business_type);
+  // Gate on ready: before the async query resolves, use "other" (neutral terms: Team/Clients/Appointments)
+  // so non-salon accounts never briefly flash salon terminology (Stylists, Salon Dashboard, etc.)
+  const vc = ready
+    ? getVerticalConfig(activeSalon?.business_type)
+    : getVerticalConfig("other");
 
   return (
     <SalonContext.Provider value={{ salons, activeSalonId, activeSalon, vc, switchSalon, ready }}>

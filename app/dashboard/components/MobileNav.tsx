@@ -7,54 +7,28 @@ import {
   Users,
   Scissors,
   Settings2,
-  Home,
 } from "lucide-react";
+import { useSalon } from "../context/SalonContext";
 
-const BOTTOM_NAV = [
-  {
-    label: "Home",
-    path: "/dashboard",
-    Icon: LayoutDashboard,
-    activeColor: "#8B5CF6",
-    activeGlow: "rgba(139,92,246,0.5)",
-    activeBg: "linear-gradient(135deg,#7C3AED,#6D28D9)",
-  },
-  {
-    label: "Bookings",
-    path: "/dashboard/bookings",
-    Icon: BookOpenCheck,
-    activeColor: "#60A5FA",
-    activeGlow: "rgba(96,165,250,0.5)",
-    activeBg: "linear-gradient(135deg,#2563EB,#6366F1)",
-  },
-  {
-    label: "Clients",
-    path: "/dashboard/clients",
-    Icon: Users,
-    activeColor: "#34D399",
-    activeGlow: "rgba(52,211,153,0.5)",
-    activeBg: "linear-gradient(135deg,#059669,#10B981)",
-  },
-  {
-    label: "Staff",
-    path: "/dashboard/staff",
-    Icon: Scissors,
-    activeColor: "#C084FC",
-    activeGlow: "rgba(192,132,252,0.5)",
-    activeBg: "linear-gradient(135deg,#7C3AED,#9333EA)",
-  },
-  {
-    label: "Settings",
-    path: "/dashboard/settings",
-    Icon: Settings2,
-    activeColor: "#94A3B8",
-    activeGlow: "rgba(148,163,184,0.4)",
-    activeBg: "linear-gradient(135deg,#475569,#64748B)",
-  },
+const NAV_BASE = [
+  { key: "home",     path: "/dashboard",          Icon: LayoutDashboard, activeColor: "#8B5CF6", activeGlow: "rgba(139,92,246,0.5)", activeBg: "linear-gradient(135deg,#7C3AED,#6D28D9)" },
+  { key: "bookings", path: "/dashboard/bookings", Icon: BookOpenCheck,   activeColor: "#60A5FA", activeGlow: "rgba(96,165,250,0.5)",  activeBg: "linear-gradient(135deg,#2563EB,#6366F1)" },
+  { key: "clients",  path: "/dashboard/clients",  Icon: Users,           activeColor: "#34D399", activeGlow: "rgba(52,211,153,0.5)",  activeBg: "linear-gradient(135deg,#059669,#10B981)" },
+  { key: "staff",    path: "/dashboard/staff",    Icon: Scissors,        activeColor: "#C084FC", activeGlow: "rgba(192,132,252,0.5)", activeBg: "linear-gradient(135deg,#7C3AED,#9333EA)" },
+  { key: "settings", path: "/dashboard/settings", Icon: Settings2,       activeColor: "#94A3B8", activeGlow: "rgba(148,163,184,0.4)", activeBg: "linear-gradient(135deg,#475569,#64748B)" },
 ];
 
 export default function MobileNav() {
   const pathname = usePathname();
+  const { vc } = useSalon();
+
+  const labelFor = (key: string) => {
+    if (key === "home")     return "Home";
+    if (key === "bookings") return vc.bookingPlural;
+    if (key === "clients")  return vc.clientPlural;
+    if (key === "staff")    return vc.staffPlural;
+    return "Settings";
+  };
   const isActive = (path: string) =>
     path === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(path);
 
@@ -128,7 +102,7 @@ export default function MobileNav() {
           paddingBottom: "env(safe-area-inset-bottom, 0px)",
         }}
       >
-        {BOTTOM_NAV.map(item => {
+        {NAV_BASE.map(item => {
           const active = isActive(item.path);
           const { Icon, activeColor, activeGlow, activeBg } = item;
           return (
@@ -162,7 +136,7 @@ export default function MobileNav() {
 
               {/* Label */}
               <span className="mnav-label" style={{ color: active ? activeColor : "rgba(255,255,255,0.3)" }}>
-                {item.label}
+                {labelFor(item.key)}
               </span>
             </Link>
           );

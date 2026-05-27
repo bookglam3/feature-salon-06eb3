@@ -6,6 +6,7 @@ import { getCurrentUserProfile } from "../../lib/auth";
 import DashboardShell, { HamburgerBtn } from "../components/DashboardShell";
 import { SkeletonDashboard } from "../components/SkeletonLoader";
 import StatCard from "../components/StatCard";
+import { useSalon } from "../context/SalonContext";
 
 type SortKey = "name" | "bookings" | "spent" | "lastVisit";
 
@@ -35,6 +36,7 @@ function Avatar({ name, size = 36 }: { name: string; size?: number }) {
 
 export default function ClientsPage() {
   const router = useRouter();
+  const { vc } = useSalon();
   const [salon, setSalon] = useState<SalonData | null>(null);
   const [clients, setClients] = useState<ClientRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -135,8 +137,8 @@ export default function ClientsPage() {
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <HamburgerBtn />
         <div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: "var(--text-1)", letterSpacing: "-0.4px" }}>Clients</div>
-          <div style={{ fontSize: 11.5, color: "var(--text-3)" }}>{clients.length} clients in CRM</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "var(--text-1)", letterSpacing: "-0.4px" }}>{vc.clientPlural}</div>
+          <div style={{ fontSize: 11.5, color: "var(--text-3)" }}>{clients.length} {vc.clientPlural.toLowerCase()} in CRM</div>
         </div>
       </div>
     </header>
@@ -148,9 +150,9 @@ export default function ClientsPage() {
 
         {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 20 }}>
-          <StatCard label="Total Clients" value={clients.length} icon="👤" color="indigo" sub="all time" />
+          <StatCard label={`Total ${vc.clientPlural}`} value={clients.length} icon="👤" color="indigo" sub="all time" />
           <StatCard label="New This Month" value={newThisMonth} icon="✨" color="green" sub="vs last month" />
-          <StatCard label="Avg Spend" value={avgSpend} icon="💷" color="amber" prefix="£" sub="per client" />
+          <StatCard label="Avg Spend" value={avgSpend} icon="💷" color="amber" prefix="£" sub={`per ${vc.clientSingular.toLowerCase()}`} />
           <StatCard label="Top Spender" value={topSpender ? topSpender.spent : 0} icon="🏆" color="red" prefix="£" sub={topSpender?.name || "—"} />
         </div>
 
@@ -164,7 +166,7 @@ export default function ClientsPage() {
                 onBlurCapture={e => { e.currentTarget.style.borderColor = "#E2E8F0"; e.currentTarget.style.background = "#F8FAFC"; }}
               >
                 <svg width="13" height="13" viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5.75" stroke="#94A3B8" strokeWidth="1.75"/><path d="M13 13L17 17" stroke="#94A3B8" strokeWidth="1.75" strokeLinecap="round"/></svg>
-                <input type="text" placeholder="Search clients…" value={search} onChange={e => setSearch(e.target.value)}
+                <input type="text" placeholder={`Search ${vc.clientPlural.toLowerCase()}…`} value={search} onChange={e => setSearch(e.target.value)}
                   style={{ background: "none", border: "none", outline: "none", fontSize: 13, color: "var(--text-1)", fontFamily: "var(--font)", width: "100%" }} />
               </div>
               <select value={sortKey} onChange={e => setSortKey(e.target.value as SortKey)}
@@ -174,21 +176,21 @@ export default function ClientsPage() {
                 <option value="bookings">Most Bookings</option>
                 <option value="name">Name A–Z</option>
               </select>
-              <span style={{ fontSize: 12, color: "var(--text-3)", whiteSpace: "nowrap", fontWeight: 600 }}>{filtered.length} clients</span>
+              <span style={{ fontSize: 12, color: "var(--text-3)", whiteSpace: "nowrap", fontWeight: 600 }}>{filtered.length} {vc.clientPlural.toLowerCase()}</span>
             </div>
 
             {filtered.length === 0 ? (
               <div style={{ padding: "56px 24px", textAlign: "center" }}>
                 <div style={{ fontSize: 40, marginBottom: 12 }}>👤</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)", marginBottom: 6 }}>{search ? "No clients found" : "No clients yet"}</div>
-                <div style={{ fontSize: 13, color: "var(--text-3)" }}>Clients appear here after their first booking</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)", marginBottom: 6 }}>{search ? `No ${vc.clientPlural.toLowerCase()} found` : `No ${vc.clientPlural.toLowerCase()} yet`}</div>
+                <div style={{ fontSize: 13, color: "var(--text-3)" }}>{vc.clientPlural} appear here after their first booking</div>
               </div>
             ) : (
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 540 }}>
                   <thead>
                     <tr style={{ background: "#F8FAFC" }}>
-                      {["Client","Contact","Bookings","Spent","Last Visit",""].map(h => (
+                      {[vc.clientSingular,"Contact","Bookings","Spent","Last Visit",""].map(h => (
                         <th key={h} style={{ fontSize: 10.5, color: "var(--text-3)", textAlign: "left", padding: "11px 16px", fontWeight: 800, borderBottom: "1.5px solid #F1F5F9", letterSpacing: "0.7px", textTransform: "uppercase" }}>{h}</th>
                       ))}
                     </tr>

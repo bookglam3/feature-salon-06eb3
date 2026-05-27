@@ -148,8 +148,8 @@ export default function BookingsPage() {
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <HamburgerBtn />
         <div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: "#F1F5F9", letterSpacing: "-0.4px" }}>Bookings</div>
-          <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.3)", marginTop: 1 }}>{appointments.length} total appointments</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "#F1F5F9", letterSpacing: "-0.4px" }}>{vc.bookingPlural}</div>
+          <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.3)", marginTop: 1 }}>{appointments.length} total {vc.bookingPlural.toLowerCase()}</div>
         </div>
       </div>
       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -163,7 +163,7 @@ export default function BookingsPage() {
         <button
           onClick={() => { setShowForm(true); setEditingId(null); setFormData(EMPTY_FORM); }}
           className="elite-btn-primary"
-        >+ New Booking</button>
+        >+ New {vc.bookingSingular}</button>
       </div>
     </header>
   );
@@ -197,7 +197,7 @@ export default function BookingsPage() {
                 <table className="elite-table" style={{ minWidth: 640 }}>
                   <thead>
                     <tr>
-                      {["Status","Client","Service","Staff","Date & Time","Amount","Actions"].map(h => (
+                      {["Status", vc.clientSingular, "Service", vc.staffSingular, "Date & Time","Amount","Actions"].map(h => (
                         <th key={h}>{h}</th>
                       ))}
                     </tr>
@@ -283,14 +283,14 @@ export default function BookingsPage() {
       </div>
 
       {/* Booking Form Modal */}
-      <Modal open={showForm} onClose={() => { setShowForm(false); setEditingId(null); }} title={editingId ? "Edit Booking" : "New Booking"}>
+      <Modal open={showForm} onClose={() => { setShowForm(false); setEditingId(null); }} title={editingId ? `Edit ${vc.bookingSingular}` : `New ${vc.bookingSingular}`}>
         <form onSubmit={handleSubmit}>
           <FormGroup label="Client Name *"><Input placeholder="Sarah Johnson" value={formData.client_name} onChange={e => setFormData({ ...formData, client_name: e.target.value })} required /></FormGroup>
           <FormGroup label="Email"><Input type="email" placeholder="sarah@email.com" value={formData.client_email} onChange={e => setFormData({ ...formData, client_email: e.target.value })} /></FormGroup>
           <FormGroup label="Phone"><Input placeholder="+44 7700 900000" value={formData.client_phone} onChange={e => setFormData({ ...formData, client_phone: e.target.value })} /></FormGroup>
           <FormGroup label="Date & Time *"><Input type="datetime-local" value={formData.date_time} onChange={e => setFormData({ ...formData, date_time: e.target.value })} required /></FormGroup>
           <FormGroup label="Service"><Select value={formData.service_id} onChange={e => setFormData({ ...formData, service_id: e.target.value })}><option value="">Select service</option>{services.map(s => <option key={s.id} value={s.id}>{s.name} - {s.price}</option>)}</Select></FormGroup>
-          <FormGroup label="Staff"><Select value={formData.staff_id} onChange={e => setFormData({ ...formData, staff_id: e.target.value })}><option value="">Any Available Staff</option>{staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</Select></FormGroup>
+          <FormGroup label={vc.staffSingular}><Select value={formData.staff_id} onChange={e => setFormData({ ...formData, staff_id: e.target.value })}><option value="">Any Available {vc.staffSingular}</option>{staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</Select></FormGroup>
           <FormGroup label="Status"><Select value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}><option value="pending">Pending</option><option value="confirmed">Confirmed</option><option value="completed">✓ Completed</option><option value="no_show">💤 No-show</option><option value="cancelled">Cancelled</option></Select></FormGroup>
           {vc.treatmentNotes && (
             <FormGroup label="Treatment Notes">

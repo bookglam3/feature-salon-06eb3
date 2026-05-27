@@ -5,6 +5,7 @@ import { supabase } from "../../lib/supabase";
 import { getCurrentUserProfile } from "@/app/lib/auth";
 import FeatureGate from "../components/FeatureGate";
 import DashboardShell, { HamburgerBtn } from "../components/DashboardShell";
+import { useSalon } from "../context/SalonContext";
 
 interface Appointment {
   id: string;
@@ -221,22 +222,23 @@ interface ApptModalProps {
   onViewAll: () => void;
 }
 function ApptModal({ selectedAppt, setSelectedAppt, onViewAll }: ApptModalProps) {
+  const { vc } = useSalon();
   if (!selectedAppt) return null;
   const sc = STATUS_COLORS[selectedAppt.status] || STATUS_COLORS.pending;
   return (
     <div onClick={() => setSelectedAppt(null)} style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, backdropFilter: "blur(4px)" }}>
       <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 20, padding: 28, width: "100%", maxWidth: 420, boxShadow: "0 32px 80px rgba(0,0,0,0.2)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <div style={{ fontSize: 18, fontWeight: 900, color: "#0F172A", letterSpacing: "-0.5px" }}>Appointment Details</div>
+          <div style={{ fontSize: 18, fontWeight: 900, color: "#0F172A", letterSpacing: "-0.5px" }}>{vc.bookingSingular} Details</div>
           <button onClick={() => setSelectedAppt(null)} style={{ background: "#F1F5F9", border: "none", width: 32, height: 32, borderRadius: "50%", cursor: "pointer", fontSize: 16, color: "#64748B", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {[
-            { icon: "👤", label: "Client",   value: selectedAppt.client_name },
-            { icon: "💇", label: "Service",  value: selectedAppt.services?.name || "—" },
-            { icon: "✂️", label: "Staff",    value: selectedAppt.staff?.name || "—" },
-            { icon: "📅", label: "Date",     value: new Date(selectedAppt.date_time).toLocaleString("en-GB", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }) },
-            { icon: "💰", label: "Amount",   value: selectedAppt.services?.price ? `£${selectedAppt.services.price}` : "—" },
+            { icon: "👤", label: vc.clientSingular, value: selectedAppt.client_name },
+            { icon: "💇", label: "Service",          value: selectedAppt.services?.name || "—" },
+            { icon: "✂️", label: vc.staffSingular,   value: selectedAppt.staff?.name || "—" },
+            { icon: "📅", label: "Date",             value: new Date(selectedAppt.date_time).toLocaleString("en-GB", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }) },
+            { icon: "💰", label: "Amount",           value: selectedAppt.services?.price ? `£${selectedAppt.services.price}` : "—" },
           ].map(row => (
             <div key={row.label} style={{ display: "flex", gap: 12, alignItems: "center" }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: "#F8FAFC", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }}>{row.icon}</div>
@@ -263,6 +265,7 @@ function ApptModal({ selectedAppt, setSelectedAppt, onViewAll }: ApptModalProps)
 /* ─── MAIN CALENDAR CONTENT ─────────────────────── */
 function CalendarContent() {
   const router = useRouter();
+  const { vc } = useSalon();
   const [salonName, setSalonName]   = useState("");
   const [appointments, setAppts]    = useState<Appointment[]>([]);
   const [loading, setLoading]       = useState(true);
@@ -357,7 +360,7 @@ function CalendarContent() {
     <DashboardShell salonName={salonName} topbar={Topbar}>
       <div style={{ background: "#fff", borderBottom: "1px solid #F1F5F9", padding: "12px 24px", display: "flex", gap: 24, alignItems: "center" }}>
         {[
-          { label: "Total Appointments", value: appointments.length, color: "#6366F1" },
+          { label: `Total ${vc.bookingPlural}`, value: appointments.length, color: "#6366F1" },
           { label: "Confirmed", value: appointments.filter(a => a.status === "confirmed").length, color: "#10B981" },
           { label: "Pending", value: appointments.filter(a => a.status === "pending").length, color: "#F59E0B" },
           { label: "Cancelled", value: appointments.filter(a => a.status === "cancelled").length, color: "#EF4444" },

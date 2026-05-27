@@ -4,13 +4,14 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import { supabase } from "@/app/lib/supabase";
+import { getVerticalConfig } from "@/app/lib/verticalConfig";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 
 interface SalonData {
   id: string; name: string; slug: string; description?: string;
   logo_url?: string; payment_methods?: any;
-  timezone?: string; country?: string;
+  timezone?: string; country?: string; business_type?: string;
 }
 interface ServiceItem { id: string; name: string; price: number; duration?: number; duration_minutes?: number; description?: string; }
 interface StaffMember {
@@ -35,7 +36,7 @@ const SERVICE_ICONS: Record<string, string> = {
   wax:"🌿",threading:"🧵",lash:"👁️",brow:"🪮",keratin:"✨",treatment:"🌿",
 };
 
-const STEPS = ["Service","Staff","Date & Time","Details","Payment"];
+// STEPS is computed dynamically in the component using bookingVc.staffSingular
 
 function getServiceIcon(name: string): string {
   const lower = name.toLowerCase();
@@ -206,6 +207,7 @@ export default function BookingPage() {
   const { slug } = useParams() as { slug: string };
 
   const [salon, setSalon] = useState<SalonData | null>(null);
+  const [bookingVc, setBookingVc] = useState(getVerticalConfig("other"));
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -309,6 +311,7 @@ export default function BookingPage() {
       const { data: s } = await supabase.from("salons").select("*").eq("slug", slug).single();
       if (!s) { setNotFound(true); setLoading(false); return; }
       setSalon(s);
+      setBookingVc(getVerticalConfig(s.business_type));
       const [{ data: sv },{ data: st }] = await Promise.all([
         supabase.from("services").select("*").eq("salon_id", s.id).order("price"),
         supabase.from("staff").select("*").eq("salon_id", s.id).eq("active", true),
@@ -473,6 +476,10 @@ export default function BookingPage() {
     setOtpLoading(false);
   }, [otpCode, form.phone, handleProceedToPayment]);
 
+  const steps = ["Service", bookingVc.staffSingular, "Date & Time", "Details", "Payment"];
+  // Salon-like verticals (scissors/sparkles/leaf) have relevant per-service emoji — others get a neutral icon
+  const isSalonLike = ["scissors", "sparkles", "leaf"].includes(bookingVc.staffIcon);
+
   const canNext0 = !!selectedService;
   const canNext1 = staffConfirmed;
   const canNext2 = !!selDate && !!selTime;
@@ -570,10 +577,10 @@ export default function BookingPage() {
         <div className="container">
           <div className="card">
             <div className="progress">
-              {STEPS.map((_,i) => <div key={i} className={`progress-step ${i<=step?"active":""}`}></div>)}
+              {steps.map((_,i) => <div key={i} className={`progress-step ${i<=step?"active":""}`}></div>)}
             </div>
             <div className="progress-labels">
-              {STEPS.map((label,i) => <span key={i} className={`progress-label ${i<=step?"active":""}`}>{label}</span>)}
+              {steps.map((label,i) => <span key={i} className={`progress-label ${i<=step?"active":""}`}>{label}</span>)}
             </div>
 
             {/* Step 0: Service */}
@@ -582,15 +589,15 @@ export default function BookingPage() {
                 <h2>Choose Your Service</h2>
                 {services.length === 0 ? (
                   <div style={{ textAlign:"center",padding:"32px 16px",background:"#F8FAFF",borderRadius:16,border:"1.5px dashed #C7D2FE" }}>
-                    <div style={{ fontSize:48,marginBottom:12 }}>✂️</div>
+                    <div style={{ fontSize:48,marginBottom:12 }}>📋</div>
                     <div style={{ fontSize:16,fontWeight:700,color:"#0F172A",marginBottom:8 }}>No services available yet</div>
-                    <div style={{ fontSize:13,color:"#64748B",lineHeight:1.6 }}>This salon hasn&apos;t set up their services yet.<br/>Please contact them directly to book.</div>
+                    <div style={{ fontSize:13,color:"#64748B",lineHeight:1.6 }}>{salon?.name} hasn&apos;t set up their services yet.<br/>Please contact them directly to book.</div>
                   </div>
                 ) : (
                   services.map(s => (
 
                   <div key={s.id} className={`item-card ${selectedService?.id===s.id?"selected":""}`} onClick={()=>setSelectedService(s)}>
-                    <div className="item-icon">{getServiceIcon(s.name)}</div>
+                    <div className="item-icon">{isSalonLike ? getServiceIcon(s.name) : "📋"}</div>
                     <div className="item-content">
                       <h3>{s.name}</h3>
                       <p>£{s.price}</p>
@@ -608,10 +615,10 @@ export default function BookingPage() {
             {step===1 && (
               <>
                 <button onClick={()=>setStep(0)} className="back-btn">← Back to Services</button>
-                <h2>Select Your Stylist</h2>
+                <h2>Select Your {bookingVc.staffSingular}</h2>
                 <div className={`item-card ${staffConfirmed&&selectedStaff===null?"selected":""}`} onClick={()=>{setSelectedStaff(null);setStaffConfirmed(true);}}>
                   <div className="item-icon">👥</div>
-                  <div className="item-content"><h3>Any Available Staff</h3><p>We will assign the best available</p></div>
+                  <div className="item-content"><h3>Any Available {bookingVc.staffSingular}</h3><p>We will assign the best available</p></div>
                 </div>
                 {staffList.map(s => (
                   <div key={s.id} className={`item-card ${selectedStaff?.id===s.id?"selected":""}`} onClick={()=>{setSelectedStaff(s);setStaffConfirmed(true);}}>
@@ -626,7 +633,7 @@ export default function BookingPage() {
             {/* Step 2: Date & Time */}
             {step===2 && (
               <>
-                <button onClick={()=>setStep(1)} className="back-btn">← Back to Staff</button>
+                <button onClick={()=>setStep(1)} className="back-btn">← Back to {bookingVc.staffSingular}</button>
                 <h2>Pick Date & Time</h2>
                 <div className="input-group">
                   <label className="input-label">Select Date</label>
