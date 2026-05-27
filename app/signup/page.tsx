@@ -331,7 +331,7 @@ export default function SignupPage() {
               <label style={{ display:"flex", alignItems:"flex-start", gap:10, marginBottom:20, cursor:"pointer" }}>
                 <input type="checkbox" checked={terms} onChange={e=>setTerms(e.target.checked)} style={{ width:16, height:16, marginTop:2, accentColor:C.indigo, flexShrink:0 }} />
                 <span style={{ fontSize:12.5, color:C.text2, lineHeight:1.6 }}>
-                  I agree to the <a href="#" style={{ color:C.indigo, textDecoration:"none", fontWeight:700 }}>Terms of Service</a> and <a href="#" style={{ color:C.indigo, textDecoration:"none", fontWeight:700 }}>Privacy Policy</a>
+                  I agree to the <Link href="/terms" style={{ color:C.indigo, textDecoration:"none", fontWeight:700 }}>Terms of Service</Link> and <Link href="/privacy" style={{ color:C.indigo, textDecoration:"none", fontWeight:700 }}>Privacy Policy</Link>
                 </span>
               </label>
               <div style={{ display:"flex", gap:10 }}>
