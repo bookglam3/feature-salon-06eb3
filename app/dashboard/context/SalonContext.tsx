@@ -25,7 +25,7 @@ const SalonContext = createContext<SalonCtx>({
   salons: [],
   activeSalonId: null,
   activeSalon: null,
-  vc: getVerticalConfig("hair"),
+  vc: getVerticalConfig("other"),
   switchSalon: () => {},
   ready: false,
 });

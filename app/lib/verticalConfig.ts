@@ -17,5 +17,5 @@ export type VerticalKey    = keyof typeof VERTICAL_CONFIG;
 export type VerticalConfig = typeof VERTICAL_CONFIG[VerticalKey];
 
 export function getVerticalConfig(type?: string | null): VerticalConfig {
-  return VERTICAL_CONFIG[(type as VerticalKey) ?? "hair"] ?? VERTICAL_CONFIG.hair;
+  return VERTICAL_CONFIG[(type as VerticalKey) ?? "other"] ?? VERTICAL_CONFIG.other;
 }

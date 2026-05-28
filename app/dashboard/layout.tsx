@@ -131,7 +131,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     check();
   }, [router, pathname]);
 
-  if (!loaded) return <>{children}</>;
+  // Always render inside SalonProvider from the very first paint so children
+  // never fall back to the bare context default (which uses "hair" / salon terms).
+  // Show a neutral dark loading screen while the subscription check is in-flight.
+  if (!loaded) {
+    return (
+      <SalonProvider>
+        <div style={{
+          minHeight: "100vh",
+          background: "#09090F",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}>
+          <div style={{
+            width: 32, height: 32, borderRadius: "50%",
+            border: "3px solid rgba(139,92,246,0.2)",
+            borderTopColor: "#7C3AED",
+            animation: "spin 0.7s linear infinite",
+          }} />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+      </SalonProvider>
+    );
+  }
 
   const status       = salon?.subscription_status ?? "trial";
   const trialDays    = daysLeft(salon?.trial_ends_at ?? null);
