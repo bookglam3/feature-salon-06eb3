@@ -6,6 +6,7 @@ import Sidebar from "./Sidebar";
 import MobileNav from "./MobileNav";
 import { ToastProvider } from "./Toast";
 import { Search, Bell, ChevronDown, Menu } from "lucide-react";
+import { useSalon } from "../context/SalonContext";
 
 interface DashboardShellProps {
   children: React.ReactNode;
@@ -334,6 +335,7 @@ function PremiumTopBar({ onMenuClick, salonName, plan }: {
 }) {
   const pathname = usePathname();
   const [searchVal, setSearchVal] = useState("");
+  const { vc } = useSalon();
 
   const pageTitle = (() => {
     const seg = pathname?.split("/").filter(Boolean).at(-1) || "dashboard";
@@ -398,7 +400,7 @@ function PremiumTopBar({ onMenuClick, salonName, plan }: {
             fontSize: 12.5, fontWeight: 700, color: "#F1F5F9",
             maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>
-            {salonName || "Salon"}
+            {salonName || vc.productName.replace(" OS","")}
           </span>
           <ChevronDown size={11} strokeWidth={2} color="rgba(255,255,255,0.3)" />
         </div>

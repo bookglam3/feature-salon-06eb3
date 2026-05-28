@@ -455,7 +455,7 @@ export default function SettingsPage() {
         <HamburgerBtn />
         <div>
           <div style={{ fontSize: 15, fontWeight: 800, color: "#F1F5F9", letterSpacing: "-0.4px" }}>Settings</div>
-          <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.3)", marginTop: 1 }}>Manage your salon</div>
+          <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.3)", marginTop: 1 }}>Manage your {vc.productName.replace(" OS","")}</div>
         </div>
       </div>
     </header>
@@ -488,14 +488,14 @@ export default function SettingsPage() {
 
       {/* ── Salon Brand ── */}
       <div style={cardStyle}>
-        <div style={{ fontSize: "14px", fontWeight: 600, color: "#0F172A", marginBottom: "4px" }}>🎨 Salon Brand</div>
+        <div style={{ fontSize: "14px", fontWeight: 600, color: "#0F172A", marginBottom: "4px" }}>🎨 {vc.productName.replace(" OS","")} Brand</div>
         <p style={{ fontSize: "13px", color: "#64748B", marginBottom: "20px" }}>
           Your logo and name appear on the public booking page.
         </p>
 
         {/* Logo upload area */}
         <div style={{ marginBottom: 24 }}>
-          <label style={labelStyle}>Salon Logo</label>
+          <label style={labelStyle}>{vc.productName.replace(" OS","")} Logo</label>
           <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
 
             {/* Logo preview circle */}
@@ -532,7 +532,7 @@ export default function SettingsPage() {
             </div>
 
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#0F172A", marginBottom: 8 }}>{salonName || "Your Salon"}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#0F172A", marginBottom: 8 }}>{salonName || `Your ${vc.productName.replace(" OS","")}`}</div>
               <button
                 type="button"
                 onClick={() => logoInputRef.current?.click()}
@@ -585,7 +585,7 @@ export default function SettingsPage() {
 
 
         <div style={{ marginBottom: "14px" }}>
-          <label htmlFor="salon-name" style={labelStyle}>Salon Name</label>
+          <label htmlFor="salon-name" style={labelStyle}>{vc.productName.replace(" OS","")} Name</label>
           <input id="salon-name" value={salonName} onChange={e => setSalonName(e.target.value)} style={inputStyle} />
         </div>
 

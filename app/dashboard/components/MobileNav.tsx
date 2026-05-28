@@ -6,8 +6,23 @@ import {
   BookOpenCheck,
   Users,
   Scissors,
+  Sparkles,
+  Leaf,
+  Dumbbell,
+  Stethoscope,
   Settings2,
 } from "lucide-react";
+
+type LucideIcon = React.ComponentType<{ size?: number; strokeWidth?: number; color?: string }>;
+
+const STAFF_ICON_MAP: Record<string, LucideIcon> = {
+  scissors:    Scissors,
+  sparkles:    Sparkles,
+  leaf:        Leaf,
+  dumbbell:    Dumbbell,
+  stethoscope: Stethoscope,
+  users:       Users,
+};
 import { useSalon } from "../context/SalonContext";
 
 const NAV_BASE = [
@@ -104,7 +119,8 @@ export default function MobileNav() {
       >
         {NAV_BASE.map(item => {
           const active = isActive(item.path);
-          const { Icon, activeColor, activeGlow, activeBg } = item;
+          const { activeColor, activeGlow, activeBg } = item;
+          const Icon = item.key === "staff" ? (STAFF_ICON_MAP[vc.staffIcon] ?? Scissors) : item.Icon;
           return (
             <Link
               key={item.path}

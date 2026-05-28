@@ -10,7 +10,7 @@ function SuccessContent() {
   const name      = params.get("name") || "";
   const amount    = params.get("amount") || "";
   const deposit   = params.get("deposit") === "true";
-  const salon     = params.get("salon") || "Your Salon";
+  const salon     = params.get("salon") || "the business";
   const apptId    = params.get("appt_id") || "";
   const salonSlug = params.get("slug") || "";
 

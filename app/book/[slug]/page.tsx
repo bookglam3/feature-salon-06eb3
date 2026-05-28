@@ -308,7 +308,7 @@ export default function BookingPage() {
   useEffect(() => {
     if (!slug) return;
     (async () => {
-      const { data: s } = await supabase.from("salons").select("*").eq("slug", slug).single();
+      const { data: s } = await supabase.from("salons").select("id,name,slug,description,logo_url,payment_methods,timezone,country,business_type").eq("slug", slug).single();
       if (!s) { setNotFound(true); setLoading(false); return; }
       setSalon(s);
       setBookingVc(getVerticalConfig(s.business_type));
@@ -421,6 +421,7 @@ export default function BookingPage() {
         email: form.email, booking_id: appt.id,
         salon_name: salon.name, service_name: selectedService.name,
         deposit_only: pm !== "full_online",
+        salon_id: salon.id,
       }),
     });
     const data = await res.json();
@@ -807,7 +808,7 @@ export default function BookingPage() {
 
                 <div className="summary">
                   <div className="summary-row"><span className="summary-label">Service</span><span className="summary-value">{selectedService?.name}</span></div>
-                  <div className="summary-row"><span className="summary-label">Stylist</span><span className="summary-value">{selectedStaff?.name||"Any available"}</span></div>
+                  <div className="summary-row"><span className="summary-label">{bookingVc.staffSingular}</span><span className="summary-value">{selectedStaff?.name||"Any available"}</span></div>
                   <div className="summary-row"><span className="summary-label">Date</span><span className="summary-value">{selDate?.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}</span></div>
                   <div className="summary-row"><span className="summary-label">Time</span><span className="summary-value">{selTime}</span></div>
                   <div className="summary-row"><span className="summary-label">{isPayAtSalon ? "Due Now" : selectedOption?.pct === 100 ? "Total" : "Deposit Due"}</span><span className="summary-value" style={{color:"#667eea",fontSize:18}}>£{chargeAmount.toFixed(2)}{isPayAtSalon ? " (pay at salon)" : ""}</span></div>

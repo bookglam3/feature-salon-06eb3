@@ -455,7 +455,7 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
                 fontSize: 12.5, fontWeight: 700, color: "#F1F5F9",
                 whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                 letterSpacing: "-0.2px",
-              }}>{salonName || "Your Salon"}</div>
+              }}>{salonName || `Your ${vc.productName.replace(" OS","")}`}</div>
               <div style={{
                 fontSize: 10, color: "#10B981", fontWeight: 600,
                 display: "flex", alignItems: "center", gap: 4, marginTop: 1,
