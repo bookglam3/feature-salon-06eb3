@@ -136,6 +136,12 @@ function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+function reviewerDisplayName(full: string): string {
+  const parts = full.trim().split(/\s+/);
+  if (parts.length < 2) return parts[0] || full;
+  return `${parts[0]} ${parts[parts.length - 1][0]}.`;
+}
+
 function isValidPhoneForCountry(raw: string, countryCode: CountryCode): boolean {
   const digits = raw.replace(/[\s\-\(\)]/g, ""); // strip formatting
   return getCountryByCode(countryCode).validate(digits);
@@ -171,8 +177,8 @@ const DEFAULT_PM: PaymentMethods = { full_online: true, deposit_online: true, pa
 
 /* ── Stripe Payment Form ── */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function CheckoutForm({ amount, chargeAmount, methodLabel, bookingId, onSuccess: _, onError, slug, service, date, time, name, salon }:
-  { amount: number; chargeAmount: number; methodLabel: string; bookingId: string; onSuccess: ()=>void; onError:(msg:string)=>void; slug:string; service:string; date:string; time:string; name:string; salon:string }) {
+function CheckoutForm({ amount, chargeAmount, methodLabel, bookingId, reviewToken, onSuccess: _, onError, slug, service, date, time, name, salon }:
+  { amount: number; chargeAmount: number; methodLabel: string; bookingId: string; reviewToken: string; onSuccess: ()=>void; onError:(msg:string)=>void; slug:string; service:string; date:string; time:string; name:string; salon:string }) {
   const stripe = useStripe();
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
@@ -185,7 +191,7 @@ function CheckoutForm({ amount, chargeAmount, methodLabel, bookingId, onSuccess:
     const { error } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: `${appUrl}/payment/success?service=${encodeURIComponent(service)}&date=${encodeURIComponent(date)}&time=${encodeURIComponent(time)}&name=${encodeURIComponent(name)}&amount=${chargeAmount.toFixed(2)}&deposit=${chargeAmount < amount}&salon=${encodeURIComponent(salon)}&appt_id=${encodeURIComponent(bookingId)}&slug=${encodeURIComponent(slug)}`,
+        return_url: `${appUrl}/payment/success?service=${encodeURIComponent(service)}&date=${encodeURIComponent(date)}&time=${encodeURIComponent(time)}&name=${encodeURIComponent(name)}&amount=${chargeAmount.toFixed(2)}&deposit=${chargeAmount < amount}&salon=${encodeURIComponent(salon)}&appt_id=${encodeURIComponent(bookingId)}&slug=${encodeURIComponent(slug)}${reviewToken ? `&review_token=${encodeURIComponent(reviewToken)}` : ""}`,
       },
     });
     if (error) { onError(error.message || "Payment failed"); setProcessing(false); }
@@ -234,6 +240,12 @@ export default function BookingPage() {
 
   // Confirmation screen state (for pay_at_salon and free services)
   const [confirmedBooking, setConfirmedBooking] = useState<{ service: string; date: string; time: string; name: string; salon: string; apptId: string; paymentStatus: string } | null>(null);
+
+  // Review token — captured at booking time, shown as a "leave a review" link
+  const [reviewToken, setReviewToken] = useState("");
+
+  // Published reviews for this salon (shown below the booking widget)
+  const [salonReviews, setSalonReviews] = useState<{ client_name: string; rating: number; comment: string | null; created_at: string }[]>([]);
 
   // Track already-booked time slots for selected date/staff
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
@@ -312,12 +324,14 @@ export default function BookingPage() {
       if (!s) { setNotFound(true); setLoading(false); return; }
       setSalon(s);
       setBookingVc(getVerticalConfig(s.business_type));
-      const [{ data: sv },{ data: st }] = await Promise.all([
+      const [{ data: sv },{ data: st },{ data: rv }] = await Promise.all([
         supabase.from("services").select("*").eq("salon_id", s.id).order("price"),
         supabase.from("staff").select("*").eq("salon_id", s.id).eq("active", true),
+        supabase.from("reviews").select("client_name,rating,comment,created_at").eq("salon_id", s.id).eq("is_published", true).order("created_at",{ascending:false}).limit(10),
       ]);
       setServices(sv||[]);
       setStaffList(st||[]);
+      setSalonReviews(rv||[]);
       setLoading(false);
     })();
   }, [slug]);
@@ -395,6 +409,7 @@ export default function BookingPage() {
       setSubmitting(false); return;
     }
     setBookingId(appt.id);
+    setReviewToken((appt as Record<string,unknown>).review_token as string || "");
 
     // Pay at salon OR free service (£0) — skip Stripe, show confirmation directly
     if (isPayAtSalon || chargeAmount === 0) {
@@ -890,6 +905,7 @@ export default function BookingPage() {
                     chargeAmount={chargeAmount}
                     methodLabel={selectedOption?.label||"Pay"}
                     bookingId={bookingId}
+                    reviewToken={reviewToken}
                     onSuccess={()=>setStep(5)}
                     onError={msg=>setPaymentError(msg)}
                     slug={slug}
@@ -969,6 +985,12 @@ export default function BookingPage() {
                       📅 Manage / Reschedule Appointment
                     </a>
                   )}
+                  {reviewToken && (
+                    <a href={`/review/${reviewToken}`}
+                      style={{ display: "block", padding: "12px 24px", background: "#FFFBEB", color: "#D97706", borderRadius: 12, textDecoration: "none", fontSize: 13, fontWeight: 700, border: "1.5px solid #FDE68A", textAlign: "center" }}>
+                      ⭐ Leave a Review After Your Visit
+                    </a>
+                  )}
                   <a href={`/book/${slug}`}
                     style={{ display: "block", padding: "12px 24px", background: "linear-gradient(135deg,#667eea 0%,#764ba2 100%)", color: "#fff", borderRadius: 12, textDecoration: "none", fontSize: 13, fontWeight: 700, textAlign: "center", boxShadow: "0 4px 12px rgba(102,126,234,0.35)" }}>
                     📅 Book Another Appointment
@@ -978,6 +1000,66 @@ export default function BookingPage() {
             )}
           </div>
         </div>
+
+        {/* ── Reviews section (below booking widget) ── */}
+        {salon && (() => {
+          const avg = salonReviews.length
+            ? salonReviews.reduce((s, r) => s + r.rating, 0) / salonReviews.length
+            : 0;
+          return (
+            <div style={{ maxWidth: 480, margin: "24px auto 40px", width: "100%", padding: "0 16px" }}>
+              <div style={{ background: "#fff", borderRadius: 24, border: "2px solid #E2E8F0", overflow: "hidden", boxShadow: "0 4px 16px rgba(0,0,0,0.06)" }}>
+                {/* Header */}
+                <div style={{ padding: "18px 24px", background: "linear-gradient(135deg,#F8FAFC,#F1F5F9)", borderBottom: "1px solid #E2E8F0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: "#0F172A", letterSpacing: "-0.3px" }}>Client Reviews</div>
+                    {salonReviews.length > 0 && (
+                      <div style={{ fontSize: 12.5, color: "#64748B", marginTop: 2 }}>
+                        {avg.toFixed(1)} ★ · {salonReviews.length} review{salonReviews.length !== 1 ? "s" : ""}
+                      </div>
+                    )}
+                  </div>
+                  {salonReviews.length > 0 && (
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 30, fontWeight: 900, color: "#F59E0B", letterSpacing: "-1px", lineHeight: 1 }}>{avg.toFixed(1)}</div>
+                      <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 2 }}>out of 5</div>
+                    </div>
+                  )}
+                </div>
+
+                {salonReviews.length === 0 ? (
+                  <div style={{ padding: "36px 24px", textAlign: "center" }}>
+                    <div style={{ fontSize: 32, marginBottom: 8 }}>⭐</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "#0F172A" }}>No reviews yet</div>
+                    <div style={{ fontSize: 13, color: "#94A3B8", marginTop: 4 }}>Be the first to leave a review after your visit</div>
+                  </div>
+                ) : (
+                  <div>
+                    {salonReviews.map((r, i) => (
+                      <div key={i} style={{ padding: "16px 24px", borderBottom: i < salonReviews.length - 1 ? "1px solid #F8FAFC" : "none" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: "#0F172A" }}>{reviewerDisplayName(r.client_name)}</div>
+                            <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 1 }}>
+                              {new Date(r.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                            </div>
+                          </div>
+                          <div style={{ color: "#F59E0B", fontSize: 14, letterSpacing: 1, flexShrink: 0 }}>
+                            {"★".repeat(r.rating)}<span style={{ color: "#E2E8F0" }}>{"★".repeat(5 - r.rating)}</span>
+                          </div>
+                        </div>
+                        {r.comment && (
+                          <p style={{ fontSize: 13.5, color: "#475569", lineHeight: 1.65, margin: 0 }}>&ldquo;{r.comment}&rdquo;</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
       </div>
     </>
   );

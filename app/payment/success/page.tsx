@@ -11,8 +11,9 @@ function SuccessContent() {
   const amount    = params.get("amount") || "";
   const deposit   = params.get("deposit") === "true";
   const salon     = params.get("salon") || "the business";
-  const apptId    = params.get("appt_id") || "";
-  const salonSlug = params.get("slug") || "";
+  const apptId      = params.get("appt_id") || "";
+  const salonSlug   = params.get("slug") || "";
+  const reviewToken = params.get("review_token") || "";
 
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg,#667eea 0%,#764ba2 100%)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, fontFamily: "'Plus Jakarta Sans',system-ui,sans-serif" }}>
@@ -62,6 +63,12 @@ function SuccessContent() {
             <a href={`/reschedule/${apptId}`}
               style={{ display: "block", padding: "13px", background: "#F1F5F9", color: "#475569", borderRadius: 14, textDecoration: "none", fontSize: 14, fontWeight: 700, border: "1.5px solid #E2E8F0" }}>
               📅 Manage / Reschedule Appointment
+            </a>
+          )}
+          {reviewToken && (
+            <a href={`/review/${reviewToken}`}
+              style={{ display: "block", padding: "13px", background: "#FFFBEB", color: "#D97706", borderRadius: 14, textDecoration: "none", fontSize: 14, fontWeight: 700, border: "1.5px solid #FDE68A" }}>
+              ⭐ Leave a Review After Your Visit
             </a>
           )}
           {salonSlug ? (

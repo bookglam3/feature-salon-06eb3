@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { getCurrentUserProfile } from "@/app/lib/auth";
@@ -17,6 +17,7 @@ interface Review {
   reply?: string | null;
   is_published: boolean;
   created_at: string;
+  appointment_id?: string | null;
 }
 
 function StarRating({ rating, size = 16 }: { rating: number; size?: number }) {
@@ -29,43 +30,23 @@ function StarRating({ rating, size = 16 }: { rating: number; size?: number }) {
   );
 }
 
-function InteractiveStars({ value, onChange }: { value: number; onChange: (v: number) => void }) {
-  const [hovered, setHovered] = useState(0);
-  return (
-    <div style={{ display: "flex", gap: 4 }}>
-      {[1, 2, 3, 4, 5].map(s => (
-        <span key={s}
-          onClick={() => onChange(s)}
-          onMouseEnter={() => setHovered(s)}
-          onMouseLeave={() => setHovered(0)}
-          style={{ fontSize: 28, cursor: "pointer", color: s <= (hovered || value) ? "#F59E0B" : "#E2E8F0", transition: "all 0.1s", transform: hovered >= s ? "scale(1.2)" : "scale(1)", display: "inline-block" }}>★</span>
-      ))}
-    </div>
-  );
-}
-
 function ReviewsContent() {
   const router = useRouter();
   const toast = useToast();
-  const [salonId, setSalonId] = useState<string | null>(null);
   const [salonName, setSalonName] = useState("");
   const [salonSlug, setSalonSlug] = useState("");
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAdd, setShowAdd] = useState(false);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
   const [origin] = useState(() =>
     typeof window !== "undefined" ? window.location.origin : ""
   );
 
-  const [form, setForm] = useState({ client_name: "", client_email: "", rating: 5, comment: "" });
-
   useEffect(() => {
     const load = async () => {
       const profile = await getCurrentUserProfile();
       if (!profile?.salon) { router.push("/login"); return; }
-      setSalonId(profile.salon.id);
       setSalonName(profile.salon.name);
       setSalonSlug(profile.salon.slug);
       const { data, error } = await supabase
@@ -89,19 +70,6 @@ function ReviewsContent() {
     reviews.forEach(r => { if (r.rating >= 1 && r.rating <= 5) dist[r.rating - 1]++; });
     return dist.reverse(); // 5→1
   }, [reviews]);
-
-  const handleAdd = async () => {
-    if (!salonId || !form.client_name || !form.comment) { toast.error("Name and comment required"); return; }
-    const { data, error } = await supabase.from("reviews").insert({
-      salon_id: salonId, client_name: form.client_name, client_email: form.client_email,
-      rating: form.rating, comment: form.comment, is_published: true
-    }).select().single();
-    if (error) { toast.error("Failed to add review"); return; }
-    setReviews(p => [data, ...p]);
-    toast.success("Review added!");
-    setShowAdd(false);
-    setForm({ client_name: "", client_email: "", rating: 5, comment: "" });
-  };
 
   const handleReply = async (id: string) => {
     if (!replyText.trim()) return;
@@ -135,7 +103,7 @@ function ReviewsContent() {
   const Topbar = (
     <header style={{ background: "#fff", borderBottom: "1px solid #F1F5F9", padding: "0 24px", height: 66, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 30, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        <HamburgerBtn onClick={() => {}} />
+        <HamburgerBtn />
         <div>
           <div style={{ fontSize: 15, fontWeight: 800, color: "#0F172A", letterSpacing: "-0.4px" }}>⭐ Reviews</div>
           <div style={{ fontSize: 11.5, color: "#94A3B8", marginTop: 1 }}>Client feedback & reputation</div>
@@ -143,7 +111,6 @@ function ReviewsContent() {
       </div>
       <div style={{ display: "flex", gap: 10 }}>
         <button onClick={copyReviewLink} style={{ padding: "9px 16px", background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 12, fontSize: 13, fontWeight: 700, color: "#475569", cursor: "pointer" }}>🔗 Share Link</button>
-        <button onClick={() => setShowAdd(true)} style={{ padding: "9px 18px", background: "linear-gradient(135deg,#F59E0B,#D97706)", color: "#fff", border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 14px rgba(245,158,11,0.3)" }}>+ Add Review</button>
       </div>
     </header>
   );
@@ -260,39 +227,6 @@ function ReviewsContent() {
         </div>
       </div>
 
-      {/* Add Review Modal */}
-      {showAdd && (
-        <div onClick={() => setShowAdd(false)} style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, backdropFilter: "blur(4px)" }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 20, padding: 28, width: "100%", maxWidth: 480, boxShadow: "0 32px 80px rgba(0,0,0,0.2)" }}>
-            <div style={{ fontSize: 18, fontWeight: 900, color: "#0F172A", marginBottom: 20, letterSpacing: "-0.5px" }}>Add Review</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: "#475569", display: "block", marginBottom: 6 }}>Client Name *</label>
-                <input value={form.client_name} onChange={e => setForm({ ...form, client_name: e.target.value })} placeholder="Sarah Johnson"
-                  style={{ width: "100%", padding: "10px 13px", border: "1.5px solid #E2E8F0", borderRadius: 10, fontSize: 14, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
-              </div>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: "#475569", display: "block", marginBottom: 6 }}>Email (optional)</label>
-                <input value={form.client_email} onChange={e => setForm({ ...form, client_email: e.target.value })} placeholder="sarah@email.com" type="email"
-                  style={{ width: "100%", padding: "10px 13px", border: "1.5px solid #E2E8F0", borderRadius: 10, fontSize: 14, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
-              </div>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: "#475569", display: "block", marginBottom: 8 }}>Rating *</label>
-                <InteractiveStars value={form.rating} onChange={v => setForm({ ...form, rating: v })} />
-              </div>
-              <div>
-                <label style={{ fontSize: 12, fontWeight: 700, color: "#475569", display: "block", marginBottom: 6 }}>Review *</label>
-                <textarea value={form.comment} onChange={e => setForm({ ...form, comment: e.target.value })} placeholder="Share the client's experience..." rows={4}
-                  style={{ width: "100%", padding: "10px 13px", border: "1.5px solid #E2E8F0", borderRadius: 10, fontSize: 14, fontFamily: "inherit", outline: "none", resize: "vertical", boxSizing: "border-box" }} />
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-              <button onClick={() => setShowAdd(false)} style={{ flex: 1, padding: 12, background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#475569", cursor: "pointer" }}>Cancel</button>
-              <button onClick={handleAdd} disabled={!form.client_name || !form.comment} style={{ flex: 2, padding: 12, background: "linear-gradient(135deg,#F59E0B,#D97706)", border: "none", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#fff", cursor: "pointer", boxShadow: "0 4px 14px rgba(245,158,11,0.3)", opacity: !form.client_name || !form.comment ? 0.5 : 1 }}>Save Review</button>
-            </div>
-          </div>
-        </div>
-      )}
     </DashboardShell>
   );
 }
