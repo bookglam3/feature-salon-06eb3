@@ -99,7 +99,7 @@ function ClientPortalContent() {
 
   if (loading) return <DashboardShell salonName={salonName} topbar={Topbar}><div style={{ padding: 40, textAlign: "center", color: "#94A3B8" }}>Loading clients…</div></DashboardShell>;
 
-  const COLORS = ["#6366F1","#10B981","#F59E0B","#EC4899","#8B5CF6","#06B6D4"];
+  const COLORS = ["#4A2C6D","#10B981","#F59E0B","#EC4899","#7B5EA7","#06B6D4"];
 
   return (
     <DashboardShell salonName={salonName} topbar={Topbar}>
@@ -108,7 +108,7 @@ function ClientPortalContent() {
         {/* Stats row */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 24 }}>
           {[
-            { label: "Total Clients", value: clients.length, icon: "👥", color: "#6366F1" },
+            { label: "Total Clients", value: clients.length, icon: "👥", color: "#4A2C6D" },
             { label: "Returning", value: clients.filter(c => c.count > 1).length, icon: "🔄", color: "#10B981" },
             { label: "Total Revenue", value: `£${clients.reduce((s,c) => s + c.revenue, 0)}`, icon: "💰", color: "#F59E0B" },
             { label: "Avg. Bookings", value: clients.length ? (clients.reduce((s,c) => s + c.count, 0) / clients.length).toFixed(1) : "0", icon: "📋", color: "#EC4899" },
@@ -182,7 +182,7 @@ function ClientPortalContent() {
                           </span>
                         </td>
                         <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9" }} onClick={e => e.stopPropagation()}>
-                          <button onClick={() => sendPortalLink(c)} style={{ padding: "5px 12px", background: "#EEF2FF", color: "#6366F1", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>🔗 Portal</button>
+                          <button onClick={() => sendPortalLink(c)} style={{ padding: "5px 12px", background: "#EEF2FF", color: "#4A2C6D", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>🔗 Portal</button>
                         </td>
                       </tr>
                     );
@@ -214,7 +214,7 @@ function ClientPortalContent() {
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
               {[
-                { label: "Total Bookings", value: selected.count, color: "#6366F1" },
+                { label: "Total Bookings", value: selected.count, color: "#4A2C6D" },
                 { label: "Total Spent", value: `£${selected.revenue}`, color: "#10B981" },
                 { label: "Last Visit", value: new Date(selected.last_visit).toLocaleDateString("en-GB", { day: "numeric", month: "short" }), color: "#F59E0B" },
                 { label: "Client Type", value: selected.count >= 5 || selected.revenue >= 200 ? "⭐ VIP" : selected.count === 1 ? "🆕 New" : "🔄 Regular", color: "#EC4899" },
@@ -226,7 +226,7 @@ function ClientPortalContent() {
               ))}
             </div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => { sendPortalLink(selected); setSelected(null); }} style={{ flex: 1, padding: 12, background: "linear-gradient(135deg,#6366F1,#4F46E5)", border: "none", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#fff", cursor: "pointer", boxShadow: "0 4px 14px rgba(99,102,241,0.3)" }}>🔗 Copy Portal Link</button>
+              <button onClick={() => { sendPortalLink(selected); setSelected(null); }} style={{ flex: 1, padding: 12, background: "linear-gradient(135deg,#4A2C6D,#4F46E5)", border: "none", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#fff", cursor: "pointer", boxShadow: "0 4px 14px rgba(74,44,109,0.3)" }}>🔗 Copy Portal Link</button>
               <button onClick={() => setSelected(null)} style={{ padding: 12, background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#475569", cursor: "pointer" }}>Close</button>
             </div>
           </div>

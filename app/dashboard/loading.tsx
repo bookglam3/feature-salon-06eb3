@@ -13,7 +13,7 @@ export default function DashboardLoading() {
             display: "flex", flexDirection: "column", gap: 14,
             position: "relative", overflow: "hidden",
           }}>
-            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg,rgba(139,92,246,0.35),transparent)", borderRadius: "18px 18px 0 0" }} />
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg,rgba(74,44,109,0.35),transparent)", borderRadius: "18px 18px 0 0" }} />
             <div className="skeleton" style={{ height: 10, width: "60%", borderRadius: 5 }} />
             <div className="skeleton" style={{ height: 32, width: "45%", borderRadius: 6 }} />
           </div>

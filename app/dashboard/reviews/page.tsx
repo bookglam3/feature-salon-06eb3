@@ -229,14 +229,14 @@ function ReviewsContent() {
 
                 {/* Reply section */}
                 {review.reply ? (
-                  <div style={{ marginTop: 14, padding: "12px 16px", background: "#F8FAFC", borderRadius: 12, borderLeft: "3px solid #6366F1" }}>
-                    <div style={{ fontSize: 11, fontWeight: 800, color: "#6366F1", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" }}>Your reply</div>
+                  <div style={{ marginTop: 14, padding: "12px 16px", background: "#F8FAFC", borderRadius: 12, borderLeft: "3px solid #4A2C6D" }}>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: "#4A2C6D", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" }}>Your reply</div>
                     <p style={{ fontSize: 13.5, color: "#334155", margin: 0, lineHeight: 1.6 }}>{review.reply}</p>
-                    <button onClick={() => { setReplyingTo(review.id); setReplyText(review.reply || ""); }} style={{ marginTop: 6, background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "#6366F1", fontWeight: 700, padding: 0 }}>Edit reply</button>
+                    <button onClick={() => { setReplyingTo(review.id); setReplyText(review.reply || ""); }} style={{ marginTop: 6, background: "none", border: "none", cursor: "pointer", fontSize: 12, color: "#4A2C6D", fontWeight: 700, padding: 0 }}>Edit reply</button>
                   </div>
                 ) : (
                   <button onClick={() => { setReplyingTo(review.id); setReplyText(""); }}
-                    style={{ marginTop: 12, padding: "6px 14px", background: "#EEF2FF", color: "#6366F1", border: "none", borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: "pointer", transition: "all 0.12s" }}
+                    style={{ marginTop: 12, padding: "6px 14px", background: "#EEF2FF", color: "#4A2C6D", border: "none", borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: "pointer", transition: "all 0.12s" }}
                     onMouseEnter={e => { e.currentTarget.style.background = "#C7D2FE"; }}
                     onMouseLeave={e => { e.currentTarget.style.background = "#EEF2FF"; }}>
                     💬 Reply
@@ -249,7 +249,7 @@ function ReviewsContent() {
                     <textarea value={replyText} onChange={e => setReplyText(e.target.value)} placeholder="Write your reply..." rows={3}
                       style={{ width: "100%", padding: "10px 14px", border: "1.5px solid #C7D2FE", borderRadius: 10, fontSize: 13.5, fontFamily: "inherit", outline: "none", resize: "vertical", boxSizing: "border-box" }} />
                     <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                      <button onClick={() => handleReply(review.id)} style={{ padding: "8px 18px", background: "linear-gradient(135deg,#6366F1,#4F46E5)", color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Save Reply</button>
+                      <button onClick={() => handleReply(review.id)} style={{ padding: "8px 18px", background: "linear-gradient(135deg,#4A2C6D,#4F46E5)", color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Save Reply</button>
                       <button onClick={() => setReplyingTo(null)} style={{ padding: "8px 14px", background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 10, fontSize: 13, fontWeight: 700, color: "#475569", cursor: "pointer" }}>Cancel</button>
                     </div>
                   </div>

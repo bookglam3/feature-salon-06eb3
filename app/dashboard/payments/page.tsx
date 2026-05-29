@@ -82,12 +82,12 @@ export default function PaymentsPage() {
             <div style={{ display: "flex", gap: 2, background: "#F1F5F9", borderRadius: 10, padding: 3 }}>
               {["All","Paid","Pending","Cancelled"].map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab)}
-                  style={{ fontSize: 12.5, padding: "6px 12px", borderRadius: 8, border: "none", background: activeTab === tab ? "#fff" : "transparent", color: activeTab === tab ? "#6366F1" : "var(--text-3)", cursor: "pointer", fontWeight: activeTab === tab ? 700 : 500, boxShadow: activeTab === tab ? "0 1px 4px rgba(0,0,0,0.07)" : "none", transition: "all 0.12s", fontFamily: "var(--font)" }}>{tab}
+                  style={{ fontSize: 12.5, padding: "6px 12px", borderRadius: 8, border: "none", background: activeTab === tab ? "#fff" : "transparent", color: activeTab === tab ? "#4A2C6D" : "var(--text-3)", cursor: "pointer", fontWeight: activeTab === tab ? 700 : 500, boxShadow: activeTab === tab ? "0 1px 4px rgba(0,0,0,0.07)" : "none", transition: "all 0.12s", fontFamily: "var(--font)" }}>{tab}
                 </button>
               ))}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "7px 12px", minWidth: 180 }}
-              onFocusCapture={e => { e.currentTarget.style.borderColor = "#6366F1"; e.currentTarget.style.background = "#fff"; }}
+              onFocusCapture={e => { e.currentTarget.style.borderColor = "#4A2C6D"; e.currentTarget.style.background = "#fff"; }}
               onBlurCapture={e => { e.currentTarget.style.borderColor = "#E2E8F0"; e.currentTarget.style.background = "#F8FAFC"; }}
             >
               <svg width="13" height="13" viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5.75" stroke="#94A3B8" strokeWidth="1.75"/><path d="M13 13L17 17" stroke="#94A3B8" strokeWidth="1.75" strokeLinecap="round"/></svg>

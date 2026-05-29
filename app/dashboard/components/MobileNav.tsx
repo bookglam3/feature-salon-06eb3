@@ -26,10 +26,10 @@ const STAFF_ICON_MAP: Record<string, LucideIcon> = {
 import { useSalon } from "../context/SalonContext";
 
 const NAV_BASE = [
-  { key: "home",     path: "/dashboard",          Icon: LayoutDashboard, activeColor: "#8B5CF6", activeGlow: "rgba(139,92,246,0.5)", activeBg: "linear-gradient(135deg,#7C3AED,#6D28D9)" },
-  { key: "bookings", path: "/dashboard/bookings", Icon: BookOpenCheck,   activeColor: "#60A5FA", activeGlow: "rgba(96,165,250,0.5)",  activeBg: "linear-gradient(135deg,#2563EB,#6366F1)" },
-  { key: "clients",  path: "/dashboard/clients",  Icon: Users,           activeColor: "#34D399", activeGlow: "rgba(52,211,153,0.5)",  activeBg: "linear-gradient(135deg,#059669,#10B981)" },
-  { key: "staff",    path: "/dashboard/staff",    Icon: Scissors,        activeColor: "#C084FC", activeGlow: "rgba(192,132,252,0.5)", activeBg: "linear-gradient(135deg,#7C3AED,#9333EA)" },
+  { key: "home",     path: "/dashboard",          Icon: LayoutDashboard, activeColor: "#C9A24B", activeGlow: "rgba(201,162,75,0.4)",  activeBg: "linear-gradient(135deg,#4A2C6D,#2A1840)" },
+  { key: "bookings", path: "/dashboard/bookings", Icon: BookOpenCheck,   activeColor: "#60A5FA", activeGlow: "rgba(96,165,250,0.5)",   activeBg: "linear-gradient(135deg,#2563EB,#1E40AF)" },
+  { key: "clients",  path: "/dashboard/clients",  Icon: Users,           activeColor: "#34D399", activeGlow: "rgba(52,211,153,0.5)",   activeBg: "linear-gradient(135deg,#059669,#10B981)" },
+  { key: "staff",    path: "/dashboard/staff",    Icon: Scissors,        activeColor: "#C9A24B", activeGlow: "rgba(201,162,75,0.4)",  activeBg: "linear-gradient(135deg,#4A2C6D,#2A1840)" },
   { key: "settings", path: "/dashboard/settings", Icon: Settings2,       activeColor: "#94A3B8", activeGlow: "rgba(148,163,184,0.4)", activeBg: "linear-gradient(135deg,#475569,#64748B)" },
 ];
 

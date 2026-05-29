@@ -169,7 +169,7 @@ export default function InvoicesPage() {
     if (!w) return;
     w.document.write(`
       <html><head><title>Invoice ${inv.invoice_number}</title>
-      <style>body{font-family:sans-serif;padding:40px;color:#0F172A}h1{color:#6366F1}table{width:100%;border-collapse:collapse}th,td{padding:10px;text-align:left;border-bottom:1px solid #E2E8F0}th{background:#F8FAFC;font-size:12px;text-transform:uppercase;color:#94A3B8}.total{font-size:18px;font-weight:900;color:#10B981}.badge{padding:4px 12px;border-radius:99px;font-size:12px;font-weight:700;background:${inv.status==="paid"?"#ECFDF5":"#EEF2FF"};color:${inv.status==="paid"?"#059669":"#4F46E5"}}</style>
+      <style>body{font-family:sans-serif;padding:40px;color:#0F172A}h1{color:#4A2C6D}table{width:100%;border-collapse:collapse}th,td{padding:10px;text-align:left;border-bottom:1px solid #E2E8F0}th{background:#F8FAFC;font-size:12px;text-transform:uppercase;color:#94A3B8}.total{font-size:18px;font-weight:900;color:#10B981}.badge{padding:4px 12px;border-radius:99px;font-size:12px;font-weight:700;background:${inv.status==="paid"?"#ECFDF5":"#EEF2FF"};color:${inv.status==="paid"?"#059669":"#4F46E5"}}</style>
       </head><body>
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:40px">
         <div><h1>INVOICE</h1><div style="font-size:24px;font-weight:900">${inv.invoice_number}</div></div>
@@ -195,7 +195,7 @@ export default function InvoicesPage() {
           <div style={{ fontSize: 11.5, color: "#94A3B8", marginTop: 1 }}>Create & manage client invoices</div>
         </div>
       </div>
-      <button onClick={() => setShowNew(true)} style={{ padding: "9px 18px", background: "linear-gradient(135deg,#6366F1,#4F46E5)", color: "#fff", border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 14px rgba(99,102,241,0.3)" }}>+ New Invoice</button>
+      <button onClick={() => setShowNew(true)} style={{ padding: "9px 18px", background: "linear-gradient(135deg,#4A2C6D,#4F46E5)", color: "#fff", border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 14px rgba(74,44,109,0.3)" }}>+ New Invoice</button>
     </header>
   );
 
@@ -210,7 +210,7 @@ export default function InvoicesPage() {
         {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 24 }}>
           {[
-            { label: "Total Invoices", value: invoices.length, color: "#6366F1" },
+            { label: "Total Invoices", value: invoices.length, color: "#4A2C6D" },
             { label: "Paid", value: invoices.filter(i => i.status === "paid").length, color: "#10B981" },
             { label: "Pending", value: invoices.filter(i => i.status === "sent").length, color: "#F59E0B" },
             { label: "Revenue Collected", value: `£${totalRevenue.toFixed(2)}`, color: "#10B981" },
@@ -246,7 +246,7 @@ export default function InvoicesPage() {
                       onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = "#F8FAFC"; }}
                       onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = "transparent"; }}
                       onClick={() => setSelected(inv)}>
-                      <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9", fontFamily: "monospace", fontSize: 13, fontWeight: 800, color: "#6366F1" }}>{inv.invoice_number}</td>
+                      <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9", fontFamily: "monospace", fontSize: 13, fontWeight: 800, color: "#4A2C6D" }}>{inv.invoice_number}</td>
                       <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9" }}>
                         <div style={{ fontSize: 13.5, fontWeight: 700, color: "#0F172A" }}>{inv.client_name}</div>
                         <div style={{ fontSize: 11.5, color: "#94A3B8" }}>{inv.client_email}</div>
@@ -316,7 +316,7 @@ export default function InvoicesPage() {
               <button
                 onClick={() => sendInvoiceEmail(selected)}
                 disabled={!selected.client_email || sendingEmail === selected.id}
-                style={{ flex: 1, minWidth: 120, padding: 12, background: selected.client_email ? "linear-gradient(135deg,#6366F1,#4F46E5)" : "#F1F5F9", border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, color: selected.client_email ? "#fff" : "#94A3B8", cursor: selected.client_email ? "pointer" : "not-allowed", opacity: sendingEmail === selected.id ? 0.7 : 1 }}
+                style={{ flex: 1, minWidth: 120, padding: 12, background: selected.client_email ? "linear-gradient(135deg,#4A2C6D,#4F46E5)" : "#F1F5F9", border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, color: selected.client_email ? "#fff" : "#94A3B8", cursor: selected.client_email ? "pointer" : "not-allowed", opacity: sendingEmail === selected.id ? 0.7 : 1 }}
               >{sendingEmail === selected.id ? "Sending…" : "📧 Email to Client"}</button>
               {selected.status !== "paid" && <button onClick={() => updateStatus(selected.id, selected.status === "draft" ? "sent" : "paid")} style={{ flex: 1, minWidth: 120, padding: 12, background: "linear-gradient(135deg,#10B981,#059669)", border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer" }}>{selected.status === "draft" ? "Mark as Sent" : "Mark as Paid"}</button>}
             </div>
@@ -350,7 +350,7 @@ export default function InvoicesPage() {
                     <button onClick={() => setItems(p => p.filter((_, i) => i !== idx))} style={{ background: "#FEF2F2", border: "1.5px solid #FECACA", borderRadius: 10, cursor: "pointer", fontSize: 14, color: "#EF4444" }}>×</button>
                   </div>
                 ))}
-                <button onClick={() => setItems(p => [...p, { name: "", price: "", qty: 1 }])} style={{ padding: "7px 14px", background: "#EEF2FF", color: "#6366F1", border: "none", borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>+ Add Item</button>
+                <button onClick={() => setItems(p => [...p, { name: "", price: "", qty: 1 }])} style={{ padding: "7px 14px", background: "#EEF2FF", color: "#4A2C6D", border: "none", borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>+ Add Item</button>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div>
@@ -370,7 +370,7 @@ export default function InvoicesPage() {
             </div>
             <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
               <button onClick={() => setShowNew(false)} style={{ flex: 1, padding: 12, background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#475569", cursor: "pointer" }}>Cancel</button>
-              <button onClick={handleCreate} style={{ flex: 2, padding: 12, background: "linear-gradient(135deg,#6366F1,#4F46E5)", border: "none", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#fff", cursor: "pointer" }}>Create Invoice</button>
+              <button onClick={handleCreate} style={{ flex: 2, padding: 12, background: "linear-gradient(135deg,#4A2C6D,#4F46E5)", border: "none", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#fff", cursor: "pointer" }}>Create Invoice</button>
             </div>
           </div>
         </div>
@@ -401,7 +401,7 @@ export default function InvoicesPage() {
                     <button onClick={() => setItems(p => p.filter((_, i) => i !== idx))} style={{ background: "#FEF2F2", border: "1.5px solid #FECACA", borderRadius: 10, cursor: "pointer", fontSize: 14, color: "#EF4444" }}>×</button>
                   </div>
                 ))}
-                <button onClick={() => setItems(p => [...p, { name: "", price: "", qty: 1 }])} style={{ padding: "7px 14px", background: "#EEF2FF", color: "#6366F1", border: "none", borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>+ Add Item</button>
+                <button onClick={() => setItems(p => [...p, { name: "", price: "", qty: 1 }])} style={{ padding: "7px 14px", background: "#EEF2FF", color: "#4A2C6D", border: "none", borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>+ Add Item</button>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <div>
@@ -425,7 +425,7 @@ export default function InvoicesPage() {
             </div>
             <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
               <button onClick={() => { setShowEdit(false); setEditingId(null); }} style={{ flex: 1, padding: 12, background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#475569", cursor: "pointer" }}>Cancel</button>
-              <button onClick={handleUpdate} style={{ flex: 2, padding: 12, background: "linear-gradient(135deg,#6366F1,#4F46E5)", border: "none", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#fff", cursor: "pointer" }}>Save Changes</button>
+              <button onClick={handleUpdate} style={{ flex: 2, padding: 12, background: "linear-gradient(135deg,#4A2C6D,#4F46E5)", border: "none", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#fff", cursor: "pointer" }}>Save Changes</button>
             </div>
           </div>
         </div>

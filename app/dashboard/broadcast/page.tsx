@@ -137,7 +137,7 @@ function BroadcastContent() {
   };
 
   const channelIcon = { whatsapp: "📱", sms: "💬", email: "📧" };
-  const channelColor = { whatsapp: "#25D366", sms: "#6366F1", email: "#F59E0B" };
+  const channelColor = { whatsapp: "#25D366", sms: "#4A2C6D", email: "#F59E0B" };
 
   const Topbar = (
     <header style={{ background: "#fff", borderBottom: "1px solid #F1F5F9", padding: "0 24px", height: 66, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 30, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
@@ -182,7 +182,7 @@ function BroadcastContent() {
                 <div style={{ fontSize: 12.5, fontWeight: 700, color: "#0F172A" }}>Recipients</div>
                 <div style={{ fontSize: 11.5, color: "#94A3B8" }}>All {recipientCount} clients</div>
               </div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: "#6366F1" }}>{recipientCount}</div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: "#4A2C6D" }}>{recipientCount}</div>
             </div>
 
             {/* Title */}

@@ -143,7 +143,7 @@ export default function ClosedDatesPage() {
                   <button key={lbl} onClick={() => {
                     if (i === 1) setWeekStart(getMonday(new Date()));
                     else { const d = new Date(weekStart); d.setDate(d.getDate() + (i===0?-7:7)); setWeekStart(d); }
-                  }} style={{ padding:"6px 12px", background: i===1 ? "#6366F1" : "#F8FAFC", color: i===1 ? "#fff" : "#475569", border:`1.5px solid ${i===1 ? "transparent" : "#E2E8F0"}`, borderRadius:8, fontSize:12, fontWeight:700, cursor:"pointer" }}>{lbl}</button>
+                  }} style={{ padding:"6px 12px", background: i===1 ? "#4A2C6D" : "#F8FAFC", color: i===1 ? "#fff" : "#475569", border:`1.5px solid ${i===1 ? "transparent" : "#E2E8F0"}`, borderRadius:8, fontSize:12, fontWeight:700, cursor:"pointer" }}>{lbl}</button>
                 ))}
               </div>
             </div>

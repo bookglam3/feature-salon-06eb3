@@ -133,7 +133,7 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
           position: sticky; top: 0; z-index: 30;
           gap: 12px;
           /* Subtle shimmer line at very bottom */
-          box-shadow: 0 1px 0 rgba(139,92,246,0.08), 0 4px 20px rgba(0,0,0,0.25);
+          box-shadow: 0 1px 0 rgba(74,44,109,0.08), 0 4px 20px rgba(0,0,0,0.25);
         }
 
         /* Search bar */
@@ -146,9 +146,9 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
           transition: all 0.18s ease;
         }
         .ds-topbar-search:focus-within {
-          border-color: rgba(139,92,246,0.5);
-          background: rgba(139,92,246,0.06);
-          box-shadow: 0 0 0 3px rgba(139,92,246,0.12);
+          border-color: rgba(74,44,109,0.5);
+          background: rgba(74,44,109,0.06);
+          box-shadow: 0 0 0 3px rgba(74,44,109,0.12);
         }
         .ds-topbar-search input {
           background: none; border: none; outline: none;
@@ -168,8 +168,8 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
           flex-shrink: 0; color: rgba(255,255,255,0.45);
         }
         .ds-notif-btn:hover {
-          border-color: rgba(139,92,246,0.35);
-          background: rgba(139,92,246,0.1);
+          border-color: rgba(74,44,109,0.35);
+          background: rgba(74,44,109,0.1);
           color: rgba(255,255,255,0.75);
         }
         .ds-notif-dot {
@@ -194,8 +194,8 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
           cursor: pointer; transition: all 0.18s; flex-shrink: 0;
         }
         .ds-avatar-chip:hover {
-          border-color: rgba(139,92,246,0.3);
-          background: rgba(139,92,246,0.07);
+          border-color: rgba(74,44,109,0.3);
+          background: rgba(74,44,109,0.07);
           transform: translateY(-1px);
           box-shadow: 0 4px 16px rgba(0,0,0,0.2);
         }
@@ -205,9 +205,9 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
           font-size: 9.5px; font-weight: 800; letter-spacing: 0.8px;
           text-transform: uppercase; padding: 3px 9px;
           border-radius: 99px; white-space: nowrap;
-          background: rgba(139,92,246,0.14);
-          color: #A78BFA;
-          border: 1px solid rgba(139,92,246,0.22);
+          background: rgba(74,44,109,0.14);
+          color: #C9A24B;
+          border: 1px solid rgba(74,44,109,0.22);
         }
 
         /* Hamburger */
@@ -391,10 +391,10 @@ function PremiumTopBar({ onMenuClick, salonName, plan }: {
         <div className="ds-avatar-chip" onClick={onMenuClick}>
           <div style={{
             width: 26, height: 26, borderRadius: 8,
-            background: "linear-gradient(135deg,#7C3AED,#6D28D9)",
+            background: "linear-gradient(135deg,#4A2C6D,#2A1840)",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 10, fontWeight: 800, color: "#fff", flexShrink: 0,
-            boxShadow: "0 2px 8px rgba(124,58,237,0.45)",
+            boxShadow: "0 2px 8px rgba(74,44,109,0.45)",
           }}>{initials}</div>
           <span style={{
             fontSize: 12.5, fontWeight: 700, color: "#F1F5F9",
@@ -426,7 +426,7 @@ export function HamburgerBtn({ onClick }: { onClick?: () => void }) {
         display: "flex", flexDirection: "column", gap: 4,
         transition: "all 0.18s", alignItems: "center",
       }}
-      onMouseEnter={e => { e.currentTarget.style.background = "rgba(139,92,246,0.12)"; e.currentTarget.style.borderColor = "rgba(139,92,246,0.25)"; }}
+      onMouseEnter={e => { e.currentTarget.style.background = "rgba(74,44,109,0.12)"; e.currentTarget.style.borderColor = "rgba(74,44,109,0.25)"; }}
       onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}
     >
       <span style={{ display: "block", width: 16, height: 1.5, background: "rgba(255,255,255,0.55)", borderRadius: 2 }} />

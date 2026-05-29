@@ -23,7 +23,7 @@ interface HistoryItem {
 type SalonData = { id: string; slug?: string };
 
 function Avatar({ name, size = 36 }: { name: string; size?: number }) {
-  const colors = ["#6366F1","#10B981","#F59E0B","#EF4444","#8B5CF6","#06B6D4","#EC4899"];
+  const colors = ["#4A2C6D","#10B981","#F59E0B","#EF4444","#7B5EA7","#06B6D4","#EC4899"];
   const bg = colors[(name?.charCodeAt(0) || 0) % colors.length];
   return (
     <div style={{
@@ -162,7 +162,7 @@ export default function ClientsPage() {
             {/* Toolbar */}
             <div style={{ padding: "14px 18px", borderBottom: "1px solid #F1F5F9", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", background: "#FAFBFF" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 160, background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "8px 12px" }}
-                onFocusCapture={e => { e.currentTarget.style.borderColor = "#6366F1"; e.currentTarget.style.background = "#fff"; }}
+                onFocusCapture={e => { e.currentTarget.style.borderColor = "#4A2C6D"; e.currentTarget.style.background = "#fff"; }}
                 onBlurCapture={e => { e.currentTarget.style.borderColor = "#E2E8F0"; e.currentTarget.style.background = "#F8FAFC"; }}
               >
                 <svg width="13" height="13" viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5.75" stroke="#94A3B8" strokeWidth="1.75"/><path d="M13 13L17 17" stroke="#94A3B8" strokeWidth="1.75" strokeLinecap="round"/></svg>
@@ -219,7 +219,7 @@ export default function ClientsPage() {
                             <div style={{ fontSize: 11.5, color: "var(--text-3)", marginTop: 1 }}>{c.phone || "—"}</div>
                           </td>
                           <td style={{ padding: "13px 16px", borderBottom: "1px solid #F8FAFC" }}>
-                            <span style={{ background: "#EEF2FF", color: "#6366F1", fontSize: 12, padding: "3px 10px", borderRadius: 99, fontWeight: 800, border: "1px solid #C7D2FE" }}>{c.bookings}</span>
+                            <span style={{ background: "#EEF2FF", color: "#4A2C6D", fontSize: 12, padding: "3px 10px", borderRadius: 99, fontWeight: 800, border: "1px solid #C7D2FE" }}>{c.bookings}</span>
                           </td>
                           <td style={{ padding: "13px 16px", fontSize: 13.5, fontWeight: 800, color: "var(--text-1)", borderBottom: "1px solid #F8FAFC" }}>£{c.spent.toFixed(0)}</td>
                           <td style={{ padding: "13px 16px", borderBottom: "1px solid #F8FAFC" }}>
@@ -229,7 +229,7 @@ export default function ClientsPage() {
                             </div>
                           </td>
                           <td style={{ padding: "13px 16px", borderBottom: "1px solid #F8FAFC" }}>
-                            <span style={{ fontSize: 11.5, color: "#6366F1", fontWeight: 700, background: "#EEF2FF", padding: "3px 10px", borderRadius: 8, border: "1px solid #C7D2FE" }}>View →</span>
+                            <span style={{ fontSize: 11.5, color: "#4A2C6D", fontWeight: 700, background: "#EEF2FF", padding: "3px 10px", borderRadius: 8, border: "1px solid #C7D2FE" }}>View →</span>
                           </td>
                         </tr>
                       );
@@ -242,7 +242,7 @@ export default function ClientsPage() {
 
           {/* Detail panel */}
           {selected && (
-            <div style={{ width: "100%", background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, overflow: "hidden", boxShadow: "0 8px 32px rgba(99,102,241,0.12)", display: "flex", flexDirection: "column", maxHeight: "82vh" }}>
+            <div style={{ width: "100%", background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, overflow: "hidden", boxShadow: "0 8px 32px rgba(74,44,109,0.12)", display: "flex", flexDirection: "column", maxHeight: "82vh" }}>
               {/* Header */}
               <div style={{ padding: "18px 20px", borderBottom: "1px solid #F1F5F9", display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(135deg,#EEF2FF,#F8FAFF)", flexShrink: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -269,7 +269,7 @@ export default function ClientsPage() {
                 )}
                 {selected.phone && (
                   <a href={`tel:${selected.phone}`}
-                    style={{ flex: 1, background: "#EEF2FF", color: "#6366F1", border: "1px solid #C7D2FE", borderRadius: 10, padding: "9px", fontSize: 12.5, fontWeight: 700, textAlign: "center", textDecoration: "none", display: "block" }}>
+                    style={{ flex: 1, background: "#EEF2FF", color: "#4A2C6D", border: "1px solid #C7D2FE", borderRadius: 10, padding: "9px", fontSize: 12.5, fontWeight: 700, textAlign: "center", textDecoration: "none", display: "block" }}>
                     📞 Call
                   </a>
                 )}
@@ -304,7 +304,7 @@ export default function ClientsPage() {
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
                   <span style={{ fontSize: 11.5, color: "var(--green)", fontWeight: 600 }}>{noteMsg}</span>
                   <button onClick={saveNote} disabled={noteSaving}
-                    style={{ padding: "6px 16px", background: "#6366F1", color: "#fff", border: "none", borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
+                    style={{ padding: "6px 16px", background: "#4A2C6D", color: "#fff", border: "none", borderRadius: 8, fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>
                     Save Note
                   </button>
                 </div>

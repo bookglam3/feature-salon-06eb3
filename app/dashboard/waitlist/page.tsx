@@ -121,7 +121,7 @@ export default function WaitlistPage() {
       <div style={{ padding: "28px 24px", maxWidth: 1200, margin: "0 auto" }}>
         {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 24 }}>
-          {([["all","Total","⏳","#6366F1"], ["waiting","Waiting","🕐","#F59E0B"], ["contacted","Contacted","📞","#6366F1"], ["booked","Booked","✅","#10B981"]] as const).map(([key, label, icon, color]) => (
+          {([["all","Total","⏳","#4A2C6D"], ["waiting","Waiting","🕐","#F59E0B"], ["contacted","Contacted","📞","#4A2C6D"], ["booked","Booked","✅","#10B981"]] as const).map(([key, label, icon, color]) => (
             <div key={key} onClick={() => setFilter(key as typeof filter)} style={{ background: filter === key ? "#fff" : "#fff", border: `2px solid ${filter === key ? color : "#F1F5F9"}`, borderRadius: 16, padding: "18px 16px", cursor: "pointer", position: "relative", overflow: "hidden", transition: "all 0.15s" }}>
               <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: color, opacity: filter === key ? 1 : 0.3 }} />
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
@@ -180,7 +180,7 @@ export default function WaitlistPage() {
                               <button
                                 onClick={() => handleNotify(e)}
                                 disabled={notifying === e.id}
-                                style={{ padding: "5px 10px", background: notifying === e.id ? "#F1F5F9" : "linear-gradient(135deg,#7C3AED,#C2185B)", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: notifying === e.id ? "not-allowed" : "pointer", color: notifying === e.id ? "#94A3B8" : "#fff", whiteSpace: "nowrap" }}
+                                style={{ padding: "5px 10px", background: notifying === e.id ? "#F1F5F9" : "linear-gradient(135deg,#4A2C6D,#C2185B)", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: notifying === e.id ? "not-allowed" : "pointer", color: notifying === e.id ? "#94A3B8" : "#fff", whiteSpace: "nowrap" }}
                               >
                                 {notifying === e.id ? "Sending…" : "🔔 Notify"}
                               </button>

@@ -54,7 +54,7 @@ const DEFAULT_AUTOMATIONS: Automation[] = [
 const TYPE_META: Record<string, { icon: string; label: string; desc: string; color: string }> = {
   birthday:    { icon: "🎂", label: "Birthday Message",     desc: "Auto-send on client's birthday",           color: "#EC4899" },
   winback:     { icon: "💔", label: "Win-Back Campaign",    desc: "Re-engage clients who haven't visited",    color: "#F59E0B" },
-  anniversary: { icon: "🎉", label: "Loyalty Anniversary",  desc: "Celebrate 1 year with your salon",         color: "#6366F1" },
+  anniversary: { icon: "🎉", label: "Loyalty Anniversary",  desc: "Celebrate 1 year with your salon",         color: "#4A2C6D" },
   referral:    { icon: "🔗", label: "Referral Prompt",      desc: "Encourage clients to refer friends",       color: "#10B981" },
 };
 

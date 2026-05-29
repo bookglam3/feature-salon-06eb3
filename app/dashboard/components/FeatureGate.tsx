@@ -87,7 +87,7 @@ export default function FeatureGate({ feature, children }: FeatureGateProps) {
 
         {/* Lock icon with glow */}
         <div style={{ position: "relative", display: "inline-block", marginBottom: 28 }}>
-          <div style={{ width: 90, height: 90, borderRadius: 26, background: "linear-gradient(135deg,#1E1B4B,#3730A3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40, margin: "0 auto", boxShadow: "0 16px 48px rgba(99,102,241,0.35)" }}>
+          <div style={{ width: 90, height: 90, borderRadius: 26, background: "linear-gradient(135deg,#1E1B4B,#3730A3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40, margin: "0 auto", boxShadow: "0 16px 48px rgba(74,44,109,0.35)" }}>
             🔒
           </div>
           <div style={{ position: "absolute", bottom: -4, right: -4, background: "#F59E0B", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, border: "2px solid #fff" }}>

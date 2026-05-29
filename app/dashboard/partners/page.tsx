@@ -261,8 +261,8 @@ function PartnersPageInner() {
   });
 
   const SUB_BADGE: Record<string, { bg: string; color: string; border: string; label: string }> = {
-    trial:     { bg: "rgba(99,102,241,0.12)",  color: "#A78BFA", border: "rgba(99,102,241,0.3)",  label: "🎁 Trial" },
-    trialing:  { bg: "rgba(99,102,241,0.12)",  color: "#A78BFA", border: "rgba(99,102,241,0.3)",  label: "⏳ Trialing" },
+    trial:     { bg: "rgba(74,44,109,0.12)",  color: "#C9A24B", border: "rgba(74,44,109,0.3)",  label: "🎁 Trial" },
+    trialing:  { bg: "rgba(74,44,109,0.12)",  color: "#C9A24B", border: "rgba(74,44,109,0.3)",  label: "⏳ Trialing" },
     active:    { bg: "rgba(16,185,129,0.12)",  color: "#34D399", border: "rgba(16,185,129,0.3)",  label: "✅ Active" },
     past_due:  { bg: "rgba(245,158,11,0.12)",  color: "#FCD34D", border: "rgba(245,158,11,0.3)",  label: "⚠️ Past Due" },
     cancelled: { bg: "rgba(239,68,68,0.12)",   color: "#FCA5A5", border: "rgba(239,68,68,0.3)",   label: "❌ Cancelled" },
@@ -316,7 +316,7 @@ function PartnersPageInner() {
                 : allSalons.filter(s => s.country_code === t.key).length;
               return (
                 <button key={t.key} onClick={() => setCountryFilter(t.key)}
-                  style={{ padding: "6px 14px", borderRadius: 99, fontSize: 12.5, fontWeight: countryFilter === t.key ? 800 : 500, whiteSpace: "nowrap", cursor: "pointer", border: `1px solid ${countryFilter === t.key ? "rgba(139,92,246,0.5)" : "rgba(255,255,255,0.08)"}`, background: countryFilter === t.key ? "rgba(139,92,246,0.18)" : "transparent", color: countryFilter === t.key ? "#C4B5FD" : "rgba(255,255,255,0.4)", transition: "all 0.15s" }}
+                  style={{ padding: "6px 14px", borderRadius: 99, fontSize: 12.5, fontWeight: countryFilter === t.key ? 800 : 500, whiteSpace: "nowrap", cursor: "pointer", border: `1px solid ${countryFilter === t.key ? "rgba(74,44,109,0.5)" : "rgba(255,255,255,0.08)"}`, background: countryFilter === t.key ? "rgba(74,44,109,0.18)" : "transparent", color: countryFilter === t.key ? "#C9A24B" : "rgba(255,255,255,0.4)", transition: "all 0.15s" }}
                 >{t.label} <span style={{ opacity: 0.6, fontSize: 11 }}>({count})</span></button>
               );
             })}
@@ -364,16 +364,16 @@ function PartnersPageInner() {
                           {s.last_ip ? <span style={{ fontFamily: "monospace", fontSize: 12, color: "#67E8F9", background: "rgba(6,182,212,0.08)", padding: "2px 7px", borderRadius: 5, border: "1px solid rgba(6,182,212,0.2)" }}>{s.last_ip}</span> : <span style={{ color: "rgba(255,255,255,0.18)", fontSize: 12 }}>—</span>}
                         </td>
                         <td style={{ padding: "11px 14px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                          {s.last_device ? <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 99, background: isMobile ? "rgba(236,72,153,0.1)" : "rgba(99,102,241,0.1)", color: isMobile ? "#F472B6" : "#A78BFA", border: `1px solid ${isMobile ? "rgba(236,72,153,0.2)" : "rgba(99,102,241,0.2)"}` }}>{s.last_device}</span> : <span style={{ color: "rgba(255,255,255,0.18)", fontSize: 12 }}>—</span>}
+                          {s.last_device ? <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 99, background: isMobile ? "rgba(236,72,153,0.1)" : "rgba(74,44,109,0.1)", color: isMobile ? "#F472B6" : "#C9A24B", border: `1px solid ${isMobile ? "rgba(236,72,153,0.2)" : "rgba(74,44,109,0.2)"}` }}>{s.last_device}</span> : <span style={{ color: "rgba(255,255,255,0.18)", fontSize: 12 }}>—</span>}
                         </td>
                         <td style={{ padding: "11px 14px", borderBottom: "1px solid rgba(255,255,255,0.04)", fontSize: 11, color: "rgba(255,255,255,0.28)", whiteSpace: "nowrap" }}>
                           {new Date(s.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "2-digit" })}
                         </td>
                         <td style={{ padding: "11px 14px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                           <button onClick={() => openEdit(s)}
-                            style={{ padding: "5px 12px", background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.25)", color: "#A78BFA", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.12s" }}
-                            onMouseEnter={e => { e.currentTarget.style.background = "rgba(139,92,246,0.22)"; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = "rgba(139,92,246,0.12)"; }}
+                            style={{ padding: "5px 12px", background: "rgba(74,44,109,0.12)", border: "1px solid rgba(74,44,109,0.25)", color: "#C9A24B", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", transition: "all 0.12s" }}
+                            onMouseEnter={e => { e.currentTarget.style.background = "rgba(74,44,109,0.22)"; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = "rgba(74,44,109,0.12)"; }}
                           >Edit</button>
                         </td>
                       </tr>
@@ -391,7 +391,7 @@ function PartnersPageInner() {
         {/* Edit Salon Modal */}
         {editSalon && (
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 16 }}>
-            <div style={{ background: "#13111F", border: "1px solid rgba(139,92,246,0.3)", borderRadius: 20, padding: 28, width: "100%", maxWidth: 440, boxShadow: "0 24px 80px rgba(0,0,0,0.7)" }}>
+            <div style={{ background: "#13111F", border: "1px solid rgba(74,44,109,0.3)", borderRadius: 20, padding: 28, width: "100%", maxWidth: 440, boxShadow: "0 24px 80px rgba(0,0,0,0.7)" }}>
               <div style={{ fontSize: 17, fontWeight: 800, color: "#F1F5F9", marginBottom: 4 }}>Edit Salon</div>
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginBottom: 22 }}>{editSalon.name} · {editSalon.owner_email}</div>
 
@@ -434,7 +434,7 @@ function PartnersPageInner() {
 
               <div style={{ display: "flex", gap: 10 }}>
                 <button onClick={() => setEditSalon(null)} style={{ flex: 1, padding: 11, background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
-                <button onClick={handleSaveSalon} disabled={editSaving} style={{ flex: 1, padding: 11, background: editSaving ? "rgba(139,92,246,0.4)" : "linear-gradient(135deg,#7C3AED,#6D28D9)", color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: editSaving ? "not-allowed" : "pointer", boxShadow: "0 4px 16px rgba(124,58,237,0.4)" }}>
+                <button onClick={handleSaveSalon} disabled={editSaving} style={{ flex: 1, padding: 11, background: editSaving ? "rgba(74,44,109,0.4)" : "linear-gradient(135deg,#4A2C6D,#2A1840)", color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: editSaving ? "not-allowed" : "pointer", boxShadow: "0 4px 16px rgba(74,44,109,0.4)" }}>
                   {editSaving ? "Saving…" : "Save Changes"}
                 </button>
               </div>
@@ -449,7 +449,7 @@ function PartnersPageInner() {
             { label: "Pending",  value: stats.pending,  color: "#D97706",          bg: "#FFFBEB" },
             { label: "Approved", value: stats.approved, color: "var(--green)",    bg: "var(--green-light)" },
             { label: "Rejected", value: stats.rejected, color: "var(--red)",      bg: "var(--red-light)" },
-            { label: "Signups Referred", value: stats.referred, color: "#7C3AED", bg: "#F5F3FF" },
+            { label: "Signups Referred", value: stats.referred, color: "#4A2C6D", bg: "#F5F3FF" },
           ].map(s => (
             <div key={s.label} style={{ background: "#fff", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", padding: "14px 16px" }}>
               <div style={{ fontSize: 22, fontWeight: 800, color: s.color, marginBottom: 2 }}>{s.value}</div>
@@ -474,7 +474,7 @@ function PartnersPageInner() {
             onChange={e => setSearch(e.target.value)}
             placeholder="Search name, phone, city…"
             style={{ flex: 1, minWidth: 180, maxWidth: 300, padding: "8px 13px", border: "1px solid var(--border-2)", borderRadius: "var(--r-sm)", fontSize: 13.5, outline: "none", fontFamily: "var(--font)", color: "var(--text-1)" }}
-            onFocus={e => { e.currentTarget.style.borderColor = "var(--indigo)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.12)"; }}
+            onFocus={e => { e.currentTarget.style.borderColor = "var(--indigo)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(74,44,109,0.12)"; }}
             onBlur={e => { e.currentTarget.style.borderColor = "var(--border-2)"; e.currentTarget.style.boxShadow = "none"; }}
           />
         </div>
@@ -501,7 +501,7 @@ function PartnersPageInner() {
                       {/* Avatar */}
                       <div style={{
                         width: 40, height: 40, borderRadius: "50%", flexShrink: 0,
-                        background: "linear-gradient(135deg, var(--indigo), #7C3AED)",
+                        background: "linear-gradient(135deg, var(--indigo), #4A2C6D)",
                         display: "flex", alignItems: "center", justifyContent: "center",
                         fontSize: 15, fontWeight: 800, color: "#fff",
                       }}>
@@ -633,7 +633,7 @@ function PartnersPageInner() {
                   outline: "none", resize: "vertical", color: "var(--text-1)", lineHeight: 1.6,
                   boxSizing: "border-box",
                 }}
-                onFocus={e => { e.currentTarget.style.borderColor = "var(--indigo)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.12)"; }}
+                onFocus={e => { e.currentTarget.style.borderColor = "var(--indigo)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(74,44,109,0.12)"; }}
                 onBlur={e => { e.currentTarget.style.borderColor = "var(--border-2)"; e.currentTarget.style.boxShadow = "none"; }}
               />
             </FormGroup>
@@ -702,7 +702,7 @@ function PartnersPageInner() {
                         <td style={{ padding: "11px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 12.5, color: "rgba(255,255,255,0.6)" }}>{flag} {log.city}{log.city && log.country ? ", " : ""}{log.country}</td>
                         <td style={{ padding: "11px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 11.5, color: "rgba(255,255,255,0.35)" }}>{log.isp || "—"}</td>
                         <td style={{ padding: "11px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                          <span style={{ fontSize: 11.5, fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: isMobile ? "rgba(236,72,153,0.12)" : "rgba(99,102,241,0.12)", color: isMobile ? "#F472B6" : "#A78BFA", border: `1px solid ${isMobile ? "rgba(236,72,153,0.25)" : "rgba(99,102,241,0.25)"}` }}>{log.device || "Unknown"}</span>
+                          <span style={{ fontSize: 11.5, fontWeight: 700, padding: "3px 9px", borderRadius: 99, background: isMobile ? "rgba(236,72,153,0.12)" : "rgba(74,44,109,0.12)", color: isMobile ? "#F472B6" : "#C9A24B", border: `1px solid ${isMobile ? "rgba(236,72,153,0.25)" : "rgba(74,44,109,0.25)"}` }}>{log.device || "Unknown"}</span>
                         </td>
                         <td style={{ padding: "11px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 11.5, color: "rgba(255,255,255,0.3)", whiteSpace: "nowrap" }}>
                           {new Date(log.logged_at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}

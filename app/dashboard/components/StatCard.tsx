@@ -14,9 +14,9 @@ interface StatCardProps {
 
 const colorMap = {
   indigo: {
-    accent: "#6366F1", light: "#EEF2FF", text: "#6366F1",
-    grad: "linear-gradient(135deg,#6366F1,#8B5CF6)",
-    glow: "rgba(99,102,241,0.2)", bar: "#818CF8",
+    accent: "#4A2C6D", light: "#EEF2FF", text: "#4A2C6D",
+    grad: "linear-gradient(135deg,#4A2C6D,#7B5EA7)",
+    glow: "rgba(74,44,109,0.2)", bar: "#818CF8",
   },
   green: {
     accent: "#10B981", light: "#ECFDF5", text: "#059669",

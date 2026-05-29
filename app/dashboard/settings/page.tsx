@@ -466,7 +466,7 @@ export default function SettingsPage() {
       <div style={{ padding: "28px 24px", maxWidth: 740 }}>
 
       {/* ── Booking Link ── */}
-      <div style={{ ...cardStyle, background: "linear-gradient(135deg,#0F0B2D 0%,#3730A3 60%,#6366F1 100%)", border: "none", marginBottom: 20 }}>
+      <div style={{ ...cardStyle, background: "linear-gradient(135deg,#0F0B2D 0%,#3730A3 60%,#4A2C6D 100%)", border: "none", marginBottom: 20 }}>
         <div style={{ fontSize: "13px", fontWeight: 700, color: "rgba(255,255,255,0.6)", letterSpacing: "0.5px", textTransform: "uppercase", marginBottom: 6 }}>🔗 Your Booking Page</div>
         <div style={{ fontSize: "15px", fontWeight: 700, color: "#fff", marginBottom: 4 }}>{salon?.name}</div>
         <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.55)", marginBottom: 18, wordBreak: "break-all" }}>{origin}/book/{salon?.slug}</div>
@@ -841,8 +841,8 @@ export default function SettingsPage() {
               { flag: "🇦🇪", label: "UAE", fmt: "+971" },
               { flag: "🇸🇦", label: "Saudi Arabia", fmt: "+966" },
             ].map(c => (
-              <span key={c.label} style={{ fontSize: "12px", background: "#EEF2FF", color: "#4338CA", padding: "4px 10px", borderRadius: 20, fontWeight: 500 }}>
-                {c.flag} {c.label} <span style={{ color: "#6366F1", fontWeight: 400 }}>({c.fmt})</span>
+              <span key={c.label} style={{ fontSize: "12px", background: "#EEF2FF", color: "#2A1840", padding: "4px 10px", borderRadius: 20, fontWeight: 500 }}>
+                {c.flag} {c.label} <span style={{ color: "#4A2C6D", fontWeight: 400 }}>({c.fmt})</span>
               </span>
             ))}
           </div>
@@ -876,7 +876,7 @@ export default function SettingsPage() {
         {vc.serviceCategory && services.some(s => s.category) && (
           <div style={{ fontSize: 11, fontWeight: 700, color: "#94A3B8", letterSpacing: "0.8px", textTransform: "uppercase", marginBottom: 8 }}>
             {Array.from(new Set(services.map(s => s.category || "General"))).map(cat => (
-              <span key={cat} style={{ marginRight: 12, color: "#6366F1", background: "#EEF2FF", borderRadius: 6, padding: "2px 8px", fontWeight: 700, fontSize: 10.5 }}>{cat}</span>
+              <span key={cat} style={{ marginRight: 12, color: "#4A2C6D", background: "#EEF2FF", borderRadius: 6, padding: "2px 8px", fontWeight: 700, fontSize: 10.5 }}>{cat}</span>
             ))}
           </div>
         )}
@@ -914,7 +914,7 @@ export default function SettingsPage() {
                     <div style={{ fontSize: "11.5px", color: "#64748B", marginTop: 2, fontStyle: "italic" }}>{s.description}</div>
                   )}
                   {vc.serviceCategory && s.category && (
-                    <div style={{ display: "inline-block", marginTop: 4, fontSize: 10.5, fontWeight: 700, color: "#6366F1", background: "#EEF2FF", borderRadius: 6, padding: "2px 8px" }}>{s.category}</div>
+                    <div style={{ display: "inline-block", marginTop: 4, fontSize: 10.5, fontWeight: 700, color: "#4A2C6D", background: "#EEF2FF", borderRadius: 6, padding: "2px 8px" }}>{s.category}</div>
                   )}
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
@@ -949,12 +949,12 @@ export default function SettingsPage() {
           <span style={{ fontSize: 28 }}>🏦</span>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#1E1B4B" }}>Stripe Connect Express</div>
-            <div style={{ fontSize: 11.5, color: "#6366F1", marginTop: 2 }}>5% platform fee · automatic payouts · Stripe-powered</div>
+            <div style={{ fontSize: 11.5, color: "#4A2C6D", marginTop: 2 }}>5% platform fee · automatic payouts · Stripe-powered</div>
           </div>
         </div>
         <button
           onClick={() => router.push("/dashboard/earnings")}
-          style={{ padding: "10px 20px", background: "linear-gradient(135deg,#6366F1,#4F46E5)", color: "#fff", border: "none", borderRadius: "10px", fontSize: "13px", cursor: "pointer", fontWeight: 700, boxShadow: "0 4px 16px rgba(99,102,241,0.3)" }}
+          style={{ padding: "10px 20px", background: "linear-gradient(135deg,#4A2C6D,#4F46E5)", color: "#fff", border: "none", borderRadius: "10px", fontSize: "13px", cursor: "pointer", fontWeight: 700, boxShadow: "0 4px 16px rgba(74,44,109,0.3)" }}
         >
           💰 Manage Payouts →
         </button>
@@ -1003,7 +1003,7 @@ export default function SettingsPage() {
           </div>
         </div>
         <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-          <button onClick={handleChangePassword} disabled={pwSaving || !pwForm.current || !pwForm.newPw || !pwForm.confirm} style={{ padding: "10px 22px", background: "linear-gradient(135deg,#5B21B6,#7C3AED)", color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: (!pwForm.current || !pwForm.newPw || !pwForm.confirm) ? 0.4 : 1 }}>{pwSaving ? "Updating…" : "🔐 Update Password"}</button>
+          <button onClick={handleChangePassword} disabled={pwSaving || !pwForm.current || !pwForm.newPw || !pwForm.confirm} style={{ padding: "10px 22px", background: "linear-gradient(135deg,#5B21B6,#4A2C6D)", color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: (!pwForm.current || !pwForm.newPw || !pwForm.confirm) ? 0.4 : 1 }}>{pwSaving ? "Updating…" : "🔐 Update Password"}</button>
           <div style={{ width: 1, height: 28, background: "#E2E8F0" }} />
           <button onClick={handleLogout} style={{ padding: "10px 18px", background: "#FEF2F2", color: "#EF4444", border: "1px solid #FECACA", borderRadius: 8, fontSize: 13, cursor: "pointer", fontWeight: 500 }}>Sign out</button>
         </div>

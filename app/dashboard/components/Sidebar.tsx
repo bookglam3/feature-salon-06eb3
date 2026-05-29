@@ -19,9 +19,9 @@ const SECTION_COLORS: Record<string, {
   border: string;
   labelColor: string;
 }> = {
-  Main:       { grad: "linear-gradient(135deg,#7C3AED,#6D28D9)",  dimBg: "rgba(124,58,237,0.14)",  glow: "rgba(124,58,237,0.5)",  border: "#8B5CF6", labelColor: "rgba(167,139,250,0.6)" },
+  Main:       { grad: "linear-gradient(135deg,#4A2C6D,#2A1840)",  dimBg: "rgba(74,44,109,0.14)",  glow: "rgba(74,44,109,0.5)",  border: "#7B5EA7", labelColor: "rgba(167,139,250,0.6)" },
   Finance:    { grad: "linear-gradient(135deg,#059669,#10B981)",  dimBg: "rgba(5,150,105,0.14)",   glow: "rgba(5,150,105,0.5)",   border: "#34D399", labelColor: "rgba(52,211,153,0.6)" },
-  Engagement: { grad: "linear-gradient(135deg,#2563EB,#6366F1)",  dimBg: "rgba(37,99,235,0.14)",   glow: "rgba(37,99,235,0.5)",   border: "#60A5FA", labelColor: "rgba(96,165,250,0.6)" },
+  Engagement: { grad: "linear-gradient(135deg,#2563EB,#4A2C6D)",  dimBg: "rgba(37,99,235,0.14)",   glow: "rgba(37,99,235,0.5)",   border: "#60A5FA", labelColor: "rgba(96,165,250,0.6)" },
   Content:    { grad: "linear-gradient(135deg,#DB2777,#EC4899)",  dimBg: "rgba(219,39,119,0.14)",  glow: "rgba(219,39,119,0.5)",  border: "#F472B6", labelColor: "rgba(244,114,182,0.6)" },
   System:     { grad: "linear-gradient(135deg,#475569,#64748B)",  dimBg: "rgba(71,85,105,0.14)",   glow: "rgba(71,85,105,0.4)",   border: "#94A3B8", labelColor: "rgba(148,163,184,0.5)" },
 };
@@ -142,7 +142,7 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
           position: absolute;
           top: 60px; left: -40px;
           width: 160px; height: 160px;
-          background: radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%);
+          background: radial-gradient(circle, rgba(74,44,109,0.18) 0%, transparent 70%);
           pointer-events: none;
           border-radius: 50%;
         }
@@ -165,10 +165,10 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
           border-color: rgba(255,255,255,0.06);
         }
         .sb-link.active {
-          background: rgba(139,92,246,0.1);
+          background: rgba(74,44,109,0.1);
           color: #F1F5F9;
           font-weight: 700;
-          border-color: rgba(139,92,246,0.12);
+          border-color: rgba(74,44,109,0.12);
         }
         /* Icon box inside link */
         .sb-icon-box {
@@ -246,7 +246,7 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
             <div style={{
               width: 36, height: 36, borderRadius: 11, position: "relative",
               display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 4px 18px rgba(124,58,237,0.55)",
+              boxShadow: "0 4px 18px rgba(74,44,109,0.55)",
               flexShrink: 0, overflow: "hidden",
             }}>
               <img
@@ -257,7 +257,7 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
               {/* Pulse ring */}
               <div style={{
                 position: "absolute", inset: -3, borderRadius: 14,
-                border: "1px solid rgba(139,92,246,0.45)",
+                border: "1px solid rgba(74,44,109,0.45)",
                 animation: "logoPulse 3s ease-in-out infinite",
                 pointerEvents: "none",
               }} />
@@ -289,16 +289,16 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
               style={{
                 width: "100%", display: "flex", alignItems: "center", gap: 9,
                 background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(139,92,246,0.2)",
+                border: "1px solid rgba(74,44,109,0.2)",
                 borderRadius: 11, padding: "8px 11px",
                 cursor: "pointer", transition: "all 0.15s",
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = "rgba(139,92,246,0.1)"; e.currentTarget.style.borderColor = "rgba(139,92,246,0.4)"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = "rgba(139,92,246,0.2)"; }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(74,44,109,0.1)"; e.currentTarget.style.borderColor = "rgba(74,44,109,0.4)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = "rgba(74,44,109,0.2)"; }}
             >
               <div style={{
                 width: 26, height: 26, borderRadius: 7, flexShrink: 0,
-                background: "linear-gradient(135deg,#7C3AED,#6D28D9)",
+                background: "linear-gradient(135deg,#4A2C6D,#2A1840)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: 10, fontWeight: 900, color: "#fff",
               }}>
@@ -318,9 +318,9 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
               <div style={{
                 position: "absolute", top: "calc(100% - 2px)", left: 12, right: 12,
                 background: "rgba(16,15,40,0.98)",
-                border: "1px solid rgba(139,92,246,0.25)",
+                border: "1px solid rgba(74,44,109,0.25)",
                 borderRadius: 12, overflow: "hidden",
-                boxShadow: "0 16px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(139,92,246,0.1)",
+                boxShadow: "0 16px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(74,44,109,0.1)",
                 zIndex: 200, backdropFilter: "blur(16px)",
               }}>
                 {salons.map(s => (
@@ -330,7 +330,7 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
                     style={{
                       width: "100%", display: "flex", alignItems: "center", gap: 9,
                       padding: "9px 12px",
-                      background: s.id === activeSalon?.id ? "rgba(139,92,246,0.12)" : "transparent",
+                      background: s.id === activeSalon?.id ? "rgba(74,44,109,0.12)" : "transparent",
                       border: "none", cursor: "pointer",
                       borderBottom: "1px solid rgba(255,255,255,0.04)",
                       transition: "background 0.12s",
@@ -340,14 +340,14 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
                   >
                     <div style={{
                       width: 22, height: 22, borderRadius: 6, flexShrink: 0,
-                      background: s.id === activeSalon?.id ? "linear-gradient(135deg,#7C3AED,#6D28D9)" : "rgba(255,255,255,0.07)",
+                      background: s.id === activeSalon?.id ? "linear-gradient(135deg,#4A2C6D,#2A1840)" : "rgba(255,255,255,0.07)",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 9, fontWeight: 900, color: "#fff",
                     }}>{s.name.slice(0, 1).toUpperCase()}</div>
                     <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
-                      <div style={{ fontSize: 12, fontWeight: s.id === activeSalon?.id ? 700 : 500, color: s.id === activeSalon?.id ? "#A78BFA" : "rgba(255,255,255,0.6)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</div>
+                      <div style={{ fontSize: 12, fontWeight: s.id === activeSalon?.id ? 700 : 500, color: s.id === activeSalon?.id ? "#C9A24B" : "rgba(255,255,255,0.6)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</div>
                     </div>
-                    {s.id === activeSalon?.id && <div style={{ fontSize: 10, color: "#7C3AED" }}>✓</div>}
+                    {s.id === activeSalon?.id && <div style={{ fontSize: 10, color: "#4A2C6D" }}>✓</div>}
                   </button>
                 ))}
               </div>
@@ -445,10 +445,10 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
           }}>
             <div style={{
               width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-              background: "linear-gradient(135deg,#7C3AED,#4C1D95)",
+              background: "linear-gradient(135deg,#4A2C6D,#4C1D95)",
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 12, fontWeight: 800, color: "#fff",
-              boxShadow: "0 2px 10px rgba(124,58,237,0.45)",
+              boxShadow: "0 2px 10px rgba(74,44,109,0.45)",
             }}>{initials}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{
