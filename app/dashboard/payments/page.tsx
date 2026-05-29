@@ -68,7 +68,7 @@ export default function PaymentsPage() {
       <div style={{ padding: "20px 20px 32px" }}>
 
         {/* Stats */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 20 }}>
+        <div className="dash-stats" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 20 }}>
           <StatCard label="Total Collected" value={Math.round(totalCollected)} icon="💳" color="green" prefix="£" sub={`${appointments.filter(a => a.status === "confirmed").length} payments`} />
           <StatCard label="Pending" value={Math.round(pending)} icon="⏳" color="amber" prefix="£" sub={`${appointments.filter(a => a.status === "pending").length} unpaid`} />
           <StatCard label="Refunded" value={Math.round(refunded)} icon="↩️" color="red" prefix="£" sub={`${appointments.filter(a => a.status === "cancelled").length} refunds`} />

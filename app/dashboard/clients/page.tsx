@@ -149,7 +149,7 @@ export default function ClientsPage() {
       <div style={{ padding: "20px 20px 32px" }}>
 
         {/* Stats */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 20 }}>
+        <div className="dash-stats" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 20 }}>
           <StatCard label={`Total ${vc.clientPlural}`} value={clients.length} icon="👤" color="indigo" sub="all time" />
           <StatCard label="New This Month" value={newThisMonth} icon="✨" color="green" sub="vs last month" />
           <StatCard label="Avg Spend" value={avgSpend} icon="💷" color="amber" prefix="£" sub={`per ${vc.clientSingular.toLowerCase()}`} />
