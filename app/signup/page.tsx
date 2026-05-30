@@ -5,7 +5,7 @@ import { supabase } from "../lib/supabase";
 import { POPULAR_COUNTRIES, ALL_COUNTRIES, type Country } from "../lib/countries";
 import { getDefaultServices } from "../lib/defaultServices";
 
-const C = { indigo:"#C9A24B", indigoDark:"#C9A24B", indigoSoft:"#EEF2FF", green:"#10B981", red:"#EF4444", text:"#F7F5EF", text2:"#475569", text3:"#aab1c4", border:"#2a3350", bg:"#1C2438" };
+const C = { indigo:"#C9A24B", indigoDark:"#C9A24B", indigoSoft:"rgba(201,162,75,0.10)", green:"#10B981", red:"#EF4444", text:"#F7F5EF", text2:"#aab1c4", text3:"#aab1c4", border:"#2a3350", bg:"#1C2438" };
 const STEPS = ["Account", "Your Business", "Done!"];
 
 const BUSINESS_TYPES = [
@@ -38,7 +38,7 @@ function Inp({ label, type="text", value, onChange, placeholder, required, hint,
       <div style={{ position:"relative" }}>
         <input type={type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} required={required}
           onFocus={()=>setF(true)} onBlur={()=>setF(false)}
-          style={{ width:"100%", padding:"11px 14px", paddingRight: right?"44px":"14px", fontSize:14, color:C.text, border:`1.5px solid ${f?C.indigo:C.border}`, borderRadius:10, outline:"none", boxSizing:"border-box", background:f?"#fff":C.bg, transition:"all .15s", boxShadow:f?`0 0 0 3px ${C.indigo}18`:"none" }} />
+          style={{ width:"100%", padding:"11px 14px", paddingRight: right?"44px":"14px", fontSize:14, color:C.text, border:`1.5px solid ${f?C.indigo:C.border}`, borderRadius:10, outline:"none", boxSizing:"border-box", background:C.bg, transition:"all .15s", boxShadow:f?`0 0 0 3px ${C.indigo}18`:"none" }} />
         {right && <div style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)" }}>{right}</div>}
       </div>
       {hint && <div style={{ fontSize:11, color:C.text3, marginTop:4 }}>{hint}</div>}
@@ -58,8 +58,8 @@ function CountryDropdown({ value, onChange }: { value: Country|null; onChange:(c
   const filtered = q ? ALL_COUNTRIES.filter(c => c.name.toLowerCase().includes(q.toLowerCase()) || c.dial.includes(q)) : null;
   const Item = ({ c }: { c: Country }) => (
     <button type="button" onClick={() => { onChange(c); setOpen(false); setQ(""); }}
-      style={{ display:"flex", alignItems:"center", gap:10, width:"100%", padding:"9px 14px", border:"none", cursor:"pointer", background: value?.code===c.code?"#EEF2FF":"transparent", color:C.text, fontSize:13, textAlign:"left", transition:"background .1s" }}
-      onMouseEnter={e=>{ if(value?.code!==c.code)(e.currentTarget as HTMLElement).style.background="#1C2438"; }}
+      style={{ display:"flex", alignItems:"center", gap:10, width:"100%", padding:"9px 14px", border:"none", cursor:"pointer", background: value?.code===c.code?"rgba(201,162,75,0.12)":"transparent", color:C.text, fontSize:13, textAlign:"left", transition:"background .1s" }}
+      onMouseEnter={e=>{ if(value?.code!==c.code)(e.currentTarget as HTMLElement).style.background="#141A2E"; }}
       onMouseLeave={e=>{ if(value?.code!==c.code)(e.currentTarget as HTMLElement).style.background="transparent"; }}>
       <span style={{fontSize:18}}>{c.flag}</span>
       <span style={{flex:1}}>{c.name}</span>
@@ -71,15 +71,15 @@ function CountryDropdown({ value, onChange }: { value: Country|null; onChange:(c
       <label style={{ fontSize:12.5, fontWeight:700, color:C.text, display:"block", marginBottom:5 }}>Country <span style={{color:C.indigo}}>*</span></label>
       <div ref={ref} style={{ position:"relative" }}>
         <button type="button" onClick={()=>setOpen(o=>!o)}
-          style={{ width:"100%", padding:"11px 14px", border:`1.5px solid ${open?C.indigo:C.border}`, borderRadius:10, background:open?"#fff":C.bg, display:"flex", alignItems:"center", gap:10, cursor:"pointer", fontSize:14, color: value?C.text:C.text3, boxShadow:open?`0 0 0 3px ${C.indigo}18`:"none", transition:"all .15s" }}>
+          style={{ width:"100%", padding:"11px 14px", border:`1.5px solid ${open?C.indigo:C.border}`, borderRadius:10, background:C.bg, display:"flex", alignItems:"center", gap:10, cursor:"pointer", fontSize:14, color: value?C.text:C.text3, boxShadow:open?`0 0 0 3px ${C.indigo}18`:"none", transition:"all .15s" }}>
           {value ? <><span style={{fontSize:18}}>{value.flag}</span><span style={{flex:1, textAlign:"left"}}>{value.name}</span><span style={{fontSize:12,color:C.text3}}>{value.dial}</span></> : <span>Select country…</span>}
           <span style={{fontSize:10, color:C.text3}}>{open?"▲":"▼"}</span>
         </button>
         {open && (
-          <div style={{ position:"absolute", top:"calc(100% + 6px)", left:0, right:0, zIndex:500, background:"#fff", border:`1.5px solid ${C.border}`, borderRadius:12, boxShadow:"0 16px 48px rgba(15,23,42,0.15)", overflow:"hidden" }}>
+          <div style={{ position:"absolute", top:"calc(100% + 6px)", left:0, right:0, zIndex:500, background:"#1C2438", border:`1.5px solid ${C.border}`, borderRadius:12, boxShadow:"0 16px 48px rgba(0,0,0,0.4)", overflow:"hidden" }}>
             <div style={{ padding:"10px 12px", borderBottom:`1px solid ${C.border}` }}>
               <input autoFocus value={q} onChange={e=>setQ(e.target.value)} placeholder="Search country or dial code…"
-                style={{ width:"100%", padding:"8px 12px", border:`1.5px solid ${C.border}`, borderRadius:8, fontSize:13, outline:"none", fontFamily:"inherit", background:C.bg }} />
+                style={{ width:"100%", padding:"8px 12px", border:`1.5px solid ${C.border}`, borderRadius:8, fontSize:13, outline:"none", fontFamily:"inherit", background:C.bg, color:C.text }} />
             </div>
             <div style={{ maxHeight:260, overflowY:"auto" }}>
               {filtered ? (
@@ -193,18 +193,18 @@ export default function SignupPage() {
   );
 
   if (step === 2) return (
-    <main style={{ minHeight:"100vh", background:"linear-gradient(135deg,#F0F4FF,#EEF2FF)", display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
-      <div style={{ background:"#fff", borderRadius:24, padding:"48px 40px", maxWidth:480, width:"100%", textAlign:"center", boxShadow:"0 24px 64px rgba(99,102,241,0.15)", border:"1px solid #E0E7FF" }}>
+    <main style={{ minHeight:"100vh", background:"#141A2E", display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
+      <div style={{ background:"#1C2438", borderRadius:24, padding:"48px 40px", maxWidth:480, width:"100%", textAlign:"center", boxShadow:"0 24px 64px rgba(0,0,0,0.4)", border:"1px solid #2a3350" }}>
         <div style={{ width:72, height:72, borderRadius:"50%", background:"linear-gradient(135deg,#10B981,#059669)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:32, margin:"0 auto 20px", boxShadow:"0 8px 24px rgba(16,185,129,0.3)" }}>✓</div>
         <h1 style={{ fontSize:24, fontWeight:900, color:C.text, letterSpacing:"-0.5px", marginBottom:8 }}>{salonName} is ready!</h1>
         <p style={{ fontSize:14, color:C.text2, lineHeight:1.7, marginBottom:20 }}>
           Verification link sent to <strong>{email}</strong>.<br/>Check spam if not received within 2 mins.
         </p>
-        <div style={{ background:"#EEF2FF", border:"1.5px solid #C7D2FE", borderRadius:12, padding:"12px 16px", marginBottom:24, fontSize:13, color:"#C9A24B" }}>
+        <div style={{ background:"rgba(201,162,75,0.10)", border:"1.5px solid rgba(201,162,75,0.30)", borderRadius:12, padding:"12px 16px", marginBottom:24, fontSize:13, color:"#C9A24B" }}>
           💡 Verify your email then sign in to access your dashboard.
         </div>
         {["Online booking page ready","WhatsApp reminders configured","14-day free trial started","Zero setup fees"].map(f=>(
-          <div key={f} style={{ display:"flex", alignItems:"center", gap:10, fontSize:13, color:C.text2, padding:"7px 12px", background:"#ECFDF5", borderRadius:8, marginBottom:8 }}>
+          <div key={f} style={{ display:"flex", alignItems:"center", gap:10, fontSize:13, color:C.text2, padding:"7px 12px", background:"rgba(16,185,129,0.10)", borderRadius:8, marginBottom:8 }}>
             <span style={{color:C.green, fontWeight:800}}>✓</span> {f}
           </div>
         ))}
@@ -218,7 +218,7 @@ export default function SignupPage() {
   return (
     <main style={{ minHeight:"100vh", background:C.bg, display:"flex" }}>
       {/* Left Panel */}
-      <div style={{ width:380, background:"linear-gradient(160deg,#0F0B2D,#1E1B4B 40%,#3730A3 70%,#C9A24B)", display:"flex", flexDirection:"column", justifyContent:"center", padding:"48px 40px", flexShrink:0 }} className="signup-left">
+      <div style={{ width:380, background:"linear-gradient(160deg,#0E1320,#141A2E 50%,#1C2438)", display:"flex", flexDirection:"column", justifyContent:"center", padding:"48px 40px", flexShrink:0, borderRight:"1px solid #2a3350" }} className="signup-left">
         <div style={{ marginBottom:40 }}>
           <img src="/brand/logo-dark.svg" alt="Feature Salon" style={{ height: 40, width: "auto", display: "block", marginBottom: 6, opacity: 0.95 }} />
         </div>
@@ -260,7 +260,7 @@ export default function SignupPage() {
 
           {/* Badge */}
           <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:16 }}>
-            <div style={{ fontSize:10, fontWeight:800, color:C.indigo, letterSpacing:"2px", textTransform:"uppercase", background:C.indigoSoft, padding:"3px 10px", borderRadius:99, border:"1px solid #C7D2FE" }}>14-Day Free Trial</div>
+            <div style={{ fontSize:10, fontWeight:800, color:C.indigo, letterSpacing:"2px", textTransform:"uppercase", background:C.indigoSoft, padding:"3px 10px", borderRadius:99, border:"1px solid rgba(201,162,75,0.30)" }}>14-Day Free Trial</div>
             <div style={{ fontSize:11, color:C.text3 }}>No credit card required</div>
           </div>
           <h1 style={{ fontSize:26, fontWeight:900, color:C.text, letterSpacing:"-0.8px", marginBottom:4, lineHeight:1.2 }}>
@@ -272,9 +272,9 @@ export default function SignupPage() {
 
           {/* Error */}
           {error && (
-            <div style={{ background:"#FEF2F2", border:"1.5px solid #FECACA", borderRadius:10, padding:"11px 14px", marginBottom:16, fontSize:13, color:"#DC2626" }}>
+            <div style={{ background:"rgba(239,68,68,0.10)", border:"1.5px solid rgba(239,68,68,0.25)", borderRadius:10, padding:"11px 14px", marginBottom:16, fontSize:13, color:"#F87171" }}>
               <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom: error.includes("already exists")?8:0 }}>⚠ {error}</div>
-              {error.includes("already exists") && <Link href="/login" style={{ fontSize:13, fontWeight:700, color:C.indigo, textDecoration:"none", background:C.indigoSoft, padding:"5px 12px", borderRadius:7, display:"inline-block", marginTop:4, border:"1px solid #C7D2FE" }}>→ Sign in</Link>}
+              {error.includes("already exists") && <Link href="/login" style={{ fontSize:13, fontWeight:700, color:C.indigo, textDecoration:"none", background:C.indigoSoft, padding:"5px 12px", borderRadius:7, display:"inline-block", marginTop:4, border:"1px solid rgba(201,162,75,0.30)" }}>→ Sign in</Link>}
             </div>
           )}
 
@@ -297,11 +297,11 @@ export default function SignupPage() {
               </div>
               <Inp label="Confirm Password" type={showCpw?"text":"password"} value={confirmPw} onChange={setConfirmPw} placeholder="Repeat password" required
                 right={<EyeBtn show={showCpw} toggle={()=>setShowCpw(p=>!p)} />} />
-              <div style={{ display:"flex", alignItems:"flex-start", gap:10, marginBottom:20, padding:"11px 14px", background:C.indigoSoft, border:`1.5px solid #C7D2FE`, borderRadius:10 }}>
+              <div style={{ display:"flex", alignItems:"flex-start", gap:10, marginBottom:20, padding:"11px 14px", background:C.indigoSoft, border:`1.5px solid rgba(201,162,75,0.30)`, borderRadius:10 }}>
                 <span style={{ fontSize:15, marginTop:1 }}>🔒</span>
                 <span style={{ fontSize:12, color:"#C9A24B", lineHeight:1.6 }}>Your data is encrypted and never shared. We comply with GDPR &amp; global data protection law.</span>
               </div>
-              <button type="submit" style={{ width:"100%", padding:"13px", background:`linear-gradient(135deg,${C.indigo},${C.indigoDark})`, color:"#fff", border:"none", borderRadius:12, fontSize:15, fontWeight:800, cursor:"pointer", boxShadow:"0 6px 20px rgba(99,102,241,0.35)", transition:"all .15s" }}>
+              <button type="submit" style={{ width:"100%", padding:"13px", background:`linear-gradient(135deg,${C.indigo},${C.indigoDark})`, color:"#fff", border:"none", borderRadius:12, fontSize:15, fontWeight:800, cursor:"pointer", boxShadow:"0 6px 20px rgba(201,162,75,0.35)", transition:"all .15s" }}>
                 Continue →
               </button>
               <div style={{ textAlign:"center", marginTop:16, fontSize:13, color:C.text3 }}>
@@ -322,7 +322,7 @@ export default function SignupPage() {
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }} className="salon-grid">
                   {BUSINESS_TYPES.map(o=>(
                     <button key={o.key} type="button" onClick={()=>setCategory(o.key)}
-                      style={{ padding:"9px 12px", borderRadius:10, fontSize:13, fontWeight:600, cursor:"pointer", textAlign:"left", border:`1.5px solid ${category===o.key?C.indigo:C.border}`, background:category===o.key?C.indigoSoft:"#fff", color:category===o.key?C.indigoDark:C.text2, transition:"all .15s" }}>
+                      style={{ padding:"9px 12px", borderRadius:10, fontSize:13, fontWeight:600, cursor:"pointer", textAlign:"left", border:`1.5px solid ${category===o.key?C.indigo:C.border}`, background:category===o.key?C.indigoSoft:C.bg, color:category===o.key?C.indigo:C.text2, transition:"all .15s" }}>
                       {o.label}
                     </button>
                   ))}
@@ -335,8 +335,8 @@ export default function SignupPage() {
                 </span>
               </label>
               <div style={{ display:"flex", gap:10 }}>
-                <button type="button" onClick={()=>{ setStep(0); setError(""); }} style={{ padding:"13px 20px", borderRadius:12, border:`1.5px solid ${C.border}`, background:"#fff", color:C.text2, fontSize:14, fontWeight:700, cursor:"pointer" }}>← Back</button>
-                <button type="submit" disabled={loading} style={{ flex:1, padding:"13px", background: loading?C.text3:`linear-gradient(135deg,${C.indigo},${C.indigoDark})`, color:"#fff", border:"none", borderRadius:12, fontSize:15, fontWeight:800, cursor: loading?"not-allowed":"pointer", boxShadow: loading?"none":"0 6px 20px rgba(99,102,241,0.35)", transition:"all .15s" }}>
+                <button type="button" onClick={()=>{ setStep(0); setError(""); }} style={{ padding:"13px 20px", borderRadius:12, border:`1.5px solid ${C.border}`, background:C.bg, color:C.text2, fontSize:14, fontWeight:700, cursor:"pointer" }}>← Back</button>
+                <button type="submit" disabled={loading} style={{ flex:1, padding:"13px", background: loading?C.text3:`linear-gradient(135deg,${C.indigo},${C.indigoDark})`, color:"#fff", border:"none", borderRadius:12, fontSize:15, fontWeight:800, cursor: loading?"not-allowed":"pointer", boxShadow: loading?"none":"0 6px 20px rgba(201,162,75,0.35)", transition:"all .15s" }}>
                   {loading ? <span>Creating… <span style={{ display:"inline-block", animation:"spin 1s linear infinite" }}>⟳</span></span> : "Create Free Account →"}
                 </button>
               </div>

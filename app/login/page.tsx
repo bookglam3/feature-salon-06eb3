@@ -67,8 +67,8 @@ export default function LoginPage() {
   };
   const focusIn = (e: React.FocusEvent<HTMLInputElement>) => {
     e.currentTarget.style.borderColor = "#C9A24B";
-    e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.12)";
-    e.currentTarget.style.background = "#fff";
+    e.currentTarget.style.boxShadow = "0 0 0 3px rgba(201,162,75,0.15)";
+    e.currentTarget.style.background = "#1C2438";
   };
   const focusOut = (e: React.FocusEvent<HTMLInputElement>) => {
     e.currentTarget.style.borderColor = "#2a3350";
@@ -83,9 +83,9 @@ export default function LoginPage() {
       padding: "20px 16px",
     }}>
       <div style={{
-        background: "#fff", border: "1px solid #2a3350", borderRadius: "20px",
+        background: "#1C2438", border: "1px solid #2a3350", borderRadius: "20px",
         padding: "36px 28px", width: "100%", maxWidth: "420px",
-        boxShadow: "0 4px 24px rgba(15,23,42,0.08)",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
       }}>
         <div style={{ textAlign: "center", marginBottom: "28px" }}>
           <Link href="/">
@@ -97,12 +97,12 @@ export default function LoginPage() {
         </div>
 
         {error === "RESENT" && (
-          <div style={{ background:"#ECFDF5", border:"1px solid #A7F3D0", borderRadius:"10px", padding:"12px 16px", marginBottom:"20px", fontSize:"13.5px", color:"#059669", display:"flex", alignItems:"center", gap:8 }}>
+          <div style={{ background:"rgba(16,185,129,0.10)", border:"1px solid rgba(16,185,129,0.30)", borderRadius:"10px", padding:"12px 16px", marginBottom:"20px", fontSize:"13.5px", color:"#34D399", display:"flex", alignItems:"center", gap:8 }}>
             ✅ Verification email resent! Check your inbox (and spam folder).
           </div>
         )}
         {error === "EMAIL_NOT_CONFIRMED" && (
-          <div style={{ background:"#FFF7ED", border:"1px solid #FDE68A", borderRadius:"10px", padding:"12px 16px", marginBottom:"20px", fontSize:"13px", color:"#92400E" }}>
+          <div style={{ background:"rgba(245,158,11,0.10)", border:"1px solid rgba(245,158,11,0.30)", borderRadius:"10px", padding:"12px 16px", marginBottom:"20px", fontSize:"13px", color:"#FCD34D" }}>
             <div style={{ fontWeight:700, marginBottom:6 }}>⚠ Email not verified yet</div>
             <div style={{ marginBottom:10, lineHeight:1.6 }}>Please check your inbox and click the verification link first. Can&apos;t find it?</div>
             <button onClick={resendVerification} style={{ background:"#F59E0B", color:"#fff", border:"none", borderRadius:8, padding:"7px 16px", fontSize:13, fontWeight:700, cursor:"pointer" }}>
@@ -111,7 +111,7 @@ export default function LoginPage() {
           </div>
         )}
         {error && error !== "EMAIL_NOT_CONFIRMED" && error !== "RESENT" && (
-          <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: "10px", padding: "12px 16px", marginBottom: "20px", fontSize: "13.5px", color: "#DC2626", display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ background: "rgba(239,68,68,0.10)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: "10px", padding: "12px 16px", marginBottom: "20px", fontSize: "13.5px", color: "#F87171", display: "flex", alignItems: "center", gap: 8 }}>
             <span>⚠</span> {error}
           </div>
         )}
@@ -169,7 +169,7 @@ export default function LoginPage() {
                 </button>
               </div>
               <button type="submit" disabled={loading}
-                style={{ width: "100%", padding: "13px", border: "none", borderRadius: "10px", fontSize: "15px", fontWeight: 700, minHeight: 48, background: loading ? "#aab1c4" : "linear-gradient(135deg,#C9A24B,#C9A24B)", color: "#fff", cursor: loading ? "not-allowed" : "pointer", boxShadow: loading ? "none" : "0 4px 14px rgba(99,102,241,0.3)" }}>
+                style={{ width: "100%", padding: "13px", border: "none", borderRadius: "10px", fontSize: "15px", fontWeight: 700, minHeight: 48, background: loading ? "#aab1c4" : "linear-gradient(135deg,#C9A24B,#C9A24B)", color: "#fff", cursor: loading ? "not-allowed" : "pointer", boxShadow: loading ? "none" : "0 4px 14px rgba(201,162,75,0.3)" }}>
                 {loading ? "Signing in…" : "Sign in"}
               </button>
             </form>
