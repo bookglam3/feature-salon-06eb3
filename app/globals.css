@@ -106,6 +106,21 @@
   --dk-purple-glow:   rgba(201,162,75,0.28);
   --dk-shadow-purple: 0 8px 32px rgba(201,162,75,0.18);
   --gradient-brand:   linear-gradient(135deg,#141A2E 0%,#1C2438 50%,#0E1320 100%);
+
+  /* Override light-theme tokens so any var(--text-*)/var(--border) inside the
+     dashboard shell automatically resolves to dark-theme values */
+  --text-1:    #F7F5EF;
+  --text-2:    #aab1c4;
+  --text-3:    #aab1c4;
+  --border:    #2a3350;
+  --border-2:  #3a4a60;
+  --slate-50:  #141A2E;
+  --slate-100: #1C2438;
+  --slate-200: #2a3350;
+  --slate-300: #3a4a60;
+  --indigo:         #C9A24B;
+  --indigo-light:   rgba(201,162,75,0.10);
+  --indigo-text:    #C9A24B;
 }
 
 html { scroll-behavior: smooth; }
@@ -241,7 +256,7 @@ html, body { overflow-x: hidden; max-width: 100vw; }
 .step-num { width: 40px; height: 40px; border-radius: 50%; background: #C9A24B; color: #fff; font-size: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
 .step h3 { font-size: 16px; font-weight: 500; color: #F7F5EF; margin-bottom: 8px; margin-top: 0; }
 .step p { font-size: 13px; color: #aab1c4; line-height: 1.6; margin: 0; }
-.fresha-badge { display: flex; align-items: center; justify-content: center; gap: 8px; background: #ECFDF5; border: 0.5px solid #A7F3D0; border-radius: 20px; padding: 8px 20px; margin-bottom: 40px; width: fit-content; margin-left: auto; margin-right: auto; font-size: 13px; color: #065F46; font-weight: 500; }
+.fresha-badge { display: flex; align-items: center; justify-content: center; gap: 8px; background: rgba(16,185,129,0.10); border: 0.5px solid rgba(16,185,129,0.30); border-radius: 20px; padding: 8px 20px; margin-bottom: 40px; width: fit-content; margin-left: auto; margin-right: auto; font-size: 13px; color: #10B981; font-weight: 500; }
 .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 960px; margin: 0 auto; }
 .plan-card { background: #1C2438; border: 0.5px solid #2a3350; border-radius: 12px; padding: 32px; position: relative; transition: box-shadow 0.2s cubic-bezier(0.4,0,0.2,1), transform 0.2s cubic-bezier(0.4,0,0.2,1); will-change: transform; }
 .plan-card:hover { box-shadow: 0 8px 28px rgba(201,162,75,0.12); transform: translateY(-2px); }
@@ -292,8 +307,10 @@ html, body { overflow-x: hidden; max-width: 100vw; }
   .mobile-nav-cta {
     display: inline-flex !important;
     font-size: 13px !important;
-    padding: 8px 16px !important;
+    padding: 12px 16px !important;
     border-radius: 8px !important;
+    min-height: 44px !important;
+    align-items: center !important;
   }
 
   /* ── Hero ── */
@@ -377,6 +394,8 @@ html, body { overflow-x: hidden; max-width: 100vw; }
   .ps-solution { padding: 20px 16px !important; }
   .ps-solution-item { font-size: 13px !important; padding: 9px 11px !important; margin-bottom: 6px !important; }
   .ps-solution-header { font-size: 12px !important; }
+  /* Flatten gradient on mobile to avoid GPU banding */
+  .ps-solution { background: #1C2438 !important; }
 
   /* ── Features grid ── */
   .features-grid { grid-template-columns: 1fr !important; }
@@ -388,6 +407,9 @@ html, body { overflow-x: hidden; max-width: 100vw; }
   .feature-card h3 { font-size: 13px !important; }
   .feature-card p { font-size: 12px !important; }
   .feature-icon-v2 { font-size: 22px !important; margin-bottom: 8px !important; }
+
+  /* Disable will-change on mobile — prevents unnecessary GPU layers that amplify banding */
+  .feature-card, .feature-card-v2, .plan-card, .location-card, .btn-primary { will-change: auto !important; }
 
   /* ── How it works steps ── */
   .steps { flex-direction: column !important; gap: 24px !important; }
@@ -486,8 +508,8 @@ html, body { overflow-x: hidden; max-width: 100vw; }
 .compare-cell-feature { background: rgba(201,162,75,0.07); text-align: center; }
 .compare-cell-other { text-align: center; }
 .compare-badge-our { display: inline-block; background: #C9A24B; color: #fff; font-size: 11px; font-weight: 800; padding: 4px 14px; border-radius: 20px; letter-spacing: 0.5px; }
-.compare-check { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: #ECFDF5; color: #059669; font-size: 13px; font-weight: 700; }
-.compare-cross { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: #FEF2F2; color: #DC2626; font-size: 11px; font-weight: 700; }
+.compare-check { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: rgba(16,185,129,0.15); color: #34D399; font-size: 13px; font-weight: 700; }
+.compare-cross { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: rgba(239,68,68,0.15); color: #F87171; font-size: 11px; font-weight: 700; }
 .compare-cta { text-align: center; }
 
 /* ── Location cards ── */
@@ -568,7 +590,7 @@ details[open] .faq-question::after { transform: rotate(45deg); }
 /* ── Features v2 ── */
 .features-grid-v2 { grid-template-columns: repeat(4,1fr) !important; max-width: 1100px !important; gap: 14px !important; }
 .feature-card-v2 { transition: box-shadow 0.2s cubic-bezier(0.4,0,0.2,1), transform 0.2s cubic-bezier(0.4,0,0.2,1), border-color 0.2s; will-change: transform; }
-.feature-card-v2:hover { box-shadow: 0 8px 24px rgba(99,102,241,0.12); transform: translateY(-3px); border-color: #C7D2FE; }
+.feature-card-v2:hover { box-shadow: 0 8px 24px rgba(201,162,75,0.14); transform: translateY(-3px); border-color: rgba(201,162,75,0.5); }
 .feature-icon-v2 { font-size: 28px; margin-bottom: 12px; }
 
 /* ── Steps v2 ── */
@@ -578,14 +600,14 @@ details[open] .faq-question::after { transform: rotate(45deg); }
 .step-v2:not(:last-child)::after { content: "→"; position: absolute; right: -24px; top: 20px; font-size: 22px; color: #CBD5E1; }
 
 /* ── Final CTA section ── */
-.final-cta { background: linear-gradient(135deg,#0E1320,#141A2E); text-align: center; border-radius: 0; padding: 80px 40px; content-visibility: auto; contain-intrinsic-size: 0 400px; border-top: 1px solid #2a3350; }
+.final-cta { background: #0E1320; text-align: center; border-radius: 0; padding: 80px 40px; border-top: 1px solid #2a3350; }
 .final-cta-title { font-family: var(--font-playfair, Georgia, serif); font-size: 40px; font-weight: 400; color: #F7F5EF; letter-spacing: -1px; margin-bottom: 16px; }
 .final-cta-sub { font-size: 17px; color: #aab1c4; max-width: 520px; margin: 0 auto 36px; line-height: 1.7; }
 .final-cta .btn-primary { background: #C9A24B; color: #fff !important; font-weight: 800; }
 .final-cta-trust { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 18px; font-size: 13px; color: #aab1c4; flex-wrap: wrap; }
 
 /* ── Mobile sticky CTA ── */
-.mobile-sticky-cta { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; padding: 12px 16px; background: rgba(14,19,32,0.97); backdrop-filter: blur(8px); border-top: 1px solid #2a3350; box-shadow: 0 -4px 20px rgba(0,0,0,0.3); }
+.mobile-sticky-cta { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 200; padding: 12px 16px; background: #0E1320; border-top: 1px solid #2a3350; box-shadow: 0 -4px 20px rgba(0,0,0,0.3); }
 .mobile-sticky-btn { display: block; width: 100%; text-align: center; background: #C9A24B; color: #fff; padding: 14px; border-radius: 12px; font-weight: 700; font-size: 15px; text-decoration: none; }
 
 /* ─────────────── DASHBOARD MOBILE POLISH ─────────────── */
@@ -749,8 +771,8 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   transition: all 0.2s ease;
 }
 .premium-card:hover {
-  border-color: var(--indigo-pale);
-  box-shadow: 0 8px 28px rgba(99,102,241,0.12), 0 2px 8px rgba(15,23,42,0.06);
+  border-color: rgba(201,162,75,0.4);
+  box-shadow: 0 8px 28px rgba(201,162,75,0.14), 0 2px 8px rgba(0,0,0,0.2);
   transform: translateY(-2px);
 }
 
