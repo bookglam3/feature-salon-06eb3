@@ -26,7 +26,7 @@ const TIME_SLOTS = ["08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00
 
 const PLAN_FEATURES: Record<string, { color: string; bg: string; border: string; badge: string; features: string[]; limit: string }> = {
   Starter: { color: "#64748B", bg: "#F8FAFC", border: "#E2E8F0", badge: "STARTER", features: ["Up to 50 bookings/mo", "1 staff member", "Basic analytics", "Email notifications", "Public booking page"], limit: "50 bookings/month" },
-  Professional: { color: "#4A2C6D", bg: "#EEF2FF", border: "#C7D2FE", badge: "PROFESSIONAL", features: ["Unlimited bookings", "Up to 5 staff", "Advanced analytics", "SMS + Email", "Custom offers", "Priority support"], limit: "Unlimited bookings" },
+  Professional: { color: "#C9A24B", bg: "#EEF2FF", border: "#C7D2FE", badge: "PROFESSIONAL", features: ["Unlimited bookings", "Up to 5 staff", "Advanced analytics", "SMS + Email", "Custom offers", "Priority support"], limit: "Unlimited bookings" },
   Growth: { color: "#10B981", bg: "#ECFDF5", border: "#A7F3D0", badge: "GROWTH", features: ["Unlimited bookings", "Up to 15 staff", "Revenue reports", "SMS + Email + WhatsApp", "Staff performance", "API access"], limit: "Unlimited bookings" },
   Enterprise: { color: "#F59E0B", bg: "#FFFBEB", border: "#FDE68A", badge: "ENTERPRISE", features: ["Unlimited everything", "Unlimited staff", "White-label option", "Dedicated support", "Custom integrations", "SLA 99.9%"], limit: "Unlimited everything" },
 };
@@ -98,7 +98,7 @@ function MiniStat({ label, value, color, lucideIcon, sub }: { label: string; val
 function SearchBar({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "7px 13px", minWidth: 220, transition: "all 0.18s" }}
-      onFocusCapture={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(74,44,109,0.5)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 0 0 3px rgba(74,44,109,0.12)"; (e.currentTarget as HTMLDivElement).style.background = "rgba(74,44,109,0.05)"; }}
+      onFocusCapture={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(201,162,75,0.5)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 0 0 3px rgba(201,162,75,0.12)"; (e.currentTarget as HTMLDivElement).style.background = "rgba(201,162,75,0.05)"; }}
       onBlurCapture={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.08)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "none"; (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)"; }}
     >
       <Search size={13} strokeWidth={2} color="rgba(255,255,255,0.22)" />
@@ -125,7 +125,7 @@ function RevenueMiniChart({ appointments }: { appointments: Appointment[] }) {
     <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 60, paddingTop: 8 }}>
       {dayRevenue.map((rev, i) => (
         <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-          <div title={`£${rev}`} style={{ width: "100%", borderRadius: "5px 5px 0 0", height: `${Math.max((rev / max) * 52, 4)}px`, background: i === todayIdx ? "linear-gradient(180deg,#4A2C6D,#4C1D95)" : "rgba(74,44,109,0.15)", boxShadow: i === todayIdx ? "0 0 12px rgba(74,44,109,0.4)" : "none", transition: "all 0.3s ease", cursor: "default" }} />
+          <div title={`£${rev}`} style={{ width: "100%", borderRadius: "5px 5px 0 0", height: `${Math.max((rev / max) * 52, 4)}px`, background: i === todayIdx ? "linear-gradient(180deg,#C9A24B,#4C1D95)" : "rgba(201,162,75,0.15)", boxShadow: i === todayIdx ? "0 0 12px rgba(201,162,75,0.4)" : "none", transition: "all 0.3s ease", cursor: "default" }} />
           <span style={{ fontSize: 9, color: i === todayIdx ? "#C9A24B" : "rgba(255,255,255,0.25)", fontWeight: i === todayIdx ? 800 : 500 }}>{days[i]}</span>
         </div>
       ))}
@@ -332,8 +332,8 @@ export default function DashboardPage() {
   }, [trialEnd]);
 
   const SUB_STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
-    trial: { label: "Free Trial", color: "#4A2C6D", bg: "#EEF2FF" },
-    trialing: { label: "Trial", color: "#7B5EA7", bg: "#F5F3FF" },
+    trial: { label: "Free Trial", color: "#C9A24B", bg: "#EEF2FF" },
+    trialing: { label: "Trial", color: "#E7C878", bg: "#F5F3FF" },
     active: { label: "Active", color: "#059669", bg: "#D1FAE5" },
     past_due: { label: "Past Due", color: "#D97706", bg: "#FEF3C7" },
     cancelled: { label: "Cancelled", color: "#DC2626", bg: "#FEE2E2" },
@@ -369,18 +369,18 @@ export default function DashboardPage() {
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         {/* Plan badge */}
-        <div className="dash-topbar-badge" style={{ padding: "5px 14px", borderRadius: 99, background: "rgba(74,44,109,0.15)", border: "1px solid rgba(74,44,109,0.25)", fontSize: 10.5, fontWeight: 900, color: "#C9A24B", letterSpacing: "1px" }}>{planInfo.badge}</div>
+        <div className="dash-topbar-badge" style={{ padding: "5px 14px", borderRadius: 99, background: "rgba(201,162,75,0.15)", border: "1px solid rgba(201,162,75,0.25)", fontSize: 10.5, fontWeight: 900, color: "#C9A24B", letterSpacing: "1px" }}>{planInfo.badge}</div>
         {/* Export */}
         <button onClick={handleExportCSV} title="Export CSV" className="dash-topbar-export"
           style={{ width: 38, height: 38, borderRadius: 10, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "rgba(255,255,255,0.5)", transition: "all 0.18s" }}
-          onMouseEnter={e => { e.currentTarget.style.background = "rgba(74,44,109,0.12)"; e.currentTarget.style.borderColor = "rgba(74,44,109,0.28)"; e.currentTarget.style.color = "#C9A24B"; }}
+          onMouseEnter={e => { e.currentTarget.style.background = "rgba(201,162,75,0.12)"; e.currentTarget.style.borderColor = "rgba(201,162,75,0.28)"; e.currentTarget.style.color = "#C9A24B"; }}
           onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; e.currentTarget.style.color = "rgba(255,255,255,0.5)"; }}
         ><Download size={15} strokeWidth={2} /></button>
         {/* New Booking */}
         <button onClick={() => setShowModal(true)} className="dash-topbar-newbtn"
-          style={{ display: "flex", alignItems: "center", gap: 7, background: "linear-gradient(135deg,#4A2C6D,#2A1840)", color: "#fff", fontSize: 13, fontWeight: 700, padding: "10px 20px", borderRadius: 11, border: "1px solid rgba(255,255,255,0.12)", cursor: "pointer", boxShadow: "0 4px 18px rgba(74,44,109,0.45)", whiteSpace: "nowrap", letterSpacing: "-0.1px", transition: "all 0.18s" }}
-          onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 30px rgba(74,44,109,0.65)"; }}
-          onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 4px 18px rgba(74,44,109,0.45)"; }}
+          style={{ display: "flex", alignItems: "center", gap: 7, background: "linear-gradient(135deg,#C9A24B,#0E1320)", color: "#fff", fontSize: 13, fontWeight: 700, padding: "10px 20px", borderRadius: 11, border: "1px solid rgba(255,255,255,0.12)", cursor: "pointer", boxShadow: "0 4px 18px rgba(201,162,75,0.45)", whiteSpace: "nowrap", letterSpacing: "-0.1px", transition: "all 0.18s" }}
+          onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 30px rgba(201,162,75,0.65)"; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 4px 18px rgba(201,162,75,0.45)"; }}
         ><Plus size={15} strokeWidth={2.5} /> New {vc.bookingSingular}</button>
       </div>
     </header>
@@ -393,7 +393,7 @@ export default function DashboardPage() {
 
 
         {/* ── Welcome Banner ────────────────────────────────────── */}
-        <div className="dash-banner" style={{ background: "linear-gradient(135deg,#0F0B2D 0%,#1E1448 30%,#4C1D95 65%,#4A2C6D 100%)", borderRadius: 24, padding: "32px 36px", marginBottom: 24, position: "relative", overflow: "hidden", boxShadow: "0 16px 56px rgba(74,44,109,0.35)" }}>
+        <div className="dash-banner" style={{ background: "linear-gradient(135deg,#0F0B2D 0%,#1E1448 30%,#4C1D95 65%,#C9A24B 100%)", borderRadius: 24, padding: "32px 36px", marginBottom: 24, position: "relative", overflow: "hidden", boxShadow: "0 16px 56px rgba(201,162,75,0.35)" }}>
           {/* decorative circles */}
           <div style={{ position: "absolute", top: -50, right: -50, width: 220, height: 220, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
           <div style={{ position: "absolute", bottom: -80, right: 100, width: 280, height: 280, borderRadius: "50%", background: "rgba(255,255,255,0.03)" }} />
@@ -429,9 +429,9 @@ export default function DashboardPage() {
 
         {/* ── 4 Stat Cards ─────────────────────────────────────────── */}
         <div className="dash-stats" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 20 }}>
-          <MiniStat label="Upcoming" value={upcomingAppts.length} color="#4A2C6D" lucideIcon={<Clock size={17} strokeWidth={1.8} />} sub={`${confirmedAppts.length} confirmed`} />
+          <MiniStat label="Upcoming" value={upcomingAppts.length} color="#C9A24B" lucideIcon={<Clock size={17} strokeWidth={1.8} />} sub={`${confirmedAppts.length} confirmed`} />
           <MiniStat label="Total Revenue" value={`£${totalRevenue}`} color="#10B981" lucideIcon={<TrendingUp size={17} strokeWidth={1.8} />} sub="all confirmed" />
-          <MiniStat label={`Total ${vc.bookingPlural}`} value={appointments.length} color="#7B5EA7" lucideIcon={<BookOpen size={17} strokeWidth={1.8} />} sub={`${pendingAppts.length} pending`} />
+          <MiniStat label={`Total ${vc.bookingPlural}`} value={appointments.length} color="#E7C878" lucideIcon={<BookOpen size={17} strokeWidth={1.8} />} sub={`${pendingAppts.length} pending`} />
           <MiniStat label={vc.staffPlural} value={staff.length} color="#EC4899" lucideIcon={<Users size={17} strokeWidth={1.8} />} sub="active team" />
         </div>
 
@@ -439,9 +439,9 @@ export default function DashboardPage() {
         <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "20px 22px", marginBottom: 20, boxShadow: "0 4px 20px rgba(0,0,0,0.25)" }}>
           <div style={{ fontSize: 11, fontWeight: 900, color: "rgba(255,255,255,0.25)", letterSpacing: "1.2px", textTransform: "uppercase", marginBottom: 16 }}>Quick Actions</div>
           <div className="dash-quick-scroll" style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 2 }}>
-            <QuickAction lucideIcon={<CalendarPlus size={20} strokeWidth={1.8} />} label={`New ${vc.bookingSingular}`} color="#4A2C6D" onClick={() => setShowModal(true)} />
+            <QuickAction lucideIcon={<CalendarPlus size={20} strokeWidth={1.8} />} label={`New ${vc.bookingSingular}`} color="#C9A24B" onClick={() => setShowModal(true)} />
             <QuickAction lucideIcon={<Tag size={20} strokeWidth={1.8} />} label="Add Offer" color="#10B981" onClick={() => setShowOfferModal(true)} />
-            <QuickAction lucideIcon={<UserPlus size={20} strokeWidth={1.8} />} label={`Add ${vc.clientSingular}`} color="#7B5EA7" onClick={() => router.push("/dashboard/clients")} />
+            <QuickAction lucideIcon={<UserPlus size={20} strokeWidth={1.8} />} label={`Add ${vc.clientSingular}`} color="#E7C878" onClick={() => router.push("/dashboard/clients")} />
             <QuickAction lucideIcon={STAFF_ICON_MAP[vc.staffIcon] ?? <Scissors size={20} strokeWidth={1.8} />} label={`Add ${vc.staffSingular}`} color="#EC4899" onClick={() => router.push("/dashboard/staff")} />
             <QuickAction lucideIcon={<BarChart3 size={20} strokeWidth={1.8} />} label="Reports" color="#F59E0B" onClick={() => router.push("/dashboard/reports")} />
             <QuickAction lucideIcon={<Settings2 size={20} strokeWidth={1.8} />} label="Settings" color="#06B6D4" onClick={() => router.push("/dashboard/settings")} />
@@ -465,7 +465,7 @@ export default function DashboardPage() {
                     <div style={{ display: "flex", gap: 2, background: "rgba(255,255,255,0.05)", padding: 3, borderRadius: 10 }}>
                       {["All", "Today", "Upcoming", "Confirmed", "Pending", "Completed", "Cancelled", "No-show"].map(t => (
                         <button key={t} onClick={() => setActiveTab(t)}
-                          style={{ fontSize: 11.5, padding: "5px 12px", borderRadius: 8, border: "none", background: activeTab === t ? "rgba(74,44,109,0.25)" : "transparent", color: activeTab === t ? "#C9A24B" : "rgba(255,255,255,0.35)", cursor: "pointer", fontWeight: activeTab === t ? 800 : 500, boxShadow: activeTab === t ? "0 1px 4px rgba(0,0,0,0.2)" : "none", transition: "all 0.12s", whiteSpace: "nowrap" }}>{t}</button>
+                          style={{ fontSize: 11.5, padding: "5px 12px", borderRadius: 8, border: "none", background: activeTab === t ? "rgba(201,162,75,0.25)" : "transparent", color: activeTab === t ? "#C9A24B" : "rgba(255,255,255,0.35)", cursor: "pointer", fontWeight: activeTab === t ? 800 : 500, boxShadow: activeTab === t ? "0 1px 4px rgba(0,0,0,0.2)" : "none", transition: "all 0.12s", whiteSpace: "nowrap" }}>{t}</button>
                       ))}
                     </div>
                   </div>
@@ -563,11 +563,11 @@ export default function DashboardPage() {
               </div>
 
               {/* Subscription Plan */}
-              <div style={{ background: "#100F1C", border: "1px solid rgba(74,44,109,0.2)", borderRadius: 20, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.3)" }}>
-                <div style={{ padding: "18px 20px", borderBottom: "1px solid rgba(255,255,255,0.07)", background: "rgba(74,44,109,0.06)" }}>
+              <div style={{ background: "#100F1C", border: "1px solid rgba(201,162,75,0.2)", borderRadius: 20, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.3)" }}>
+                <div style={{ padding: "18px 20px", borderBottom: "1px solid rgba(255,255,255,0.07)", background: "rgba(201,162,75,0.06)" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                     <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "1.5px", color: "rgba(255,255,255,0.35)", textTransform: "uppercase" }}>Current Plan</div>
-                    <div style={{ padding: "4px 12px", borderRadius: 99, background: "rgba(74,44,109,0.2)", color: "#C9A24B", fontSize: 10, fontWeight: 900, letterSpacing: "0.8px", border: "1px solid rgba(74,44,109,0.3)" }}>{statusBadge.label}</div>
+                    <div style={{ padding: "4px 12px", borderRadius: 99, background: "rgba(201,162,75,0.2)", color: "#C9A24B", fontSize: 10, fontWeight: 900, letterSpacing: "0.8px", border: "1px solid rgba(201,162,75,0.3)" }}>{statusBadge.label}</div>
                   </div>
                   <div style={{ fontSize: 22, fontWeight: 900, color: "#F1F5F9", letterSpacing: "-0.5px", textTransform: "capitalize" }}>{subPlan} Plan</div>
                   <div style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", marginTop: 4 }}>{PLAN_PRICE[subPlan] || "£29"}/month</div>
@@ -624,7 +624,7 @@ export default function DashboardPage() {
                       return (
                         <div key={offer.id}
                           style={{ border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "14px 16px", opacity: offer.active ? 1 : 0.5, transition: "all 0.18s", background: "rgba(255,255,255,0.02)" }}
-                          onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(74,44,109,0.25)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.3)"; e.currentTarget.style.background = "rgba(74,44,109,0.04)"; }}
+                          onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(201,162,75,0.25)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.3)"; e.currentTarget.style.background = "rgba(201,162,75,0.04)"; }}
                           onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.background = "rgba(255,255,255,0.02)"; }}
                         >
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
@@ -658,21 +658,21 @@ export default function DashboardPage() {
               <div style={{ background: "#100F1C", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.3)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
                   <div style={{ fontSize: 15, fontWeight: 800, color: "#F1F5F9" }}>{vc.staffPlural} Overview</div>
-                  <a href="/dashboard/staff" style={{ fontSize: 12.5, fontWeight: 700, color: "#C9A24B", textDecoration: "none", padding: "6px 14px", background: "rgba(74,44,109,0.12)", borderRadius: 8, border: "1px solid rgba(74,44,109,0.2)" }}>Manage →</a>
+                  <a href="/dashboard/staff" style={{ fontSize: 12.5, fontWeight: 700, color: "#C9A24B", textDecoration: "none", padding: "6px 14px", background: "rgba(201,162,75,0.12)", borderRadius: 8, border: "1px solid rgba(201,162,75,0.2)" }}>Manage →</a>
                 </div>
                 {staff.length === 0 ? (
                   <EmptyState icon={STAFF_EMOJI_MAP[vc.staffIcon] ?? "✂️"} title={`No ${vc.staffPlural.toLowerCase()}`} description={`Add ${vc.staffPlural.toLowerCase()} to assign ${vc.bookingPlural.toLowerCase()}`} action={{ label: `Add ${vc.staffSingular}`, onClick: () => router.push("/dashboard/staff") }} />
                 ) : (
                   <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 8 }}>
                     {staff.slice(0, 5).map(s => {
-                      const colors = ["#4A2C6D", "#10B981", "#F59E0B", "#EF4444", "#7B5EA7"];
+                      const colors = ["#C9A24B", "#10B981", "#F59E0B", "#EF4444", "#E7C878"];
                       const bg = colors[s.name.charCodeAt(0) % colors.length];
                       const initials = s.name.split(" ").map((part: string) => part[0]).join("").slice(0, 2).toUpperCase();
                       const staffAppts = appointments.filter(a => a.staff_id === s.id && a.status === "confirmed");
                       return (
                         <div key={s.id}
                           style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 14px", borderRadius: 13, border: "1px solid rgba(255,255,255,0.07)", transition: "all 0.12s" }}
-                          onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = "rgba(74,44,109,0.2)"; }}
+                          onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = "rgba(201,162,75,0.2)"; }}
                           onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}
                         >
                           <div style={{ width: 38, height: 38, borderRadius: 12, background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: "#fff", flexShrink: 0, boxShadow: `0 4px 10px ${bg}55` }}>{initials}</div>

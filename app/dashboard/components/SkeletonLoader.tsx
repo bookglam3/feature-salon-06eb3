@@ -22,7 +22,7 @@ export function SkeletonStatCard() {
       overflow: "hidden",
     }}>
       {/* top accent */}
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg,rgba(74,44,109,0.4),transparent)", borderRadius: "18px 18px 0 0" }} />
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg,rgba(201,162,75,0.4),transparent)", borderRadius: "18px 18px 0 0" }} />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <SkeletonBox w={80} h={10} />
         <SkeletonBox w={36} h={36} r={10} />

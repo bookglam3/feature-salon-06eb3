@@ -20,7 +20,7 @@ const EMPTY_FORM = {
 
 function Avatar({ name }: { name: string }) {
   const initials = name.split(" ").map(w => w[0]).join("").slice(0,2).toUpperCase();
-  const colors = ["#4A2C6D","#10B981","#F59E0B","#EF4444","#7B5EA7","#06B6D4"];
+  const colors = ["#C9A24B","#10B981","#F59E0B","#EF4444","#E7C878","#06B6D4"];
   const bg = colors[name.charCodeAt(0) % colors.length];
   return <div style={{ width: 40, height: 40, borderRadius: "50%", background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{initials}</div>;
 }
@@ -212,7 +212,7 @@ export default function StaffPage() {
         {/* Search */}
         <div style={{ marginBottom: 16 }}>
           <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder={`Search ${vc.staffPlural.toLowerCase()} by name or email…`} style={{ width: "100%", maxWidth: 360, padding: "9px 13px", border: "1px solid var(--border-2)", borderRadius: "var(--r-sm)", fontSize: 13.5, fontFamily: "var(--font)", outline: "none", color: "var(--text-1)" }}
-            onFocus={e => { e.currentTarget.style.borderColor = "var(--indigo)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(74,44,109,0.12)"; }}
+            onFocus={e => { e.currentTarget.style.borderColor = "var(--indigo)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(201,162,75,0.12)"; }}
             onBlur={e => { e.currentTarget.style.borderColor = "var(--border-2)"; e.currentTarget.style.boxShadow = "none"; }}
           />
         </div>

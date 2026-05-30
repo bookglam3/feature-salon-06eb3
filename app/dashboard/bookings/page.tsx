@@ -239,7 +239,7 @@ export default function BookingsPage() {
                 {weekDays[0].toLocaleDateString("en-GB",{day:"numeric",month:"short"})} – {weekDays[6].toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}
               </div>
               <div style={{ display: "flex", gap: 6 }}>
-                <button onClick={() => setWeekOffset(0)} className="elite-btn-ghost" style={{ padding: "5px 12px", color: "#C9A24B", borderColor: "rgba(74,44,109,0.25)" }}>Today</button>
+                <button onClick={() => setWeekOffset(0)} className="elite-btn-ghost" style={{ padding: "5px 12px", color: "#C9A24B", borderColor: "rgba(201,162,75,0.25)" }}>Today</button>
                 <button onClick={() => setWeekOffset(w => w + 1)} className="elite-btn-ghost" style={{ padding: "5px 12px" }}>→</button>
               </div>
             </div>
@@ -251,7 +251,7 @@ export default function BookingsPage() {
                     <div style={{ fontSize: 10, color: "rgba(255,255,255,0.28)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" }}>
                       {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][day.getDay()]}
                     </div>
-                    <div style={{ width: 28, height: 28, borderRadius: "50%", background: isToday ? "linear-gradient(135deg,#4A2C6D,#2A1840)" : "transparent", color: isToday ? "#fff" : "#F1F5F9", fontSize: 13, fontWeight: isToday ? 800 : 500, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto", boxShadow: isToday ? "0 4px 12px rgba(74,44,109,0.45)" : "none" }}>
+                    <div style={{ width: 28, height: 28, borderRadius: "50%", background: isToday ? "linear-gradient(135deg,#C9A24B,#0E1320)" : "transparent", color: isToday ? "#fff" : "#F1F5F9", fontSize: 13, fontWeight: isToday ? 800 : 500, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto", boxShadow: isToday ? "0 4px 12px rgba(201,162,75,0.45)" : "none" }}>
                       {day.getDate()}
                     </div>
                   </div>
@@ -265,9 +265,9 @@ export default function BookingsPage() {
                   <div key={i} style={{ padding: 6, borderRight: i < 6 ? "1px solid rgba(255,255,255,0.05)" : "none", minHeight: 200 }}>
                     {dayAppts.map(a => (
                       <div key={a.id} onClick={() => handleEdit(a)}
-                        style={{ background: "rgba(74,44,109,0.12)", borderRadius: 7, padding: "5px 8px", marginBottom: 4, cursor: "pointer", borderLeft: "3px solid #4A2C6D", transition: "all 0.15s" }}
-                        onMouseEnter={e => { e.currentTarget.style.background = "rgba(74,44,109,0.22)"; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = "rgba(74,44,109,0.12)"; }}
+                        style={{ background: "rgba(201,162,75,0.12)", borderRadius: 7, padding: "5px 8px", marginBottom: 4, cursor: "pointer", borderLeft: "3px solid #C9A24B", transition: "all 0.15s" }}
+                        onMouseEnter={e => { e.currentTarget.style.background = "rgba(201,162,75,0.22)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = "rgba(201,162,75,0.12)"; }}
                       >
                         <div style={{ fontSize: 10.5, fontWeight: 700, color: "#C9A24B" }}>{new Date(a.date_time).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}</div>
                         <div style={{ fontSize: 10.5, color: "#F1F5F9", fontWeight: 600 }}>{a.client_name}</div>
@@ -300,7 +300,7 @@ export default function BookingsPage() {
                 placeholder="Clinical observations, treatment plan, follow-up notes…"
                 rows={4}
                 style={{ width: "100%", padding: "9px 12px", fontSize: 13, border: "1.5px solid #E2E8F0", borderRadius: 10, resize: "vertical", fontFamily: "inherit", color: "#0F172A", lineHeight: 1.6, outline: "none", boxSizing: "border-box" }}
-                onFocus={e => { e.currentTarget.style.borderColor = "#4A2C6D"; }}
+                onFocus={e => { e.currentTarget.style.borderColor = "#C9A24B"; }}
                 onBlur={e => { e.currentTarget.style.borderColor = "#E2E8F0"; }}
               />
             </FormGroup>

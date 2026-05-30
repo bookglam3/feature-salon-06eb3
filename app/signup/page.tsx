@@ -5,7 +5,7 @@ import { supabase } from "../lib/supabase";
 import { POPULAR_COUNTRIES, ALL_COUNTRIES, type Country } from "../lib/countries";
 import { getDefaultServices } from "../lib/defaultServices";
 
-const C = { indigo:"#6366F1", indigoDark:"#4338CA", indigoSoft:"#EEF2FF", green:"#10B981", red:"#EF4444", text:"#0F172A", text2:"#475569", text3:"#94A3B8", border:"#E2E8F0", bg:"#F8F9FC" };
+const C = { indigo:"#C9A24B", indigoDark:"#C9A24B", indigoSoft:"#EEF2FF", green:"#10B981", red:"#EF4444", text:"#F7F5EF", text2:"#475569", text3:"#aab1c4", border:"#2a3350", bg:"#1C2438" };
 const STEPS = ["Account", "Your Business", "Done!"];
 
 const BUSINESS_TYPES = [
@@ -59,7 +59,7 @@ function CountryDropdown({ value, onChange }: { value: Country|null; onChange:(c
   const Item = ({ c }: { c: Country }) => (
     <button type="button" onClick={() => { onChange(c); setOpen(false); setQ(""); }}
       style={{ display:"flex", alignItems:"center", gap:10, width:"100%", padding:"9px 14px", border:"none", cursor:"pointer", background: value?.code===c.code?"#EEF2FF":"transparent", color:C.text, fontSize:13, textAlign:"left", transition:"background .1s" }}
-      onMouseEnter={e=>{ if(value?.code!==c.code)(e.currentTarget as HTMLElement).style.background="#F8FAFC"; }}
+      onMouseEnter={e=>{ if(value?.code!==c.code)(e.currentTarget as HTMLElement).style.background="#1C2438"; }}
       onMouseLeave={e=>{ if(value?.code!==c.code)(e.currentTarget as HTMLElement).style.background="transparent"; }}>
       <span style={{fontSize:18}}>{c.flag}</span>
       <span style={{flex:1}}>{c.name}</span>
@@ -200,7 +200,7 @@ export default function SignupPage() {
         <p style={{ fontSize:14, color:C.text2, lineHeight:1.7, marginBottom:20 }}>
           Verification link sent to <strong>{email}</strong>.<br/>Check spam if not received within 2 mins.
         </p>
-        <div style={{ background:"#EEF2FF", border:"1.5px solid #C7D2FE", borderRadius:12, padding:"12px 16px", marginBottom:24, fontSize:13, color:"#4338CA" }}>
+        <div style={{ background:"#EEF2FF", border:"1.5px solid #C7D2FE", borderRadius:12, padding:"12px 16px", marginBottom:24, fontSize:13, color:"#C9A24B" }}>
           💡 Verify your email then sign in to access your dashboard.
         </div>
         {["Online booking page ready","WhatsApp reminders configured","14-day free trial started","Zero setup fees"].map(f=>(
@@ -218,7 +218,7 @@ export default function SignupPage() {
   return (
     <main style={{ minHeight:"100vh", background:C.bg, display:"flex" }}>
       {/* Left Panel */}
-      <div style={{ width:380, background:"linear-gradient(160deg,#0F0B2D,#1E1B4B 40%,#3730A3 70%,#6366F1)", display:"flex", flexDirection:"column", justifyContent:"center", padding:"48px 40px", flexShrink:0 }} className="signup-left">
+      <div style={{ width:380, background:"linear-gradient(160deg,#0F0B2D,#1E1B4B 40%,#3730A3 70%,#C9A24B)", display:"flex", flexDirection:"column", justifyContent:"center", padding:"48px 40px", flexShrink:0 }} className="signup-left">
         <div style={{ marginBottom:40 }}>
           <img src="/brand/logo-dark.svg" alt="Feature Salon" style={{ height: 40, width: "auto", display: "block", marginBottom: 6, opacity: 0.95 }} />
         </div>
@@ -288,7 +288,7 @@ export default function SignupPage() {
                   right={<EyeBtn show={showPw} toggle={()=>setShowPw(p=>!p)} />} />
                 {password && (
                   <div style={{ marginTop:-10, marginBottom:14 }}>
-                    <div style={{ height:3, background:"#E2E8F0", borderRadius:99, overflow:"hidden" }}>
+                    <div style={{ height:3, background:"#2a3350", borderRadius:99, overflow:"hidden" }}>
                       <div style={{ height:"100%", width:pw.w, background:pw.color, transition:"all .3s", borderRadius:99 }}/>
                     </div>
                     <div style={{ fontSize:11, color:pw.color, fontWeight:700, marginTop:4 }}>{pw.label}</div>
@@ -299,7 +299,7 @@ export default function SignupPage() {
                 right={<EyeBtn show={showCpw} toggle={()=>setShowCpw(p=>!p)} />} />
               <div style={{ display:"flex", alignItems:"flex-start", gap:10, marginBottom:20, padding:"11px 14px", background:C.indigoSoft, border:`1.5px solid #C7D2FE`, borderRadius:10 }}>
                 <span style={{ fontSize:15, marginTop:1 }}>🔒</span>
-                <span style={{ fontSize:12, color:"#4338CA", lineHeight:1.6 }}>Your data is encrypted and never shared. We comply with GDPR &amp; global data protection law.</span>
+                <span style={{ fontSize:12, color:"#C9A24B", lineHeight:1.6 }}>Your data is encrypted and never shared. We comply with GDPR &amp; global data protection law.</span>
               </div>
               <button type="submit" style={{ width:"100%", padding:"13px", background:`linear-gradient(135deg,${C.indigo},${C.indigoDark})`, color:"#fff", border:"none", borderRadius:12, fontSize:15, fontWeight:800, cursor:"pointer", boxShadow:"0 6px 20px rgba(99,102,241,0.35)", transition:"all .15s" }}>
                 Continue →

@@ -62,7 +62,7 @@ export default function Modal({ open, onClose, title, children, maxWidth = 480 }
           maxHeight: "92vh",
           overflowY: "auto",
           padding: "24px 20px 32px",
-          boxShadow: "0 -8px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(74,44,109,0.1)",
+          boxShadow: "0 -8px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,162,75,0.1)",
         }}
         onClick={e => e.stopPropagation()}
       >
@@ -116,7 +116,7 @@ export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
         outline: "none", transition: "border-color 0.12s, box-shadow 0.12s",
         ...props.style,
       }}
-      onFocus={e => { e.currentTarget.style.borderColor = "#7B5EA7"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(74,44,109,0.2)"; }}
+      onFocus={e => { e.currentTarget.style.borderColor = "#E7C878"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(201,162,75,0.2)"; }}
       onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.boxShadow = "none"; }}
     />
   );
@@ -138,7 +138,7 @@ export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
         paddingRight: 36,
         ...props.style,
       }}
-      onFocus={e => { e.currentTarget.style.borderColor = "#7B5EA7"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(74,44,109,0.2)"; }}
+      onFocus={e => { e.currentTarget.style.borderColor = "#E7C878"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(201,162,75,0.2)"; }}
       onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.boxShadow = "none"; }}
     />
   );
@@ -158,17 +158,17 @@ export function BtnPrimary({ children, ...props }: React.ButtonHTMLAttributes<HT
       {...props}
       style={{
         flex: 1, padding: "11px 20px",
-        background: "linear-gradient(135deg,#4A2C6D,#2A1840)",
+        background: "linear-gradient(135deg,#C9A24B,#0E1320)",
         color: "#fff",
         border: "none", borderRadius: 10,
         fontSize: 14, fontWeight: 700, cursor: "pointer",
-        boxShadow: "0 4px 16px rgba(74,44,109,0.4)",
+        boxShadow: "0 4px 16px rgba(201,162,75,0.4)",
         transition: "all 0.14s",
         letterSpacing: "-0.15px", opacity: props.disabled ? 0.45 : 1,
         ...props.style,
       }}
-      onMouseEnter={e => { if (!props.disabled) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(74,44,109,0.5)"; } }}
-      onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(74,44,109,0.4)"; }}
+      onMouseEnter={e => { if (!props.disabled) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(201,162,75,0.5)"; } }}
+      onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(201,162,75,0.4)"; }}
     >{children}</button>
   );
 }

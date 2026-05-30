@@ -129,7 +129,7 @@ function GiftCardsContent() {
         </div>
       </div>
       <div style={{ display: "flex", gap: 8 }}>
-        <button onClick={() => setShowCodeModal(true)} style={{ padding: "9px 16px", background: "#EEF2FF", color: "#4A2C6D", border: "1.5px solid #C7D2FE", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>+ Discount Code</button>
+        <button onClick={() => setShowCodeModal(true)} style={{ padding: "9px 16px", background: "#EEF2FF", color: "#C9A24B", border: "1.5px solid #C7D2FE", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer" }}>+ Discount Code</button>
         <button onClick={() => setShowGiftModal(true)} style={{ padding: "9px 18px", background: "linear-gradient(135deg,#10B981,#059669)", color: "#fff", border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 14px rgba(16,185,129,0.3)" }}>+ Gift Card</button>
       </div>
     </header>
@@ -145,7 +145,7 @@ function GiftCardsContent() {
         {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 24 }}>
           {[
-            { label: "Active Codes", value: codes.filter(c => c.is_active).length, icon: "🏷️", color: "#4A2C6D" },
+            { label: "Active Codes", value: codes.filter(c => c.is_active).length, icon: "🏷️", color: "#C9A24B" },
             { label: "Total Uses", value: codes.reduce((s, c) => s + c.uses, 0), icon: "📊", color: "#10B981" },
             { label: "Gift Cards", value: gifts.length, icon: "🎁", color: "#F59E0B" },
             { label: "Gift Value", value: `£${gifts.reduce((s, g) => s + g.remaining, 0)}`, icon: "💰", color: "#EC4899" },
@@ -164,7 +164,7 @@ function GiftCardsContent() {
         {/* Tabs */}
         <div style={{ background: "#F1F5F9", borderRadius: 12, padding: 4, display: "inline-flex", gap: 2, marginBottom: 20 }}>
           {(["discount", "gift"] as const).map(id => (
-            <button key={id} onClick={() => setTab(id)} style={{ padding: "8px 20px", borderRadius: 10, border: "none", background: tab === id ? "#fff" : "transparent", color: tab === id ? "#4A2C6D" : "#64748B", fontWeight: tab === id ? 800 : 500, fontSize: 13, cursor: "pointer", boxShadow: tab === id ? "0 1px 4px rgba(0,0,0,0.08)" : "none", transition: "all 0.12s" }}>
+            <button key={id} onClick={() => setTab(id)} style={{ padding: "8px 20px", borderRadius: 10, border: "none", background: tab === id ? "#fff" : "transparent", color: tab === id ? "#C9A24B" : "#64748B", fontWeight: tab === id ? 800 : 500, fontSize: 13, cursor: "pointer", boxShadow: tab === id ? "0 1px 4px rgba(0,0,0,0.08)" : "none", transition: "all 0.12s" }}>
               {id === "discount" ? `🏷️ Discount Codes (${codes.length})` : `🎁 Gift Cards (${gifts.length})`}
             </button>
           ))}
@@ -276,7 +276,7 @@ function GiftCardsContent() {
             </div>
             <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
               <button onClick={() => setShowCodeModal(false)} style={{ flex: 1, padding: 12, background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#475569", cursor: "pointer" }}>Cancel</button>
-              <button onClick={handleAddCode} style={{ flex: 2, padding: 12, background: "linear-gradient(135deg,#4A2C6D,#4F46E5)", border: "none", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#fff", cursor: "pointer", boxShadow: "0 4px 14px rgba(74,44,109,0.3)" }}>Create Code</button>
+              <button onClick={handleAddCode} style={{ flex: 2, padding: 12, background: "linear-gradient(135deg,#C9A24B,#4F46E5)", border: "none", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#fff", cursor: "pointer", boxShadow: "0 4px 14px rgba(201,162,75,0.3)" }}>Create Code</button>
             </div>
           </div>
         </div>

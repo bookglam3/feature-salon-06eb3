@@ -11,8 +11,8 @@ const PLANS = [
   {
     id:        "starter",
     name:      "Starter",
-    color:     "#6366F1",
-    gradient:  "linear-gradient(135deg,#6366F1 0%,#4F46E5 100%)",
+    color:     "#C9A24B",
+    gradient:  "linear-gradient(135deg,#C9A24B 0%,#4F46E5 100%)",
     showBadge: false,
     icon:      "✂️",
     tagline:   "Perfect for solo stylists",

@@ -103,7 +103,7 @@ export default function ReferralsPage() {
         {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 24 }}>
           {[
-            { label: "Total Referrals", value: referrals.length, color: "#4A2C6D" },
+            { label: "Total Referrals", value: referrals.length, color: "#C9A24B" },
             { label: "Completed", value: totalCompleted, color: "#10B981" },
             { label: "Rewarded", value: totalRewarded, color: "#F59E0B" },
             { label: "Conversion", value: referrals.length ? `${Math.round((totalCompleted/referrals.length)*100)}%` : "0%", color: "#EC4899" },
@@ -175,7 +175,7 @@ export default function ReferralsPage() {
                         </td>
                         <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9", fontSize: 12.5, color: "#64748B" }}>{new Date(r.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</td>
                         <td style={{ padding: "12px 16px", borderBottom: "1px solid #F1F5F9" }}>
-                          <button onClick={() => copyLink(r.code)} style={{ padding: "6px 12px", background: "#EEF2FF", color: "#4A2C6D", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>🔗 Copy Link</button>
+                          <button onClick={() => copyLink(r.code)} style={{ padding: "6px 12px", background: "#EEF2FF", color: "#C9A24B", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>🔗 Copy Link</button>
                         </td>
                       </tr>
                     );

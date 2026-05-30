@@ -39,7 +39,7 @@ function TrialBanner({ salon }: { salon: SalonSub }) {
       backdropFilter: "blur(8px)",
       color:"#fff", padding:"10px 20px", fontSize:13, fontWeight:600,
       display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap",
-      borderBottom: `1px solid ${urgent ? "rgba(239,68,68,0.3)" : "rgba(74,44,109,0.3)"}`,
+      borderBottom: `1px solid ${urgent ? "rgba(239,68,68,0.3)" : "rgba(201,162,75,0.3)"}`,
     }}>
       <span style={{ color: urgent ? "#FCA5A5" : "#C9A24B" }}>
         {urgent ? "⚠️" : "🎁"}{" "}
@@ -48,7 +48,7 @@ function TrialBanner({ salon }: { salon: SalonSub }) {
           : `Free trial: ${days} day${days === 1 ? "" : "s"} remaining`}
         {salon.subscription_plan && ` · ${salon.subscription_plan.charAt(0).toUpperCase() + salon.subscription_plan.slice(1)} plan`}
       </span>
-      <button onClick={openPortal} style={{ background: urgent ? "rgba(239,68,68,0.25)" : "rgba(74,44,109,0.25)", border: `1px solid ${urgent ? "rgba(239,68,68,0.4)" : "rgba(74,44,109,0.4)"}`, color:"#fff", borderRadius:99, padding:"5px 14px", fontSize:12, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>
+      <button onClick={openPortal} style={{ background: urgent ? "rgba(239,68,68,0.25)" : "rgba(201,162,75,0.25)", border: `1px solid ${urgent ? "rgba(239,68,68,0.4)" : "rgba(201,162,75,0.4)"}`, color:"#fff", borderRadius:99, padding:"5px 14px", fontSize:12, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>
         {salon.stripe_customer_id ? "Manage Subscription →" : "Upgrade Now →"}
       </button>
     </div>
@@ -82,7 +82,7 @@ function LockedOverlay({ salon }: { salon: SalonSub }) {
 
   return (
     <div style={{ position:"fixed", inset:0, zIndex:9999, background:"rgba(0,0,0,0.92)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:24, backdropFilter:"blur(16px)" }}>
-      <div style={{ maxWidth:480, width:"100%", textAlign:"center", background:"rgba(20,18,42,0.95)", border:"1px solid rgba(74,44,109,0.2)", borderRadius:24, padding:"48px 36px", boxShadow:"0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(74,44,109,0.1)" }}>
+      <div style={{ maxWidth:480, width:"100%", textAlign:"center", background:"rgba(20,18,42,0.95)", border:"1px solid rgba(201,162,75,0.2)", borderRadius:24, padding:"48px 36px", boxShadow:"0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,162,75,0.1)" }}>
         <div style={{ fontSize:56, marginBottom:20 }}>🔒</div>
         <h1 style={{ fontSize:28, fontWeight:900, color:"#F1F5F9", letterSpacing:"-1px", marginBottom:12 }}>
           Dashboard Locked
@@ -95,9 +95,9 @@ function LockedOverlay({ salon }: { salon: SalonSub }) {
         <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
           <button
             onClick={openPortal}
-            style={{ background:"linear-gradient(135deg,#4A2C6D 0%,#2A1840 100%)", color:"#fff", border:"none", borderRadius:12, padding:"16px 32px", fontSize:16, fontWeight:800, cursor:"pointer", boxShadow:"0 8px 32px rgba(74,44,109,0.5)", transition:"all 0.18s" }}
-            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(74,44,109,0.65)"; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(74,44,109,0.5)"; }}
+            style={{ background:"linear-gradient(135deg,#C9A24B 0%,#0E1320 100%)", color:"#fff", border:"none", borderRadius:12, padding:"16px 32px", fontSize:16, fontWeight:800, cursor:"pointer", boxShadow:"0 8px 32px rgba(201,162,75,0.5)", transition:"all 0.18s" }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(201,162,75,0.65)"; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(201,162,75,0.5)"; }}
           >
             {salon.stripe_customer_id ? "Reactivate Subscription →" : "Choose a Plan →"}
           </button>
@@ -146,8 +146,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         }}>
           <div style={{
             width: 32, height: 32, borderRadius: "50%",
-            border: "3px solid rgba(74,44,109,0.2)",
-            borderTopColor: "#4A2C6D",
+            border: "3px solid rgba(201,162,75,0.2)",
+            borderTopColor: "#C9A24B",
             animation: "spin 0.7s linear infinite",
           }} />
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>

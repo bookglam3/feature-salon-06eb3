@@ -13,7 +13,7 @@ const SECTION: Record<string, {
   glow: string;   // box-shadow glow color
   border: string; // active row left border color
 }> = {
-  MAIN:       { grad: "from-violet-600 to-violet-400",  dimBg: "rgba(74,44,109,0.18)", glow: "rgba(74,44,109,0.55)",  border: "rgba(74,44,109,0.9)" },
+  MAIN:       { grad: "from-violet-600 to-violet-400",  dimBg: "rgba(201,162,75,0.18)", glow: "rgba(201,162,75,0.55)",  border: "rgba(201,162,75,0.9)" },
   FINANCE:    { grad: "from-emerald-600 to-emerald-400",dimBg: "rgba(5,150,105,0.18)",  glow: "rgba(5,150,105,0.55)",   border: "rgba(52,211,153,0.9)" },
   ENGAGEMENT: { grad: "from-blue-600 to-blue-400",      dimBg: "rgba(37,99,235,0.18)",  glow: "rgba(37,99,235,0.55)",   border: "rgba(96,165,250,0.9)" },
   CONTENT:    { grad: "from-pink-600 to-pink-400",      dimBg: "rgba(219,39,119,0.18)", glow: "rgba(219,39,119,0.55)",  border: "rgba(244,114,182,0.9)" },
@@ -283,7 +283,7 @@ export default function DashboardSidebar() {
                       <div
                         className="w-[5px] h-[5px] rounded-full shrink-0"
                         style={{
-                          background: `linear-gradient(135deg,${s.grad.includes("violet") ? "#4A2C6D,#C9A24B" : s.grad.includes("emerald") ? "#059669,#34D399" : s.grad.includes("blue") ? "#2563EB,#60A5FA" : s.grad.includes("pink") ? "#DB2777,#F472B6" : "#475569,#94A3B8"})`,
+                          background: `linear-gradient(135deg,${s.grad.includes("violet") ? "#C9A24B,#C9A24B" : s.grad.includes("emerald") ? "#059669,#34D399" : s.grad.includes("blue") ? "#2563EB,#60A5FA" : s.grad.includes("pink") ? "#DB2777,#F472B6" : "#475569,#94A3B8"})`,
                           boxShadow: `0 0 7px ${s.glow}`,
                         }}
                       />

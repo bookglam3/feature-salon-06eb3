@@ -77,7 +77,7 @@ function MonthView({ currentDate, monthDays, getApptsByDay, today, setSelectedAp
               onMouseEnter={e => { if (!isToday) e.currentTarget.style.borderColor = "#C7D2FE"; }}
               onMouseLeave={e => { if (!isToday) e.currentTarget.style.borderColor = "#F1F5F9"; }}
             >
-              <div style={{ fontSize: 12, fontWeight: isToday ? 900 : 600, marginBottom: 5, display: "inline-flex", alignItems: "center", justifyContent: "center", width: 22, height: 22, borderRadius: "50%", background: isToday ? "#4A2C6D" : "transparent", color: isToday ? "#fff" : "#0F172A" }}>{day.getDate()}</div>
+              <div style={{ fontSize: 12, fontWeight: isToday ? 900 : 600, marginBottom: 5, display: "inline-flex", alignItems: "center", justifyContent: "center", width: 22, height: 22, borderRadius: "50%", background: isToday ? "#C9A24B" : "transparent", color: isToday ? "#fff" : "#0F172A" }}>{day.getDate()}</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 {dayAppts.slice(0, 3).map(a => {
                   const sc = STATUS_COLORS[a.status] || STATUS_COLORS.pending;
@@ -255,7 +255,7 @@ function ApptModal({ selectedAppt, setSelectedAppt, onViewAll }: ApptModalProps)
         </div>
         <div style={{ marginTop: 20, display: "flex", gap: 8 }}>
           <button onClick={() => setSelectedAppt(null)} style={{ flex: 1, padding: "11px", background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#475569", cursor: "pointer" }}>Close</button>
-          <button onClick={onViewAll} style={{ flex: 1, padding: "11px", background: "linear-gradient(135deg,#4A2C6D,#4F46E5)", border: "none", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#fff", cursor: "pointer", boxShadow: "0 4px 14px rgba(74,44,109,0.3)" }}>View All →</button>
+          <button onClick={onViewAll} style={{ flex: 1, padding: "11px", background: "linear-gradient(135deg,#C9A24B,#4F46E5)", border: "none", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#fff", cursor: "pointer", boxShadow: "0 4px 14px rgba(201,162,75,0.3)" }}>View All →</button>
         </div>
       </div>
     </div>
@@ -334,7 +334,7 @@ function CalendarContent() {
         <div style={{ display: "flex", background: "#F1F5F9", borderRadius: 10, padding: 3, gap: 2 }}>
           {(["day","week","month"] as ViewMode[]).map(v => (
             <button key={v} onClick={() => setView(v)}
-              style={{ fontSize: 12, padding: "5px 14px", borderRadius: 8, border: "none", background: view === v ? "#fff" : "transparent", color: view === v ? "#4A2C6D" : "#64748B", cursor: "pointer", fontWeight: view === v ? 800 : 500, boxShadow: view === v ? "0 1px 4px rgba(0,0,0,0.08)" : "none", transition: "all 0.12s", textTransform: "capitalize" }}>
+              style={{ fontSize: 12, padding: "5px 14px", borderRadius: 8, border: "none", background: view === v ? "#fff" : "transparent", color: view === v ? "#C9A24B" : "#64748B", cursor: "pointer", fontWeight: view === v ? 800 : 500, boxShadow: view === v ? "0 1px 4px rgba(0,0,0,0.08)" : "none", transition: "all 0.12s", textTransform: "capitalize" }}>
               {v}
             </button>
           ))}
@@ -342,7 +342,7 @@ function CalendarContent() {
         {(["←","Today","→"] as const).map((lbl, i) => (
           <button key={lbl}
             onClick={() => i === 1 ? setCurrentDate(new Date()) : nav(i === 0 ? -1 : 1)}
-            style={{ padding: "7px 14px", background: i === 1 ? "linear-gradient(135deg,#4A2C6D,#4F46E5)" : "#F8FAFC", color: i === 1 ? "#fff" : "#475569", border: `1.5px solid ${i === 1 ? "transparent" : "#E2E8F0"}`, borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.12s" }}>
+            style={{ padding: "7px 14px", background: i === 1 ? "linear-gradient(135deg,#C9A24B,#4F46E5)" : "#F8FAFC", color: i === 1 ? "#fff" : "#475569", border: `1.5px solid ${i === 1 ? "transparent" : "#E2E8F0"}`, borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.12s" }}>
             {lbl}
           </button>
         ))}
@@ -360,7 +360,7 @@ function CalendarContent() {
     <DashboardShell salonName={salonName} topbar={Topbar}>
       <div style={{ background: "#fff", borderBottom: "1px solid #F1F5F9", padding: "12px 24px", display: "flex", gap: 24, alignItems: "center" }}>
         {[
-          { label: `Total ${vc.bookingPlural}`, value: appointments.length, color: "#4A2C6D" },
+          { label: `Total ${vc.bookingPlural}`, value: appointments.length, color: "#C9A24B" },
           { label: "Confirmed", value: appointments.filter(a => a.status === "confirmed").length, color: "#10B981" },
           { label: "Pending", value: appointments.filter(a => a.status === "pending").length, color: "#F59E0B" },
           { label: "Cancelled", value: appointments.filter(a => a.status === "cancelled").length, color: "#EF4444" },

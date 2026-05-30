@@ -10,7 +10,7 @@ interface ChecklistProps {
 }
 
 const C = {
-  indigo: "#4A2C6D", indigoDark: "#2A1840", indigoSoft: "#EEF2FF",
+  indigo: "#C9A24B", indigoDark: "#0E1320", indigoSoft: "#EEF2FF",
   green: "#10B981", greenSoft: "#ECFDF5", greenBorder: "#A7F3D0",
   text: "#0F172A", text2: "#475569", text3: "#94A3B8",
   border: "#E2E8F0", surface: "#FFFFFF",
@@ -96,7 +96,7 @@ export default function OnboardingChecklist({ services, staff, bookingLink, salo
           display: "flex", alignItems: "center", gap: 10,
           background: `linear-gradient(135deg,${C.indigo},${C.indigoDark})`,
           color: "#fff", border: "none", borderRadius: 14, padding: "12px 18px",
-          cursor: "pointer", boxShadow: "0 8px 24px rgba(74,44,109,0.4)",
+          cursor: "pointer", boxShadow: "0 8px 24px rgba(201,162,75,0.4)",
           fontSize: 13.5, fontWeight: 700, fontFamily: "inherit",
         }}>
           <span style={{ fontSize: 18 }}>🚀</span>

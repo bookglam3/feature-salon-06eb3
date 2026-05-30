@@ -180,7 +180,7 @@ function ReportsContent() {
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a"); a.href = url; a.download = "revenue-report.csv"; a.click();
         }}
-        style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "linear-gradient(135deg,#4A2C6D,#4F46E5)", color: "#fff", border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 14px rgba(74,44,109,0.3)" }}>
+        style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "linear-gradient(135deg,#C9A24B,#4F46E5)", color: "#fff", border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 14px rgba(201,162,75,0.3)" }}>
         📥 Export CSV
       </button>
     </header>
@@ -192,7 +192,7 @@ function ReportsContent() {
     </DashboardShell>
   );
 
-  const COLORS = ["#4A2C6D", "#10B981", "#F59E0B", "#EC4899", "#7B5EA7"];
+  const COLORS = ["#C9A24B", "#10B981", "#F59E0B", "#EC4899", "#E7C878"];
 
   return (
     <DashboardShell salonName={salonName} topbar={Topbar}>
@@ -201,16 +201,16 @@ function ReportsContent() {
         {/* KPI Cards */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 14, marginBottom: 28 }}>
           <StatCard icon="💰" label="Total Revenue" value={`£${totalRevenue}`} sub="All confirmed bookings" color="#10B981" />
-          <StatCard icon="📅" label="This Month" value={`£${thisMonthRevenue}`} sub={new Date().toLocaleDateString("en-GB", { month: "long", year: "numeric" })} color="#4A2C6D" />
+          <StatCard icon="📅" label="This Month" value={`£${thisMonthRevenue}`} sub={new Date().toLocaleDateString("en-GB", { month: "long", year: "numeric" })} color="#C9A24B" />
           <StatCard icon="🧾" label="Avg. Order Value" value={`£${avgOrderValue}`} sub="Per confirmed booking" color="#F59E0B" />
           <StatCard icon="✅" label="Conversion Rate" value={`${conversionRate}%`} sub="Confirmed vs total" color="#EC4899" />
-          <StatCard icon="📋" label="Total Bookings" value={String(appointments.length)} sub={`${confirmed.length} confirmed`} color="#7B5EA7" />
+          <StatCard icon="📋" label="Total Bookings" value={String(appointments.length)} sub={`${confirmed.length} confirmed`} color="#E7C878" />
         </div>
 
         {/* Charts row */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 28 }}>
           <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, padding: "22px 24px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
-            <BarChart data={monthlyRevenue} color="#4A2C6D" label="Monthly Revenue (Last 12 Months)" />
+            <BarChart data={monthlyRevenue} color="#C9A24B" label="Monthly Revenue (Last 12 Months)" />
           </div>
           <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, padding: "22px 24px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
             <BarChart data={monthlyBookings} color="#10B981" label="Monthly Bookings (Last 12 Months)" />
@@ -302,9 +302,9 @@ function ReportsContent() {
                     <div key={hour} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
                       <div style={{ width: 80, fontSize: 12.5, fontWeight: 700, color: "#475569", flexShrink: 0 }}>{label}</div>
                       <div style={{ flex: 1, height: 8, background: "#F1F5F9", borderRadius: 99 }}>
-                        <div style={{ height: "100%", borderRadius: 99, background: "#4A2C6D", width: `${(count / maxCount) * 100}%`, transition: "width 0.6s ease" }} />
+                        <div style={{ height: "100%", borderRadius: 99, background: "#C9A24B", width: `${(count / maxCount) * 100}%`, transition: "width 0.6s ease" }} />
                       </div>
-                      <div style={{ width: 28, fontSize: 12.5, fontWeight: 800, color: "#4A2C6D", textAlign: "right" }}>{count}</div>
+                      <div style={{ width: 28, fontSize: 12.5, fontWeight: 800, color: "#C9A24B", textAlign: "right" }}>{count}</div>
                     </div>
                   );
                 })}

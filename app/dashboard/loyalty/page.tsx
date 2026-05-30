@@ -20,7 +20,7 @@ const TIERS = [
   { name:"Bronze",  min:0,    max:199,  color:"#CD7F32", icon:"🥉", perks:"5% discount on next visit" },
   { name:"Silver",  min:200,  max:499,  color:"#94A3B8", icon:"🥈", perks:"10% discount + priority booking" },
   { name:"Gold",    min:500,  max:999,  color:"#F59E0B", icon:"🥇", perks:"15% discount + free treatment" },
-  { name:"Platinum",min:1000, max:Infinity, color:"#4A2C6D", icon:"💎", perks:"20% off + VIP access" },
+  { name:"Platinum",min:1000, max:Infinity, color:"#C9A24B", icon:"💎", perks:"20% off + VIP access" },
 ];
 
 function getTier(points: number) {
@@ -151,7 +151,7 @@ function LoyaltyContent() {
         {/* Stats */}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, marginBottom:24 }}>
           {[
-            { label:"Total Members", value:clients.length, icon:"👥", color:"#4A2C6D" },
+            { label:"Total Members", value:clients.length, icon:"👥", color:"#C9A24B" },
             { label:"Points Outstanding", value:totalPoints.toLocaleString(), icon:"💎", color:"#F59E0B" },
             { label:"Gold+ Members", value:clients.filter(c=>c.points>=500).length, icon:"🥇", color:"#F59E0B" },
             { label:"Pts/£ Rate", value:`${pointsPerPound} pts`, icon:"💰", color:"#10B981" },
@@ -236,7 +236,7 @@ function LoyaltyContent() {
                         <td style={{ padding:"12px 16px", borderBottom:"1px solid #F1F5F9", fontSize:13, color:"#10B981", fontWeight:700 }}>+{c.total_earned}</td>
                         <td style={{ padding:"12px 16px", borderBottom:"1px solid #F1F5F9", fontSize:13, color:"#EF4444", fontWeight:700 }}>-{c.total_redeemed}</td>
                         <td style={{ padding:"12px 16px", borderBottom:"1px solid #F1F5F9" }}>
-                          <button onClick={() => { setSelectedClient(c); setShowModal(true); }} style={{ padding:"6px 14px", background:"linear-gradient(135deg,#4A2C6D,#4F46E5)", color:"#fff", border:"none", borderRadius:8, fontSize:12, fontWeight:700, cursor:"pointer" }}>Adjust</button>
+                          <button onClick={() => { setSelectedClient(c); setShowModal(true); }} style={{ padding:"6px 14px", background:"linear-gradient(135deg,#C9A24B,#4F46E5)", color:"#fff", border:"none", borderRadius:8, fontSize:12, fontWeight:700, cursor:"pointer" }}>Adjust</button>
                         </td>
                       </tr>
                     );
@@ -260,7 +260,7 @@ function LoyaltyContent() {
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8 }}>
                   {(["earn","redeem","bonus"] as const).map(t => (
                     <button key={t} onClick={() => setAdjForm({...adjForm, type:t})}
-                      style={{ padding:"8px 4px", borderRadius:10, border:`1.5px solid ${adjForm.type===t ? "#4A2C6D" : "#E2E8F0"}`, background: adjForm.type===t ? "#EEF2FF" : "#fff", color: adjForm.type===t ? "#4F46E5" : "#475569", fontSize:12.5, fontWeight:700, cursor:"pointer", textTransform:"capitalize", transition:"all 0.12s" }}>
+                      style={{ padding:"8px 4px", borderRadius:10, border:`1.5px solid ${adjForm.type===t ? "#C9A24B" : "#E2E8F0"}`, background: adjForm.type===t ? "#EEF2FF" : "#fff", color: adjForm.type===t ? "#4F46E5" : "#475569", fontSize:12.5, fontWeight:700, cursor:"pointer", textTransform:"capitalize", transition:"all 0.12s" }}>
                       {t === "earn" ? "💰" : t === "redeem" ? "🎁" : "⭐"} {t}
                     </button>
                   ))}
@@ -279,7 +279,7 @@ function LoyaltyContent() {
             </div>
             <div style={{ display:"flex", gap:10, marginTop:20 }}>
               <button onClick={() => setShowModal(false)} style={{ flex:1, padding:12, background:"#F8FAFC", border:"1.5px solid #E2E8F0", borderRadius:12, fontSize:13.5, fontWeight:700, color:"#475569", cursor:"pointer" }}>Cancel</button>
-              <button onClick={handleAdjust} disabled={saving || !adjForm.points} style={{ flex:2, padding:12, background:"linear-gradient(135deg,#4A2C6D,#4F46E5)", border:"none", borderRadius:12, fontSize:13.5, fontWeight:700, color:"#fff", cursor:"pointer", opacity:!adjForm.points?0.5:1 }}>
+              <button onClick={handleAdjust} disabled={saving || !adjForm.points} style={{ flex:2, padding:12, background:"linear-gradient(135deg,#C9A24B,#4F46E5)", border:"none", borderRadius:12, fontSize:13.5, fontWeight:700, color:"#fff", cursor:"pointer", opacity:!adjForm.points?0.5:1 }}>
                 {saving ? "Saving…" : "Save Changes"}
               </button>
             </div>
@@ -307,7 +307,7 @@ function LoyaltyContent() {
                 </div>
               ))}
             </div>
-            <button onClick={() => { toast.success("Settings saved!"); setShowSetup(false); }} style={{ marginTop:20, width:"100%", padding:12, background:"linear-gradient(135deg,#4A2C6D,#4F46E5)", border:"none", borderRadius:12, fontSize:13.5, fontWeight:700, color:"#fff", cursor:"pointer" }}>Save Settings</button>
+            <button onClick={() => { toast.success("Settings saved!"); setShowSetup(false); }} style={{ marginTop:20, width:"100%", padding:12, background:"linear-gradient(135deg,#C9A24B,#4F46E5)", border:"none", borderRadius:12, fontSize:13.5, fontWeight:700, color:"#fff", cursor:"pointer" }}>Save Settings</button>
           </div>
         </div>
       )}

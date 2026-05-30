@@ -22,7 +22,7 @@ interface ConnectStatus {
 const STATUS_COLORS: Record<string, string> = {
   paid: "#10B981",
   in_transit: "#F59E0B",
-  pending: "#4A2C6D",
+  pending: "#C9A24B",
   failed: "#EF4444",
   canceled: "#94A3B8",
 };
@@ -127,7 +127,7 @@ export default function EarningsPage() {
   };
 
   const Topbar = (
-    <header style={{ background: "linear-gradient(135deg,#0F0B2D,#1E1B4B)", borderBottom: "1px solid rgba(74,44,109,0.2)", padding: "0 24px", height: 66, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 30 }}>
+    <header style={{ background: "linear-gradient(135deg,#0F0B2D,#1E1B4B)", borderBottom: "1px solid rgba(201,162,75,0.2)", padding: "0 24px", height: 66, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 30 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <HamburgerBtn onClick={() => { }} />
         <div>
@@ -137,7 +137,7 @@ export default function EarningsPage() {
       </div>
       {status?.connected && (
         <button onClick={handleStripeDashboard} disabled={dashLinking}
-          style={{ padding: "8px 16px", background: "rgba(74,44,109,0.2)", border: "1px solid rgba(74,44,109,0.4)", borderRadius: 10, fontSize: 12.5, fontWeight: 700, color: "#A5B4FC", cursor: "pointer" }}>
+          style={{ padding: "8px 16px", background: "rgba(201,162,75,0.2)", border: "1px solid rgba(201,162,75,0.4)", borderRadius: 10, fontSize: 12.5, fontWeight: 700, color: "#A5B4FC", cursor: "pointer" }}>
           {dashLinking ? "Opening…" : "↗ Stripe Dashboard"}
         </button>
       )}
@@ -165,7 +165,7 @@ export default function EarningsPage() {
 
         {/* ── Not Connected State ── */}
         {!status?.connected && (
-          <div style={{ background: "linear-gradient(135deg,#0F0B2D,#1E1B4B)", border: "1px solid rgba(74,44,109,0.3)", borderRadius: 24, padding: "60px 40px", textAlign: "center", maxWidth: 560, margin: "60px auto" }}>
+          <div style={{ background: "linear-gradient(135deg,#0F0B2D,#1E1B4B)", border: "1px solid rgba(201,162,75,0.3)", borderRadius: 24, padding: "60px 40px", textAlign: "center", maxWidth: 560, margin: "60px auto" }}>
             <div style={{ fontSize: 64, marginBottom: 20 }}>🏦</div>
             <h2 style={{ fontSize: 26, fontWeight: 900, color: "#fff", margin: "0 0 12px", letterSpacing: "-0.5px" }}>Connect Your Stripe Account</h2>
             <p style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", lineHeight: 1.7, margin: "0 0 32px" }}>
@@ -186,7 +186,7 @@ export default function EarningsPage() {
               ))}
             </div>
             <button onClick={handleConnect} disabled={connecting}
-              style={{ width: "100%", padding: "16px", background: connecting ? "rgba(74,44,109,0.4)" : "linear-gradient(135deg,#4A2C6D,#4F46E5)", border: "none", borderRadius: 14, fontSize: 15, fontWeight: 800, color: "#fff", cursor: connecting ? "not-allowed" : "pointer", boxShadow: "0 8px 30px rgba(74,44,109,0.4)", letterSpacing: "-0.2px" }}>
+              style={{ width: "100%", padding: "16px", background: connecting ? "rgba(201,162,75,0.4)" : "linear-gradient(135deg,#C9A24B,#4F46E5)", border: "none", borderRadius: 14, fontSize: 15, fontWeight: 800, color: "#fff", cursor: connecting ? "not-allowed" : "pointer", boxShadow: "0 8px 30px rgba(201,162,75,0.4)", letterSpacing: "-0.2px" }}>
               {connecting ? "⏳ Redirecting to Stripe…" : "🔗 Connect Stripe Account"}
             </button>
             {connectError && (
@@ -230,7 +230,7 @@ export default function EarningsPage() {
                 { label: "Pending Balance", value: fmt(pending, currency), icon: "⏳", color: "#F59E0B", desc: "Processing — arrives in 2-7 days" },
                 { label: "Platform Fee", value: "5%", icon: "🏷️", color: "#A5B4FC", desc: "Kept per transaction" },
               ].map(s => (
-                <div key={s.label} style={{ background: "linear-gradient(135deg,rgba(15,11,45,0.9),rgba(30,27,75,0.9))", border: "1px solid rgba(74,44,109,0.2)", borderRadius: 20, padding: "22px 20px", position: "relative", overflow: "hidden" }}>
+                <div key={s.label} style={{ background: "linear-gradient(135deg,rgba(15,11,45,0.9),rgba(30,27,75,0.9))", border: "1px solid rgba(201,162,75,0.2)", borderRadius: 20, padding: "22px 20px", position: "relative", overflow: "hidden" }}>
                   <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: s.color }} />
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
                     <span style={{ fontSize: 10.5, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.8px" }}>{s.label}</span>
@@ -243,7 +243,7 @@ export default function EarningsPage() {
             </div>
 
             {/* How it works */}
-            <div style={{ background: "rgba(74,44,109,0.08)", border: "1px solid rgba(74,44,109,0.2)", borderRadius: 16, padding: "18px 22px", marginBottom: 24, display: "flex", gap: 20, flexWrap: "wrap" }}>
+            <div style={{ background: "rgba(201,162,75,0.08)", border: "1px solid rgba(201,162,75,0.2)", borderRadius: 16, padding: "18px 22px", marginBottom: 24, display: "flex", gap: 20, flexWrap: "wrap" }}>
               <div style={{ fontSize: 13, fontWeight: 800, color: "#A5B4FC", minWidth: 120 }}>💡 How it works</div>
               {[
                 { from: "Client pays £100", to: "Platform fee: £5", via: "→" },
@@ -252,18 +252,18 @@ export default function EarningsPage() {
               ].map((step, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "rgba(255,255,255,0.6)" }}>
                   <span style={{ color: "rgba(255,255,255,0.4)", fontWeight: 700 }}>{step.from}</span>
-                  <span style={{ color: "#4A2C6D", fontWeight: 800 }}>{step.via}</span>
+                  <span style={{ color: "#C9A24B", fontWeight: 800 }}>{step.via}</span>
                   <span style={{ color: "#34D399", fontWeight: 700 }}>{step.to}</span>
                 </div>
               ))}
             </div>
 
             {/* Payout history */}
-            <div style={{ background: "linear-gradient(135deg,rgba(15,11,45,0.9),rgba(30,27,75,0.9))", border: "1px solid rgba(74,44,109,0.2)", borderRadius: 20, overflow: "hidden" }}>
-              <div style={{ padding: "18px 22px", borderBottom: "1px solid rgba(74,44,109,0.15)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ background: "linear-gradient(135deg,rgba(15,11,45,0.9),rgba(30,27,75,0.9))", border: "1px solid rgba(201,162,75,0.2)", borderRadius: 20, overflow: "hidden" }}>
+              <div style={{ padding: "18px 22px", borderBottom: "1px solid rgba(201,162,75,0.15)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>Payout History</div>
                 <button onClick={handleStripeDashboard} disabled={dashLinking}
-                  style={{ padding: "7px 14px", background: "rgba(74,44,109,0.15)", border: "1px solid rgba(74,44,109,0.3)", borderRadius: 10, fontSize: 12, fontWeight: 700, color: "#A5B4FC", cursor: "pointer" }}>
+                  style={{ padding: "7px 14px", background: "rgba(201,162,75,0.15)", border: "1px solid rgba(201,162,75,0.3)", borderRadius: 10, fontSize: 12, fontWeight: 700, color: "#A5B4FC", cursor: "pointer" }}>
                   {dashLinking ? "…" : "View All in Stripe ↗"}
                 </button>
               </div>
@@ -280,14 +280,14 @@ export default function EarningsPage() {
                     <thead>
                       <tr style={{ background: "rgba(255,255,255,0.03)" }}>
                         {["Amount", "Status", "Arrival Date", "Created", "Description"].map(h => (
-                          <th key={h} style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", textAlign: "left", padding: "10px 16px", letterSpacing: "0.8px", textTransform: "uppercase", borderBottom: "1px solid rgba(74,44,109,0.1)" }}>{h}</th>
+                          <th key={h} style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", textAlign: "left", padding: "10px 16px", letterSpacing: "0.8px", textTransform: "uppercase", borderBottom: "1px solid rgba(201,162,75,0.1)" }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {status.payouts.map(p => (
-                        <tr key={p.id} style={{ borderBottom: "1px solid rgba(74,44,109,0.08)", transition: "background 0.1s" }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = "rgba(74,44,109,0.05)"; }}
+                        <tr key={p.id} style={{ borderBottom: "1px solid rgba(201,162,75,0.08)", transition: "background 0.1s" }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLTableRowElement).style.background = "rgba(201,162,75,0.05)"; }}
                           onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = "transparent"; }}>
                           <td style={{ padding: "12px 16px", fontSize: 15, fontWeight: 900, color: "#34D399" }}>{fmt(p.amount, p.currency)}</td>
                           <td style={{ padding: "12px 16px" }}>

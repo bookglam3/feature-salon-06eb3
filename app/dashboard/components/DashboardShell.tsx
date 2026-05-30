@@ -66,7 +66,7 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
         /* ══ Layout ══ */
         .ds-layout {
           display: flex; min-height: 100vh;
-          background: #09090F;
+          background: #141A2E;
           position: relative;
         }
 
@@ -106,7 +106,7 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
           position: relative; z-index: 1;
         }
         .ds-content {
-          flex: 1; overflow-y: auto; background: #09090F;
+          flex: 1; overflow-y: auto; background: #141A2E;
           padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
           -webkit-overflow-scrolling: touch;
         }
@@ -124,7 +124,7 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
 
         /* ══ Premium Topbar ══ */
         .ds-topbar {
-          background: rgba(9,9,20,0.97);
+          background: rgba(14,19,32,0.97);
           backdrop-filter: blur(24px) saturate(180%);
           -webkit-backdrop-filter: blur(24px) saturate(180%);
           border-bottom: 1px solid rgba(255,255,255,0.06);
@@ -133,7 +133,7 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
           position: sticky; top: 0; z-index: 30;
           gap: 12px;
           /* Subtle shimmer line at very bottom */
-          box-shadow: 0 1px 0 rgba(74,44,109,0.08), 0 4px 20px rgba(0,0,0,0.25);
+          box-shadow: 0 1px 0 rgba(201,162,75,0.08), 0 4px 20px rgba(0,0,0,0.25);
         }
 
         /* Search bar */
@@ -146,9 +146,9 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
           transition: all 0.18s ease;
         }
         .ds-topbar-search:focus-within {
-          border-color: rgba(74,44,109,0.5);
-          background: rgba(74,44,109,0.06);
-          box-shadow: 0 0 0 3px rgba(74,44,109,0.12);
+          border-color: rgba(201,162,75,0.5);
+          background: rgba(201,162,75,0.06);
+          box-shadow: 0 0 0 3px rgba(201,162,75,0.12);
         }
         .ds-topbar-search input {
           background: none; border: none; outline: none;
@@ -168,14 +168,14 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
           flex-shrink: 0; color: rgba(255,255,255,0.45);
         }
         .ds-notif-btn:hover {
-          border-color: rgba(74,44,109,0.35);
-          background: rgba(74,44,109,0.1);
+          border-color: rgba(201,162,75,0.35);
+          background: rgba(201,162,75,0.1);
           color: rgba(255,255,255,0.75);
         }
         .ds-notif-dot {
           position: absolute; top: 7px; right: 7px;
           width: 6px; height: 6px; border-radius: 50%;
-          background: #EF4444; border: 1.5px solid #09090F;
+          background: #EF4444; border: 1.5px solid #141A2E;
           box-shadow: 0 0 6px rgba(239,68,68,0.7);
           animation: notifPulse 2s ease-in-out infinite;
         }
@@ -194,8 +194,8 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
           cursor: pointer; transition: all 0.18s; flex-shrink: 0;
         }
         .ds-avatar-chip:hover {
-          border-color: rgba(74,44,109,0.3);
-          background: rgba(74,44,109,0.07);
+          border-color: rgba(201,162,75,0.3);
+          background: rgba(201,162,75,0.07);
           transform: translateY(-1px);
           box-shadow: 0 4px 16px rgba(0,0,0,0.2);
         }
@@ -205,9 +205,9 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
           font-size: 9.5px; font-weight: 800; letter-spacing: 0.8px;
           text-transform: uppercase; padding: 3px 9px;
           border-radius: 99px; white-space: nowrap;
-          background: rgba(74,44,109,0.14);
+          background: rgba(201,162,75,0.12);
           color: #C9A24B;
-          border: 1px solid rgba(74,44,109,0.22);
+          border: 1px solid rgba(201,162,75,0.25);
         }
 
         /* Hamburger */
@@ -391,10 +391,10 @@ function PremiumTopBar({ onMenuClick, salonName, plan }: {
         <div className="ds-avatar-chip" onClick={onMenuClick}>
           <div style={{
             width: 26, height: 26, borderRadius: 8,
-            background: "linear-gradient(135deg,#4A2C6D,#2A1840)",
+            background: "linear-gradient(135deg,#1C2438,#0E1320)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 10, fontWeight: 800, color: "#fff", flexShrink: 0,
-            boxShadow: "0 2px 8px rgba(74,44,109,0.45)",
+            fontSize: 10, fontWeight: 800, color: "#C9A24B", flexShrink: 0,
+            boxShadow: "0 2px 8px rgba(201,162,75,0.25)",
           }}>{initials}</div>
           <span style={{
             fontSize: 12.5, fontWeight: 700, color: "#F1F5F9",
@@ -426,7 +426,7 @@ export function HamburgerBtn({ onClick }: { onClick?: () => void }) {
         display: "flex", flexDirection: "column", gap: 4,
         transition: "all 0.18s", alignItems: "center",
       }}
-      onMouseEnter={e => { e.currentTarget.style.background = "rgba(74,44,109,0.12)"; e.currentTarget.style.borderColor = "rgba(74,44,109,0.25)"; }}
+      onMouseEnter={e => { e.currentTarget.style.background = "rgba(201,162,75,0.12)"; e.currentTarget.style.borderColor = "rgba(201,162,75,0.25)"; }}
       onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; }}
     >
       <span style={{ display: "block", width: 16, height: 1.5, background: "rgba(255,255,255,0.55)", borderRadius: 2 }} />

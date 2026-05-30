@@ -158,7 +158,7 @@ export default function GalleryPage() {
           {[
             { label: "Total Photos", value: photos.length, color: "#EC4899" },
             { label: "Featured", value: photos.filter(p => p.is_featured).length, color: "#F59E0B" },
-            { label: "Categories", value: new Set(photos.map(p => p.category)).size, color: "#4A2C6D" },
+            { label: "Categories", value: new Set(photos.map(p => p.category)).size, color: "#C9A24B" },
             { label: "This Month", value: photos.filter(p => new Date(p.created_at).getMonth() === new Date().getMonth()).length, color: "#10B981" },
           ].map(s => (
             <div key={s.label} style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 16, padding: "18px 16px", position: "relative", overflow: "hidden" }}>

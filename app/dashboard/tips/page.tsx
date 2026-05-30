@@ -62,7 +62,7 @@ export default function TipsPage() {
     setForm({ client_name: "", amount: "", staff_id: "", method: "cash", note: "" });
   };
 
-  const methodColor: Record<string, string> = { cash: "#10B981", card: "#4A2C6D", online: "#F59E0B" };
+  const methodColor: Record<string, string> = { cash: "#10B981", card: "#C9A24B", online: "#F59E0B" };
 
   const Topbar = (
     <header style={{ background: "#fff", borderBottom: "1px solid #F1F5F9", padding: "0 24px", height: 66, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 30, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
@@ -86,7 +86,7 @@ export default function TipsPage() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, marginBottom: 24 }}>
           {[
             { label: "Total Tips", value: `£${totalTips.toFixed(2)}`, icon: "💸", color: "#10B981" },
-            { label: "This Month", value: `£${tips.filter(t => new Date(t.created_at).getMonth() === new Date().getMonth()).reduce((s,t) => s + t.amount, 0).toFixed(2)}`, icon: "📅", color: "#4A2C6D" },
+            { label: "This Month", value: `£${tips.filter(t => new Date(t.created_at).getMonth() === new Date().getMonth()).reduce((s,t) => s + t.amount, 0).toFixed(2)}`, icon: "📅", color: "#C9A24B" },
             { label: "Total Count", value: tips.length, icon: "🧾", color: "#F59E0B" },
           ].map(s => (
             <div key={s.label} style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 16, padding: "18px 20px", position: "relative", overflow: "hidden" }}>
@@ -142,7 +142,7 @@ export default function TipsPage() {
               {staffTips.length === 0 ? <div style={{ textAlign: "center", padding: "30px 0", color: "#94A3B8", fontSize: 13 }}>No data yet</div> :
                 staffTips.map((s, i) => {
                   const COLS = ["#F59E0B", "#94A3B8", "#CD7F32"];
-                  const col = COLS[i] || "#4A2C6D";
+                  const col = COLS[i] || "#C9A24B";
                   const initials = s.name.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase();
                   return (
                     <div key={s.name} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>

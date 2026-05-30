@@ -26,10 +26,10 @@ const STAFF_ICON_MAP: Record<string, LucideIcon> = {
 import { useSalon } from "../context/SalonContext";
 
 const NAV_BASE = [
-  { key: "home",     path: "/dashboard",          Icon: LayoutDashboard, activeColor: "#C9A24B", activeGlow: "rgba(201,162,75,0.4)",  activeBg: "linear-gradient(135deg,#4A2C6D,#2A1840)" },
+  { key: "home",     path: "/dashboard",          Icon: LayoutDashboard, activeColor: "#C9A24B", activeGlow: "rgba(201,162,75,0.4)",  activeBg: "linear-gradient(135deg,#C9A24B,#A07A30)" },
   { key: "bookings", path: "/dashboard/bookings", Icon: BookOpenCheck,   activeColor: "#60A5FA", activeGlow: "rgba(96,165,250,0.5)",   activeBg: "linear-gradient(135deg,#2563EB,#1E40AF)" },
   { key: "clients",  path: "/dashboard/clients",  Icon: Users,           activeColor: "#34D399", activeGlow: "rgba(52,211,153,0.5)",   activeBg: "linear-gradient(135deg,#059669,#10B981)" },
-  { key: "staff",    path: "/dashboard/staff",    Icon: Scissors,        activeColor: "#C9A24B", activeGlow: "rgba(201,162,75,0.4)",  activeBg: "linear-gradient(135deg,#4A2C6D,#2A1840)" },
+  { key: "staff",    path: "/dashboard/staff",    Icon: Scissors,        activeColor: "#C9A24B", activeGlow: "rgba(201,162,75,0.4)",  activeBg: "linear-gradient(135deg,#C9A24B,#A07A30)" },
   { key: "settings", path: "/dashboard/settings", Icon: Settings2,       activeColor: "#94A3B8", activeGlow: "rgba(148,163,184,0.4)", activeBg: "linear-gradient(135deg,#475569,#64748B)" },
 ];
 
@@ -53,7 +53,7 @@ export default function MobileNav() {
         @media (min-width: 768px) { .mobile-nav-bar { display: none !important; } }
 
         .mobile-nav-bar {
-          background: rgba(9,9,20,0.96);
+          background: rgba(14,19,32,0.96);
           backdrop-filter: blur(28px) saturate(180%);
           -webkit-backdrop-filter: blur(28px) saturate(180%);
           border-top: 1px solid rgba(255,255,255,0.07);

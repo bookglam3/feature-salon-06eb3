@@ -181,7 +181,7 @@ export default function Home() {
           <a href="#compare">vs Fresha</a>
           <a href="#pricing">Pricing</a>
           <Link href="/about">About</Link>
-          <Link href="/partner" style={{ color: "#6366F1", fontWeight: 600 }}>Become a Partner</Link>
+          <Link href="/partner" style={{ color: "#C9A24B", fontWeight: 600 }}>Become a Partner</Link>
           <Link href="/login">Login</Link>
           <Link href="/signup" className="btn-primary">Start free trial</Link>
         </div>
@@ -221,7 +221,7 @@ export default function Home() {
               <div className="mockup-body">
                 <div className="mock-stats">
                   {[
-                    { label:"Today's Bookings", val:"18", color:"#6366F1" },
+                    { label:"Today's Bookings", val:"18", color:"#C9A24B" },
                     { label:"Revenue",          val:"£1,240", color:"#10B981" },
                     { label:"No-Shows",         val:"0",      color:"#F59E0B" },
                   ].map(s => (
@@ -273,10 +273,10 @@ export default function Home() {
           {industries.map(({ Icon, name, desc }) => (
             <div key={name} className="feature-card feature-card-v2" style={{cursor:"default"}}>
               <div className="feature-icon-v2" style={{display:"flex",alignItems:"center",justifyContent:"center"}}>
-                <Icon size={28} strokeWidth={1.5} color="#6366F1" />
+                <Icon size={28} strokeWidth={1.5} color="#C9A24B" />
               </div>
               <h3 style={{fontSize:15,marginBottom:6}}>{name}</h3>
-              <p style={{fontSize:13,color:"#64748B",margin:0}}>{desc}</p>
+              <p style={{fontSize:13,color:"#aab1c4",margin:0}}>{desc}</p>
             </div>
           ))}
         </div>
@@ -317,7 +317,7 @@ export default function Home() {
               { Icon: BarChart3,      text:"Revenue reports updated in real-time" },
             ] as { Icon: LucideIcon; text: string }[]).map(({ Icon, text }) => (
               <div key={text} className="ps-solution-item">
-                <span className="ps-icon"><Icon size={18} strokeWidth={1.5} color="#6366F1" /></span>
+                <span className="ps-icon"><Icon size={18} strokeWidth={1.5} color="#C9A24B" /></span>
                 <span>{text}</span>
               </div>
             ))}
@@ -343,7 +343,7 @@ export default function Home() {
           ] as { Icon: LucideIcon; title: string; desc: string }[]).map(({ Icon, title, desc }) => (
             <div key={title} className="feature-card feature-card-v2">
               <div className="feature-icon-v2" style={{display:"flex",alignItems:"center",justifyContent:"center"}}>
-                <Icon size={28} strokeWidth={1.5} color="#6366F1" />
+                <Icon size={28} strokeWidth={1.5} color="#C9A24B" />
               </div>
               <h3>{title}</h3>
               <p>{desc}</p>
@@ -364,7 +364,7 @@ export default function Home() {
           ] as { num: string; Icon: LucideIcon; title: string; desc: string }[]).map(({ num, Icon, title, desc }) => (
             <div key={num} className="step step-v2">
               <div className="step-icon" style={{display:"flex",alignItems:"center",justifyContent:"center"}}>
-                <Icon size={24} strokeWidth={1.5} color="#6366F1" />
+                <Icon size={24} strokeWidth={1.5} color="#C9A24B" />
               </div>
               <div className="step-num">{num}</div>
               <h3>{title}</h3>
@@ -456,19 +456,19 @@ export default function Home() {
         <p className="section-sub">Feature is open to any UK health &amp; wellbeing business — wherever you are.</p>
         <div className="locations-grid">
           <Link href="/salons/london" className="location-card">
-            <div className="location-icon" style={{display:"flex",alignItems:"center",justifyContent:"center"}}><Building2 size={28} strokeWidth={1.5} color="#6366F1" /></div>
+            <div className="location-icon" style={{display:"flex",alignItems:"center",justifyContent:"center"}}><Building2 size={28} strokeWidth={1.5} color="#C9A24B" /></div>
             <h3>London</h3>
             <p>Salons, spas, gyms &amp; clinics in London</p>
             <span className="location-link">Explore →</span>
           </Link>
           <Link href="/salons/manchester" className="location-card">
-            <div className="location-icon" style={{display:"flex",alignItems:"center",justifyContent:"center"}}><Building2 size={28} strokeWidth={1.5} color="#6366F1" /></div>
+            <div className="location-icon" style={{display:"flex",alignItems:"center",justifyContent:"center"}}><Building2 size={28} strokeWidth={1.5} color="#C9A24B" /></div>
             <h3>Manchester</h3>
             <p>Salon software for Manchester businesses</p>
             <span className="location-link">Explore →</span>
           </Link>
           <Link href="/salons/birmingham" className="location-card">
-            <div className="location-icon" style={{display:"flex",alignItems:"center",justifyContent:"center"}}><Building2 size={28} strokeWidth={1.5} color="#6366F1" /></div>
+            <div className="location-icon" style={{display:"flex",alignItems:"center",justifyContent:"center"}}><Building2 size={28} strokeWidth={1.5} color="#C9A24B" /></div>
             <h3>Birmingham</h3>
             <p>Salon software for Birmingham businesses</p>
             <span className="location-link">Explore →</span>
