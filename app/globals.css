@@ -556,13 +556,19 @@ html, body { overflow-x: hidden; max-width: 100vw; }
   .landing .btn-glow            { box-shadow: none !important; }
   .mobile-sticky-cta            { box-shadow: none !important; }
 
-  /* ── (h) NUCLEAR: hide glow-orb animated blurs — these are the primary
-     source of banding. Each orb is an absolutely-positioned div with a
-     semi-transparent RGBA background + filter:blur(60px) + an infinite
-     opacity/scale animation. Android 8-bit GPU dithers every composited
-     frame into visible horizontal noise. Simply remove them on mobile.  ── */
+  /* ── (h) Hide glow-orb animated blurs ── */
   .landing .glow-orb,
   .landing [class*="glow-orb"]  { display: none !important; }
+
+  /* ── (i) Hero badge — replace low-alpha rgba with solid equivalent ── */
+  .landing .hero-badge {
+    background: #1e1606 !important;
+    border-color: #C9A24B !important;
+  }
+
+  /* ── (j) Comparison table badges — replace rgba check/cross with solid ── */
+  .landing .compare-check { background: #0a2a1e !important; }
+  .landing .compare-cross  { background: #2a0e0e !important; }
 }
 
 

@@ -310,10 +310,10 @@ export default function Home() {
             <div className="ps-solution-header">Feature fixes all of this</div>
             {([
               { Icon: Smartphone,     text:"Clients book online 24/7 — you never pick up the phone" },
-              { Icon: MessageCircle,  text:"Automated WhatsApp, SMS & email reminders to help reduce no-shows" },
+              { Icon: MessageCircle,  text:"Automated WhatsApp, SMS & email reminders to reduce no-shows" },
               { Icon: CalendarCheck,  text:"Smart calendar prevents double bookings" },
-              { Icon: CreditCard,     text:"Stripe payments collected at booking" },
-              { Icon: Zap,            text:"Automated SMS, email & WhatsApp reminders" },
+              { Icon: CreditCard,     text:"Stripe payments collected at booking — no chasing" },
+              { Icon: Zap,            text:"Win-back emails re-engage clients who haven't visited in 6 weeks" },
               { Icon: BarChart3,      text:"Revenue reports updated in real-time" },
             ] as { Icon: LucideIcon; text: string }[]).map(({ Icon, text }) => (
               <div key={text} className="ps-solution-item">
