@@ -546,12 +546,23 @@ html, body { overflow-x: hidden; max-width: 100vw; }
   .landing .compare-col-feature,
   .landing .compare-cell-feature{ background: #1E2840 !important; }
 
-  /* ── (f) Disable will-change across all landing elements ── */
-  .landing *                    { will-change: auto !important; }
+  /* ── (e2) Solid border on problem items — rgba border was also dithering ── */
+  .landing .ps-problem-item     { border-color: #3d1515 !important; }
+
+  /* ── (f) Disable will-change and strip ALL background-images on every element ── */
+  .landing *                    { will-change: auto !important; background-image: none !important; }
 
   /* ── (g) Remove glow box-shadow from CTA button and sticky bar ── */
   .landing .btn-glow            { box-shadow: none !important; }
   .mobile-sticky-cta            { box-shadow: none !important; }
+
+  /* ── (h) NUCLEAR: hide glow-orb animated blurs — these are the primary
+     source of banding. Each orb is an absolutely-positioned div with a
+     semi-transparent RGBA background + filter:blur(60px) + an infinite
+     opacity/scale animation. Android 8-bit GPU dithers every composited
+     frame into visible horizontal noise. Simply remove them on mobile.  ── */
+  .landing .glow-orb,
+  .landing [class*="glow-orb"]  { display: none !important; }
 }
 
 
@@ -1288,8 +1299,4 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .delay-2 { animation-delay: 0.10s; }
 .delay-3 { animation-delay: 0.15s; }
 
-/* ── DIAGNOSTIC TEST — REMOVE AFTER CONFIRMING ── */
-@media (max-width: 768px) {
-  html, body, .landing { background: #FF0000 !important; }
-}
 .delay-4 { animation-delay: 0.20s; }
