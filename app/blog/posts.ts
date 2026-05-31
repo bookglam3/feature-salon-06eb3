@@ -28,6 +28,20 @@ export const POSTS: BlogPost[] = [
   },
 
   {
+    slug: "salon-software-whatsapp-reminders",
+    title: "Salon Software with WhatsApp Reminders: Why It Matters (2026)",
+    metaTitle: "Salon Software with WhatsApp Reminders: Why It Matters (2026) | Feature",
+    metaDescription: "Email reminders are easy to miss. Learn why WhatsApp reminders are quietly becoming the most important feature in salon booking software — and how to use them well.",
+    keyword: "whatsapp reminders",
+    publishedDate: "2026-05-31",
+    updatedDate: "2026-05-31",
+    readingTime: 4,
+    author: "Feature Team",
+    excerpt: "Email reminders are standard — but most clients never open them. Here's why WhatsApp reminders have become the most effective way to cut no-shows, and what a good reminder rhythm looks like.",
+    sections: [],
+  },
+
+  {
     slug: "how-to-reduce-salon-no-shows",
     title: "How to Reduce No-Shows in Your Salon: A UK Owner's Guide (2026)",
     metaTitle: "How to Reduce No-Shows in Your Salon (2026) | Feature",
