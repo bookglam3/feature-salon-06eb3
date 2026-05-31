@@ -1287,4 +1287,9 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 .delay-1 { animation-delay: 0.05s; }
 .delay-2 { animation-delay: 0.10s; }
 .delay-3 { animation-delay: 0.15s; }
+
+/* ── DIAGNOSTIC TEST — REMOVE AFTER CONFIRMING ── */
+@media (max-width: 768px) {
+  html, body, .landing { background: #FF0000 !important; }
+}
 .delay-4 { animation-delay: 0.20s; }
