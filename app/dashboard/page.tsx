@@ -738,7 +738,7 @@ export default function DashboardPage() {
         staff={staff.length}
         bookingLink={`${origin}/book/${salon?.slug}`}
         salonSlug={salon?.slug || ""}
-        businessType={salon?.business_type}
+        businessType={salon?.business_type ?? undefined}
       />
 
     </DashboardShell>

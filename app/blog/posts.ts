@@ -14,6 +14,20 @@ export interface BlogPost {
 
 export const POSTS: BlogPost[] = [
   {
+    slug: "fresha-alternative-uk-2026",
+    title: "The Best Fresha Alternative for UK Salons & Clinics in 2026",
+    metaTitle: "Best Fresha Alternative for UK Salons & Clinics (2026) | Feature",
+    metaDescription: "Looking for a Fresha alternative with no commission? Compare Fresha, Booksy and Feature on real 2026 UK pricing — flat £29/month, WhatsApp reminders, zero commission.",
+    keyword: "fresha alternative 2026",
+    publishedDate: "2026-05-31",
+    updatedDate: "2026-05-31",
+    readingTime: 9,
+    author: "Feature Team",
+    excerpt: "An honest, up-to-date look at the real cost of the big booking platforms in 2026 — Fresha, Booksy, and Feature compared on subscription, commission, WhatsApp reminders, and the trade-offs that matter most to UK salon and clinic owners.",
+    sections: [],
+  },
+
+  {
     slug: "how-to-reduce-no-shows-salon",
     title: "How to Reduce No-Shows in Your Salon",
     metaTitle: "How to Reduce No-Shows in Your Salon | Feature Salon",

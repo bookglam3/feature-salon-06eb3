@@ -6,6 +6,7 @@ export interface Salon {
   owner_id: string;
   plan: string;
   created_at: string;
+  business_type?: string | null;
 }
 
 export interface Appointment {

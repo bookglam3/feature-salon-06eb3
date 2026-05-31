@@ -515,6 +515,7 @@ export default function Home() {
         <span className="nav-logo footer-logo">feature</span>
         <nav className="footer-links" aria-label="Footer navigation">
           <Link href="/pricing">Pricing</Link>
+          <Link href="/blog">Blog</Link>
           <Link href="/about">About</Link>
           <Link href="/partner">Become a Partner</Link>
           <Link href="/salons/london">London</Link>
