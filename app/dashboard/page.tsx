@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   CalendarPlus, Tag, UserPlus, Scissors, BarChart3, Settings2,
@@ -25,10 +25,10 @@ type StaffItem = { id: string; name: string };
 const TIME_SLOTS = ["08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00"];
 
 const PLAN_FEATURES: Record<string, { color: string; bg: string; border: string; badge: string; features: string[]; limit: string }> = {
-  Starter: { color: "#64748B", bg: "#F8FAFC", border: "#E2E8F0", badge: "STARTER", features: ["Up to 50 bookings/mo", "1 staff member", "Basic analytics", "Email notifications", "Public booking page"], limit: "50 bookings/month" },
-  Professional: { color: "#C9A24B", bg: "#EEF2FF", border: "#C7D2FE", badge: "PROFESSIONAL", features: ["Unlimited bookings", "Up to 5 staff", "Advanced analytics", "SMS + Email", "Custom offers", "Priority support"], limit: "Unlimited bookings" },
-  Growth: { color: "#10B981", bg: "#ECFDF5", border: "#A7F3D0", badge: "GROWTH", features: ["Unlimited bookings", "Up to 15 staff", "Revenue reports", "SMS + Email + WhatsApp", "Staff performance", "API access"], limit: "Unlimited bookings" },
-  Enterprise: { color: "#F59E0B", bg: "#FFFBEB", border: "#FDE68A", badge: "ENTERPRISE", features: ["Unlimited everything", "Unlimited staff", "White-label option", "Dedicated support", "Custom integrations", "SLA 99.9%"], limit: "Unlimited everything" },
+  Starter: { color: "#aab1c4", bg: "#1C2438", border: "#2a3350", badge: "STARTER", features: ["Up to 50 bookings/mo", "1 staff member", "Basic analytics", "Email notifications", "Public booking page"], limit: "50 bookings/month" },
+  Professional: { color: "#C9A24B", bg: "rgba(201,162,75,0.10)", border: "rgba(201,162,75,0.25)", badge: "PROFESSIONAL", features: ["Unlimited bookings", "Up to 5 staff", "Advanced analytics", "SMS + Email", "Custom offers", "Priority support"], limit: "Unlimited bookings" },
+  Growth: { color: "#10B981", bg: "rgba(16,185,129,0.10)", border: "rgba(16,185,129,0.25)", badge: "GROWTH", features: ["Unlimited bookings", "Up to 15 staff", "Revenue reports", "SMS + Email + WhatsApp", "Staff performance", "API access"], limit: "Unlimited bookings" },
+  Enterprise: { color: "#F59E0B", bg: "rgba(245,158,11,0.10)", border: "rgba(245,158,11,0.25)", badge: "ENTERPRISE", features: ["Unlimited everything", "Unlimited staff", "White-label option", "Dedicated support", "Custom integrations", "SLA 99.9%"], limit: "Unlimited everything" },
 };
 
 interface SalonExtended {
@@ -88,7 +88,7 @@ function MiniStat({ label, value, color, lucideIcon, sub }: { label: string; val
           {lucideIcon}
         </div>
       </div>
-      <div style={{ fontSize: 30, fontWeight: 900, color: "#F1F5F9", letterSpacing: "-1.5px", lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: 30, fontWeight: 900, color: "#F7F5EF", letterSpacing: "-1.5px", lineHeight: 1 }}>{value}</div>
       {sub && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.28)", marginTop: 7, fontWeight: 500 }}>{sub}</div>}
     </div>
   );
@@ -102,7 +102,7 @@ function SearchBar({ value, onChange, placeholder }: { value: string; onChange: 
       onBlurCapture={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.08)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "none"; (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)"; }}
     >
       <Search size={13} strokeWidth={2} color="rgba(255,255,255,0.22)" />
-      <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder || "Search..."} style={{ background: "none", border: "none", outline: "none", fontSize: 13, color: "#F1F5F9", fontFamily: "inherit", width: "100%" }} />
+      <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder || "Search..."} style={{ background: "none", border: "none", outline: "none", fontSize: 13, color: "#F7F5EF", fontFamily: "inherit", width: "100%" }} />
       {value && <button onClick={() => onChange("")} style={{ background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.3)", fontSize: 16, padding: 0, lineHeight: 1 }}>×</button>}
     </div>
   );
@@ -332,12 +332,12 @@ export default function DashboardPage() {
   }, [trialEnd]);
 
   const SUB_STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
-    trial: { label: "Free Trial", color: "#C9A24B", bg: "#EEF2FF" },
-    trialing: { label: "Trial", color: "#E7C878", bg: "#F5F3FF" },
-    active: { label: "Active", color: "#059669", bg: "#D1FAE5" },
-    past_due: { label: "Past Due", color: "#D97706", bg: "#FEF3C7" },
-    cancelled: { label: "Cancelled", color: "#DC2626", bg: "#FEE2E2" },
-    unpaid: { label: "Unpaid", color: "#DC2626", bg: "#FEE2E2" },
+    trial: { label: "Free Trial", color: "#C9A24B", bg: "rgba(201,162,75,0.12)" },
+    trialing: { label: "Trial", color: "#E7C878", bg: "rgba(201,162,75,0.08)" },
+    active: { label: "Active", color: "#10B981", bg: "rgba(16,185,129,0.12)" },
+    past_due: { label: "Past Due", color: "#F59E0B", bg: "rgba(245,158,11,0.12)" },
+    cancelled: { label: "Cancelled", color: "#DC2626", bg: "rgba(239,68,68,0.12)" },
+    unpaid: { label: "Unpaid", color: "#DC2626", bg: "rgba(239,68,68,0.12)" },
   };
   const statusBadge = SUB_STATUS_MAP[subStatus] || SUB_STATUS_MAP.trial;
   const PLAN_PRICE: Record<string, string> = { starter: "£29", pro: "£59", business: "£99" };
@@ -352,7 +352,7 @@ export default function DashboardPage() {
 
   /* ── Loading ── */
   if (loading) return (
-    <DashboardShell salonName="" topbar={<header style={{ background: "#fff", borderBottom: "1px solid #F1F5F9", height: 58, display: "flex", alignItems: "center", padding: "0 20px", gap: 14 }}><div style={{ width: 36, height: 12, borderRadius: 6 }} className="skeleton" /><div style={{ width: 140, height: 12, borderRadius: 6 }} className="skeleton" /></header>}>
+    <DashboardShell salonName="" topbar={<header style={{ background: "#1C2438", borderBottom: "1px solid #2a3350", height: 58, display: "flex", alignItems: "center", padding: "0 20px", gap: 14 }}><div style={{ width: 36, height: 12, borderRadius: 6 }} className="skeleton" /><div style={{ width: 140, height: 12, borderRadius: 6 }} className="skeleton" /></header>}>
       <SkeletonDashboard />
     </DashboardShell>
   );
@@ -363,7 +363,7 @@ export default function DashboardPage() {
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <HamburgerBtn />
         <div>
-          <div style={{ fontSize: 14.5, fontWeight: 800, color: "#F1F5F9", letterSpacing: "-0.4px" }}>{greeting}, {salon?.name?.split(" ")[0]}</div>
+          <div style={{ fontSize: 14.5, fontWeight: 800, color: "#F7F5EF", letterSpacing: "-0.4px" }}>{greeting}, {salon?.name?.split(" ")[0]}</div>
           <div className="dash-greeting-date" style={{ fontSize: 11.5, color: "rgba(255,255,255,0.3)", marginTop: 1 }}>{new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</div>
         </div>
       </div>
@@ -459,7 +459,7 @@ export default function DashboardPage() {
               {/* All Appointments Table */}
               <div style={{ background: "#100F1C", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.3)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 22px", borderBottom: "1px solid rgba(255,255,255,0.07)", flexWrap: "wrap", gap: 12 }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: "#F1F5F9" }}>All {vc.bookingPlural}</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "#F7F5EF" }}>All {vc.bookingPlural}</div>
                   <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
                     <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder={`Search ${vc.clientSingular.toLowerCase()}, service...`} />
                     <div style={{ display: "flex", gap: 2, background: "rgba(255,255,255,0.05)", padding: 3, borderRadius: 10 }}>
@@ -493,7 +493,7 @@ export default function DashboardPage() {
                               onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = "transparent"; }}
                             >
                               <td style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}><StatusPill status={a.status} /></td>
-                              <td style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", fontSize: 13.5, fontWeight: 800, color: "#F1F5F9" }}>{a.client_name}</td>
+                              <td style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", fontSize: 13.5, fontWeight: 800, color: "#F7F5EF" }}>{a.client_name}</td>
                               <td style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", fontSize: 13, color: "rgba(255,255,255,0.5)" }}>{a.services?.name || "—"}</td>
                               <td style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", fontSize: 13, color: "rgba(255,255,255,0.35)" }}>{a.staff?.name || "—"}</td>
                               <td style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)", fontSize: 12.5, color: "rgba(255,255,255,0.45)", whiteSpace: "nowrap" }}>{new Date(a.date_time).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</td>
@@ -525,7 +525,7 @@ export default function DashboardPage() {
                               <td colSpan={7} style={{ padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
                                   <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ fontSize: 14, fontWeight: 800, color: "#F1F5F9", marginBottom: 2 }}>{a.client_name}</div>
+                                    <div style={{ fontSize: 14, fontWeight: 800, color: "#F7F5EF", marginBottom: 2 }}>{a.client_name}</div>
                                     <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>{a.services?.name || "No service"}{a.staff?.name ? ` · ${a.staff.name}` : ""}</div>
                                     <div style={{ fontSize: 12, color: "rgba(255,255,255,0.28)", marginTop: 2 }}>{new Date(a.date_time).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}{a.services?.price ? ` · £${a.services.price}` : ""}</div>
                                   </div>
@@ -557,7 +557,7 @@ export default function DashboardPage() {
 
               {/* Revenue Chart */}
               <div style={{ background: "#100F1C", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, overflow: "hidden", padding: "18px 22px", boxShadow: "0 4px 24px rgba(0,0,0,0.3)" }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: "#F1F5F9", marginBottom: 4 }}>This Week&apos;s Revenue</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: "#F7F5EF", marginBottom: 4 }}>This Week&apos;s Revenue</div>
                 <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginBottom: 4 }}>Daily breakdown (confirmed)</div>
                 <RevenueMiniChart appointments={appointments} />
               </div>
@@ -569,25 +569,25 @@ export default function DashboardPage() {
                     <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "1.5px", color: "rgba(255,255,255,0.35)", textTransform: "uppercase" }}>Current Plan</div>
                     <div style={{ padding: "4px 12px", borderRadius: 99, background: "rgba(201,162,75,0.2)", color: "#C9A24B", fontSize: 10, fontWeight: 900, letterSpacing: "0.8px", border: "1px solid rgba(201,162,75,0.3)" }}>{statusBadge.label}</div>
                   </div>
-                  <div style={{ fontSize: 22, fontWeight: 900, color: "#F1F5F9", letterSpacing: "-0.5px", textTransform: "capitalize" }}>{subPlan} Plan</div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: "#F7F5EF", letterSpacing: "-0.5px", textTransform: "capitalize" }}>{subPlan} Plan</div>
                   <div style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", marginTop: 4 }}>{PLAN_PRICE[subPlan] || "£29"}/month</div>
                 </div>
                 <div style={{ padding: "16px 20px" }}>
                   {(subStatus === "trial" || subStatus === "trialing") && (
-                    <div style={{ background: trialDaysLeft <= 3 ? "#FEF2F2" : "#EEF2FF", border: `1.5px solid ${trialDaysLeft <= 3 ? "#FECACA" : "#C7D2FE"}`, borderRadius: 12, padding: "11px 16px", marginBottom: 14 }}>
-                      <div style={{ fontSize: 12.5, fontWeight: 800, color: trialDaysLeft <= 3 ? "#DC2626" : "#4F46E5" }}>
+                    <div style={{ background: trialDaysLeft <= 3 ? "rgba(239,68,68,0.10)" : "rgba(201,162,75,0.10)", border: `1.5px solid ${trialDaysLeft <= 3 ? "rgba(239,68,68,0.25)" : "rgba(201,162,75,0.25)"}`, borderRadius: 12, padding: "11px 16px", marginBottom: 14 }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 800, color: trialDaysLeft <= 3 ? "#EF4444" : "#C9A24B" }}>
                         {trialDaysLeft === 0 ? "⚠️ Trial ended — subscribe to continue" : `🎁 ${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left in free trial`}
                       </div>
                     </div>
                   )}
                   {subStatus === "active" && periodEnd && (
-                    <div style={{ background: "#ECFDF5", border: "1.5px solid #A7F3D0", borderRadius: 12, padding: "11px 16px", marginBottom: 14 }}>
-                      <div style={{ fontSize: 12.5, fontWeight: 800, color: "#059669" }}>✅ Next billing: {new Date(periodEnd).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</div>
+                    <div style={{ background: "rgba(16,185,129,0.10)", border: "1.5px solid rgba(16,185,129,0.25)", borderRadius: 12, padding: "11px 16px", marginBottom: 14 }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 800, color: "#10B981" }}>✅ Next billing: {new Date(periodEnd).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</div>
                     </div>
                   )}
                   {subStatus === "past_due" && (
-                    <div style={{ background: "#FEF3C7", border: "1.5px solid #FDE68A", borderRadius: 12, padding: "11px 16px", marginBottom: 14 }}>
-                      <div style={{ fontSize: 12.5, fontWeight: 800, color: "#D97706" }}>⚠️ Payment failed — update your card</div>
+                    <div style={{ background: "rgba(245,158,11,0.10)", border: "1.5px solid rgba(245,158,11,0.25)", borderRadius: 12, padding: "11px 16px", marginBottom: 14 }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 800, color: "#F59E0B" }}>⚠️ Payment failed — update your card</div>
                     </div>
                   )}
                   <button onClick={handleManageSub}
@@ -597,7 +597,7 @@ export default function DashboardPage() {
                   >
                     {subStatus === "active" || subStatus === "trialing" ? "Manage Subscription →" : hasCustId ? "Reactivate / Upgrade →" : "Choose a Plan →"}
                   </button>
-                  {subStatus !== "active" && <div style={{ textAlign: "center", fontSize: 11.5, color: "#94A3B8", marginTop: 10 }}>Plans from £29/month · Cancel anytime</div>}
+                  {subStatus !== "active" && <div style={{ textAlign: "center", fontSize: 11.5, color: "#aab1c4", marginTop: 10 }}>Plans from £29/month · Cancel anytime</div>}
                 </div>
               </div>
 
@@ -605,7 +605,7 @@ export default function DashboardPage() {
               <div style={{ background: "#100F1C", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.3)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
                   <div>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: "#F1F5F9" }}>Special Offers</div>
+                    <div style={{ fontSize: 15, fontWeight: 800, color: "#F7F5EF" }}>Special Offers</div>
                     <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>{offers.length} active offer{offers.length !== 1 ? "s" : ""}</div>
                   </div>
                   <button onClick={() => setShowOfferModal(true)}
@@ -628,11 +628,11 @@ export default function DashboardPage() {
                           onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.background = "rgba(255,255,255,0.02)"; }}
                         >
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-                            <div style={{ fontSize: 13.5, fontWeight: 800, color: "#F1F5F9", lineHeight: 1.3 }}>{offer.title}</div>
+                            <div style={{ fontSize: 13.5, fontWeight: 800, color: "#F7F5EF", lineHeight: 1.3 }}>{offer.title}</div>
                             <label style={{ position: "relative", width: 32, height: 18, cursor: "pointer", flexShrink: 0, marginTop: 2 }}>
                               <input type="checkbox" checked={offer.active} onChange={() => handleToggleOffer(offer.id, offer.active)} style={{ opacity: 0, width: 0, height: 0 }} />
-                              <span style={{ position: "absolute", inset: 0, background: offer.active ? "#10B981" : "#CBD5E1", borderRadius: 99, transition: "background 0.18s" }}>
-                                <span style={{ position: "absolute", width: 12, height: 12, left: offer.active ? 17 : 3, top: 3, background: "#fff", borderRadius: "50%", transition: "left 0.18s", boxShadow: "0 1px 3px rgba(0,0,0,0.15)" }} />
+                              <span style={{ position: "absolute", inset: 0, background: offer.active ? "#10B981" : "#aab1c4", borderRadius: 99, transition: "background 0.18s" }}>
+                                <span style={{ position: "absolute", width: 12, height: 12, left: offer.active ? 17 : 3, top: 3, background: "#1C2438", borderRadius: "50%", transition: "left 0.18s", boxShadow: "0 1px 3px rgba(0,0,0,0.15)" }} />
                               </span>
                             </label>
                           </div>
@@ -657,7 +657,7 @@ export default function DashboardPage() {
               {/* Team Overview */}
               <div style={{ background: "#100F1C", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, overflow: "hidden", boxShadow: "0 4px 24px rgba(0,0,0,0.3)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: "#F1F5F9" }}>{vc.staffPlural} Overview</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "#F7F5EF" }}>{vc.staffPlural} Overview</div>
                   <a href="/dashboard/staff" style={{ fontSize: 12.5, fontWeight: 700, color: "#C9A24B", textDecoration: "none", padding: "6px 14px", background: "rgba(201,162,75,0.12)", borderRadius: 8, border: "1px solid rgba(201,162,75,0.2)" }}>Manage →</a>
                 </div>
                 {staff.length === 0 ? (
@@ -677,14 +677,14 @@ export default function DashboardPage() {
                         >
                           <div style={{ width: 38, height: 38, borderRadius: 12, background: bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: "#fff", flexShrink: 0, boxShadow: `0 4px 10px ${bg}55` }}>{initials}</div>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 13.5, fontWeight: 800, color: "#F1F5F9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</div>
+                            <div style={{ fontSize: 13.5, fontWeight: 800, color: "#F7F5EF", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</div>
                             <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.3)" }}>{staffAppts.length} confirmed {staffAppts.length !== 1 ? vc.bookingPlural.toLowerCase() : vc.bookingSingular.toLowerCase()}</div>
                           </div>
                           <div style={{ fontSize: 11, fontWeight: 800, padding: "3px 10px", borderRadius: 99, background: "rgba(16,185,129,0.12)", color: "#34D399", border: "1px solid rgba(16,185,129,0.25)", flexShrink: 0 }}>Active</div>
                         </div>
                       );
                     })}
-                    {staff.length > 5 && <div style={{ fontSize: 12, color: "#94A3B8", textAlign: "center", padding: "6px 0" }}>+{staff.length - 5} more {vc.staffPlural.toLowerCase()}</div>}
+                    {staff.length > 5 && <div style={{ fontSize: 12, color: "#aab1c4", textAlign: "center", padding: "6px 0" }}>+{staff.length - 5} more {vc.staffPlural.toLowerCase()}</div>}
                   </div>
                 )}
               </div>
@@ -708,7 +708,7 @@ export default function DashboardPage() {
       {/* ── Add Offer Modal ───────────────────────────────────────── */}
       <Modal open={showOfferModal} onClose={() => setShowOfferModal(false)} title="Add Special Offer">
         <FormGroup label="Offer Title *"><Input placeholder="e.g. Summer Special" value={offerForm.title} onChange={e => setOfferForm({ ...offerForm, title: e.target.value })} /></FormGroup>
-        <FormGroup label="Description"><textarea placeholder="Describe your offer..." value={offerForm.description} onChange={e => setOfferForm({ ...offerForm, description: e.target.value })} rows={2} style={{ width: "100%", padding: "10px 13px", border: "1.5px solid #E2E8F0", borderRadius: 10, fontSize: 14, resize: "vertical", fontFamily: "inherit", outline: "none" }} /></FormGroup>
+        <FormGroup label="Description"><textarea placeholder="Describe your offer..." value={offerForm.description} onChange={e => setOfferForm({ ...offerForm, description: e.target.value })} rows={2} style={{ width: "100%", padding: "10px 13px", border: "1.5px solid #2a3350", borderRadius: 10, fontSize: 14, resize: "vertical", fontFamily: "inherit", outline: "none" }} /></FormGroup>
         <FormGroup label="Discount">
           <div style={{ display: "flex", gap: 8 }}>
             <Select value={offerForm.discount_type} onChange={e => setOfferForm({ ...offerForm, discount_type: e.target.value })} style={{ flex: "0 0 150px" }}><option value="percentage">Percentage (%)</option><option value="fixed">Fixed (£)</option></Select>
@@ -716,15 +716,15 @@ export default function DashboardPage() {
           </div>
         </FormGroup>
         <FormGroup label="Valid Until (optional)"><Input type="date" value={offerForm.valid_until} onChange={e => setOfferForm({ ...offerForm, valid_until: e.target.value })} /></FormGroup>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", background: "#F8FAFC", borderRadius: 12, border: "1.5px solid #E2E8F0", marginBottom: 4 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", background: "#141A2E", borderRadius: 12, border: "1.5px solid #2a3350", marginBottom: 4 }}>
           <div>
-            <div style={{ fontSize: 13.5, fontWeight: 700, color: "#0F172A" }}>Publish on booking page</div>
-            <div style={{ fontSize: 11.5, color: "#94A3B8", marginTop: 2 }}>Clients see this immediately</div>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: "#F7F5EF" }}>Publish on booking page</div>
+            <div style={{ fontSize: 11.5, color: "#aab1c4", marginTop: 2 }}>Clients see this immediately</div>
           </div>
           <label style={{ position: "relative", width: 34, height: 18, cursor: "pointer" }}>
             <input type="checkbox" checked={offerForm.active} onChange={e => setOfferForm({ ...offerForm, active: e.target.checked })} style={{ opacity: 0, width: 0, height: 0 }} />
-            <span style={{ position: "absolute", inset: 0, background: offerForm.active ? "#10B981" : "#CBD5E1", borderRadius: 99, transition: "background 0.18s" }}>
-              <span style={{ position: "absolute", width: 12, height: 12, left: offerForm.active ? 19 : 3, top: 3, background: "#fff", borderRadius: "50%", transition: "left 0.18s", boxShadow: "0 1px 3px rgba(0,0,0,0.15)" }} />
+            <span style={{ position: "absolute", inset: 0, background: offerForm.active ? "#10B981" : "#aab1c4", borderRadius: 99, transition: "background 0.18s" }}>
+              <span style={{ position: "absolute", width: 12, height: 12, left: offerForm.active ? 19 : 3, top: 3, background: "#1C2438", borderRadius: "50%", transition: "left 0.18s", boxShadow: "0 1px 3px rgba(0,0,0,0.15)" }} />
             </span>
           </label>
         </div>
@@ -738,6 +738,7 @@ export default function DashboardPage() {
         staff={staff.length}
         bookingLink={`${origin}/book/${salon?.slug}`}
         salonSlug={salon?.slug || ""}
+        businessType={salon?.business_type}
       />
 
     </DashboardShell>

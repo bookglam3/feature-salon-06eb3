@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
@@ -19,13 +19,21 @@ interface BroadcastMsg {
   created_at: string;
 }
 
-const TEMPLATES = [
-  { label: "🎉 Special Offer", message: "Hi {name}! 🌟 We have a special offer just for you at {salon}. Book this week and get 20% off any service. Book now: {link}" },
-  { label: "🎂 Birthday Wish", message: "Happy Birthday {name}! 🎂 As our valued client, enjoy a FREE birthday treatment this month at {salon}. Call us to book!" },
-  { label: "📅 Appointment Reminder", message: "Hi {name}, just a reminder that {salon} is open and ready to serve you. Book your next appointment: {link}" },
-  { label: "⭐ Review Request", message: "Hi {name}! Thank you for visiting {salon}. We'd love to hear your feedback. Please leave us a review: {link}" },
-  { label: "🎁 Loyalty Reward", message: "Hi {name}! 🎁 You've earned enough loyalty points for a free reward at {salon}. Come in and claim it today!" },
-];
+function getTemplates(bt?: string) {
+  const bookWord = ["gym","yoga","pt"].includes(bt ?? "") ? "session"
+    : ["dental","physio"].includes(bt ?? "") ? "appointment"
+    : "appointment";
+  const visitWord = ["gym","yoga","pt"].includes(bt ?? "") ? "session"
+    : ["spa","massage"].includes(bt ?? "") ? "treatment"
+    : "visit";
+  return [
+    { label: "🎉 Special Offer",       message: `Hi {name}! 🌟 We have a special offer just for you at {salon}. Book this week and get 20% off. Book now: {link}` },
+    { label: "🎂 Birthday Wish",       message: `Happy Birthday {name}! 🎂 As our valued client, enjoy a FREE birthday ${visitWord} this month at {salon}. Get in touch to book!` },
+    { label: "📅 Booking Reminder",    message: `Hi {name}, just a reminder that {salon} is open and ready for you. Book your next ${bookWord}: {link}` },
+    { label: "⭐ Review Request",      message: `Hi {name}! Thank you for visiting {salon}. We'd love to hear your feedback. Please leave us a review: {link}` },
+    { label: "🎁 Loyalty Reward",      message: `Hi {name}! 🎁 You've earned enough loyalty points for a free reward at {salon}. Come in and claim it today!` },
+  ];
+}
 
 function BroadcastContent() {
   const router = useRouter();
@@ -38,6 +46,7 @@ function BroadcastContent() {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ title: "", message: "", channel: "whatsapp" as "whatsapp"|"sms"|"email", filter: "all" as "all"|"vip"|"new"|"inactive" });
   const [sending, setSending] = useState(false);
+  const [businessType, setBusinessType] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     const load = async () => {
@@ -46,6 +55,7 @@ function BroadcastContent() {
       setSalonId(profile.salon.id);
       setSalonName(profile.salon.name);
       setSalonSlug(profile.salon.slug || "");
+      setBusinessType(profile.salon.business_type ?? undefined);
 
       const [{ data: hist }, { data: appts }] = await Promise.all([
         supabase.from("broadcast_messages").select("*").eq("salon_id", profile.salon.id).order("created_at", { ascending: false }),
@@ -74,7 +84,7 @@ function BroadcastContent() {
 
   const recipientCount = filteredClients.length;
 
-  const applyTemplate = (t: typeof TEMPLATES[0]) => {
+  const applyTemplate = (t: ReturnType<typeof getTemplates>[0]) => {
     const msg = t.message
       .replace(/{salon}/g, salonName)
       .replace(/{link}/g, `${typeof window !== "undefined" ? window.location.origin : ""}/book/${salonSlug}`);
@@ -140,18 +150,18 @@ function BroadcastContent() {
   const channelColor = { whatsapp: "#25D366", sms: "#C9A24B", email: "#F59E0B" };
 
   const Topbar = (
-    <header style={{ background: "#fff", borderBottom: "1px solid #F1F5F9", padding: "0 24px", height: 66, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 30, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+    <header style={{ background: "#1C2438", borderBottom: "1px solid #2a3350", padding: "0 24px", height: 66, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 30, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <HamburgerBtn onClick={() => {}} />
         <div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: "#0F172A" }}>📢 Broadcast Messages</div>
-          <div style={{ fontSize: 11.5, color: "#94A3B8", marginTop: 1 }}>Send bulk messages to all clients</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "#F7F5EF" }}>📢 Broadcast Messages</div>
+          <div style={{ fontSize: 11.5, color: "#aab1c4", marginTop: 1 }}>Send bulk messages to all clients</div>
         </div>
       </div>
     </header>
   );
 
-  if (loading) return <DashboardShell salonName={salonName} topbar={Topbar}><div style={{ padding: 40, textAlign: "center", color: "#94A3B8" }}>Loading…</div></DashboardShell>;
+  if (loading) return <DashboardShell salonName={salonName} topbar={Topbar}><div style={{ padding: 40, textAlign: "center", color: "#aab1c4" }}>Loading…</div></DashboardShell>;
 
   return (
     <DashboardShell salonName={salonName} topbar={Topbar}>
@@ -159,55 +169,55 @@ function BroadcastContent() {
 
         {/* Compose */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, padding: "22px 24px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
-            <div style={{ fontSize: 15, fontWeight: 800, color: "#0F172A", marginBottom: 20 }}>✍️ Compose Message</div>
+          <div style={{ background: "#1C2438", border: "1.5px solid #2a3350", borderRadius: 20, padding: "22px 24px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#F7F5EF", marginBottom: 20 }}>✍️ Compose Message</div>
 
             {/* Channel selector */}
             <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 12, fontWeight: 700, color: "#475569", display: "block", marginBottom: 8 }}>Channel</label>
+              <label style={{ fontSize: 12, fontWeight: 700, color: "#aab1c4", display: "block", marginBottom: 8 }}>Channel</label>
               <div style={{ display: "flex", gap: 10 }}>
                 {(["whatsapp", "sms", "email"] as const).map(ch => (
                   <button key={ch} onClick={() => setForm(f => ({ ...f, channel: ch }))}
-                    style={{ flex: 1, padding: "10px 4px", borderRadius: 12, border: `2px solid ${form.channel === ch ? channelColor[ch] : "#E2E8F0"}`, background: form.channel === ch ? `${channelColor[ch]}12` : "#fff", cursor: "pointer", transition: "all 0.12s", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                    style={{ flex: 1, padding: "10px 4px", borderRadius: 12, border: `2px solid ${form.channel === ch ? channelColor[ch] : "#2a3350"}`, background: form.channel === ch ? `${channelColor[ch]}12` : "#1C2438", cursor: "pointer", transition: "all 0.12s", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                     <span style={{ fontSize: 22 }}>{channelIcon[ch]}</span>
-                    <span style={{ fontSize: 11.5, fontWeight: 800, color: form.channel === ch ? channelColor[ch] : "#64748B", textTransform: "capitalize" }}>{ch}</span>
+                    <span style={{ fontSize: 11.5, fontWeight: 800, color: form.channel === ch ? channelColor[ch] : "#aab1c4", textTransform: "capitalize" }}>{ch}</span>
                   </button>
                 ))}
               </div>
             </div>
 
             {/* Audience */}
-            <div style={{ marginBottom: 16, padding: "12px 16px", background: "#F8FAFC", borderRadius: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ marginBottom: 16, padding: "12px 16px", background: "#141A2E", borderRadius: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <div style={{ fontSize: 12.5, fontWeight: 700, color: "#0F172A" }}>Recipients</div>
-                <div style={{ fontSize: 11.5, color: "#94A3B8" }}>All {recipientCount} clients</div>
+                <div style={{ fontSize: 12.5, fontWeight: 700, color: "#F7F5EF" }}>Recipients</div>
+                <div style={{ fontSize: 11.5, color: "#aab1c4" }}>All {recipientCount} clients</div>
               </div>
               <div style={{ fontSize: 22, fontWeight: 900, color: "#C9A24B" }}>{recipientCount}</div>
             </div>
 
             {/* Title */}
             <div style={{ marginBottom: 14 }}>
-              <label style={{ fontSize: 12, fontWeight: 700, color: "#475569", display: "block", marginBottom: 6 }}>Campaign Title *</label>
+              <label style={{ fontSize: 12, fontWeight: 700, color: "#aab1c4", display: "block", marginBottom: 6 }}>Campaign Title *</label>
               <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Summer Discount Campaign"
-                style={{ width: "100%", padding: "10px 13px", border: "1.5px solid #E2E8F0", borderRadius: 10, fontSize: 14, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
+                style={{ width: "100%", padding: "10px 13px", border: "1.5px solid #2a3350", borderRadius: 10, fontSize: 14, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
             </div>
 
             {/* Message */}
             <div style={{ marginBottom: 14 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                <label style={{ fontSize: 12, fontWeight: 700, color: "#475569" }}>Message *</label>
-                <span style={{ fontSize: 11, color: "#94A3B8" }}>{form.message.length} chars</span>
+                <label style={{ fontSize: 12, fontWeight: 700, color: "#aab1c4" }}>Message *</label>
+                <span style={{ fontSize: 11, color: "#aab1c4" }}>{form.message.length} chars</span>
               </div>
               <textarea value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} placeholder="Type your message… Use {name} for client name, {salon} for salon name" rows={5}
-                style={{ width: "100%", padding: "10px 13px", border: "1.5px solid #E2E8F0", borderRadius: 10, fontSize: 13.5, fontFamily: "inherit", outline: "none", resize: "vertical", boxSizing: "border-box", lineHeight: 1.6 }} />
-              <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 4 }}>Variables: {"{"}<b>name</b>{"}"}, {"{"}<b>salon</b>{"}"}, {"{"}<b>link</b>{"}"}</div>
+                style={{ width: "100%", padding: "10px 13px", border: "1.5px solid #2a3350", borderRadius: 10, fontSize: 13.5, fontFamily: "inherit", outline: "none", resize: "vertical", boxSizing: "border-box", lineHeight: 1.6 }} />
+              <div style={{ fontSize: 11, color: "#aab1c4", marginTop: 4 }}>Variables: {"{"}<b>name</b>{"}"}, {"{"}<b>salon</b>{"}"}, {"{"}<b>link</b>{"}"}</div>
             </div>
 
             {/* Preview */}
             {form.message && (
-              <div style={{ marginBottom: 16, padding: "14px 16px", background: "#F8FAFC", borderRadius: 12, border: "1.5px solid #E2E8F0" }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#94A3B8", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.5px" }}>Preview (for &quot;Sarah&quot;)</div>
-                <div style={{ fontSize: 13.5, color: "#334155", lineHeight: 1.7 }}>
+              <div style={{ marginBottom: 16, padding: "14px 16px", background: "#141A2E", borderRadius: 12, border: "1.5px solid #2a3350" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#aab1c4", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.5px" }}>Preview (for &quot;Sarah&quot;)</div>
+                <div style={{ fontSize: 13.5, color: "#aab1c4", lineHeight: 1.7 }}>
                   {form.message.replace(/{name}/g, "Sarah").replace(/{salon}/g, salonName).replace(/{link}/g, "featuresalon.com/book")}
                 </div>
               </div>
@@ -223,14 +233,14 @@ function BroadcastContent() {
         {/* Right column */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {/* Templates */}
-          <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, padding: "20px 20px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: "#0F172A", marginBottom: 14 }}>⚡ Quick Templates</div>
+          <div style={{ background: "#1C2438", border: "1.5px solid #2a3350", borderRadius: 20, padding: "20px 20px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "#F7F5EF", marginBottom: 14 }}>⚡ Quick Templates</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {TEMPLATES.map((t, i) => (
+              {getTemplates(businessType).map((t: ReturnType<typeof getTemplates>[0], i: number) => (
                 <button key={i} onClick={() => applyTemplate(t)}
-                  style={{ padding: "10px 14px", background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 12, textAlign: "left", fontSize: 13, fontWeight: 600, color: "#334155", cursor: "pointer", transition: "all 0.12s" }}
-                  onMouseEnter={e => { e.currentTarget.style.background = "#EEF2FF"; e.currentTarget.style.borderColor = "#C7D2FE"; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = "#F8FAFC"; e.currentTarget.style.borderColor = "#E2E8F0"; }}>
+                  style={{ padding: "10px 14px", background: "#141A2E", border: "1.5px solid #2a3350", borderRadius: 12, textAlign: "left", fontSize: 13, fontWeight: 600, color: "#aab1c4", cursor: "pointer", transition: "all 0.12s" }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "rgba(201,162,75,0.10)"; e.currentTarget.style.borderColor = "rgba(201,162,75,0.25)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "#141A2E"; e.currentTarget.style.borderColor = "#2a3350"; }}>
                   {t.label}
                 </button>
               ))}
@@ -238,21 +248,21 @@ function BroadcastContent() {
           </div>
 
           {/* History */}
-          <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
-            <div style={{ padding: "16px 20px", borderBottom: "1px solid #F1F5F9", fontSize: 14, fontWeight: 800, color: "#0F172A" }}>📋 Sent History</div>
+          <div style={{ background: "#1C2438", border: "1.5px solid #2a3350", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid #2a3350", fontSize: 14, fontWeight: 800, color: "#F7F5EF" }}>📋 Sent History</div>
             <div style={{ maxHeight: 320, overflowY: "auto" }}>
               {history.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "30px 0", color: "#94A3B8", fontSize: 13 }}>No broadcasts sent yet</div>
+                <div style={{ textAlign: "center", padding: "30px 0", color: "#aab1c4", fontSize: 13 }}>No broadcasts sent yet</div>
               ) : history.map(h => (
-                <div key={h.id} style={{ padding: "14px 18px", borderBottom: "1px solid #F8FAFC" }}>
+                <div key={h.id} style={{ padding: "14px 18px", borderBottom: "1px solid #2a3350" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#0F172A" }}>{h.title}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#F7F5EF" }}>{h.title}</div>
                     <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 99, background: `${channelColor[h.channel as keyof typeof channelColor]}18`, color: channelColor[h.channel as keyof typeof channelColor] }}>
                       {channelIcon[h.channel as keyof typeof channelIcon]} {h.channel}
                     </span>
                   </div>
-                  <div style={{ fontSize: 11.5, color: "#64748B", marginBottom: 4 }}>{h.recipient_count} recipients</div>
-                  <div style={{ fontSize: 11, color: "#94A3B8" }}>{new Date(h.created_at).toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" })}</div>
+                  <div style={{ fontSize: 11.5, color: "#aab1c4", marginBottom: 4 }}>{h.recipient_count} recipients</div>
+                  <div style={{ fontSize: 11, color: "#aab1c4" }}>{new Date(h.created_at).toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" })}</div>
                 </div>
               ))}
             </div>

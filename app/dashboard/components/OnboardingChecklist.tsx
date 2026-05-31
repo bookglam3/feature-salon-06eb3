@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
@@ -7,17 +7,35 @@ interface ChecklistProps {
   staff: number;
   bookingLink: string;
   salonSlug: string;
+  businessType?: string;
+}
+
+function getOnboardingTerms(bt?: string) {
+  switch (bt) {
+    case "gym":     return { icon:"🏋️", example:"e.g. PT Session – £40, Group Class – £15" };
+    case "yoga":    return { icon:"🧘", example:"e.g. Yoga Class – £12, Private Session – £35" };
+    case "physio":  return { icon:"🤸", example:"e.g. Initial Assessment – £60, Follow-up – £40" };
+    case "dental":  return { icon:"🦷", example:"e.g. Consultation – £50, Cleaning – £80" };
+    case "spa":     return { icon:"🌿", example:"e.g. Swedish Massage – £60, Facial – £45" };
+    case "massage": return { icon:"💆", example:"e.g. Deep Tissue – £55, Hot Stone – £70" };
+    case "nail":    return { icon:"💅", example:"e.g. Gel Nails – £35, Nail Art – £45" };
+    case "beauty":  return { icon:"✨", example:"e.g. Lash Extensions – £60, Facial – £45" };
+    case "barber":  return { icon:"💈", example:"e.g. Haircut – £15, Beard Trim – £10" };
+    case "pt":      return { icon:"🏃", example:"e.g. PT Session – £50, 10-pack – £450" };
+    default:        return { icon:"✂️", example:"e.g. Haircut – £25, Colour – £60" };
+  }
 }
 
 const C = {
-  indigo: "#C9A24B", indigoDark: "#0E1320", indigoSoft: "#EEF2FF",
-  green: "#10B981", greenSoft: "#ECFDF5", greenBorder: "#A7F3D0",
-  text: "#0F172A", text2: "#475569", text3: "#94A3B8",
-  border: "#E2E8F0", surface: "#FFFFFF",
+  indigo: "#C9A24B", indigoDark: "#0E1320", indigoSoft: "rgba(201,162,75,0.10)",
+  green: "#10B981", greenSoft: "rgba(16,185,129,0.10)", greenBorder: "rgba(16,185,129,0.25)",
+  text: "#F7F5EF", text2: "#aab1c4", text3: "#94A3B8",
+  border: "#2a3350", surface: "#FFFFFF",
 };
 
-export default function OnboardingChecklist({ services, staff, bookingLink, salonSlug }: ChecklistProps) {
+export default function OnboardingChecklist({ services, staff, bookingLink, salonSlug, businessType }: ChecklistProps) {
   const router = useRouter();
+  const terms = getOnboardingTerms(businessType);
   const [open, setOpen] = useState(true);
   const [dismissed, setDismissed] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -43,9 +61,9 @@ export default function OnboardingChecklist({ services, staff, bookingLink, salo
     {
       id: "services",
       done: services > 0,
-      icon: "✂️",
+      icon: terms.icon,
       title: "Add your first service",
-      desc: "e.g. Haircut – £25, Colour – £60",
+      desc: terms.example,
       cta: "Add Services",
       action: () => router.push("/dashboard/settings"),
     },
@@ -104,7 +122,7 @@ export default function OnboardingChecklist({ services, staff, bookingLink, salo
           <div style={{
             width: 32, height: 6, borderRadius: 99, background: "rgba(255,255,255,0.2)", overflow: "hidden",
           }}>
-            <div style={{ width: `${pct}%`, height: "100%", background: "#fff", borderRadius: 99, transition: "width 0.4s" }} />
+            <div style={{ width: `${pct}%`, height: "100%", background: "#1C2438", borderRadius: 99, transition: "width 0.4s" }} />
           </div>
         </button>
       )}
@@ -176,9 +194,9 @@ export default function OnboardingChecklist({ services, staff, bookingLink, salo
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
                     fontSize: 12.5, fontWeight: 700,
-                    color: s.done ? "#059669" : C.text,
+                    color: s.done ? "#10B981" : C.text,
                     textDecoration: s.done ? "line-through" : "none",
-                    textDecorationColor: "#A7F3D0",
+                    textDecorationColor: "rgba(16,185,129,0.25)",
                   }}>
                     {s.title}
                   </div>
@@ -195,7 +213,7 @@ export default function OnboardingChecklist({ services, staff, bookingLink, salo
                   </button>
                 )}
                 {s.done && (
-                  <div style={{ fontSize: 11, color: "#059669", fontWeight: 800, flexShrink: 0 }}>Done</div>
+                  <div style={{ fontSize: 11, color: "#10B981", fontWeight: 800, flexShrink: 0 }}>Done</div>
                 )}
               </div>
             ))}
