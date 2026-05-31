@@ -178,7 +178,7 @@ export default function Home() {
           <a href="#who">Who it&apos;s for</a>
           <a href="#features">Features</a>
           <a href="#how">How it works</a>
-          <a href="#compare">vs Fresha</a>
+          <Link href="/vs-fresha">vs Fresha</Link>
           <a href="#pricing">Pricing</a>
           <Link href="/about">About</Link>
           <Link href="/partner" style={{ color: "#C9A24B", fontWeight: 600 }}>Become a Partner</Link>
@@ -515,6 +515,7 @@ export default function Home() {
         <span className="nav-logo footer-logo">feature</span>
         <nav className="footer-links" aria-label="Footer navigation">
           <Link href="/pricing">Pricing</Link>
+          <Link href="/vs-fresha">vs Fresha</Link>
           <Link href="/blog">Blog</Link>
           <Link href="/about">About</Link>
           <Link href="/partner">Become a Partner</Link>
