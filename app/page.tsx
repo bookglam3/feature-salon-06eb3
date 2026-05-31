@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Scissors, Dumbbell, Flower2, Stethoscope, Sparkles, Leaf, Smile, HeartPulse, PhoneOff, Banknote, BookOpen, CreditCard, BellOff, BarChart3, Smartphone, MessageCircle, CalendarCheck, Zap, CalendarClock, Users, ContactRound, Rocket, Settings2, Share2, Building2 } from "lucide-react";
+import TrustStrip from "./components/TrustStrip";
 import type { LucideIcon } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -263,6 +264,8 @@ export default function Home() {
           </div>
         ))}
       </section>
+
+      <TrustStrip />
 
       {/* ── Who it's for ── */}
       <section id="who" className="section section-white">
