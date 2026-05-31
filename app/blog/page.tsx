@@ -17,7 +17,10 @@ export const metadata: Metadata = {
 
 const CATEGORY_COLORS: Record<string, string> = {
   "salon no-show reduction": "#10B981",
+  "salon no-shows": "#10B981",
+  "barbershop booking": "#8B5CF6",
   "fresha alternative": "#6366F1",
+  "fresha alternative 2026": "#6366F1",
   "best salon software uk": "#F59E0B",
   "online salon booking": "#3B82F6",
   "treatwell alternative": "#EF4444",

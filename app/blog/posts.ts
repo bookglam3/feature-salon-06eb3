@@ -28,6 +28,34 @@ export const POSTS: BlogPost[] = [
   },
 
   {
+    slug: "how-to-reduce-salon-no-shows",
+    title: "How to Reduce No-Shows in Your Salon: A UK Owner's Guide (2026)",
+    metaTitle: "How to Reduce No-Shows in Your Salon (2026) | Feature",
+    metaDescription: "No-shows cost UK salons over £1bn a year. Learn the proven ways to cut them — WhatsApp/SMS reminders, deposits, clear policies and online booking.",
+    keyword: "salon no-shows",
+    publishedDate: "2026-05-31",
+    updatedDate: "2026-05-31",
+    readingTime: 5,
+    author: "Feature Team",
+    excerpt: "No-shows are one of the quietest, costliest problems in any salon. Here's what actually works to cut them — WhatsApp/SMS reminders, small deposits, clear policies and the right online booking setup.",
+    sections: [],
+  },
+
+  {
+    slug: "best-booking-system-uk-barbershops",
+    title: "The Best Booking System for UK Barbershops in 2026",
+    metaTitle: "The Best Booking System for UK Barbershops (2026) | Feature",
+    metaDescription: "An honest guide to choosing barbershop booking software in the UK: per-barber calendars, walk-ins, deposits, reminders, and flat vs marketplace pricing.",
+    keyword: "barbershop booking",
+    publishedDate: "2026-05-31",
+    updatedDate: "2026-05-31",
+    readingTime: 5,
+    author: "Feature Team",
+    excerpt: "An honest guide to choosing booking software for a UK barbershop — per-barber calendars, walk-ins, deposits, no-show reminders, and what the marketplace vs flat-rate pricing difference actually means for your margins.",
+    sections: [],
+  },
+
+  {
     slug: "how-to-reduce-no-shows-salon",
     title: "How to Reduce No-Shows in Your Salon",
     metaTitle: "How to Reduce No-Shows in Your Salon | Feature Salon",
