@@ -491,6 +491,69 @@ html, body { overflow-x: hidden; max-width: 100vw; }
   .plan-card { padding: 20px 16px !important; }
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   DEFINITIVE MOBILE BANDING FIX
+   Forces EVERY background on the landing page to a plain solid colour.
+   Removes every GPU compositing trigger: backdrop-filter, blur,
+   gradient, low-alpha rgba, will-change. A flat solid colour cannot
+   produce banding, dithering noise, or GPU compositing artefacts.
+   Desktop is untouched — all rules are scoped to max-width: 768px.
+   ══════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* Prevent body/html background bleeding through on Android overscroll */
+  html, body { background: #141A2E !important; }
+
+  /* ── (a) Remove ALL backdrop-filter / blur / filter on landing ── */
+  .landing *,
+  .mobile-sticky-cta { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; filter: none !important; }
+
+  /* ── (b) Section & layout backgrounds — flat solid, zero gradient ── */
+  .landing                { background: #141A2E !important; background-image: none !important; }
+  .landing .nav           { background: #0E1320 !important; background-image: none !important; }
+  .landing .hero,
+  .landing .hero-v2       { background: #0E1320 !important; background-image: none !important; }
+  .landing .trust-bar     { background: #0E1320 !important; background-image: none !important; }
+  .landing .section       { background: #141A2E !important; background-image: none !important; }
+  .landing .section-white { background: #1C2438 !important; background-image: none !important; }
+  .landing .section-ps    { background: #1C2438 !important; background-image: none !important; }
+  .landing .final-cta     { background: #0E1320 !important; background-image: none !important; }
+  .landing .footer        { background: #0E1320 !important; background-image: none !important; }
+
+  /* ── (c) Cards — flat solid, every gradient removed ── */
+  .landing .feature-card,
+  .landing .feature-card-v2    { background: #1C2438 !important; background-image: none !important; }
+  .landing .plan-card           { background: #1C2438 !important; background-image: none !important; }
+  .landing .location-card       { background: #1C2438 !important; background-image: none !important; }
+  .landing .review-card,
+  .landing .review-card-featured{ background: #1C2438 !important; background-image: none !important; }
+  .landing .faq-list            { background: #1C2438 !important; background-image: none !important; }
+  .landing .reviews-summary     { background: #1C2438 !important; background-image: none !important; }
+  .landing .compare-table-wrap  { background: #1C2438 !important; background-image: none !important; }
+  .landing .compare-table       { background: #1C2438 !important; background-image: none !important; }
+  .landing .compare-table thead { background: #141A2E !important; background-image: none !important; }
+
+  /* ── (d) Problem/Solution items — replace every low-alpha rgba ──
+     rgba(239,68,68,0.08) over #1C2438 = ~rgb(44,38,57) which causes
+     GPU dithering noise on Android. Use plain solid instead.         */
+  .landing .ps-problems         { background: #141A2E !important; background-image: none !important; }
+  .landing .ps-solution         { background: #1C2438 !important; background-image: none !important; }
+  .landing .ps-problem-item     { background: #141A2E !important; background-image: none !important;
+                                   border-color: rgba(239,68,68,0.3) !important; }
+  .landing .ps-solution-item    { background: #141A2E !important; background-image: none !important; }
+
+  /* ── (e) Table column highlight — replace ultra-low-alpha rgba ── */
+  .landing .compare-col-feature,
+  .landing .compare-cell-feature{ background: #1E2840 !important; }
+
+  /* ── (f) Disable will-change across all landing elements ── */
+  .landing *                    { will-change: auto !important; }
+
+  /* ── (g) Remove glow box-shadow from CTA button and sticky bar ── */
+  .landing .btn-glow            { box-shadow: none !important; }
+  .mobile-sticky-cta            { box-shadow: none !important; }
+}
+
 
 /* ── Section subtitle ── */
 .section-sub { font-size: 16px; color: #aab1c4; text-align: center; max-width: 520px; margin: -28px auto 40px; line-height: 1.7; }
