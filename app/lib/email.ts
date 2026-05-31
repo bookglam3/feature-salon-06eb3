@@ -33,26 +33,26 @@ function getEmailTerms(businessType?: string): EmailTerms {
     case "barber":
       return { serviceEmoji:"✂️", serviceLabel:"Service",    staffEmoji:"💈", staffLabel:"Barber",           bookingWord:"appointment", headerIcon:"✂️", greetingLine:"We can't wait to see you!" };
     case "beauty":
-      return { serviceEmoji:"💅", serviceLabel:"Treatment",  staffEmoji:"👤", staffLabel:"Beautician",       bookingWord:"appointment", headerIcon:"💅", greetingLine:"We can't wait to see you!" };
+      return { serviceEmoji:"✨", serviceLabel:"Treatment",  staffEmoji:"✨", staffLabel:"Beauty Therapist", bookingWord:"appointment", headerIcon:"✨", greetingLine:"We can't wait to see you!" };
     case "nail":
-      return { serviceEmoji:"💅", serviceLabel:"Treatment",  staffEmoji:"👤", staffLabel:"Nail Technician",  bookingWord:"appointment", headerIcon:"💅", greetingLine:"We can't wait to see you!" };
+      return { serviceEmoji:"💅", serviceLabel:"Service",    staffEmoji:"💅", staffLabel:"Nail Technician",  bookingWord:"appointment", headerIcon:"💅", greetingLine:"We can't wait to see you!" };
     case "spa":
-      return { serviceEmoji:"🌿", serviceLabel:"Treatment",  staffEmoji:"💆", staffLabel:"Therapist",        bookingWord:"treatment",   headerIcon:"🌿", greetingLine:"We look forward to welcoming you." };
+      return { serviceEmoji:"🌿", serviceLabel:"Treatment",  staffEmoji:"🌿", staffLabel:"Therapist",        bookingWord:"treatment",   headerIcon:"🌿", greetingLine:"We look forward to welcoming you." };
     case "massage":
-      return { serviceEmoji:"💆", serviceLabel:"Treatment",  staffEmoji:"💆", staffLabel:"Therapist",        bookingWord:"treatment",   headerIcon:"💆", greetingLine:"We look forward to welcoming you." };
+      return { serviceEmoji:"💆", serviceLabel:"Treatment",  staffEmoji:"🤲", staffLabel:"Therapist",        bookingWord:"treatment",   headerIcon:"💆", greetingLine:"We look forward to welcoming you." };
     case "gym":
-      return { serviceEmoji:"🏋️", serviceLabel:"Session",    staffEmoji:"👤", staffLabel:"Trainer",          bookingWord:"session",     headerIcon:"🏋️", greetingLine:"We're looking forward to seeing you!" };
+      return { serviceEmoji:"🏋️", serviceLabel:"Session",    staffEmoji:"🏋️", staffLabel:"Trainer",          bookingWord:"session",     headerIcon:"🏋️", greetingLine:"We're looking forward to seeing you!" };
     case "yoga":
-      return { serviceEmoji:"🧘", serviceLabel:"Class",      staffEmoji:"👤", staffLabel:"Instructor",       bookingWord:"class",       headerIcon:"🧘", greetingLine:"See you on the mat!" };
+      return { serviceEmoji:"🧘", serviceLabel:"Class",      staffEmoji:"🧘", staffLabel:"Instructor",       bookingWord:"class",       headerIcon:"🧘", greetingLine:"See you on the mat!" };
     case "physio":
-      return { serviceEmoji:"🤸", serviceLabel:"Session",    staffEmoji:"👤", staffLabel:"Physiotherapist",  bookingWord:"session",     headerIcon:"📋", greetingLine:"We look forward to helping you." };
+      return { serviceEmoji:"🤸", serviceLabel:"Session",    staffEmoji:"🤸", staffLabel:"Physiotherapist",  bookingWord:"session",     headerIcon:"🤸", greetingLine:"We look forward to helping you." };
     case "dental":
-      return { serviceEmoji:"🦷", serviceLabel:"Appointment",staffEmoji:"👤", staffLabel:"Practitioner",     bookingWord:"appointment", headerIcon:"🦷", greetingLine:"We look forward to seeing you." };
+      return { serviceEmoji:"🦷", serviceLabel:"Appointment",staffEmoji:"🦷", staffLabel:"Practitioner",     bookingWord:"appointment", headerIcon:"🦷", greetingLine:"We look forward to seeing you." };
     case "pt":
-      return { serviceEmoji:"🏃", serviceLabel:"Session",    staffEmoji:"👤", staffLabel:"Personal Trainer", bookingWord:"session",     headerIcon:"🏃", greetingLine:"Ready to help you smash your goals!" };
+      return { serviceEmoji:"🏃", serviceLabel:"Session",    staffEmoji:"🏃", staffLabel:"Personal Trainer", bookingWord:"session",     headerIcon:"🏃", greetingLine:"Ready to help you smash your goals!" };
     case "hair":
     default:
-      return { serviceEmoji:"✂️", serviceLabel:"Service",    staffEmoji:"👩", staffLabel:"Stylist",          bookingWord:"appointment", headerIcon:"✂️", greetingLine:"We can't wait to see you!" };
+      return { serviceEmoji:"✂️", serviceLabel:"Service",    staffEmoji:"💇", staffLabel:"Stylist",          bookingWord:"appointment", headerIcon:"✂️", greetingLine:"We can't wait to see you!" };
   }
 }
 
