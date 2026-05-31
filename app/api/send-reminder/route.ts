@@ -108,7 +108,7 @@ export async function GET(req: Request) {
   // ════════════════════════════════════════════════════════
   const { data: appts24, error: err24 } = await supabase
     .from("appointments")
-    .select("*, services(name,price), staff(name), salons(name,slug,reminders_enabled,whatsapp_enabled,review_link)")
+    .select("*, services(name,price), staff(name), salons(name,slug,reminders_enabled,whatsapp_enabled,review_link,business_type)")
     .eq("status", "confirmed")
     .eq("reminder_24h_sent", false)
     .gte("date_time", w24h.start)
@@ -136,6 +136,7 @@ export async function GET(req: Request) {
           salonName: a.salons?.name || "Your Salon",
           dateTime: a.date_time,
           price: a.services?.price,
+          businessType: a.salons?.business_type,
         });
       } catch (e) { errors.push(`24h email ${a.id}: ${e}`); }
     }
@@ -169,7 +170,7 @@ export async function GET(req: Request) {
   // ════════════════════════════════════════════════════════
   const { data: appts2h, error: err2h } = await supabase
     .from("appointments")
-    .select("*, services(name,price), staff(name), salons(name,slug,reminders_enabled,whatsapp_enabled)")
+    .select("*, services(name,price), staff(name), salons(name,slug,reminders_enabled,whatsapp_enabled,business_type)")
     .eq("status", "confirmed")
     .eq("reminder_2h_sent", false)
     .gte("date_time", w2h.start)
@@ -193,6 +194,7 @@ export async function GET(req: Request) {
           salonName: a.salons?.name || "Your Salon",
           dateTime: a.date_time,
           price: a.services?.price,
+          businessType: a.salons?.business_type,
         });
       } catch (e) { errors.push(`2h email ${a.id}: ${e}`); }
     }
@@ -285,7 +287,7 @@ export async function GET(req: Request) {
   // ════════════════════════════════════════════════════════
   const { data: apptsNoShow, error: errNoShow } = await supabase
     .from("appointments")
-    .select("*, services(name), salons(id,name,slug,owner_email,owner_id,reminders_enabled)")
+    .select("*, services(name), salons(id,name,slug,owner_email,owner_id,reminders_enabled,business_type)")
     .eq("status", "confirmed")           // still confirmed = never marked completed
     .eq("no_show_alert_sent", false)
     .gte("date_time", wNoShow.start)
@@ -311,12 +313,13 @@ export async function GET(req: Request) {
     if (ownerEmail) {
       try {
         await sendNoShowAlertEmail({
-          to:          ownerEmail,
-          clientName:  a.client_name,
-          serviceName: a.services?.name,
-          dateTime:    a.date_time,
-          salonName:   salon?.name || "Your Salon",
+          to:           ownerEmail,
+          clientName:   a.client_name,
+          serviceName:  a.services?.name,
+          dateTime:     a.date_time,
+          salonName:    salon?.name || "Your Salon",
           dashboardUrl: `${appUrl}/dashboard/bookings`,
+          businessType: salon?.business_type,
         });
       } catch (e) { errors.push(`no-show alert ${a.id}: ${e}`); }
     }

@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
         // Fetch full appointment data (same as send-confirmation route)
         const { data: appt } = await supabase
           .from("appointments")
-          .select(`*, services(name,price), staff(name), salons(id,name,slug,address,owner_email,owner_id)`)
+          .select(`*, services(name,price), staff(name), salons(id,name,slug,address,owner_email,owner_id,business_type)`)
           .eq("id", bookingId)
           .single();
 
@@ -89,6 +89,7 @@ export async function POST(req: NextRequest) {
             dashboardUrl:     `${appUrl}/dashboard/bookings`,
             paymentStatus:    depositOnly ? "deposit_paid" : "paid",
             depositOnly,
+            businessType:     salon?.business_type,
           });
           console.log(`[Webhook] ✅ Confirmation emails sent for booking ${bookingId}`);
         } else {

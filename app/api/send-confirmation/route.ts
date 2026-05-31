@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
         *,
         services(name, price),
         staff(name),
-        salons(id, name, slug, address, owner_email, owner_id, reminders_enabled, whatsapp_enabled)
+        salons(id, name, slug, address, owner_email, owner_id, reminders_enabled, whatsapp_enabled, business_type)
       `)
       .eq("id", appointmentId)
       .single();
@@ -78,6 +78,7 @@ export async function POST(req: NextRequest) {
       dashboardUrl:    `${appUrl}/dashboard/bookings`,
       paymentStatus:   appt.payment_status,
       depositOnly:     appt.payment_status === "deposit_paid",
+      businessType:    salon?.business_type,
     });
 
     // ── WhatsApp Confirmation ────────────────────────────────

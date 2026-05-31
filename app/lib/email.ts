@@ -15,6 +15,47 @@ const resend = new Resend(process.env.RESEND_API_KEY);
  */
 const FROM = process.env.FROM_EMAIL || "noreply@featuresalon.co.uk";
 
+// ─────────────────────────────────────────
+// Business-type–aware Email Terms
+// ─────────────────────────────────────────
+type EmailTerms = {
+  serviceEmoji: string;
+  serviceLabel: string;
+  staffEmoji: string;
+  staffLabel: string;
+  bookingWord: string;   // "appointment" | "session" | "class" | "treatment"
+  headerIcon: string;    // shown after "Booking Confirmed!"
+  greetingLine: string;  // body line after "Hi {name},"
+};
+
+function getEmailTerms(businessType?: string): EmailTerms {
+  switch (businessType) {
+    case "barber":
+      return { serviceEmoji:"✂️", serviceLabel:"Service",    staffEmoji:"💈", staffLabel:"Barber",           bookingWord:"appointment", headerIcon:"✂️", greetingLine:"We can't wait to see you!" };
+    case "beauty":
+      return { serviceEmoji:"💅", serviceLabel:"Treatment",  staffEmoji:"👤", staffLabel:"Beautician",       bookingWord:"appointment", headerIcon:"💅", greetingLine:"We can't wait to see you!" };
+    case "nail":
+      return { serviceEmoji:"💅", serviceLabel:"Treatment",  staffEmoji:"👤", staffLabel:"Nail Technician",  bookingWord:"appointment", headerIcon:"💅", greetingLine:"We can't wait to see you!" };
+    case "spa":
+      return { serviceEmoji:"🌿", serviceLabel:"Treatment",  staffEmoji:"💆", staffLabel:"Therapist",        bookingWord:"treatment",   headerIcon:"🌿", greetingLine:"We look forward to welcoming you." };
+    case "massage":
+      return { serviceEmoji:"💆", serviceLabel:"Treatment",  staffEmoji:"💆", staffLabel:"Therapist",        bookingWord:"treatment",   headerIcon:"💆", greetingLine:"We look forward to welcoming you." };
+    case "gym":
+      return { serviceEmoji:"🏋️", serviceLabel:"Session",    staffEmoji:"👤", staffLabel:"Trainer",          bookingWord:"session",     headerIcon:"🏋️", greetingLine:"We're looking forward to seeing you!" };
+    case "yoga":
+      return { serviceEmoji:"🧘", serviceLabel:"Class",      staffEmoji:"👤", staffLabel:"Instructor",       bookingWord:"class",       headerIcon:"🧘", greetingLine:"See you on the mat!" };
+    case "physio":
+      return { serviceEmoji:"🤸", serviceLabel:"Session",    staffEmoji:"👤", staffLabel:"Physiotherapist",  bookingWord:"session",     headerIcon:"📋", greetingLine:"We look forward to helping you." };
+    case "dental":
+      return { serviceEmoji:"🦷", serviceLabel:"Appointment",staffEmoji:"👤", staffLabel:"Practitioner",     bookingWord:"appointment", headerIcon:"🦷", greetingLine:"We look forward to seeing you." };
+    case "pt":
+      return { serviceEmoji:"🏃", serviceLabel:"Session",    staffEmoji:"👤", staffLabel:"Personal Trainer", bookingWord:"session",     headerIcon:"🏃", greetingLine:"Ready to help you smash your goals!" };
+    case "hair":
+    default:
+      return { serviceEmoji:"✂️", serviceLabel:"Service",    staffEmoji:"👩", staffLabel:"Stylist",          bookingWord:"appointment", headerIcon:"✂️", greetingLine:"We can't wait to see you!" };
+  }
+}
+
 // Helper — wraps every resend.emails.send with clear error logging
 async function sendEmailSafe(payload: Parameters<typeof resend.emails.send>[0]) {
   const { data, error } = await resend.emails.send(payload);
@@ -52,12 +93,12 @@ function formatDate(dateTime: string) {
 function emailTemplate({
   title, clientName, message, serviceName,
   formattedDate, formattedTime, staffName, salonName,
-  color, price, extra, unsubLink,
+  color, price, extra, unsubLink, terms,
 }: {
   title: string; clientName: string; message: string;
   serviceName?: string; formattedDate?: string; formattedTime?: string;
   staffName?: string; salonName: string; color: string;
-  price?: number; extra?: string; unsubLink?: string;
+  price?: number; extra?: string; unsubLink?: string; terms?: EmailTerms;
 }) {
   unsubLink = unsubLink ?? `${process.env.NEXT_PUBLIC_APP_URL}/unsubscribe`;
   return `
@@ -83,8 +124,8 @@ function emailTemplate({
           <table style="width:100%;font-size:14px;border-collapse:collapse;">
             ${formattedDate ? `<tr><td style="color:#999;padding:6px 0;width:120px;">📅 Date</td><td style="font-weight:600;">${formattedDate}</td></tr>` : ""}
             ${formattedTime ? `<tr><td style="color:#999;padding:6px 0;">🕐 Time</td><td style="font-weight:600;">${formattedTime}</td></tr>` : ""}
-            ${serviceName ? `<tr><td style="color:#999;padding:6px 0;">✂️ Service</td><td style="font-weight:600;">${serviceName}</td></tr>` : ""}
-            ${staffName ? `<tr><td style="color:#999;padding:6px 0;">👩 Stylist</td><td style="font-weight:600;">${staffName}</td></tr>` : ""}
+            ${serviceName ? `<tr><td style="color:#999;padding:6px 0;">${terms?.serviceEmoji ?? "✂️"} ${terms?.serviceLabel ?? "Service"}</td><td style="font-weight:600;">${serviceName}</td></tr>` : ""}
+            ${staffName ? `<tr><td style="color:#999;padding:6px 0;">${terms?.staffEmoji ?? "👩"} ${terms?.staffLabel ?? "Stylist"}</td><td style="font-weight:600;">${staffName}</td></tr>` : ""}
             ${price ? `<tr><td style="color:#999;padding:6px 0;">💷 Price</td><td style="font-weight:700;color:${color};">£${price}</td></tr>` : ""}
           </table>
         </div>` : ""}
@@ -116,15 +157,17 @@ function emailTemplate({
 export async function sendBookingEmails({
   clientEmail, clientName, clientPhone, serviceName,
   dateTime, staffName, salonName, salonOwnerEmail, price,
-  salonAddress, cancelLink, dashboardUrl, paymentStatus, depositOnly,
+  salonAddress, cancelLink, dashboardUrl, paymentStatus, depositOnly, businessType,
 }: {
   clientEmail: string; clientName: string; clientPhone: string;
   serviceName: string; dateTime: string; staffName?: string;
   salonName: string; salonOwnerEmail: string; price?: number;
   salonAddress?: string; cancelLink?: string; dashboardUrl?: string;
-  paymentStatus?: string; depositOnly?: boolean;
+  paymentStatus?: string; depositOnly?: boolean; businessType?: string;
 }) {
   const { formattedDate, formattedTime } = formatDate(dateTime);
+  const terms = getEmailTerms(businessType);
+  const detailsLabel = terms.bookingWord.charAt(0).toUpperCase() + terms.bookingWord.slice(1) + " Details";
 
   // ── Payment status badge for owner email ──
   const paymentBadge = (() => {
@@ -150,20 +193,20 @@ export async function sendBookingEmails({
       <div style="background:linear-gradient(135deg,#C2185B 0%,#7B2D52 100%);padding:36px 28px;text-align:center;">
         <div style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,0.2);display:inline-flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:14px;">✅</div>
         <p style="color:rgba(255,255,255,0.75);margin:0 0 4px;font-size:11px;letter-spacing:2px;text-transform:uppercase;">${salonName}</p>
-        <h1 style="color:#fff;margin:0;font-size:24px;font-weight:700;">Booking Confirmed! ✂️</h1>
+        <h1 style="color:#fff;margin:0;font-size:24px;font-weight:700;">Booking Confirmed! ${terms.headerIcon}</h1>
       </div>
 
       <!-- Greeting -->
       <div style="background:#fff;padding:28px 28px 0;">
         <p style="font-size:16px;margin:0 0 6px;color:#111;">Hi <strong>${clientName}</strong> 👋</p>
-        <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 24px;">Your appointment at <strong>${salonName}</strong> is confirmed. We can't wait to see you!</p>
+        <p style="font-size:14px;color:#555;line-height:1.7;margin:0 0 24px;">Your ${terms.bookingWord} at <strong>${salonName}</strong> is confirmed. ${terms.greetingLine}</p>
 
-        <!-- Appointment Card -->
+        <!-- Booking Card -->
         <div style="background:#FDF5F8;border:1.5px solid #F0C4D4;border-radius:12px;padding:20px 22px;margin-bottom:22px;">
-          <div style="font-size:11px;font-weight:700;color:#C2185B;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Appointment Details</div>
+          <div style="font-size:11px;font-weight:700;color:#C2185B;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">${detailsLabel}</div>
           <table style="width:100%;font-size:14px;border-collapse:collapse;">
-            <tr><td style="color:#999;padding:7px 0;width:130px;">✂️ Service</td><td style="font-weight:600;color:#0F172A;">${serviceName}</td></tr>
-            ${staffName ? `<tr><td style="color:#999;padding:7px 0;">👩 Stylist</td><td style="font-weight:600;color:#0F172A;">${staffName}</td></tr>` : ""}
+            <tr><td style="color:#999;padding:7px 0;width:130px;">${terms.serviceEmoji} ${terms.serviceLabel}</td><td style="font-weight:600;color:#0F172A;">${serviceName}</td></tr>
+            ${staffName ? `<tr><td style="color:#999;padding:7px 0;">${terms.staffEmoji} ${terms.staffLabel}</td><td style="font-weight:600;color:#0F172A;">${staffName}</td></tr>` : ""}
             <tr><td style="color:#999;padding:7px 0;">📅 Date</td><td style="font-weight:600;color:#0F172A;">${formattedDate}</td></tr>
             <tr><td style="color:#999;padding:7px 0;">🕐 Time</td><td style="font-weight:700;color:#C2185B;font-size:16px;">${formattedTime}</td></tr>
             ${price ? `<tr><td style="color:#999;padding:7px 0;">💷 Price</td><td style="font-weight:700;color:#0F172A;">£${amountPaid}${depositOnly ? " <span style='color:#D97706;font-size:12px;'>(deposit — £${amountDue} due at salon)</span>" : ""}</td></tr>` : ""}
@@ -242,10 +285,10 @@ export async function sendBookingEmails({
 
         <!-- Appointment Details -->
         <div style="background:#FDF5F8;border:1.5px solid #F0C4D4;border-radius:12px;padding:20px 22px;margin-bottom:20px;">
-          <div style="font-size:11px;font-weight:700;color:#C2185B;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">Appointment</div>
+          <div style="font-size:11px;font-weight:700;color:#C2185B;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;">${detailsLabel}</div>
           <table style="width:100%;font-size:14px;border-collapse:collapse;">
-            <tr><td style="color:#999;padding:7px 0;width:110px;">✂️ Service</td><td style="font-weight:600;color:#0F172A;">${serviceName}</td></tr>
-            ${staffName ? `<tr><td style="color:#999;padding:7px 0;">👩 Stylist</td><td style="font-weight:600;color:#0F172A;">${staffName}</td></tr>` : ""}
+            <tr><td style="color:#999;padding:7px 0;width:110px;">${terms.serviceEmoji} ${terms.serviceLabel}</td><td style="font-weight:600;color:#0F172A;">${serviceName}</td></tr>
+            ${staffName ? `<tr><td style="color:#999;padding:7px 0;">${terms.staffEmoji} ${terms.staffLabel}</td><td style="font-weight:600;color:#0F172A;">${staffName}</td></tr>` : ""}
             <tr><td style="color:#999;padding:7px 0;">📅 Date</td><td style="font-weight:600;color:#0F172A;">${formattedDate}</td></tr>
             <tr><td style="color:#999;padding:7px 0;">🕐 Time</td><td style="font-weight:700;color:#C2185B;font-size:16px;">${formattedTime}</td></tr>
             ${price ? `<tr><td style="color:#999;padding:7px 0;">💷 Amount</td><td style="font-weight:700;color:#059669;">£${amountPaid} ${depositOnly ? "<span style='color:#D97706;font-size:12px;'>(deposit — £${amountDue} due at salon)</span>" : "received"}</td></tr>` : ""}
@@ -273,7 +316,7 @@ export async function sendBookingEmails({
   await Promise.all([
     sendEmailSafe({
       from: FROM, to: clientEmail,
-      subject: `Booking Confirmed! ✂️ ${salonName}`,
+      subject: `Booking Confirmed! ${terms.headerIcon} — ${salonName}`,
       html: clientHtml,
     }),
     sendEmailSafe({
@@ -288,19 +331,20 @@ export async function sendBookingEmails({
 // 2. REMINDER — 1 Day Before
 // ═══════════════════════════════════════════════
 export async function send24hReminder({
-  to, clientName, serviceName, staffName, salonName, dateTime, price,
+  to, clientName, serviceName, staffName, salonName, dateTime, price, businessType,
 }: {
   to: string; clientName: string; serviceName: string;
-  staffName?: string; salonName: string; dateTime: string; price?: number;
+  staffName?: string; salonName: string; dateTime: string; price?: number; businessType?: string;
 }) {
   const { formattedDate, formattedTime } = formatDate(dateTime);
+  const terms = getEmailTerms(businessType);
   await sendEmailSafe({
     from: FROM, to,
-    subject: `Reminder: Your appointment tomorrow at ${formattedTime} — ${salonName}`,
+    subject: `Reminder: Your ${terms.bookingWord} tomorrow at ${formattedTime} — ${salonName}`,
     html: emailTemplate({
-      title: "Appointment Reminder — Tomorrow ⏰", clientName,
-      message: "This is a friendly reminder that you have an appointment with us <strong>tomorrow</strong>. We look forward to welcoming you.",
-      serviceName, formattedDate, formattedTime, staffName, salonName, color: "#C2185B", price,
+      title: `${terms.bookingWord.charAt(0).toUpperCase() + terms.bookingWord.slice(1)} Reminder — Tomorrow ⏰`, clientName,
+      message: `This is a friendly reminder that you have a ${terms.bookingWord} with us <strong>tomorrow</strong>. We look forward to welcoming you.`,
+      serviceName, formattedDate, formattedTime, staffName, salonName, color: "#C2185B", price, terms,
     }),
   });
 }
@@ -309,19 +353,20 @@ export async function send24hReminder({
 // 3. REMINDER — 2 Hours Before
 // ═══════════════════════════════════════════════
 export async function send2hReminder({
-  to, clientName, serviceName, staffName, salonName, dateTime, price,
+  to, clientName, serviceName, staffName, salonName, dateTime, price, businessType,
 }: {
   to: string; clientName: string; serviceName: string;
-  staffName?: string; salonName: string; dateTime: string; price?: number;
+  staffName?: string; salonName: string; dateTime: string; price?: number; businessType?: string;
 }) {
   const { formattedDate, formattedTime } = formatDate(dateTime);
+  const terms = getEmailTerms(businessType);
   await sendEmailSafe({
     from: FROM, to,
     subject: `See you in 2 hours — ${salonName}`,
     html: emailTemplate({
-      title: "See You Soon — 2 Hours to Go! 💅", clientName,
-      message: "Just a quick reminder that your appointment is in <strong>2 hours</strong>. We are looking forward to seeing you shortly!",
-      serviceName, formattedDate, formattedTime, staffName, salonName, color: "#C2185B", price,
+      title: `See You Soon — 2 Hours to Go! ${terms.headerIcon}`, clientName,
+      message: `Just a quick reminder that your ${terms.bookingWord} is in <strong>2 hours</strong>. We are looking forward to seeing you shortly!`,
+      serviceName, formattedDate, formattedTime, staffName, salonName, color: "#C2185B", price, terms,
     }),
   });
 }
@@ -423,7 +468,7 @@ export async function sendOfferEmail({
 // 7. NO-SHOW ALERT — To Salon Owner
 // ═══════════════════════════════════════════════
 export async function sendNoShowAlertEmail({
-  to, ownerName, clientName, serviceName, dateTime, salonName, dashboardUrl,
+  to, ownerName, clientName, serviceName, dateTime, salonName, dashboardUrl, businessType,
 }: {
   to: string;
   ownerName?: string;
@@ -432,8 +477,10 @@ export async function sendNoShowAlertEmail({
   dateTime: string;
   salonName: string;
   dashboardUrl?: string;
+  businessType?: string;
 }) {
   const { formattedDate, formattedTime } = formatDate(dateTime);
+  const terms = getEmailTerms(businessType);
   const greeting = ownerName ? ownerName : "there";
 
   await sendEmailSafe({
@@ -465,7 +512,7 @@ export async function sendNoShowAlertEmail({
           <div style="background:#FFF5F5;border:1.5px solid #FCA5A5;border-radius:12px;padding:18px 20px;margin-bottom:22px;">
             <table style="width:100%;font-size:14px;border-collapse:collapse;">
               <tr><td style="color:#999;padding:6px 0;width:110px;">👤 Client</td><td style="font-weight:700;color:#0F172A;">${clientName}</td></tr>
-              ${serviceName ? `<tr><td style="color:#999;padding:6px 0;">✂️ Service</td><td style="font-weight:600;color:#0F172A;">${serviceName}</td></tr>` : ""}
+              ${serviceName ? `<tr><td style="color:#999;padding:6px 0;">${terms.serviceEmoji} ${terms.serviceLabel}</td><td style="font-weight:600;color:#0F172A;">${serviceName}</td></tr>` : ""}
               <tr><td style="color:#999;padding:6px 0;">📅 Date</td><td style="font-weight:600;color:#0F172A;">${formattedDate}</td></tr>
               <tr><td style="color:#999;padding:6px 0;">🕐 Time</td><td style="font-weight:700;color:#DC2626;font-size:16px;">${formattedTime}</td></tr>
             </table>

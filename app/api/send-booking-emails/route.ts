@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
       dashboardUrl,
       paymentStatus,
       depositOnly,
+      businessType,
     } = await request.json();
 
     await sendBookingEmails({
@@ -39,6 +40,7 @@ export async function POST(request: NextRequest) {
       dashboardUrl,
       paymentStatus,
       depositOnly,
+      businessType,
     });
 
     return NextResponse.json({ success: true });
