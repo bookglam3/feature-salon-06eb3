@@ -28,6 +28,20 @@ export const POSTS: BlogPost[] = [
   },
 
   {
+    slug: "how-to-take-deposits-salon",
+    title: "How to Take Deposits in Your Salon (and Why You Should) — 2026 Guide",
+    metaTitle: "How to Take Deposits in Your Salon (and Why You Should) — 2026 Guide | Feature",
+    metaDescription: "Deposits are the single most effective way to stop no-shows — yet many UK salons still avoid them. Here's how to do it right, without losing bookings.",
+    keyword: "salon deposits",
+    publishedDate: "2026-06-01",
+    updatedDate: "2026-06-01",
+    readingTime: 4,
+    author: "Feature Team",
+    excerpt: "Deposits are the single most effective way to stop no-shows — yet many UK salons still avoid them, worried they'll put clients off. Here's how to do it right, without losing bookings.",
+    sections: [],
+  },
+
+  {
     slug: "salon-booking-software-no-commission",
     title: "Salon Booking Software with No Commission: Why It Matters (2026)",
     metaTitle: "Salon Booking Software with No Commission: Why It Matters (2026) | Feature",
