@@ -28,6 +28,20 @@ export const POSTS: BlogPost[] = [
   },
 
   {
+    slug: "booking-software-uk-physio-wellness-clinics",
+    title: "Booking Software for UK Physio & Wellness Clinics (2026): An Honest Guide",
+    metaTitle: "Booking Software for UK Physio & Wellness Clinics (2026) | Feature",
+    metaDescription: "An honest guide to booking software for UK physio and wellness clinics: when you need full practice management, when you don't, and what to look for either way.",
+    keyword: "clinic booking software",
+    publishedDate: "2026-06-01",
+    updatedDate: "2026-06-01",
+    readingTime: 5,
+    author: "Feature Team",
+    excerpt: "Not every clinic needs heavyweight practice-management software. An honest look at what physio and wellness clinics actually need from booking software in the UK — and when a simpler tool is the better fit.",
+    sections: [],
+  },
+
+  {
     slug: "gym-personal-trainer-booking-software-uk",
     title: "The Best Gym & Personal Trainer Booking Software in the UK (2026)",
     metaTitle: "The Best Gym & Personal Trainer Booking Software in the UK (2026) | Feature",
