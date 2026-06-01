@@ -28,6 +28,20 @@ export const POSTS: BlogPost[] = [
   },
 
   {
+    slug: "best-salon-booking-software-uk-2026",
+    title: "The Best Salon Booking Software in the UK (2026): An Honest Buyer's Guide",
+    metaTitle: "The Best Salon Booking Software in the UK (2026): An Honest Buyer's Guide | Feature",
+    metaDescription: "There's no single 'best' salon software — only the best one for how your salon actually works. An honest guide to the main UK options in 2026 and how to choose without overpaying.",
+    keyword: "best salon booking software",
+    publishedDate: "2026-06-01",
+    updatedDate: "2026-06-01",
+    readingTime: 5,
+    author: "Feature Team",
+    excerpt: "There's no single \"best\" salon software — only the best one for how your salon actually works. An honest guide to the main UK options in 2026 and how to choose without overpaying.",
+    sections: [],
+  },
+
+  {
     slug: "how-to-take-deposits-salon",
     title: "How to Take Deposits in Your Salon (and Why You Should) — 2026 Guide",
     metaTitle: "How to Take Deposits in Your Salon (and Why You Should) — 2026 Guide | Feature",
