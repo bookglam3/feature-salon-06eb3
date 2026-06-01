@@ -1,6 +1,11 @@
 import twilio from "twilio";
 
 // ─────────────────────────────────────────────────────────
+// Feature flag — set to true to re-enable plain SMS sending
+// ─────────────────────────────────────────────────────────
+const SMS_ENABLED = false;
+
+// ─────────────────────────────────────────────────────────
 // Twilio client — UK +44 sender
 // ─────────────────────────────────────────────────────────
 const client = twilio(
@@ -83,6 +88,10 @@ function getSender(normalisedTo: string, salonName?: string): string {
 }
 
 export async function sendSMS(to: string, body: string, salonName?: string): Promise<void> {
+  if (!SMS_ENABLED) {
+    console.log(`[SMS] Disabled — skipping message to ${to}`);
+    return;
+  }
   const normalisedTo = normalisePhone(to);
   if (!normalisedTo) {
     console.warn(`[SMS] Skipping — could not normalise phone: ${to}`);

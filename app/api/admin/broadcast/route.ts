@@ -272,16 +272,11 @@ export async function POST(req: NextRequest) {
           }
 
         } else if (channel === "sms") {
-          if (!r.phone || !twilioClient) continue;
-          const to = normaliseForBroadcast(r.phone, r.country);
-          if (!to) { failed++; continue; }
-          // Direct Twilio call — errors are not swallowed
-          await twilioClient.messages.create({
-            from: TWILIO_SMS_FROM,
-            to,
-            body: `${subject}\n\n${message}\n\nReply STOP to opt out.`,
-          });
-          sent++;
+          // SMS_ENABLED = false — plain SMS is temporarily disabled to avoid Twilio SMS charges.
+          // Flip SMS_ENABLED to true in app/lib/sms.ts to re-enable.
+          console.log(`[broadcast] SMS disabled — skipping SMS to ${r.owner_email}`);
+          failed++;
+          continue;
 
         } else if (channel === "whatsapp") {
           if (!r.phone || !twilioClient) continue;

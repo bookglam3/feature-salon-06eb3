@@ -256,6 +256,7 @@ export default function BookingPage() {
   const [otpCode, setOtpCode] = useState("");
   const [otpError, setOtpError] = useState("");
   const [otpLoading, setOtpLoading] = useState(false);
+  const [otpChallenge, setOtpChallenge] = useState("");
 
   const loadBookedSlots = useCallback(async (date: Date, staffId: string | null, salonId: string, salonTz = "Europe/London") => {
     const dateStr = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
@@ -459,17 +460,18 @@ export default function BookingPage() {
       const res = await fetch("/api/verify/send", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: form.phone }),
+        body: JSON.stringify({ email: form.email }),
       });
       const data = await res.json();
       if (!res.ok) { setOtpError(data.error || "Failed to send code"); setOtpLoading(false); return; }
+      setOtpChallenge(data.challenge || "");
       setOtpSent(true);
       setOtpCode("");
     } catch {
       setOtpError("Could not send verification code. Please try again.");
     }
     setOtpLoading(false);
-  }, [form.phone, validateForm]);
+  }, [form.email, validateForm]);
 
   const handleVerifyOtp = useCallback(async () => {
     if (!otpCode.trim()) { setOtpError("Please enter the code"); return; }
@@ -479,7 +481,7 @@ export default function BookingPage() {
       const res = await fetch("/api/verify/check", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: form.phone, code: otpCode }),
+        body: JSON.stringify({ email: form.email, code: otpCode, challenge: otpChallenge }),
       });
       const data = await res.json();
       if (!res.ok) { setOtpError(data.error || "Invalid code"); setOtpLoading(false); return; }
@@ -490,7 +492,7 @@ export default function BookingPage() {
       setOtpError("Verification failed. Please try again.");
     }
     setOtpLoading(false);
-  }, [otpCode, form.phone, handleProceedToPayment]);
+  }, [otpCode, form.email, otpChallenge, handleProceedToPayment]);
 
   const steps = ["Service", bookingVc.staffSingular, "Date & Time", "Details", "Payment"];
   // Salon-like verticals (scissors/sparkles/leaf) have relevant per-service emoji — others get a neutral icon
@@ -832,11 +834,11 @@ export default function BookingPage() {
                 {/* OTP Verification Screen */}
                 {otpSent && !phoneVerified ? (
                   <div style={{ marginTop: 24, background: "#F8FAFF", border: "2px solid #667eea", borderRadius: 20, padding: "28px 24px", textAlign: "center" }}>
-                    <div style={{ fontSize: 48, marginBottom: 12 }}>📱</div>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: "#0F172A", marginBottom: 6 }}>Verify Your Phone</div>
+                    <div style={{ fontSize: 48, marginBottom: 12 }}>📧</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: "#0F172A", marginBottom: 6 }}>Verify Your Email</div>
                     <div style={{ fontSize: 14, color: "#64748B", marginBottom: 20, lineHeight: 1.6 }}>
                       We&apos;ve sent a 6-digit code to<br/>
-                      <strong style={{ color: "#0F172A" }}>{form.phone}</strong>
+                      <strong style={{ color: "#0F172A" }}>{form.email}</strong>
                     </div>
                     <input
                       type="text"
@@ -861,7 +863,7 @@ export default function BookingPage() {
                       onClick={() => { setOtpSent(false); setOtpError(""); setOtpCode(""); }}
                       style={{ background: "none", border: "none", color: "#667eea", fontWeight: 700, cursor: "pointer", fontSize: 14, marginTop: 14, display: "block", width: "100%" }}
                     >
-                      ← Edit Phone Number
+                      ← Edit Details
                     </button>
                     <button
                       type="button"
