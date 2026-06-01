@@ -28,6 +28,20 @@ export const POSTS: BlogPost[] = [
   },
 
   {
+    slug: "gym-personal-trainer-booking-software-uk",
+    title: "The Best Gym & Personal Trainer Booking Software in the UK (2026)",
+    metaTitle: "The Best Gym & Personal Trainer Booking Software in the UK (2026) | Feature",
+    metaDescription: "An honest guide to choosing gym or PT booking software in the UK: what independent trainers, studios and gyms actually need, and how flat pricing compares to commission models in 2026.",
+    keyword: "gym booking software",
+    publishedDate: "2026-06-01",
+    updatedDate: "2026-06-01",
+    readingTime: 5,
+    author: "Feature Team",
+    excerpt: "An honest guide to choosing gym or PT booking software in the UK — what independent trainers, boutique studios and small gyms actually need, and why the pricing model matters as much as the feature list.",
+    sections: [],
+  },
+
+  {
     slug: "booksy-alternative-uk-2026",
     title: "The Best Booksy Alternative for UK Salons & Barbers (2026)",
     metaTitle: "The Best Booksy Alternative for UK Salons & Barbers (2026) | Feature",
