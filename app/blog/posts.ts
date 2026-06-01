@@ -28,6 +28,20 @@ export const POSTS: BlogPost[] = [
   },
 
   {
+    slug: "booksy-alternative-uk-2026",
+    title: "The Best Booksy Alternative for UK Salons & Barbers (2026)",
+    metaTitle: "The Best Booksy Alternative for UK Salons & Barbers (2026) | Feature",
+    metaDescription: "Thinking of leaving Booksy? An honest look at what Booksy costs in 2026 — subscription, per-staff fees and Boost commission — and what to consider if you want something simpler.",
+    keyword: "booksy alternative",
+    publishedDate: "2026-06-01",
+    updatedDate: "2026-06-01",
+    readingTime: 4,
+    author: "Feature Team",
+    excerpt: "An honest look at what Booksy costs in 2026 — subscription, per-staff fees and Boost commission — and how to decide if a flat-rate alternative suits your business better.",
+    sections: [],
+  },
+
+  {
     slug: "salon-software-whatsapp-reminders",
     title: "Salon Software with WhatsApp Reminders: Why It Matters (2026)",
     metaTitle: "Salon Software with WhatsApp Reminders: Why It Matters (2026) | Feature",
