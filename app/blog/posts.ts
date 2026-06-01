@@ -28,6 +28,20 @@ export const POSTS: BlogPost[] = [
   },
 
   {
+    slug: "salon-booking-software-no-commission",
+    title: "Salon Booking Software with No Commission: Why It Matters (2026)",
+    metaTitle: "Salon Booking Software with No Commission: Why It Matters (2026) | Feature",
+    metaDescription: "\"Free\" booking software is rarely free. An honest look at how commission quietly eats salon profits — and why a flat-rate, no-commission model can be worth far more than it looks.",
+    keyword: "no commission booking software",
+    publishedDate: "2026-06-01",
+    updatedDate: "2026-06-01",
+    readingTime: 4,
+    author: "Feature Team",
+    excerpt: "\"Free\" booking software is rarely free. An honest look at how commission quietly eats salon profits — and why a no-commission, flat-rate model can be worth far more than it looks.",
+    sections: [],
+  },
+
+  {
     slug: "booking-software-uk-physio-wellness-clinics",
     title: "Booking Software for UK Physio & Wellness Clinics (2026): An Honest Guide",
     metaTitle: "Booking Software for UK Physio & Wellness Clinics (2026) | Feature",

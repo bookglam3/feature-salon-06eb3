@@ -21,6 +21,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   "barbershop booking": "#8B5CF6",
   "whatsapp reminders": "#25D366",
   "booksy alternative": "#F59E0B",
+  "no commission booking software": "#F97316",
   "clinic booking software": "#14B8A6",
   "gym booking software": "#EF4444",
   "fresha alternative": "#6366F1",
