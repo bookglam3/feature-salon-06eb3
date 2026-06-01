@@ -164,6 +164,15 @@ const comparisonData = [
   { feature: "No hidden marketplace fees",     feature_: true,  fresha: false, treatwell: false },
 ];
 
+const TESTIMONIALS: { rating: number; quote: string; name: string; business: string }[] = [
+  {
+    rating: 5,
+    quote: "Before Feature, managing bookings was a real hassle — and Fresha kept taking commission on top. Now it costs me far less, and the automatic WhatsApp reminders are brilliant. I'd absolutely recommend it to any other salon.",
+    name: "John",
+    business: "Style by John",
+  },
+];
+
 export default function Home() {
   return (
     <main className="landing">
@@ -451,6 +460,49 @@ export default function Home() {
         </div>
       </section>
 
+
+      {/* ── Testimonials ── */}
+      {TESTIMONIALS.length > 0 && (
+        <section style={{ background: "#1C2438", padding: "56px 24px 64px", borderTop: "0.5px solid #2a3350", borderBottom: "0.5px solid #2a3350" }}>
+          <div style={{ maxWidth: 900, margin: "0 auto", textAlign: "center" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#C9A24B", letterSpacing: "2.5px", textTransform: "uppercase", marginBottom: 12 }}>
+              WHAT OWNERS SAY
+            </div>
+            <h2 style={{ fontSize: "clamp(22px,3.5vw,32px)", fontWeight: 800, color: "#F7F5EF", marginBottom: 40, letterSpacing: "-0.3px" }}>
+              What salon owners say
+            </h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 24 }}>
+              {TESTIMONIALS.map((t, i) => (
+                <div
+                  key={i}
+                  style={{
+                    background: "#141A2E",
+                    border: "1.5px solid #2a3350",
+                    borderRadius: 16,
+                    padding: "28px 26px",
+                    textAlign: "left",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 16,
+                  }}
+                >
+                  <div style={{ display: "flex", gap: 3 }}>
+                    {Array.from({ length: t.rating }).map((_, j) => (
+                      <span key={j} style={{ color: "#C9A24B", fontSize: 20, lineHeight: 1 }}>&#9733;</span>
+                    ))}
+                  </div>
+                  <p style={{ fontSize: 16, color: "#CBD5E1", lineHeight: 1.85, margin: 0, fontStyle: "italic" }}>
+                    &ldquo;{t.quote}&rdquo;
+                  </p>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#C9A24B" }}>
+                    &mdash; {t.name}, {t.business}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ── Location Pages ── */}
       <section id="locations" className="section">
