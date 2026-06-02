@@ -24,8 +24,8 @@ export default function LiveCounter() {
     try {
       const res = await fetch("/api/stats/count", { cache: "no-store" });
       if (!res.ok) return;
-      const { appointments } = await res.json();
-      if (typeof appointments === "number") setTarget(appointments);
+      const { businesses } = await res.json();
+      if (typeof businesses === "number") setTarget(businesses);
     } catch { /* keep current */ }
   }
 
@@ -102,7 +102,7 @@ export default function LiveCounter() {
             <span style={{ fontSize: 22, fontWeight: 700, color: "rgba(201,162,75,0.6)" }}>+</span>
           </div>
           <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", fontWeight: 500, marginTop: 2 }}>
-            bookings made
+            salons using Feature
           </div>
         </div>
 
