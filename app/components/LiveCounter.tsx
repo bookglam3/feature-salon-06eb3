@@ -76,7 +76,7 @@ export default function LiveCounter() {
       {/* Text + live dot */}
       <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
         <span style={{ fontSize: 13, fontWeight: 600, color: "#F7F5EF", lineHeight: 1.35 }}>
-          salons already trusting<br />and working with Feature
+          businesses already trusting<br />and working with Feature
         </span>
         <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ position: "relative", display: "inline-flex", width: 8, height: 8 }}>
