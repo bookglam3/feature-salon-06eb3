@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Scissors, Dumbbell, Flower2, Stethoscope, Sparkles, Leaf, Smile, HeartPulse, PhoneOff, Banknote, BookOpen, CreditCard, BellOff, BarChart3, Smartphone, MessageCircle, CalendarCheck, Zap, CalendarClock, Users, ContactRound, Rocket, Settings2, Share2, Building2 } from "lucide-react";
 import TrustStrip from "./components/TrustStrip";
+import LiveCounter from "./components/LiveCounter";
 import type { LucideIcon } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -217,6 +218,7 @@ export default function Home() {
                 </span>
               ))}
             </div>
+            <LiveCounter />
           </div>
 
           {/* Dashboard preview mockup */}
