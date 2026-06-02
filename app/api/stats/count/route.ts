@@ -9,27 +9,31 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Never display below this floor — reflects real sign-ups before this counter was added
-const FLOOR = 147;
+const BUSINESS_FLOOR    = 147;
+const APPOINTMENT_FLOOR = 0;
 
 export async function GET() {
   try {
-    const { count, error } = await supabase
-      .from("salons")
-      .select("*", { count: "exact", head: true });
-
-    if (error || count === null) {
-      return NextResponse.json({ count: FLOOR }, { status: 200 });
-    }
+    const [{ count: bizCount, error: bizErr }, { count: apptCount, error: apptErr }] =
+      await Promise.all([
+        supabase.from("salons").select("*", { count: "exact", head: true }),
+        supabase.from("appointments").select("*", { count: "exact", head: true }),
+      ]);
 
     return NextResponse.json(
-      { count: Math.max(count, FLOOR) },
+      {
+        businesses:   bizCount  == null || bizErr  ? BUSINESS_FLOOR    : Math.max(bizCount,  BUSINESS_FLOOR),
+        appointments: apptCount == null || apptErr ? APPOINTMENT_FLOOR : Math.max(apptCount, APPOINTMENT_FLOOR),
+      },
       {
         status: 200,
         headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120" },
       }
     );
   } catch {
-    return NextResponse.json({ count: FLOOR }, { status: 200 });
+    return NextResponse.json(
+      { businesses: BUSINESS_FLOOR, appointments: APPOINTMENT_FLOOR },
+      { status: 200 }
+    );
   }
 }
