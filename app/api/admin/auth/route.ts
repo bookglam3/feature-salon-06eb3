@@ -76,22 +76,18 @@ export async function POST(req: NextRequest) {
     .update({ last_login_at: new Date().toISOString() })
     .eq("id", adminUser.id);
 
-  const mfa_setup_required = !adminUser.totp_enabled;
-
-  // 5. Issue token (mfa_verified = false until 2FA is passed)
+  // 5. Issue token — 2FA bypassed, direct access
   const token = await signAdminToken({
     id:                 adminUser.id,
     role:               adminUser.role,
-    mfa_verified:       false,
-    mfa_setup_required,
+    mfa_verified:       true,
+    mfa_setup_required: false,
   });
 
   const res = NextResponse.json({
-    success:       true,
-    role:          adminUser.role,
-    name:          adminUser.full_name,
-    requires2fa:   adminUser.totp_enabled,
-    requires_setup: mfa_setup_required,
+    success: true,
+    role:    adminUser.role,
+    name:    adminUser.full_name,
   });
   res.cookies.set(ADMIN_COOKIE, token, adminCookieOptions);
   return res;
