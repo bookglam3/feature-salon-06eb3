@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
@@ -25,7 +25,10 @@ function StatusPill({ status }: { status: string }) {
   return <span className={`dk-badge ${cls}`}>{status.replace("_"," ")}</span>;
 }
 
-const EMPTY_FORM = { client_name: "", client_email: "", client_phone: "", staff_id: "", service_id: "", date_time: "", status: "pending", notes: "" };
+const EMPTY_FORM = { client_name: "", client_email: "", client_phone: "", staff_id: "", service_id: "", date_time: "", status: "pending", notes: "",
+  // beauty consultation fields
+  skin_type: "", allergies: "no", allergy_details: "", previous_treatments: "", medical_conditions: "", patch_test: false,
+};
 
 export default function BookingsPage() {
   const router = useRouter();
@@ -72,23 +75,28 @@ export default function BookingsPage() {
     setAppointments(data || []);
   }, [salon]);
 
-  const handleSubmit = useCallback(async (e: React.FormEvent) => {
+  const serializeNotes = useCallback((fd: typeof EMPTY_FORM, hasConsultation: boolean): string | null => {
+    if (!hasConsultation) return fd.notes || null;
+    const consultation = { skin_type: fd.skin_type, allergies: fd.allergies, allergy_details: fd.allergy_details, previous_treatments: fd.previous_treatments, medical_conditions: fd.medical_conditions, patch_test: fd.patch_test };
+    return JSON.stringify({ consultation, notes: fd.notes });
+  }, []);
+
+  const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!salon) return;
+    const notesValue = serializeNotes(formData, vc.consultationForm);
     if (editingId) {
-      const { error } = await supabase.from("appointments").update({ client_name: formData.client_name, client_email: formData.client_email, client_phone: formData.client_phone, staff_id: formData.staff_id || null, service_id: formData.service_id, date_time: formData.date_time, status: formData.status, notes: formData.notes || null }).eq("id", editingId);
+      const { error } = await supabase.from("appointments").update({ client_name: formData.client_name, client_email: formData.client_email, client_phone: formData.client_phone, staff_id: formData.staff_id || null, service_id: formData.service_id, date_time: formData.date_time, status: formData.status, notes: notesValue }).eq("id", editingId);
       if (error) { toast.error("Failed to update booking"); return; }
       toast.success("Booking updated!");
     } else {
-      // Insert and get the new row's ID
       const { data: inserted, error } = await supabase
         .from("appointments")
-        .insert({ salon_id: salon.id, client_name: formData.client_name, client_email: formData.client_email, client_phone: formData.client_phone, staff_id: formData.staff_id || null, service_id: formData.service_id, date_time: formData.date_time, status: formData.status, notes: formData.notes || null })
+        .insert({ salon_id: salon.id, client_name: formData.client_name, client_email: formData.client_email, client_phone: formData.client_phone, staff_id: formData.staff_id || null, service_id: formData.service_id, date_time: formData.date_time, status: formData.status, notes: notesValue })
         .select("id")
         .single();
       if (error) { toast.error("Failed to create booking"); return; }
 
-      // Send confirmation email + WhatsApp to client (if email provided)
       if (formData.client_email && inserted?.id) {
         setSendingEmail(true);
         try {
@@ -107,13 +115,20 @@ export default function BookingsPage() {
     setShowForm(false);
     setEditingId(null);
     await reloadAppts();
-  }, [salon, editingId, formData, toast, reloadAppts]);
+  }, [salon, editingId, formData, vc, toast, reloadAppts, serializeNotes]);
 
   const handleEdit = useCallback((a: Appointment) => {
     setEditingId(a.id);
-    setFormData({ client_name: a.client_name || "", client_email: a.client_email || "", client_phone: a.client_phone || "", staff_id: a.staff_id || "", service_id: a.service_id || "", date_time: a.date_time ? a.date_time.slice(0,16) : "", status: a.status || "pending", notes: a.notes || "" });
+    let parsed = { notes: a.notes || "", skin_type: "", allergies: "no", allergy_details: "", previous_treatments: "", medical_conditions: "", patch_test: false };
+    if (vc.consultationForm && a.notes) {
+      try {
+        const p = JSON.parse(a.notes);
+        if (p.consultation) { parsed = { notes: p.notes || "", ...p.consultation }; }
+      } catch { /* plain text notes — leave as-is */ }
+    }
+    setFormData({ client_name: a.client_name || "", client_email: a.client_email || "", client_phone: a.client_phone || "", staff_id: a.staff_id || "", service_id: a.service_id || "", date_time: a.date_time ? a.date_time.slice(0,16) : "", status: a.status || "pending", ...parsed });
     setShowForm(true);
-  }, []);
+  }, [vc]);
 
   const handleDelete = useCallback(async (id: string) => {
     if (!window.confirm("Delete this booking? This cannot be undone.")) return;
@@ -148,7 +163,7 @@ export default function BookingsPage() {
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <HamburgerBtn />
         <div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: "#F1F5F9", letterSpacing: "-0.4px" }}>{vc.bookingPlural}</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "#F7F5EF", letterSpacing: "-0.4px" }}>{vc.bookingPlural}</div>
           <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.3)", marginTop: 1 }}>{appointments.length} total {vc.bookingPlural.toLowerCase()}</div>
         </div>
       </div>
@@ -206,7 +221,7 @@ export default function BookingsPage() {
                     {filtered.map(a => (
                       <tr key={a.id}>
                         <td><StatusPill status={a.status} /></td>
-                        <td style={{ fontWeight: 700, color: "#F1F5F9" }}>{a.client_name}</td>
+                        <td style={{ fontWeight: 700, color: "#F7F5EF" }}>{a.client_name}</td>
                         <td style={{ color: "rgba(255,255,255,0.55)" }}>{a.services?.name || <span style={{opacity:.3}}>—</span>}</td>
                         <td style={{ color: "rgba(255,255,255,0.4)" }}>{a.staff?.name || <span style={{fontSize:11,opacity:.4}}>Any</span>}</td>
                         <td style={{ color: "rgba(255,255,255,0.55)", whiteSpace: "nowrap" }}>{new Date(a.date_time).toLocaleString("en-GB",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"})}</td>
@@ -235,7 +250,7 @@ export default function BookingsPage() {
           <div className="elite-table-wrap fade-in-up">
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
               <button onClick={() => setWeekOffset(w => w - 1)} className="elite-btn-ghost" style={{ padding: "5px 12px" }}>←</button>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#F1F5F9" }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#F7F5EF" }}>
                 {weekDays[0].toLocaleDateString("en-GB",{day:"numeric",month:"short"})} – {weekDays[6].toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}
               </div>
               <div style={{ display: "flex", gap: 6 }}>
@@ -251,7 +266,7 @@ export default function BookingsPage() {
                     <div style={{ fontSize: 10, color: "rgba(255,255,255,0.28)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.5px" }}>
                       {["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][day.getDay()]}
                     </div>
-                    <div style={{ width: 28, height: 28, borderRadius: "50%", background: isToday ? "linear-gradient(135deg,#C9A24B,#0E1320)" : "transparent", color: isToday ? "#fff" : "#F1F5F9", fontSize: 13, fontWeight: isToday ? 800 : 500, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto", boxShadow: isToday ? "0 4px 12px rgba(201,162,75,0.45)" : "none" }}>
+                    <div style={{ width: 28, height: 28, borderRadius: "50%", background: isToday ? "linear-gradient(135deg,#C9A24B,#0E1320)" : "transparent", color: isToday ? "#fff" : "#2a3350", fontSize: 13, fontWeight: isToday ? 800 : 500, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto", boxShadow: isToday ? "0 4px 12px rgba(201,162,75,0.45)" : "none" }}>
                       {day.getDate()}
                     </div>
                   </div>
@@ -270,7 +285,7 @@ export default function BookingsPage() {
                         onMouseLeave={e => { e.currentTarget.style.background = "rgba(201,162,75,0.12)"; }}
                       >
                         <div style={{ fontSize: 10.5, fontWeight: 700, color: "#C9A24B" }}>{new Date(a.date_time).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"})}</div>
-                        <div style={{ fontSize: 10.5, color: "#F1F5F9", fontWeight: 600 }}>{a.client_name}</div>
+                        <div style={{ fontSize: 10.5, color: "#F7F5EF", fontWeight: 600 }}>{a.client_name}</div>
                         <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)" }}>{a.services?.name}</div>
                       </div>
                     ))}
@@ -299,14 +314,89 @@ export default function BookingsPage() {
                 onChange={e => setFormData({ ...formData, notes: e.target.value })}
                 placeholder="Clinical observations, treatment plan, follow-up notes…"
                 rows={4}
-                style={{ width: "100%", padding: "9px 12px", fontSize: 13, border: "1.5px solid #E2E8F0", borderRadius: 10, resize: "vertical", fontFamily: "inherit", color: "#0F172A", lineHeight: 1.6, outline: "none", boxSizing: "border-box" }}
+                style={{ width: "100%", padding: "9px 12px", fontSize: 13, border: "1.5px solid #2a3350", borderRadius: 10, resize: "vertical", fontFamily: "inherit", color: "#F7F5EF", lineHeight: 1.6, outline: "none", boxSizing: "border-box" }}
                 onFocus={e => { e.currentTarget.style.borderColor = "#C9A24B"; }}
-                onBlur={e => { e.currentTarget.style.borderColor = "#E2E8F0"; }}
+                onBlur={e => { e.currentTarget.style.borderColor = "#2a3350"; }}
               />
             </FormGroup>
           )}
+
+          {vc.consultationForm && (
+            <>
+              <div style={{ margin: "16px 0 10px", paddingBottom: 8, borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#C9A24B", letterSpacing: "0.8px", textTransform: "uppercase" }}>Beauty Consultation</div>
+              </div>
+              <FormGroup label="Skin Type">
+                <Select value={formData.skin_type} onChange={e => setFormData({ ...formData, skin_type: e.target.value })}>
+                  <option value="">Select skin type</option>
+                  <option value="normal">Normal</option>
+                  <option value="dry">Dry</option>
+                  <option value="oily">Oily</option>
+                  <option value="combination">Combination</option>
+                  <option value="sensitive">Sensitive</option>
+                </Select>
+              </FormGroup>
+              <FormGroup label="Known Allergies?">
+                <Select value={formData.allergies} onChange={e => setFormData({ ...formData, allergies: e.target.value, allergy_details: e.target.value === "no" ? "" : formData.allergy_details })}>
+                  <option value="no">No known allergies</option>
+                  <option value="yes">Yes — has allergies</option>
+                </Select>
+              </FormGroup>
+              {formData.allergies === "yes" && (
+                <FormGroup label="Allergy Details">
+                  <Input
+                    placeholder="e.g. latex, fragrance, nickel…"
+                    value={formData.allergy_details}
+                    onChange={e => setFormData({ ...formData, allergy_details: e.target.value })}
+                  />
+                </FormGroup>
+              )}
+              <FormGroup label="Previous Beauty Treatments">
+                <textarea
+                  value={formData.previous_treatments}
+                  onChange={e => setFormData({ ...formData, previous_treatments: e.target.value })}
+                  placeholder="e.g. facials, waxing, lash extensions…"
+                  rows={2}
+                  style={{ width: "100%", padding: "9px 12px", fontSize: 13, border: "1.5px solid #2a3350", borderRadius: 10, resize: "vertical", fontFamily: "inherit", color: "#F7F5EF", lineHeight: 1.6, outline: "none", boxSizing: "border-box", background: "transparent" }}
+                  onFocus={e => { e.currentTarget.style.borderColor = "#C9A24B"; }}
+                  onBlur={e => { e.currentTarget.style.borderColor = "#2a3350"; }}
+                />
+              </FormGroup>
+              <FormGroup label="Medical Conditions / Medications">
+                <textarea
+                  value={formData.medical_conditions}
+                  onChange={e => setFormData({ ...formData, medical_conditions: e.target.value })}
+                  placeholder="e.g. rosacea, eczema, pregnancy, blood thinners…"
+                  rows={2}
+                  style={{ width: "100%", padding: "9px 12px", fontSize: 13, border: "1.5px solid #2a3350", borderRadius: 10, resize: "vertical", fontFamily: "inherit", color: "#F7F5EF", lineHeight: 1.6, outline: "none", boxSizing: "border-box", background: "transparent" }}
+                  onFocus={e => { e.currentTarget.style.borderColor = "#C9A24B"; }}
+                  onBlur={e => { e.currentTarget.style.borderColor = "#2a3350"; }}
+                />
+              </FormGroup>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "6px 0 14px", padding: "10px 12px", background: "rgba(201,162,75,0.06)", borderRadius: 10, border: "1px solid rgba(201,162,75,0.15)", cursor: "pointer" }} onClick={() => setFormData(f => ({ ...f, patch_test: !f.patch_test }))}>
+                <div style={{ width: 18, height: 18, borderRadius: 5, border: `2px solid ${formData.patch_test ? "#C9A24B" : "#2a3350"}`, background: formData.patch_test ? "#C9A24B" : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.15s" }}>
+                  {formData.patch_test && <span style={{ color: "#0E1320", fontSize: 11, fontWeight: 900 }}>✓</span>}
+                </div>
+                <div>
+                  <div style={{ fontSize: 12.5, fontWeight: 600, color: "#F7F5EF" }}>Patch Test Consent</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 1 }}>Client consents to patch test before treatment</div>
+                </div>
+              </div>
+              <FormGroup label="Additional Notes">
+                <textarea
+                  value={formData.notes}
+                  onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                  placeholder="Any other notes about this client or appointment…"
+                  rows={2}
+                  style={{ width: "100%", padding: "9px 12px", fontSize: 13, border: "1.5px solid #2a3350", borderRadius: 10, resize: "vertical", fontFamily: "inherit", color: "#F7F5EF", lineHeight: 1.6, outline: "none", boxSizing: "border-box", background: "transparent" }}
+                  onFocus={e => { e.currentTarget.style.borderColor = "#C9A24B"; }}
+                  onBlur={e => { e.currentTarget.style.borderColor = "#2a3350"; }}
+                />
+              </FormGroup>
+            </>
+          )}
           {!editingId && formData.client_email && (
-            <p style={{ fontSize: 12, color: "#059669", margin: "0 0 12px", fontWeight: 500 }}>✉️ Confirmation email will be sent to {formData.client_email}</p>
+            <p style={{ fontSize: 12, color: "#10B981", margin: "0 0 12px", fontWeight: 500 }}>✉️ Confirmation email will be sent to {formData.client_email}</p>
           )}
           <ModalActions><BtnSecondary type="button" onClick={() => { setShowForm(false); setEditingId(null); }}>Cancel</BtnSecondary><BtnPrimary type="submit" disabled={sendingEmail}>{sendingEmail ? "Sending confirmation…" : editingId ? "Update" : "Create Booking"}</BtnPrimary></ModalActions>
         </form>
