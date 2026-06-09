@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
@@ -19,9 +19,9 @@ interface Appointment {
 }
 
 const STATUS_COLORS: Record<string, { bg: string; border: string; text: string; dot: string }> = {
-  confirmed: { bg: "#ECFDF5", border: "#6EE7B7", text: "#065F46", dot: "#10B981" },
-  pending:   { bg: "#FEF9C3", border: "#FCD34D", text: "#92400E", dot: "#F59E0B" },
-  cancelled: { bg: "#FEF2F2", border: "#FCA5A5", text: "#991B1B", dot: "#EF4444" },
+  confirmed: { bg: "rgba(16,185,129,0.10)", border: "#6EE7B7", text: "#065F46", dot: "#10B981" },
+  pending:   { bg: "rgba(245,158,11,0.10)", border: "#FCD34D", text: "#F59E0B", dot: "#F59E0B" },
+  cancelled: { bg: "rgba(239,68,68,0.10)", border: "#FCA5A5", text: "#991B1B", dot: "#EF4444" },
 };
 
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 7); // 7am – 7pm
@@ -60,24 +60,24 @@ function MonthView({ currentDate, monthDays, getApptsByDay, today, setSelectedAp
   const monthName = currentDate.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
   return (
     <div style={{ padding: "24px 24px", maxWidth: 1360, margin: "0 auto" }}>
-      <div style={{ textAlign: "center", fontSize: 20, fontWeight: 900, color: "#0F172A", marginBottom: 20, letterSpacing: "-0.5px" }}>{monthName}</div>
+      <div style={{ textAlign: "center", fontSize: 20, fontWeight: 900, color: "#F7F5EF", marginBottom: 20, letterSpacing: "-0.5px" }}>{monthName}</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2, marginBottom: 2 }}>
         {DAYS.map(d => (
-          <div key={d} style={{ textAlign: "center", fontSize: 11, fontWeight: 800, color: "#94A3B8", padding: "8px 0", letterSpacing: "0.5px", textTransform: "uppercase" }}>{d}</div>
+          <div key={d} style={{ textAlign: "center", fontSize: 11, fontWeight: 800, color: "#aab1c4", padding: "8px 0", letterSpacing: "0.5px", textTransform: "uppercase" }}>{d}</div>
         ))}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 2 }}>
         {monthDays.map((day, idx) => {
-          if (!day) return <div key={`e-${idx}`} style={{ minHeight: 90, background: "#FAFAFA", borderRadius: 10, border: "1.5px solid #F1F5F9" }} />;
+          if (!day) return <div key={`e-${idx}`} style={{ minHeight: 90, background: "#141A2E", borderRadius: 10, border: "1.5px solid #2a3350" }} />;
           const dayAppts = getApptsByDay(day);
           const isToday = sameDay(day, today);
           return (
             <div key={day.toISOString()}
-              style={{ minHeight: 90, background: isToday ? "#EEF2FF" : "#fff", borderRadius: 10, border: `1.5px solid ${isToday ? "#C7D2FE" : "#F1F5F9"}`, padding: "8px 8px", cursor: "default", transition: "all 0.12s" }}
-              onMouseEnter={e => { if (!isToday) e.currentTarget.style.borderColor = "#C7D2FE"; }}
-              onMouseLeave={e => { if (!isToday) e.currentTarget.style.borderColor = "#F1F5F9"; }}
+              style={{ minHeight: 90, background: isToday ? "rgba(201,162,75,0.10)" : "#1C2438", borderRadius: 10, border: `1.5px solid ${isToday ? "rgba(201,162,75,0.25)" : "#2a3350"}`, padding: "8px 8px", cursor: "default", transition: "all 0.12s" }}
+              onMouseEnter={e => { if (!isToday) e.currentTarget.style.borderColor = "rgba(201,162,75,0.25)"; }}
+              onMouseLeave={e => { if (!isToday) e.currentTarget.style.borderColor = "#2a3350"; }}
             >
-              <div style={{ fontSize: 12, fontWeight: isToday ? 900 : 600, marginBottom: 5, display: "inline-flex", alignItems: "center", justifyContent: "center", width: 22, height: 22, borderRadius: "50%", background: isToday ? "#C9A24B" : "transparent", color: isToday ? "#fff" : "#0F172A" }}>{day.getDate()}</div>
+              <div style={{ fontSize: 12, fontWeight: isToday ? 900 : 600, marginBottom: 5, display: "inline-flex", alignItems: "center", justifyContent: "center", width: 22, height: 22, borderRadius: "50%", background: isToday ? "#C9A24B" : "transparent", color: isToday ? "#fff" : "#F7F5EF" }}>{day.getDate()}</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 {dayAppts.slice(0, 3).map(a => {
                   const sc = STATUS_COLORS[a.status] || STATUS_COLORS.pending;
@@ -91,7 +91,7 @@ function MonthView({ currentDate, monthDays, getApptsByDay, today, setSelectedAp
                     </div>
                   );
                 })}
-                {dayAppts.length > 3 && <div style={{ fontSize: 9.5, color: "#94A3B8", fontWeight: 600, paddingLeft: 4 }}>+{dayAppts.length - 3} more</div>}
+                {dayAppts.length > 3 && <div style={{ fontSize: 9.5, color: "#aab1c4", fontWeight: 600, paddingLeft: 4 }}>+{dayAppts.length - 3} more</div>}
               </div>
             </div>
           );
@@ -112,21 +112,21 @@ function WeekView({ weekDays, appointments, today, setSelectedAppt }: WeekViewPr
   const label = `${weekDays[0].toLocaleDateString("en-GB", { day: "numeric", month: "short" })} – ${weekDays[6].toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`;
   return (
     <div style={{ padding: "24px 24px", maxWidth: 1360, margin: "0 auto", overflowX: "auto" }}>
-      <div style={{ textAlign: "center", fontSize: 18, fontWeight: 800, color: "#0F172A", marginBottom: 20, letterSpacing: "-0.4px" }}>{label}</div>
+      <div style={{ textAlign: "center", fontSize: 18, fontWeight: 800, color: "#F7F5EF", marginBottom: 20, letterSpacing: "-0.4px" }}>{label}</div>
       <div style={{ display: "grid", gridTemplateColumns: "60px repeat(7,1fr)", minWidth: 700 }}>
-        <div style={{ borderRight: "1px solid #F1F5F9", borderBottom: "1px solid #F1F5F9" }} />
+        <div style={{ borderRight: "1px solid #2a3350", borderBottom: "1px solid #2a3350" }} />
         {weekDays.map(day => {
           const isToday = sameDay(day, today);
           return (
-            <div key={day.toISOString()} style={{ textAlign: "center", padding: "10px 4px", borderRight: "1px solid #F1F5F9", borderBottom: "1px solid #F1F5F9", background: isToday ? "#EEF2FF" : "#FAFAFA" }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.5px" }}>{DAYS[(weekDays.indexOf(day))]}</div>
-              <div style={{ fontSize: 18, fontWeight: 900, color: isToday ? "#4F46E5" : "#0F172A", marginTop: 2 }}>{day.getDate()}</div>
+            <div key={day.toISOString()} style={{ textAlign: "center", padding: "10px 4px", borderRight: "1px solid #2a3350", borderBottom: "1px solid #2a3350", background: isToday ? "rgba(201,162,75,0.10)" : "#141A2E" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#aab1c4", textTransform: "uppercase", letterSpacing: "0.5px" }}>{DAYS[(weekDays.indexOf(day))]}</div>
+              <div style={{ fontSize: 18, fontWeight: 900, color: isToday ? "#C9A24B" : "#F7F5EF", marginTop: 2 }}>{day.getDate()}</div>
             </div>
           );
         })}
         {HOURS.map(hour => (
           <React.Fragment key={hour}>
-            <div style={{ padding: "6px 8px", fontSize: 10.5, color: "#CBD5E1", fontWeight: 600, borderRight: "1px solid #F1F5F9", borderBottom: "1px solid #F8FAFC", textAlign: "right" }}>
+            <div style={{ padding: "6px 8px", fontSize: 10.5, color: "#aab1c4", fontWeight: 600, borderRight: "1px solid #2a3350", borderBottom: "1px solid #2a3350", textAlign: "right" }}>
               {hour}:00
             </div>
             {weekDays.map(day => {
@@ -136,7 +136,7 @@ function WeekView({ weekDays, appointments, today, setSelectedAppt }: WeekViewPr
               });
               return (
                 <div key={`${day.toISOString()}-${hour}`}
-                  style={{ minHeight: 56, borderRight: "1px solid #F1F5F9", borderBottom: "1px solid #F8FAFC", padding: "3px 4px", position: "relative", background: sameDay(day, today) ? "#FAFFFE" : "#fff" }}>
+                  style={{ minHeight: 56, borderRight: "1px solid #2a3350", borderBottom: "1px solid #2a3350", padding: "3px 4px", position: "relative", background: sameDay(day, today) ? "#1C2438" : "#1C2438" }}>
                   {cellAppts.map(a => {
                     const sc = STATUS_COLORS[a.status] || STATUS_COLORS.pending;
                     return (
@@ -172,13 +172,13 @@ function DayView({ currentDate, getApptsByDay, setSelectedAppt }: DayViewProps) 
   const label = currentDate.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
   return (
     <div style={{ padding: "24px 24px", maxWidth: 800, margin: "0 auto" }}>
-      <div style={{ textAlign: "center", fontSize: 18, fontWeight: 800, color: "#0F172A", marginBottom: 20, letterSpacing: "-0.4px" }}>{label}</div>
+      <div style={{ textAlign: "center", fontSize: 18, fontWeight: 800, color: "#F7F5EF", marginBottom: 20, letterSpacing: "-0.4px" }}>{label}</div>
       {HOURS.map(hour => {
         const hourAppts = dayAppts.filter(a => new Date(a.date_time).getHours() === hour);
         return (
           <div key={hour} style={{ display: "flex", gap: 14, marginBottom: 4, alignItems: "flex-start" }}>
-            <div style={{ width: 50, fontSize: 11.5, color: "#CBD5E1", fontWeight: 700, textAlign: "right", paddingTop: 10, flexShrink: 0 }}>{hour}:00</div>
-            <div style={{ flex: 1, minHeight: 48, borderTop: "1px solid #F1F5F9", display: "flex", flexDirection: "column", gap: 4, paddingTop: 4 }}>
+            <div style={{ width: 50, fontSize: 11.5, color: "#aab1c4", fontWeight: 700, textAlign: "right", paddingTop: 10, flexShrink: 0 }}>{hour}:00</div>
+            <div style={{ flex: 1, minHeight: 48, borderTop: "1px solid #2a3350", display: "flex", flexDirection: "column", gap: 4, paddingTop: 4 }}>
               {hourAppts.map(a => {
                 const sc = STATUS_COLORS[a.status] || STATUS_COLORS.pending;
                 return (
@@ -190,11 +190,11 @@ function DayView({ currentDate, getApptsByDay, setSelectedAppt }: DayViewProps) 
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <div>
                         <div style={{ fontSize: 14, fontWeight: 800, color: sc.text }}>{a.client_name}</div>
-                        <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>{a.services?.name || "No service"}{a.staff ? ` · ${a.staff.name}` : ""}</div>
+                        <div style={{ fontSize: 12, color: "#aab1c4", marginTop: 2 }}>{a.services?.name || "No service"}{a.staff ? ` · ${a.staff.name}` : ""}</div>
                       </div>
                       <div style={{ textAlign: "right" }}>
                         {a.services?.price && <div style={{ fontSize: 14, fontWeight: 800, color: "#10B981" }}>£{a.services.price}</div>}
-                        <div style={{ fontSize: 11, color: "#94A3B8", textTransform: "capitalize" }}>{a.status}</div>
+                        <div style={{ fontSize: 11, color: "#aab1c4", textTransform: "capitalize" }}>{a.status}</div>
                       </div>
                     </div>
                   </div>
@@ -205,7 +205,7 @@ function DayView({ currentDate, getApptsByDay, setSelectedAppt }: DayViewProps) 
         );
       })}
       {dayAppts.length === 0 && (
-        <div style={{ textAlign: "center", padding: "60px 0", color: "#94A3B8", fontSize: 15 }}>
+        <div style={{ textAlign: "center", padding: "60px 0", color: "#aab1c4", fontSize: 15 }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>📭</div>
           <div style={{ fontWeight: 700 }}>No appointments on this day</div>
           <div style={{ fontSize: 13, marginTop: 4 }}>Use the dashboard to add a new booking</div>
@@ -227,10 +227,10 @@ function ApptModal({ selectedAppt, setSelectedAppt, onViewAll }: ApptModalProps)
   const sc = STATUS_COLORS[selectedAppt.status] || STATUS_COLORS.pending;
   return (
     <div onClick={() => setSelectedAppt(null)} style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, backdropFilter: "blur(4px)" }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 20, padding: 28, width: "100%", maxWidth: 420, boxShadow: "0 32px 80px rgba(0,0,0,0.2)" }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: "#1C2438", borderRadius: 20, padding: 28, width: "100%", maxWidth: 420, boxShadow: "0 32px 80px rgba(0,0,0,0.2)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <div style={{ fontSize: 18, fontWeight: 900, color: "#0F172A", letterSpacing: "-0.5px" }}>{vc.bookingSingular} Details</div>
-          <button onClick={() => setSelectedAppt(null)} style={{ background: "#F1F5F9", border: "none", width: 32, height: 32, borderRadius: "50%", cursor: "pointer", fontSize: 16, color: "#64748B", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+          <div style={{ fontSize: 18, fontWeight: 900, color: "#F7F5EF", letterSpacing: "-0.5px" }}>{vc.bookingSingular} Details</div>
+          <button onClick={() => setSelectedAppt(null)} style={{ background: "#2a3350", border: "none", width: 32, height: 32, borderRadius: "50%", cursor: "pointer", fontSize: 16, color: "#aab1c4", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {[
@@ -241,10 +241,10 @@ function ApptModal({ selectedAppt, setSelectedAppt, onViewAll }: ApptModalProps)
             { icon: "💰", label: "Amount",           value: selectedAppt.services?.price ? `£${selectedAppt.services.price}` : "—" },
           ].map(row => (
             <div key={row.label} style={{ display: "flex", gap: 12, alignItems: "center" }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: "#F8FAFC", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }}>{row.icon}</div>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: "#141A2E", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }}>{row.icon}</div>
               <div>
-                <div style={{ fontSize: 10.5, fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.5px" }}>{row.label}</div>
-                <div style={{ fontSize: 13.5, fontWeight: 700, color: "#0F172A", marginTop: 1 }}>{row.value}</div>
+                <div style={{ fontSize: 10.5, fontWeight: 700, color: "#aab1c4", textTransform: "uppercase", letterSpacing: "0.5px" }}>{row.label}</div>
+                <div style={{ fontSize: 13.5, fontWeight: 700, color: "#F7F5EF", marginTop: 1 }}>{row.value}</div>
               </div>
             </div>
           ))}
@@ -254,8 +254,8 @@ function ApptModal({ selectedAppt, setSelectedAppt, onViewAll }: ApptModalProps)
           </div>
         </div>
         <div style={{ marginTop: 20, display: "flex", gap: 8 }}>
-          <button onClick={() => setSelectedAppt(null)} style={{ flex: 1, padding: "11px", background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#475569", cursor: "pointer" }}>Close</button>
-          <button onClick={onViewAll} style={{ flex: 1, padding: "11px", background: "linear-gradient(135deg,#C9A24B,#4F46E5)", border: "none", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#fff", cursor: "pointer", boxShadow: "0 4px 14px rgba(201,162,75,0.3)" }}>View All →</button>
+          <button onClick={() => setSelectedAppt(null)} style={{ flex: 1, padding: "11px", background: "#141A2E", border: "1.5px solid #2a3350", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#aab1c4", cursor: "pointer" }}>Close</button>
+          <button onClick={onViewAll} style={{ flex: 1, padding: "11px", background: "linear-gradient(135deg,#C9A24B,#0E1320)", border: "none", borderRadius: 12, fontSize: 13.5, fontWeight: 700, color: "#fff", cursor: "pointer", boxShadow: "0 4px 14px rgba(201,162,75,0.3)" }}>View All →</button>
         </div>
       </div>
     </div>
@@ -322,19 +322,19 @@ function CalendarContent() {
   const today = new Date();
 
   const Topbar = (
-    <header style={{ background: "#fff", borderBottom: "1px solid #F1F5F9", padding: "0 24px", height: 66, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 30, gap: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+    <header style={{ background: "#1C2438", borderBottom: "1px solid #2a3350", padding: "0 24px", height: 66, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 30, gap: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <HamburgerBtn onClick={() => {}} />
         <div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: "#0F172A", letterSpacing: "-0.4px" }}>🗓️ Calendar</div>
-          <div style={{ fontSize: 11.5, color: "#94A3B8", marginTop: 1 }}>Visual appointment scheduler</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "#F7F5EF", letterSpacing: "-0.4px" }}>🗓️ Calendar</div>
+          <div style={{ fontSize: 11.5, color: "#aab1c4", marginTop: 1 }}>Visual appointment scheduler</div>
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <div style={{ display: "flex", background: "#F1F5F9", borderRadius: 10, padding: 3, gap: 2 }}>
+        <div style={{ display: "flex", background: "#2a3350", borderRadius: 10, padding: 3, gap: 2 }}>
           {(["day","week","month"] as ViewMode[]).map(v => (
             <button key={v} onClick={() => setView(v)}
-              style={{ fontSize: 12, padding: "5px 14px", borderRadius: 8, border: "none", background: view === v ? "#fff" : "transparent", color: view === v ? "#C9A24B" : "#64748B", cursor: "pointer", fontWeight: view === v ? 800 : 500, boxShadow: view === v ? "0 1px 4px rgba(0,0,0,0.08)" : "none", transition: "all 0.12s", textTransform: "capitalize" }}>
+              style={{ fontSize: 12, padding: "5px 14px", borderRadius: 8, border: "none", background: view === v ? "#1C2438" : "transparent", color: view === v ? "#C9A24B" : "#aab1c4", cursor: "pointer", fontWeight: view === v ? 800 : 500, boxShadow: view === v ? "0 1px 4px rgba(0,0,0,0.08)" : "none", transition: "all 0.12s", textTransform: "capitalize" }}>
               {v}
             </button>
           ))}
@@ -342,7 +342,7 @@ function CalendarContent() {
         {(["←","Today","→"] as const).map((lbl, i) => (
           <button key={lbl}
             onClick={() => i === 1 ? setCurrentDate(new Date()) : nav(i === 0 ? -1 : 1)}
-            style={{ padding: "7px 14px", background: i === 1 ? "linear-gradient(135deg,#C9A24B,#4F46E5)" : "#F8FAFC", color: i === 1 ? "#fff" : "#475569", border: `1.5px solid ${i === 1 ? "transparent" : "#E2E8F0"}`, borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.12s" }}>
+            style={{ padding: "7px 14px", background: i === 1 ? "linear-gradient(135deg,#C9A24B,#0E1320)" : "#1C2438", color: i === 1 ? "#fff" : "#aab1c4", border: `1.5px solid ${i === 1 ? "transparent" : "#2a3350"}`, borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.12s" }}>
             {lbl}
           </button>
         ))}
@@ -352,13 +352,13 @@ function CalendarContent() {
 
   if (loading) return (
     <DashboardShell salonName={salonName} topbar={Topbar}>
-      <div style={{ padding: 40, textAlign: "center", color: "#94A3B8" }}>Loading calendar…</div>
+      <div style={{ padding: 40, textAlign: "center", color: "#aab1c4" }}>Loading calendar…</div>
     </DashboardShell>
   );
 
   return (
     <DashboardShell salonName={salonName} topbar={Topbar}>
-      <div style={{ background: "#fff", borderBottom: "1px solid #F1F5F9", padding: "12px 24px", display: "flex", gap: 24, alignItems: "center" }}>
+      <div style={{ background: "#1C2438", borderBottom: "1px solid #2a3350", padding: "12px 24px", display: "flex", gap: 24, alignItems: "center" }}>
         {[
           { label: `Total ${vc.bookingPlural}`, value: appointments.length, color: "#C9A24B" },
           { label: "Confirmed", value: appointments.filter(a => a.status === "confirmed").length, color: "#10B981" },
@@ -367,8 +367,8 @@ function CalendarContent() {
         ].map(s => (
           <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ width: 8, height: 8, borderRadius: "50%", background: s.color }} />
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#0F172A" }}>{s.value}</span>
-            <span style={{ fontSize: 12, color: "#94A3B8" }}>{s.label}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#F7F5EF" }}>{s.value}</span>
+            <span style={{ fontSize: 12, color: "#aab1c4" }}>{s.label}</span>
           </div>
         ))}
       </div>

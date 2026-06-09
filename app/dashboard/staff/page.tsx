@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
@@ -190,7 +190,7 @@ export default function StaffPage() {
   if (loading) return <DashboardShell salonName=""><SkeletonDashboard /></DashboardShell>;
 
   const Topbar = (
-    <header style={{ background: "#fff", borderBottom: "1px solid var(--border)", padding: "0 20px", height: 58, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 30 }}>
+    <header style={{ background: "#1C2438", borderBottom: "1px solid var(--border)", padding: "0 20px", height: 58, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 30 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <HamburgerBtn onClick={() => {}} />
         <div>
@@ -219,7 +219,7 @@ export default function StaffPage() {
 
         {/* Staff cards grid */}
         {filtered.length === 0 ? (
-          <div style={{ background: "#fff", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", overflow: "hidden" }}>
+          <div style={{ background: "#1C2438", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", overflow: "hidden" }}>
             <EmptyState icon="??" title={searchTerm ? `No ${vc.staffPlural.toLowerCase()} found` : `No ${vc.staffPlural.toLowerCase()} yet`} description={searchTerm ? "Try a different search" : `Add your first ${vc.staffSingular.toLowerCase()} to get started`} action={{ label: `+ Add ${vc.staffSingular}`, onClick: () => { setEditingStaff(null); setFormData({ ...EMPTY_FORM, role: vc.staffSingular.toLowerCase() }); setShowForm(true); } }} />
           </div>
         ) : (
@@ -228,7 +228,7 @@ export default function StaffPage() {
               const wh = s.working_hours || {};
               const activeDays = DAYS.filter(d => wh[d]?.enabled);
               return (
-                <div key={s.id} style={{ background: "#fff", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", padding: "18px", transition: "all 0.14s" }}
+                <div key={s.id} style={{ background: "#1C2438", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", padding: "18px", transition: "all 0.14s" }}
                   onMouseEnter={e => { e.currentTarget.style.boxShadow = "var(--shadow-md)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
                   onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "none"; }}
                 >
@@ -258,14 +258,14 @@ export default function StaffPage() {
                   )}
 
                   <div style={{ display: "flex", gap: 6, paddingTop: 12, borderTop: "1px solid var(--slate-100)" }}>
-                    <button onClick={() => handleEdit(s)} style={{ flex: 1, padding: "7px", borderRadius: "var(--r-sm)", border: "1px solid var(--border)", background: "#fff", color: "var(--text-2)", fontSize: 12.5, fontWeight: 600, cursor: "pointer", transition: "all 0.12s", fontFamily: "var(--font)" }}
+                    <button onClick={() => handleEdit(s)} style={{ flex: 1, padding: "7px", borderRadius: "var(--r-sm)", border: "1px solid var(--border)", background: "#1C2438", color: "var(--text-2)", fontSize: 12.5, fontWeight: 600, cursor: "pointer", transition: "all 0.12s", fontFamily: "var(--font)" }}
                       onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--indigo)"; e.currentTarget.style.color = "var(--indigo)"; }}
                       onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text-2)"; }}
                     >Edit</button>
-                    <button onClick={() => handleToggle(s.id, s.active)} style={{ flex: 1, padding: "7px", borderRadius: "var(--r-sm)", border: "1px solid var(--border)", background: "#fff", color: s.active ? "var(--red)" : "var(--green)", fontSize: 12.5, fontWeight: 600, cursor: "pointer", transition: "all 0.12s", fontFamily: "var(--font)" }}>
+                    <button onClick={() => handleToggle(s.id, s.active)} style={{ flex: 1, padding: "7px", borderRadius: "var(--r-sm)", border: "1px solid var(--border)", background: "#1C2438", color: s.active ? "var(--red)" : "var(--green)", fontSize: 12.5, fontWeight: 600, cursor: "pointer", transition: "all 0.12s", fontFamily: "var(--font)" }}>
                       {s.active ? "Deactivate" : "Activate"}
                     </button>
-                    <button onClick={() => handleDelete(s.id)} style={{ padding: "7px 10px", borderRadius: "var(--r-sm)", border: "1px solid var(--border)", background: "#fff", color: "var(--text-3)", fontSize: 12.5, cursor: "pointer", transition: "all 0.12s", fontFamily: "var(--font)" }}
+                    <button onClick={() => handleDelete(s.id)} style={{ padding: "7px 10px", borderRadius: "var(--r-sm)", border: "1px solid var(--border)", background: "#1C2438", color: "var(--text-3)", fontSize: 12.5, cursor: "pointer", transition: "all 0.12s", fontFamily: "var(--font)" }}
                       onMouseEnter={e => { e.currentTarget.style.color = "var(--red)"; e.currentTarget.style.borderColor = "var(--red-pale)"; }}
                       onMouseLeave={e => { e.currentTarget.style.color = "var(--text-3)"; e.currentTarget.style.borderColor = "var(--border)"; }}
                     >🗑</button>
@@ -305,7 +305,7 @@ export default function StaffPage() {
                 <label style={{ position: "relative", width: 32, height: 17, cursor: "pointer" }}>
                   <input type="checkbox" checked={formData.active} onChange={e => setFormData({ ...formData, active: e.target.checked })} style={{ opacity: 0, width: 0, height: 0 }} />
                   <span style={{ position: "absolute", inset: 0, background: formData.active ? "var(--green)" : "var(--slate-300)", borderRadius: 99, transition: "background 0.18s" }}>
-                    <span style={{ position: "absolute", width: 11, height: 11, left: formData.active ? 18 : 3, top: 3, background: "#fff", borderRadius: "50%", transition: "left 0.18s" }} />
+                    <span style={{ position: "absolute", width: 11, height: 11, left: formData.active ? 18 : 3, top: 3, background: "#1C2438", borderRadius: "50%", transition: "left 0.18s" }} />
                   </span>
                 </label>
                 <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-1)" }}>Active — accepting bookings</span>
@@ -322,7 +322,7 @@ export default function StaffPage() {
               ) : salonServices.map(svc => {
                   const sel = formData.services.includes(svc.name);
                   return (
-                    <button key={svc.id} type="button" onClick={() => toggleService(svc.name)} style={{ padding: "7px 14px", fontSize: 13, borderRadius: 99, border: `1px solid ${sel ? "var(--indigo)" : "var(--border)"}`, background: sel ? "var(--indigo-light)" : "#fff", color: sel ? "var(--indigo)" : "var(--text-2)", cursor: "pointer", fontWeight: sel ? 600 : 400, transition: "all 0.12s", fontFamily: "var(--font)" }}>
+                    <button key={svc.id} type="button" onClick={() => toggleService(svc.name)} style={{ padding: "7px 14px", fontSize: 13, borderRadius: 99, border: `1px solid ${sel ? "var(--indigo)" : "var(--border)"}`, background: sel ? "var(--indigo-light)" : "#1C2438", color: sel ? "var(--indigo)" : "var(--text-2)", cursor: "pointer", fontWeight: sel ? 600 : 400, transition: "all 0.12s", fontFamily: "var(--font)" }}>
                       {svc.name}
                     </button>
                   );
@@ -341,7 +341,7 @@ export default function StaffPage() {
                     <label style={{ position: "relative", width: 28, height: 15, cursor: "pointer", flexShrink: 0 }}>
                       <input type="checkbox" checked={h.enabled} onChange={e => updateHour(day, "enabled", e.target.checked)} style={{ opacity: 0, width: 0, height: 0 }} />
                       <span style={{ position: "absolute", inset: 0, background: h.enabled ? "var(--indigo)" : "var(--slate-300)", borderRadius: 99, transition: "background 0.18s" }}>
-                        <span style={{ position: "absolute", width: 9, height: 9, left: h.enabled ? 16 : 3, top: 3, background: "#fff", borderRadius: "50%", transition: "left 0.18s" }} />
+                        <span style={{ position: "absolute", width: 9, height: 9, left: h.enabled ? 16 : 3, top: 3, background: "#1C2438", borderRadius: "50%", transition: "left 0.18s" }} />
                       </span>
                     </label>
                     {h.enabled ? (

@@ -181,6 +181,18 @@ export default function SignupPage() {
         }
       } catch { /* non-fatal — signup always completes */ }
 
+      // Notify founder — fire-and-forget, never blocks signup
+      fetch("/api/notify-founder/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          salonName,
+          email,
+          businessType: category,
+          signedUpAt: new Date().toISOString(),
+        }),
+      }).catch(() => { /* silent — notification failure must never affect signup */ });
+
       setStep(2);
     }
     setLoading(false);

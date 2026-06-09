@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useEffect, useRef } from "react";
 
 interface StatCardProps {
@@ -14,12 +14,12 @@ interface StatCardProps {
 
 const colorMap = {
   indigo: {
-    accent: "#C9A24B", light: "#EEF2FF", text: "#C9A24B",
+    accent: "#C9A24B", light: "rgba(201,162,75,0.10)", text: "#C9A24B",
     grad: "linear-gradient(135deg,#C9A24B,#E7C878)",
-    glow: "rgba(201,162,75,0.2)", bar: "#818CF8",
+    glow: "rgba(201,162,75,0.2)", bar: "#C9A24B",
   },
   green: {
-    accent: "#10B981", light: "#ECFDF5", text: "#059669",
+    accent: "#10B981", light: "rgba(16,185,129,0.10)", text: "#10B981",
     grad: "linear-gradient(135deg,#10B981,#34D399)",
     glow: "rgba(16,185,129,0.18)", bar: "#34D399",
   },
@@ -29,12 +29,12 @@ const colorMap = {
     glow: "rgba(245,158,11,0.18)", bar: "#FCD34D",
   },
   red: {
-    accent: "#EF4444", light: "#FEF2F2", text: "#DC2626",
+    accent: "#EF4444", light: "rgba(239,68,68,0.10)", text: "#DC2626",
     grad: "linear-gradient(135deg,#EF4444,#F87171)",
     glow: "rgba(239,68,68,0.18)", bar: "#F87171",
   },
   slate: {
-    accent: "#64748B", light: "#F1F5F9", text: "#475569",
+    accent: "#aab1c4", light: "#2a3350", text: "#aab1c4",
     grad: "linear-gradient(135deg,#64748B,#94A3B8)",
     glow: "rgba(100,116,139,0.15)", bar: "#94A3B8",
   },
@@ -69,7 +69,7 @@ export default function StatCard({ label, value, icon, color, badge, sub, trend,
   return (
     <div
       style={{
-        background: "#fff", border: "1.5px solid #F1F5F9",
+        background: "#1C2438", border: "1.5px solid #2a3350",
         borderRadius: 20, padding: "20px 18px",
         display: "flex", flexDirection: "column", gap: 14,
         transition: "all 0.2s ease", position: "relative", overflow: "hidden",
@@ -83,7 +83,7 @@ export default function StatCard({ label, value, icon, color, badge, sub, trend,
       onMouseLeave={e => {
         e.currentTarget.style.boxShadow = "none";
         e.currentTarget.style.transform = "none";
-        e.currentTarget.style.borderColor = "#F1F5F9";
+        e.currentTarget.style.borderColor = "#2a3350";
       }}
     >
       {/* Gradient top bar */}
@@ -102,7 +102,7 @@ export default function StatCard({ label, value, icon, color, badge, sub, trend,
       {/* Header */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
         <div style={{
-          fontSize: 10.5, fontWeight: 800, color: "var(--text-3)",
+          fontSize: 10.5, fontWeight: 800, color: "var(--dk-text-3)",
           letterSpacing: "0.8px", textTransform: "uppercase",
         }}>{label}</div>
         <div style={{
@@ -126,14 +126,14 @@ export default function StatCard({ label, value, icon, color, badge, sub, trend,
         </div>
       ) : isNumeric ? (
         <div className="count-animate" style={{
-          fontSize: 32, fontWeight: 900, color: "var(--text-1)",
+          fontSize: 32, fontWeight: 900, color: "var(--dk-text-1)",
           letterSpacing: "-1.5px", lineHeight: 1,
         }}>
           <AnimCounter target={numVal} prefix={prefix} />
         </div>
       ) : (
         <div style={{
-          fontSize: 28, fontWeight: 900, color: "var(--text-1)",
+          fontSize: 28, fontWeight: 900, color: "var(--dk-text-1)",
           letterSpacing: "-1px", lineHeight: 1,
         }}>{value}</div>
       )}
@@ -141,14 +141,14 @@ export default function StatCard({ label, value, icon, color, badge, sub, trend,
       {/* Sub + trend */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
         {sub && (
-          <div style={{ fontSize: 11.5, color: "var(--text-3)", fontWeight: 500, flex: 1 }}>{sub}</div>
+          <div style={{ fontSize: 11.5, color: "var(--dk-text-3)", fontWeight: 500, flex: 1 }}>{sub}</div>
         )}
         {trend !== undefined && (
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 3,
             fontSize: 11, fontWeight: 800, padding: "3px 8px", borderRadius: 99,
-            background: trendUp ? "#ECFDF5" : "#FEF2F2",
-            color: trendUp ? "#059669" : "#DC2626",
+            background: trendUp ? "rgba(16,185,129,0.10)" : "rgba(239,68,68,0.10)",
+            color: trendUp ? "#10B981" : "#DC2626",
             flexShrink: 0,
           }}>
             <span>{trendUp ? "↑" : "↓"}</span>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useEffect, useRef } from "react";
 
 interface ModalProps {
@@ -46,7 +46,7 @@ export default function Modal({ open, onClose, title, children, maxWidth = 480 }
         .modal-inner input:-webkit-autofill,
         .modal-inner input:-webkit-autofill:hover,
         .modal-inner input:-webkit-autofill:focus {
-          -webkit-text-fill-color: #F1F5F9 !important;
+          -webkit-text-fill-color: #2a3350 !important;
           -webkit-box-shadow: 0 0 0px 1000px #1A1830 inset !important;
         }
       `}</style>
@@ -71,7 +71,7 @@ export default function Modal({ open, onClose, title, children, maxWidth = 480 }
 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-          <h2 style={{ fontSize: 17, fontWeight: 700, color: "#F1F5F9", letterSpacing: "-0.4px" }}>{title}</h2>
+          <h2 style={{ fontSize: 17, fontWeight: 700, color: "#F7F5EF", letterSpacing: "-0.4px" }}>{title}</h2>
           <button
             onClick={onClose}
             style={{
@@ -112,7 +112,7 @@ export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
         width: "100%", padding: "10px 13px",
         border: "1px solid rgba(255,255,255,0.1)",
         borderRadius: 10, fontSize: 14,
-        color: "#F1F5F9", background: "rgba(255,255,255,0.06)",
+        color: "#F7F5EF", background: "rgba(255,255,255,0.06)",
         outline: "none", transition: "border-color 0.12s, box-shadow 0.12s",
         ...props.style,
       }}
@@ -130,7 +130,7 @@ export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
         width: "100%", padding: "10px 13px",
         border: "1px solid rgba(255,255,255,0.1)",
         borderRadius: 10, fontSize: 14,
-        color: "#F1F5F9", background: "rgba(255,255,255,0.06)",
+        color: "#F7F5EF", background: "rgba(255,255,255,0.06)",
         outline: "none", transition: "border-color 0.12s, box-shadow 0.12s",
         appearance: "none",
         backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2394A3B8' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
@@ -185,7 +185,7 @@ export function BtnSecondary({ children, ...props }: React.ButtonHTMLAttributes<
         fontSize: 14, fontWeight: 500, cursor: "pointer", transition: "all 0.12s",
         ...props.style,
       }}
-      onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "#F1F5F9"; }}
+      onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; e.currentTarget.style.color = "#2a3350"; }}
       onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "rgba(255,255,255,0.6)"; }}
     >{children}</button>
   );

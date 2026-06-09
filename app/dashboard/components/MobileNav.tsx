@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -30,7 +30,7 @@ const NAV_BASE = [
   { key: "bookings", path: "/dashboard/bookings", Icon: BookOpenCheck,   activeColor: "#60A5FA", activeGlow: "rgba(96,165,250,0.5)",   activeBg: "linear-gradient(135deg,#2563EB,#1E40AF)" },
   { key: "clients",  path: "/dashboard/clients",  Icon: Users,           activeColor: "#34D399", activeGlow: "rgba(52,211,153,0.5)",   activeBg: "linear-gradient(135deg,#059669,#10B981)" },
   { key: "staff",    path: "/dashboard/staff",    Icon: Scissors,        activeColor: "#C9A24B", activeGlow: "rgba(201,162,75,0.4)",  activeBg: "linear-gradient(135deg,#C9A24B,#A07A30)" },
-  { key: "settings", path: "/dashboard/settings", Icon: Settings2,       activeColor: "#94A3B8", activeGlow: "rgba(148,163,184,0.4)", activeBg: "linear-gradient(135deg,#475569,#64748B)" },
+  { key: "settings", path: "/dashboard/settings", Icon: Settings2,       activecolor: "#aab1c4", activeGlow: "rgba(148,163,184,0.4)", activeBg: "linear-gradient(135deg,#475569,#64748B)" },
 ];
 
 export default function MobileNav() {

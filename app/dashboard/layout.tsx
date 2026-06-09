@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
@@ -35,7 +35,7 @@ function TrialBanner({ salon }: { salon: SalonSub }) {
     <div style={{
       background: urgent
         ? "linear-gradient(90deg,rgba(127,29,29,0.95),rgba(185,28,28,0.95))"
-        : "linear-gradient(90deg,rgba(30,27,75,0.95),rgba(76,29,149,0.95))",
+        : "linear-gradient(90deg,rgba(14,19,32,0.98),rgba(28,36,56,0.98))",
       backdropFilter: "blur(8px)",
       color:"#fff", padding:"10px 20px", fontSize:13, fontWeight:600,
       display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap",
@@ -84,7 +84,7 @@ function LockedOverlay({ salon }: { salon: SalonSub }) {
     <div style={{ position:"fixed", inset:0, zIndex:9999, background:"rgba(0,0,0,0.92)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:24, backdropFilter:"blur(16px)" }}>
       <div style={{ maxWidth:480, width:"100%", textAlign:"center", background:"rgba(20,18,42,0.95)", border:"1px solid rgba(201,162,75,0.2)", borderRadius:24, padding:"48px 36px", boxShadow:"0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,162,75,0.1)" }}>
         <div style={{ fontSize:56, marginBottom:20 }}>🔒</div>
-        <h1 style={{ fontSize:28, fontWeight:900, color:"#F1F5F9", letterSpacing:"-1px", marginBottom:12 }}>
+        <h1 style={{ fontSize:28, fontWeight:900, color:"#2a3350", letterSpacing:"-1px", marginBottom:12 }}>
           Dashboard Locked
         </h1>
         <p style={{ color:"rgba(255,255,255,0.5)", fontSize:15, lineHeight:1.7, marginBottom:32 }}>
@@ -139,7 +139,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <SalonProvider>
         <div style={{
           minHeight: "100vh",
-          background: "#09090F",
+          background: "#141A2E",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",

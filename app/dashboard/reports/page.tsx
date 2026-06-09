@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
@@ -21,7 +21,7 @@ function BarChart({ data, color, label }: { data: number[]; color: string; label
   const max = Math.max(...data, 1);
   return (
     <div>
-      <div style={{ fontSize: 11, fontWeight: 700, color: "#94A3B8", marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.8px" }}>{label}</div>
+      <div style={{ fontSize: 11, fontWeight: 700, color: "#aab1c4", marginBottom: 12, textTransform: "uppercase", letterSpacing: "0.8px" }}>{label}</div>
       <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 120 }}>
         {data.map((val, i) => (
           <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
@@ -30,13 +30,13 @@ function BarChart({ data, color, label }: { data: number[]; color: string; label
               onMouseEnter={e => {
                 const tip = document.createElement("div");
                 tip.id = "chart-tip";
-                tip.style.cssText = `position:absolute;top:-28px;left:50%;transform:translateX(-50%);background:#0F172A;color:#fff;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;white-space:nowrap;pointer-events:none;`;
+                tip.style.cssText = `position:absolute;top:-28px;left:50%;transform:translateX(-50%);background:#F7F5EF;color:#fff;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;white-space:nowrap;pointer-events:none;`;
                 tip.textContent = `£${val}`;
                 e.currentTarget.appendChild(tip);
               }}
               onMouseLeave={() => { document.getElementById("chart-tip")?.remove(); }}
             />
-            <span style={{ fontSize: 9.5, color: "#94A3B8", fontWeight: 600 }}>{MONTHS[i % 12]}</span>
+            <span style={{ fontSize: 9.5, color: "#aab1c4", fontWeight: 600 }}>{MONTHS[i % 12]}</span>
           </div>
         ))}
       </div>
@@ -46,16 +46,16 @@ function BarChart({ data, color, label }: { data: number[]; color: string; label
 
 function StatCard({ icon, label, value, sub, color }: { icon: string; label: string; value: string; sub?: string; color: string }) {
   return (
-    <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 18, padding: "22px 20px", position: "relative", overflow: "hidden", transition: "all 0.18s", cursor: "default" }}
+    <div style={{ background: "#1C2438", border: "1.5px solid #2a3350", borderRadius: 18, padding: "22px 20px", position: "relative", overflow: "hidden", transition: "all 0.18s", cursor: "default" }}
       onMouseEnter={e => { e.currentTarget.style.boxShadow = `0 12px 32px ${color}20`; e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.borderColor = `${color}40`; }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "none"; e.currentTarget.style.borderColor = "#F1F5F9"; }}>
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.transform = "none"; e.currentTarget.style.borderColor = "#2a3350"; }}>
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg,${color},${color}66)`, borderRadius: "18px 18px 0 0" }} />
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-        <span style={{ fontSize: 10, fontWeight: 800, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.8px" }}>{label}</span>
+        <span style={{ fontSize: 10, fontWeight: 800, color: "#aab1c4", textTransform: "uppercase", letterSpacing: "0.8px" }}>{label}</span>
         <div style={{ width: 38, height: 38, borderRadius: 12, background: `${color}15`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>{icon}</div>
       </div>
-      <div style={{ fontSize: 28, fontWeight: 900, color: "#0F172A", letterSpacing: "-1px", lineHeight: 1 }}>{value}</div>
-      {sub && <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 6 }}>{sub}</div>}
+      <div style={{ fontSize: 28, fontWeight: 900, color: "#F7F5EF", letterSpacing: "-1px", lineHeight: 1 }}>{value}</div>
+      {sub && <div style={{ fontSize: 12, color: "#aab1c4", marginTop: 6 }}>{sub}</div>}
     </div>
   );
 }
@@ -162,12 +162,12 @@ function ReportsContent() {
   }, [appointments, confirmed]);
 
   const Topbar = (
-    <header style={{ background: "#fff", borderBottom: "1px solid #F1F5F9", padding: "0 24px", height: 66, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 30, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+    <header style={{ background: "#1C2438", borderBottom: "1px solid #2a3350", padding: "0 24px", height: 66, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 30, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <HamburgerBtn onClick={() => {}} />
         <div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: "#0F172A", letterSpacing: "-0.4px" }}>📊 Revenue Analytics</div>
-          <div style={{ fontSize: 11.5, color: "#94A3B8", marginTop: 1 }}>Track your business growth</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "#F7F5EF", letterSpacing: "-0.4px" }}>📊 Revenue Analytics</div>
+          <div style={{ fontSize: 11.5, color: "#aab1c4", marginTop: 1 }}>Track your business growth</div>
         </div>
       </div>
       <button
@@ -180,7 +180,7 @@ function ReportsContent() {
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a"); a.href = url; a.download = "revenue-report.csv"; a.click();
         }}
-        style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "linear-gradient(135deg,#C9A24B,#4F46E5)", color: "#fff", border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 14px rgba(201,162,75,0.3)" }}>
+        style={{ display: "flex", alignItems: "center", gap: 6, padding: "9px 18px", background: "linear-gradient(135deg,#C9A24B,#0E1320)", color: "#fff", border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 14px rgba(201,162,75,0.3)" }}>
         📥 Export CSV
       </button>
     </header>
@@ -188,7 +188,7 @@ function ReportsContent() {
 
   if (loading) return (
     <DashboardShell salonName={salonName} topbar={Topbar}>
-      <div style={{ padding: 40, textAlign: "center", color: "#94A3B8" }}>Loading analytics…</div>
+      <div style={{ padding: 40, textAlign: "center", color: "#aab1c4" }}>Loading analytics…</div>
     </DashboardShell>
   );
 
@@ -209,10 +209,10 @@ function ReportsContent() {
 
         {/* Charts row */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 28 }}>
-          <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, padding: "22px 24px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
+          <div style={{ background: "#1C2438", border: "1.5px solid #2a3350", borderRadius: 20, padding: "22px 24px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
             <BarChart data={monthlyRevenue} color="#C9A24B" label="Monthly Revenue (Last 12 Months)" />
           </div>
-          <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, padding: "22px 24px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
+          <div style={{ background: "#1C2438", border: "1.5px solid #2a3350", borderRadius: 20, padding: "22px 24px", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
             <BarChart data={monthlyBookings} color="#10B981" label="Monthly Bookings (Last 12 Months)" />
           </div>
         </div>
@@ -220,29 +220,29 @@ function ReportsContent() {
         {/* Top Services + Top Staff */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 28 }}>
           {/* Top Services */}
-          <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
-            <div style={{ padding: "16px 20px", borderBottom: "1px solid #F1F5F9" }}>
-              <div style={{ fontSize: 15, fontWeight: 800, color: "#0F172A" }}>🏆 Top Services</div>
-              <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 2 }}>By revenue generated</div>
+          <div style={{ background: "#1C2438", border: "1.5px solid #2a3350", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid #2a3350" }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#F7F5EF" }}>🏆 Top Services</div>
+              <div style={{ fontSize: 12, color: "#aab1c4", marginTop: 2 }}>By revenue generated</div>
             </div>
             <div style={{ padding: 16 }}>
               {topServices.length === 0
-                ? <div style={{ textAlign: "center", padding: "30px 0", color: "#94A3B8" }}>No data yet</div>
+                ? <div style={{ textAlign: "center", padding: "30px 0", color: "#aab1c4" }}>No data yet</div>
                 : topServices.map(([name, data], i) => {
                   const maxRev = topServices[0][1].revenue || 1;
                   return (
                     <div key={name} style={{ marginBottom: 14 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-                        <div style={{ fontSize: 13.5, fontWeight: 700, color: "#0F172A", display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ fontSize: 13.5, fontWeight: 700, color: "#F7F5EF", display: "flex", alignItems: "center", gap: 8 }}>
                           <span style={{ width: 20, height: 20, borderRadius: 6, background: `${COLORS[i]}20`, color: COLORS[i], fontSize: 10, fontWeight: 900, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>{i + 1}</span>
                           {name}
                         </div>
                         <div style={{ textAlign: "right" }}>
                           <div style={{ fontSize: 13, fontWeight: 800, color: "#10B981" }}>£{data.revenue}</div>
-                          <div style={{ fontSize: 10.5, color: "#94A3B8" }}>{data.count} bookings</div>
+                          <div style={{ fontSize: 10.5, color: "#aab1c4" }}>{data.count} bookings</div>
                         </div>
                       </div>
-                      <div style={{ height: 6, background: "#F1F5F9", borderRadius: 99 }}>
+                      <div style={{ height: 6, background: "#2a3350", borderRadius: 99 }}>
                         <div style={{ height: "100%", borderRadius: 99, background: COLORS[i], width: `${(data.revenue / maxRev) * 100}%`, transition: "width 0.6s ease" }} />
                       </div>
                     </div>
@@ -252,14 +252,14 @@ function ReportsContent() {
           </div>
 
           {/* Top Staff */}
-          <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
-            <div style={{ padding: "16px 20px", borderBottom: "1px solid #F1F5F9" }}>
-              <div style={{ fontSize: 15, fontWeight: 800, color: "#0F172A" }}>✂️ Staff Performance</div>
-              <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 2 }}>By revenue generated</div>
+          <div style={{ background: "#1C2438", border: "1.5px solid #2a3350", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid #2a3350" }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#F7F5EF" }}>✂️ Staff Performance</div>
+              <div style={{ fontSize: 12, color: "#aab1c4", marginTop: 2 }}>By revenue generated</div>
             </div>
             <div style={{ padding: 16 }}>
               {topStaff.length === 0
-                ? <div style={{ textAlign: "center", padding: "30px 0", color: "#94A3B8" }}>No data yet</div>
+                ? <div style={{ textAlign: "center", padding: "30px 0", color: "#aab1c4" }}>No data yet</div>
                 : topStaff.map(([name, data], i) => {
                   const maxRev = topStaff[0][1].revenue || 1;
                   const initials = name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
@@ -268,13 +268,13 @@ function ReportsContent() {
                       <div style={{ width: 36, height: 36, borderRadius: 11, background: COLORS[i], display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, color: "#fff", flexShrink: 0 }}>{initials}</div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                          <div style={{ fontSize: 13.5, fontWeight: 700, color: "#0F172A" }}>{name}</div>
+                          <div style={{ fontSize: 13.5, fontWeight: 700, color: "#F7F5EF" }}>{name}</div>
                           <div style={{ fontSize: 13, fontWeight: 800, color: "#10B981" }}>£{data.revenue}</div>
                         </div>
-                        <div style={{ height: 6, background: "#F1F5F9", borderRadius: 99 }}>
+                        <div style={{ height: 6, background: "#2a3350", borderRadius: 99 }}>
                           <div style={{ height: "100%", borderRadius: 99, background: COLORS[i], width: `${(data.revenue / maxRev) * 100}%`, transition: "width 0.6s ease" }} />
                         </div>
-                        <div style={{ fontSize: 10.5, color: "#94A3B8", marginTop: 3 }}>{data.count} bookings</div>
+                        <div style={{ fontSize: 10.5, color: "#aab1c4", marginTop: 3 }}>{data.count} bookings</div>
                       </div>
                     </div>
                   );
@@ -286,22 +286,22 @@ function ReportsContent() {
         {/* Peak Hours + Status breakdown */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
           {/* Peak Hours */}
-          <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
-            <div style={{ padding: "16px 20px", borderBottom: "1px solid #F1F5F9" }}>
-              <div style={{ fontSize: 15, fontWeight: 800, color: "#0F172A" }}>⏰ Peak Hours</div>
-              <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 2 }}>Busiest times of day</div>
+          <div style={{ background: "#1C2438", border: "1.5px solid #2a3350", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid #2a3350" }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#F7F5EF" }}>⏰ Peak Hours</div>
+              <div style={{ fontSize: 12, color: "#aab1c4", marginTop: 2 }}>Busiest times of day</div>
             </div>
             <div style={{ padding: 16 }}>
               {peakHours.length === 0
-                ? <div style={{ textAlign: "center", padding: "30px 0", color: "#94A3B8" }}>No data yet</div>
+                ? <div style={{ textAlign: "center", padding: "30px 0", color: "#aab1c4" }}>No data yet</div>
                 : peakHours.map(([hour, count]) => {
                   const maxCount = parseInt(peakHours[0][1] as unknown as string) || 1;
                   const hNum = parseInt(hour);
                   const label = `${hNum}:00 – ${hNum + 1}:00`;
                   return (
                     <div key={hour} style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-                      <div style={{ width: 80, fontSize: 12.5, fontWeight: 700, color: "#475569", flexShrink: 0 }}>{label}</div>
-                      <div style={{ flex: 1, height: 8, background: "#F1F5F9", borderRadius: 99 }}>
+                      <div style={{ width: 80, fontSize: 12.5, fontWeight: 700, color: "#aab1c4", flexShrink: 0 }}>{label}</div>
+                      <div style={{ flex: 1, height: 8, background: "#2a3350", borderRadius: 99 }}>
                         <div style={{ height: "100%", borderRadius: 99, background: "#C9A24B", width: `${(count / maxCount) * 100}%`, transition: "width 0.6s ease" }} />
                       </div>
                       <div style={{ width: 28, fontSize: 12.5, fontWeight: 800, color: "#C9A24B", textAlign: "right" }}>{count}</div>
@@ -312,16 +312,16 @@ function ReportsContent() {
           </div>
 
           {/* Status breakdown */}
-          <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
-            <div style={{ padding: "16px 20px", borderBottom: "1px solid #F1F5F9" }}>
-              <div style={{ fontSize: 15, fontWeight: 800, color: "#0F172A" }}>📋 Booking Status</div>
-              <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 2 }}>Overview of all bookings</div>
+          <div style={{ background: "#1C2438", border: "1.5px solid #2a3350", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.03)" }}>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid #2a3350" }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#F7F5EF" }}>📋 Booking Status</div>
+              <div style={{ fontSize: 12, color: "#aab1c4", marginTop: 2 }}>Overview of all bookings</div>
             </div>
             <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
               {[
-                { label: "Confirmed", count: appointments.filter(a => a.status === "confirmed").length, color: "#10B981", bg: "#ECFDF5" },
-                { label: "Pending",   count: appointments.filter(a => a.status === "pending").length,   color: "#F59E0B", bg: "#FEF9C3" },
-                { label: "Cancelled", count: appointments.filter(a => a.status === "cancelled").length, color: "#EF4444", bg: "#FEF2F2" },
+                { label: "Confirmed", count: appointments.filter(a => a.status === "confirmed").length, color: "#10B981", bg: "rgba(16,185,129,0.10)" },
+                { label: "Pending",   count: appointments.filter(a => a.status === "pending").length,   color: "#F59E0B", bg: "rgba(245,158,11,0.10)" },
+                { label: "Cancelled", count: appointments.filter(a => a.status === "cancelled").length, color: "#EF4444", bg: "rgba(239,68,68,0.10)" },
               ].map(s => {
                 const pct = appointments.length ? (s.count / appointments.length) * 100 : 0;
                 return (
@@ -329,14 +329,14 @@ function ReportsContent() {
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ width: 10, height: 10, borderRadius: "50%", background: s.color, display: "inline-block" }} />
-                        <span style={{ fontSize: 13.5, fontWeight: 700, color: "#0F172A" }}>{s.label}</span>
+                        <span style={{ fontSize: 13.5, fontWeight: 700, color: "#F7F5EF" }}>{s.label}</span>
                       </div>
                       <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                         <span style={{ fontSize: 12, fontWeight: 800, padding: "2px 10px", borderRadius: 99, background: s.bg, color: s.color }}>{s.count}</span>
-                        <span style={{ fontSize: 12, color: "#94A3B8" }}>{pct.toFixed(1)}%</span>
+                        <span style={{ fontSize: 12, color: "#aab1c4" }}>{pct.toFixed(1)}%</span>
                       </div>
                     </div>
-                    <div style={{ height: 10, background: "#F1F5F9", borderRadius: 99 }}>
+                    <div style={{ height: 10, background: "#2a3350", borderRadius: 99 }}>
                       <div style={{ height: "100%", borderRadius: 99, background: s.color, width: `${pct}%`, transition: "width 0.6s ease" }} />
                     </div>
                   </div>

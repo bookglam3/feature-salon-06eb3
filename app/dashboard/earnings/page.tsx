@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
@@ -137,7 +137,7 @@ export default function EarningsPage() {
       </div>
       {status?.connected && (
         <button onClick={handleStripeDashboard} disabled={dashLinking}
-          style={{ padding: "8px 16px", background: "rgba(201,162,75,0.2)", border: "1px solid rgba(201,162,75,0.4)", borderRadius: 10, fontSize: 12.5, fontWeight: 700, color: "#A5B4FC", cursor: "pointer" }}>
+          style={{ padding: "8px 16px", background: "rgba(201,162,75,0.2)", border: "1px solid rgba(201,162,75,0.4)", borderRadius: 10, fontSize: 12.5, fontWeight: 700, color: "#E7C878", cursor: "pointer" }}>
           {dashLinking ? "Opening…" : "↗ Stripe Dashboard"}
         </button>
       )}
@@ -169,7 +169,7 @@ export default function EarningsPage() {
             <div style={{ fontSize: 64, marginBottom: 20 }}>🏦</div>
             <h2 style={{ fontSize: 26, fontWeight: 900, color: "#fff", margin: "0 0 12px", letterSpacing: "-0.5px" }}>Connect Your Stripe Account</h2>
             <p style={{ fontSize: 14, color: "rgba(255,255,255,0.55)", lineHeight: 1.7, margin: "0 0 32px" }}>
-              Receive automatic payouts directly to your bank account for every booking. Platform fee is only <strong style={{ color: "#A5B4FC" }}>5%</strong> — you keep <strong style={{ color: "#34D399" }}>95%</strong> of every payment.
+              Receive automatic payouts directly to your bank account for every booking. Platform fee is only <strong style={{ color: "#E7C878" }}>5%</strong> — you keep <strong style={{ color: "#34D399" }}>95%</strong> of every payment.
             </p>
             {/* Feature list */}
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 32, textAlign: "left" }}>
@@ -186,7 +186,7 @@ export default function EarningsPage() {
               ))}
             </div>
             <button onClick={handleConnect} disabled={connecting}
-              style={{ width: "100%", padding: "16px", background: connecting ? "rgba(201,162,75,0.4)" : "linear-gradient(135deg,#C9A24B,#4F46E5)", border: "none", borderRadius: 14, fontSize: 15, fontWeight: 800, color: "#fff", cursor: connecting ? "not-allowed" : "pointer", boxShadow: "0 8px 30px rgba(201,162,75,0.4)", letterSpacing: "-0.2px" }}>
+              style={{ width: "100%", padding: "16px", background: connecting ? "rgba(201,162,75,0.4)" : "linear-gradient(135deg,#C9A24B,#0E1320)", border: "none", borderRadius: 14, fontSize: 15, fontWeight: 800, color: "#fff", cursor: connecting ? "not-allowed" : "pointer", boxShadow: "0 8px 30px rgba(201,162,75,0.4)", letterSpacing: "-0.2px" }}>
               {connecting ? "⏳ Redirecting to Stripe…" : "🔗 Connect Stripe Account"}
             </button>
             {connectError && (
@@ -228,7 +228,7 @@ export default function EarningsPage() {
               {[
                 { label: "Available Balance", value: fmt(available, currency), icon: "💵", color: "#34D399", desc: "Ready to pay out to your bank" },
                 { label: "Pending Balance", value: fmt(pending, currency), icon: "⏳", color: "#F59E0B", desc: "Processing — arrives in 2-7 days" },
-                { label: "Platform Fee", value: "5%", icon: "🏷️", color: "#A5B4FC", desc: "Kept per transaction" },
+                { label: "Platform Fee", value: "5%", icon: "🏷️", color: "#E7C878", desc: "Kept per transaction" },
               ].map(s => (
                 <div key={s.label} style={{ background: "linear-gradient(135deg,rgba(15,11,45,0.9),rgba(30,27,75,0.9))", border: "1px solid rgba(201,162,75,0.2)", borderRadius: 20, padding: "22px 20px", position: "relative", overflow: "hidden" }}>
                   <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: s.color }} />
@@ -244,7 +244,7 @@ export default function EarningsPage() {
 
             {/* How it works */}
             <div style={{ background: "rgba(201,162,75,0.08)", border: "1px solid rgba(201,162,75,0.2)", borderRadius: 16, padding: "18px 22px", marginBottom: 24, display: "flex", gap: 20, flexWrap: "wrap" }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: "#A5B4FC", minWidth: 120 }}>💡 How it works</div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "#E7C878", minWidth: 120 }}>💡 How it works</div>
               {[
                 { from: "Client pays £100", to: "Platform fee: £5", via: "→" },
                 { from: "Platform fee: £5", to: "You receive: £95", via: "→" },
@@ -263,7 +263,7 @@ export default function EarningsPage() {
               <div style={{ padding: "18px 22px", borderBottom: "1px solid rgba(201,162,75,0.15)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>Payout History</div>
                 <button onClick={handleStripeDashboard} disabled={dashLinking}
-                  style={{ padding: "7px 14px", background: "rgba(201,162,75,0.15)", border: "1px solid rgba(201,162,75,0.3)", borderRadius: 10, fontSize: 12, fontWeight: 700, color: "#A5B4FC", cursor: "pointer" }}>
+                  style={{ padding: "7px 14px", background: "rgba(201,162,75,0.15)", border: "1px solid rgba(201,162,75,0.3)", borderRadius: 10, fontSize: 12, fontWeight: 700, color: "#E7C878", cursor: "pointer" }}>
                   {dashLinking ? "…" : "View All in Stripe ↗"}
                 </button>
               </div>

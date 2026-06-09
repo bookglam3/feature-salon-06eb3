@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -263,7 +263,7 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
               }} />
             </div>
             <div>
-              <div style={{ fontSize: 16, fontFamily: "var(--font-inter, 'Inter', sans-serif)", fontWeight: 600, color: "#F1F5F9", letterSpacing: "-0.5px", lineHeight: 1 }}>feature</div>
+              <div style={{ fontSize: 16, fontFamily: "var(--font-inter, 'Inter', sans-serif)", fontWeight: 600, color: "#F7F5EF", letterSpacing: "-0.5px", lineHeight: 1 }}>feature</div>
               <div style={{ fontSize: 8.5, fontWeight: 600, color: "rgba(201,162,75,0.55)", letterSpacing: "2.5px", textTransform: "uppercase", marginTop: 3 }}>{vc.productName}</div>
             </div>
           </div>
@@ -305,7 +305,7 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
                 {(activeSalon?.name || "S").slice(0, 1).toUpperCase()}
               </div>
               <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: "#F1F5F9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#F7F5EF", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {activeSalon?.name || "Select Branch"}
                 </div>
                 <div style={{ fontSize: 9.5, color: "rgba(201,162,75,0.65)", marginTop: 1 }}>Branch</div>
@@ -452,7 +452,7 @@ export default function Sidebar({ salonName, onClose, onLogout }: SidebarProps) 
             }}>{initials}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{
-                fontSize: 12.5, fontWeight: 700, color: "#F1F5F9",
+                fontSize: 12.5, fontWeight: 700, color: "#F7F5EF",
                 whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                 letterSpacing: "-0.2px",
               }}>{salonName || `Your ${vc.productName.replace(" OS","")}`}</div>

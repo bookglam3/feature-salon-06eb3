@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { NAV_ICON_MAP, StaffIconByKey } from "./components/DashboardIcons";
@@ -211,7 +211,7 @@ export default function DashboardSidebar() {
       className="flex flex-col sticky top-0 overflow-y-auto overflow-x-hidden"
       style={{
         width: 248, minWidth: 248, height: "100vh",
-        background: "linear-gradient(180deg,#0F0B2D 0%,#1a1040 45%,#0F172A 100%)",
+        background: "linear-gradient(180deg,#0F0B2D 0%,#1a1040 45%,#F7F5EF 100%)",
         borderRight: "1px solid rgba(255,255,255,0.07)",
       }}
     >

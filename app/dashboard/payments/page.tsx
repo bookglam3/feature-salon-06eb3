@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
@@ -45,9 +45,9 @@ export default function PaymentsPage() {
   });
 
   const statusStyle = (s: string) =>
-    s === "confirmed" ? { bg: "#ECFDF5", color: "#059669", border: "#A7F3D0", dot: "#10B981" }
-    : s === "cancelled" ? { bg: "#FEF2F2", color: "#DC2626", border: "#FECACA", dot: "#EF4444" }
-    : { bg: "#FFF7ED", color: "#D97706", border: "#FDE68A", dot: "#F59E0B" };
+    s === "confirmed" ? { bg: "rgba(16,185,129,0.10)", color: "#10B981", border: "rgba(16,185,129,0.25)", dot: "#10B981" }
+    : s === "cancelled" ? { bg: "rgba(239,68,68,0.10)", color: "#DC2626", border: "rgba(239,68,68,0.25)", dot: "#EF4444" }
+    : { bg: "rgba(245,158,11,0.10)", color: "#F59E0B", border: "rgba(245,158,11,0.25)", dot: "#F59E0B" };
 
   if (loading) return <DashboardShell salonName=""><SkeletonDashboard /></DashboardShell>;
 
@@ -76,19 +76,19 @@ export default function PaymentsPage() {
         </div>
 
         {/* Table card */}
-        <div style={{ background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(15,23,42,0.05)" }}>
+        <div style={{ background: "#1C2438", border: "1.5px solid #2a3350", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(15,23,42,0.05)" }}>
           {/* Toolbar */}
-          <div style={{ padding: "14px 18px", borderBottom: "1px solid #F1F5F9", display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", justifyContent: "space-between", background: "#FAFBFF" }}>
-            <div style={{ display: "flex", gap: 2, background: "#F1F5F9", borderRadius: 10, padding: 3 }}>
+          <div style={{ padding: "14px 18px", borderBottom: "1px solid #2a3350", display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center", justifyContent: "space-between", background: "#FAFBFF" }}>
+            <div style={{ display: "flex", gap: 2, background: "#2a3350", borderRadius: 10, padding: 3 }}>
               {["All","Paid","Pending","Cancelled"].map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab)}
                   style={{ fontSize: 12.5, padding: "6px 12px", borderRadius: 8, border: "none", background: activeTab === tab ? "#fff" : "transparent", color: activeTab === tab ? "#C9A24B" : "var(--text-3)", cursor: "pointer", fontWeight: activeTab === tab ? 700 : 500, boxShadow: activeTab === tab ? "0 1px 4px rgba(0,0,0,0.07)" : "none", transition: "all 0.12s", fontFamily: "var(--font)" }}>{tab}
                 </button>
               ))}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "7px 12px", minWidth: 180 }}
-              onFocusCapture={e => { e.currentTarget.style.borderColor = "#C9A24B"; e.currentTarget.style.background = "#fff"; }}
-              onBlurCapture={e => { e.currentTarget.style.borderColor = "#E2E8F0"; e.currentTarget.style.background = "#F8FAFC"; }}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#141A2E", border: "1.5px solid #2a3350", borderRadius: 10, padding: "7px 12px", minWidth: 180 }}
+              onFocusCapture={e => { e.currentTarget.style.borderColor = "#C9A24B"; e.currentTarget.style.background = "#1C2438"; }}
+              onBlurCapture={e => { e.currentTarget.style.borderColor = "#2a3350"; e.currentTarget.style.background = "#141A2E"; }}
             >
               <svg width="13" height="13" viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5.75" stroke="#94A3B8" strokeWidth="1.75"/><path d="M13 13L17 17" stroke="#94A3B8" strokeWidth="1.75" strokeLinecap="round"/></svg>
               <input type="text" placeholder="Search client, service…" value={search} onChange={e => setSearch(e.target.value)}
@@ -106,9 +106,9 @@ export default function PaymentsPage() {
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }}>
                 <thead>
-                  <tr style={{ background: "#F8FAFC" }}>
+                  <tr style={{ background: "#141A2E" }}>
                     {["Status","Client","Service","Staff","Date","Amount"].map(h => (
-                      <th key={h} style={{ fontSize: 10.5, color: "var(--text-3)", textAlign: "left", padding: "11px 18px", fontWeight: 800, borderBottom: "1.5px solid #F1F5F9", letterSpacing: "0.7px", textTransform: "uppercase" }}>{h}</th>
+                      <th key={h} style={{ fontSize: 10.5, color: "var(--text-3)", textAlign: "left", padding: "11px 18px", fontWeight: 800, borderBottom: "1.5px solid #2a3350", letterSpacing: "0.7px", textTransform: "uppercase" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -121,17 +121,17 @@ export default function PaymentsPage() {
                         onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#FAFBFF"; }}
                         onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
                       >
-                        <td style={{ padding: "13px 18px", borderBottom: "1px solid #F8FAFC" }}>
+                        <td style={{ padding: "13px 18px", borderBottom: "1px solid #2a3350" }}>
                           <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: sc.bg, color: sc.color, border: `1px solid ${sc.border}`, fontSize: 10.5, padding: "3px 10px", borderRadius: 99, fontWeight: 700 }}>
                             <span style={{ width: 5, height: 5, borderRadius: "50%", background: sc.dot, flexShrink: 0 }} />
                             {a.status}
                           </span>
                         </td>
-                        <td style={{ padding: "13px 18px", fontSize: 13.5, fontWeight: 700, color: "var(--text-1)", borderBottom: "1px solid #F8FAFC" }}>{a.client_name}</td>
-                        <td style={{ padding: "13px 18px", fontSize: 13, color: "var(--text-2)", borderBottom: "1px solid #F8FAFC" }}>{a.services?.name || "—"}</td>
-                        <td style={{ padding: "13px 18px", fontSize: 13, color: "var(--text-3)", borderBottom: "1px solid #F8FAFC" }}>{a.staff?.name || "—"}</td>
-                        <td style={{ padding: "13px 18px", fontSize: 13, color: "var(--text-2)", borderBottom: "1px solid #F8FAFC" }}>{new Date(a.date_time).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</td>
-                        <td style={{ padding: "13px 18px", fontSize: 14, fontWeight: 900, color: a.status === "confirmed" ? "#059669" : "var(--text-1)", borderBottom: "1px solid #F8FAFC" }}>
+                        <td style={{ padding: "13px 18px", fontSize: 13.5, fontWeight: 700, color: "var(--text-1)", borderBottom: "1px solid #2a3350" }}>{a.client_name}</td>
+                        <td style={{ padding: "13px 18px", fontSize: 13, color: "var(--text-2)", borderBottom: "1px solid #2a3350" }}>{a.services?.name || "—"}</td>
+                        <td style={{ padding: "13px 18px", fontSize: 13, color: "var(--text-3)", borderBottom: "1px solid #2a3350" }}>{a.staff?.name || "—"}</td>
+                        <td style={{ padding: "13px 18px", fontSize: 13, color: "var(--text-2)", borderBottom: "1px solid #2a3350" }}>{new Date(a.date_time).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</td>
+                        <td style={{ padding: "13px 18px", fontSize: 14, fontWeight: 900, color: a.status === "confirmed" ? "#10B981" : "var(--text-1)", borderBottom: "1px solid #2a3350" }}>
                           £{a.services?.price?.toFixed(2) || "0.00"}
                         </td>
                       </tr>

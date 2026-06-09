@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { createContext, useContext, useState, useCallback, useRef, useEffect } from "react";
 
 interface Toast {
@@ -32,9 +32,9 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: string) =
   }, [toast.id, onRemove]);
 
   const colors = {
-    success: { bg: "#ECFDF5", border: "#6EE7B7", text: "#065F46", icon: "✓" },
-    error:   { bg: "#FEF2F2", border: "#FECACA", text: "#991B1B", icon: "✕" },
-    info:    { bg: "#EEF2FF", border: "#C7D2FE", text: "#3730A3", icon: "i" },
+    success: { bg: "rgba(16,185,129,0.10)", border: "#6EE7B7", text: "#065F46", icon: "✓" },
+    error:   { bg: "rgba(239,68,68,0.10)", border: "rgba(239,68,68,0.25)", text: "#991B1B", icon: "✕" },
+    info:    { bg: "rgba(201,162,75,0.10)", border: "rgba(201,162,75,0.25)", text: "#3730A3", icon: "i" },
   };
   const c = colors[toast.type];
 

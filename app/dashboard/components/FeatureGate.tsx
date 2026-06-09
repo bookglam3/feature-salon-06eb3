@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
@@ -49,7 +49,7 @@ export default function FeatureGate({ feature, children }: FeatureGateProps) {
   if (status === "loading") {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
-        <div style={{ textAlign: "center", color: "#94A3B8" }}>
+        <div style={{ textAlign: "center", color: "#aab1c4" }}>
           <div style={{ fontSize: 32, marginBottom: 12, animation: "spin 1s linear infinite" }}>⏳</div>
           <div style={{ fontSize: 14, fontWeight: 600 }}>Checking access…</div>
         </div>
@@ -95,10 +95,10 @@ export default function FeatureGate({ feature, children }: FeatureGateProps) {
           </div>
         </div>
 
-        <h1 style={{ fontSize: 26, fontWeight: 900, color: "#0F172A", letterSpacing: "-0.8px", margin: "0 0 10px" }}>
+        <h1 style={{ fontSize: 26, fontWeight: 900, color: "#F7F5EF", letterSpacing: "-0.8px", margin: "0 0 10px" }}>
           {meta.label} is Locked
         </h1>
-        <p style={{ fontSize: 14.5, color: "#64748B", lineHeight: 1.7, margin: "0 0 28px" }}>
+        <p style={{ fontSize: 14.5, color: "#aab1c4", lineHeight: 1.7, margin: "0 0 28px" }}>
           You&apos;re currently on the{" "}
           <span style={{ fontWeight: 800, color: currentInfo.color }}>{currentInfo.name}</span> plan.
           Upgrade to <span style={{ fontWeight: 800, color: requiredInfo.color }}>{requiredInfo.name}</span> or higher to unlock {meta.icon} {meta.label}.
@@ -111,13 +111,13 @@ export default function FeatureGate({ feature, children }: FeatureGateProps) {
             const isRecommended = p === requiredPlan;
             return (
               <div key={p}
-                style={{ border: `2px solid ${isRecommended ? info.color : "#E2E8F0"}`, borderRadius: 16, padding: "16px 14px", background: isRecommended ? `${info.color}08` : "#fff", position: "relative", transition: "all 0.15s" }}>
+                style={{ border: `2px solid ${isRecommended ? info.color : "#2a3350"}`, borderRadius: 16, padding: "16px 14px", background: isRecommended ? `${info.color}08` : "#1C2438", position: "relative", transition: "all 0.15s" }}>
                 {isRecommended && (
                   <div style={{ position: "absolute", top: -10, left: "50%", transform: "translateX(-50%)", background: info.color, color: "#fff", fontSize: 9.5, fontWeight: 900, padding: "2px 10px", borderRadius: 99, letterSpacing: "0.5px", whiteSpace: "nowrap" }}>
                     RECOMMENDED
                   </div>
                 )}
-                <div style={{ fontSize: 13.5, fontWeight: 800, color: "#0F172A", marginBottom: 2, textTransform: "capitalize" }}>{info.name}</div>
+                <div style={{ fontSize: 13.5, fontWeight: 800, color: "#F7F5EF", marginBottom: 2, textTransform: "capitalize" }}>{info.name}</div>
                 <div style={{ fontSize: 20, fontWeight: 900, color: info.color, letterSpacing: "-0.5px" }}>{info.price}</div>
               </div>
             );
@@ -136,7 +136,7 @@ export default function FeatureGate({ feature, children }: FeatureGateProps) {
 
         <button
           onClick={() => router.push("/dashboard")}
-          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#94A3B8", fontWeight: 600, padding: 0 }}
+          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#aab1c4", fontWeight: 600, padding: 0 }}
           onMouseEnter={e => { e.currentTarget.style.color = "#475569"; }}
           onMouseLeave={e => { e.currentTarget.style.color = "#94A3B8"; }}
         >

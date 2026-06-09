@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
@@ -76,9 +76,9 @@ const AVAIL_LABELS: Record<string, string> = {
 };
 
 const STATUS_STYLE = {
-  pending:  { bg: "#FFFBEB", color: "#92400E", border: "#FDE68A", label: "⏳ Pending" },
-  approved: { bg: "#ECFDF5", color: "#065F46", border: "#6EE7B7", label: "✅ Approved" },
-  rejected: { bg: "#FEF2F2", color: "#991B1B", border: "#FECACA", label: "❌ Rejected" },
+  pending:  { bg: "#FFFBEB", color: "#F59E0B", border: "rgba(245,158,11,0.25)", label: "⏳ Pending" },
+  approved: { bg: "rgba(16,185,129,0.10)", color: "#065F46", border: "#6EE7B7", label: "✅ Approved" },
+  rejected: { bg: "rgba(239,68,68,0.10)", color: "#991B1B", border: "rgba(239,68,68,0.25)", label: "❌ Rejected" },
 };
 
 // ─── Main Component ────────────────────────────────────────────
@@ -272,7 +272,7 @@ function PartnersPageInner() {
   if (loading) return <DashboardShell salonName=""><SkeletonDashboard /></DashboardShell>;
 
   const Topbar = (
-    <header style={{ background: "#fff", borderBottom: "1px solid var(--border)", padding: "0 20px", height: 58, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 30 }}>
+    <header style={{ background: "#1C2438", borderBottom: "1px solid var(--border)", padding: "0 20px", height: 58, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 30 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <HamburgerBtn />
         <div>
@@ -299,11 +299,11 @@ function PartnersPageInner() {
           {/* Header */}
           <div style={{ padding: "18px 22px", borderBottom: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 800, color: "#F1F5F9" }}>🏢 All Salons</div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#F7F5EF" }}>🏢 All Salons</div>
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>{allSalons.length} total · filter by country</div>
             </div>
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-              <input value={salonSearch} onChange={e => setSalonSearch(e.target.value)} placeholder="Search name, email, IP…" style={{ padding: "7px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, fontSize: 13, color: "#F1F5F9", outline: "none", width: 220 }} />
+              <input value={salonSearch} onChange={e => setSalonSearch(e.target.value)} placeholder="Search name, email, IP…" style={{ padding: "7px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, fontSize: 13, color: "#F7F5EF", outline: "none", width: 220 }} />
               <span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>{visibleSalons.length} shown</span>
             </div>
           </div>
@@ -347,7 +347,7 @@ function PartnersPageInner() {
                         style={{ transition: "background 0.1s" }}
                       >
                         <td style={{ padding: "11px 14px", borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                          <div style={{ fontSize: 13, fontWeight: 800, color: "#F1F5F9" }}>{s.name}</div>
+                          <div style={{ fontSize: 13, fontWeight: 800, color: "#F7F5EF" }}>{s.name}</div>
                           <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>/book/{s.slug}</div>
                         </td>
                         <td style={{ padding: "11px 14px", borderBottom: "1px solid rgba(255,255,255,0.04)", fontSize: 12, color: "rgba(255,255,255,0.45)", maxWidth: 180 }}>{s.owner_email}</td>
@@ -392,17 +392,17 @@ function PartnersPageInner() {
         {editSalon && (
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 16 }}>
             <div style={{ background: "#13111F", border: "1px solid rgba(201,162,75,0.3)", borderRadius: 20, padding: 28, width: "100%", maxWidth: 440, boxShadow: "0 24px 80px rgba(0,0,0,0.7)" }}>
-              <div style={{ fontSize: 17, fontWeight: 800, color: "#F1F5F9", marginBottom: 4 }}>Edit Salon</div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: "#F7F5EF", marginBottom: 4 }}>Edit Salon</div>
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginBottom: 22 }}>{editSalon.name} · {editSalon.owner_email}</div>
 
               <div style={{ marginBottom: 14 }}>
                 <label style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", fontWeight: 600, display: "block", marginBottom: 6, letterSpacing: "0.5px", textTransform: "uppercase" }}>Salon Name</label>
-                <input value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} style={{ width: "100%", padding: "9px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 9, fontSize: 14, color: "#F1F5F9", outline: "none", boxSizing: "border-box" }} />
+                <input value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} style={{ width: "100%", padding: "9px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 9, fontSize: 14, color: "#F7F5EF", outline: "none", boxSizing: "border-box" }} />
               </div>
 
               <div style={{ marginBottom: 14 }}>
                 <label style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", fontWeight: 600, display: "block", marginBottom: 6, letterSpacing: "0.5px", textTransform: "uppercase" }}>Subscription Status</label>
-                <select value={editForm.subscription_status} onChange={e => setEditForm(f => ({ ...f, subscription_status: e.target.value }))} style={{ width: "100%", padding: "9px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 9, fontSize: 14, color: "#F1F5F9", outline: "none" }}>
+                <select value={editForm.subscription_status} onChange={e => setEditForm(f => ({ ...f, subscription_status: e.target.value }))} style={{ width: "100%", padding: "9px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 9, fontSize: 14, color: "#F7F5EF", outline: "none" }}>
                   <option value="trial">🎁 Trial</option>
                   <option value="trialing">⏳ Trialing</option>
                   <option value="active">✅ Active</option>
@@ -414,7 +414,7 @@ function PartnersPageInner() {
 
               <div style={{ marginBottom: 22 }}>
                 <label style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", fontWeight: 600, display: "block", marginBottom: 6, letterSpacing: "0.5px", textTransform: "uppercase" }}>Plan</label>
-                <select value={editForm.subscription_plan} onChange={e => setEditForm(f => ({ ...f, subscription_plan: e.target.value }))} style={{ width: "100%", padding: "9px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 9, fontSize: 14, color: "#F1F5F9", outline: "none" }}>
+                <select value={editForm.subscription_plan} onChange={e => setEditForm(f => ({ ...f, subscription_plan: e.target.value }))} style={{ width: "100%", padding: "9px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 9, fontSize: 14, color: "#F7F5EF", outline: "none" }}>
                   <option value="starter">Starter — £29/mo</option>
                   <option value="pro">Pro — £59/mo</option>
                   <option value="business">Business — £99/mo</option>
@@ -424,7 +424,7 @@ function PartnersPageInner() {
 
               <div style={{ marginBottom: 22 }}>
                 <label style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", fontWeight: 600, display: "block", marginBottom: 6, letterSpacing: "0.5px", textTransform: "uppercase" }}>Timezone</label>
-                <select value={editForm.timezone} onChange={e => setEditForm(f => ({ ...f, timezone: e.target.value }))} style={{ width: "100%", padding: "9px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 9, fontSize: 14, color: "#F1F5F9", outline: "none" }}>
+                <select value={editForm.timezone} onChange={e => setEditForm(f => ({ ...f, timezone: e.target.value }))} style={{ width: "100%", padding: "9px 12px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 9, fontSize: 14, color: "#F7F5EF", outline: "none" }}>
                   <option value="Europe/London">🇬🇧 UK — Europe/London (GMT/BST)</option>
                   <option value="Asia/Karachi">🇵🇰 Pakistan — Asia/Karachi (PKT +5)</option>
                   <option value="Asia/Dubai">🇦🇪 UAE — Asia/Dubai (GST +4)</option>
@@ -446,12 +446,12 @@ function PartnersPageInner() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 12, marginBottom: 24 }}>
           {[
             { label: "Total",    value: stats.total,    color: "var(--indigo)",   bg: "var(--indigo-light)" },
-            { label: "Pending",  value: stats.pending,  color: "#D97706",          bg: "#FFFBEB" },
+            { label: "Pending",  value: stats.pending,  color: "#F59E0B",          bg: "#FFFBEB" },
             { label: "Approved", value: stats.approved, color: "var(--green)",    bg: "var(--green-light)" },
             { label: "Rejected", value: stats.rejected, color: "var(--red)",      bg: "var(--red-light)" },
-            { label: "Signups Referred", value: stats.referred, color: "#C9A24B", bg: "#F5F3FF" },
+            { label: "Signups Referred", value: stats.referred, color: "#C9A24B", bg: "rgba(201,162,75,0.08)" },
           ].map(s => (
-            <div key={s.label} style={{ background: "#fff", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", padding: "14px 16px" }}>
+            <div key={s.label} style={{ background: "#1C2438", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", padding: "14px 16px" }}>
               <div style={{ fontSize: 22, fontWeight: 800, color: s.color, marginBottom: 2 }}>{s.value}</div>
               <div style={{ fontSize: 11.5, color: "var(--text-3)", fontWeight: 500 }}>{s.label}</div>
             </div>
@@ -481,7 +481,7 @@ function PartnersPageInner() {
 
         {/* Table / Cards */}
         {filtered.length === 0 ? (
-          <div style={{ background: "#fff", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", padding: "48px 24px", textAlign: "center" }}>
+          <div style={{ background: "#1C2438", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", padding: "48px 24px", textAlign: "center" }}>
             <div style={{ fontSize: 36, marginBottom: 12 }}>🤝</div>
             <div style={{ fontSize: 15, fontWeight: 700, color: "var(--text-1)", marginBottom: 6 }}>No applications yet</div>
             <div style={{ fontSize: 13, color: "var(--text-3)" }}>Share <strong>/partner</strong> with potential agents to start receiving applications.</div>
@@ -491,7 +491,7 @@ function PartnersPageInner() {
             {filtered.map(agent => {
               const st = STATUS_STYLE[agent.status];
               return (
-                <div key={agent.id} style={{ background: "#fff", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", padding: "16px 18px", transition: "box-shadow 0.14s" }}
+                <div key={agent.id} style={{ background: "#1C2438", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", padding: "16px 18px", transition: "box-shadow 0.14s" }}
                   onMouseEnter={e => { e.currentTarget.style.boxShadow = "var(--shadow-md)"; }}
                   onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; }}
                 >
@@ -562,7 +562,7 @@ function PartnersPageInner() {
 
                   {/* Admin notes */}
                   {agent.admin_notes && (
-                    <div style={{ fontSize: 12.5, color: "var(--text-2)", padding: "8px 12px", background: "#FFFBEB", borderRadius: "var(--r-sm)", marginBottom: 12, borderLeft: "3px solid #FDE68A" }}>
+                    <div style={{ fontSize: 12.5, color: "var(--text-2)", padding: "8px 12px", background: "#141A2E", borderRadius: "var(--r-sm)", marginBottom: 12, borderLeft: "3px solid #FDE68A" }}>
                       📝 <strong>Note:</strong> {agent.admin_notes}
                     </div>
                   )}
@@ -588,7 +588,7 @@ function PartnersPageInner() {
                     {agent.status !== "pending" && (
                       <button
                         onClick={() => openReview(agent, "approved")}
-                        style={{ padding: "7px 16px", background: "#fff", color: "var(--text-2)", border: "1px solid var(--border)", borderRadius: "var(--r-sm)", fontSize: 12.5, fontWeight: 500, cursor: "pointer", fontFamily: "var(--font)" }}
+                        style={{ padding: "7px 16px", background: "#1C2438", color: "var(--text-2)", border: "1px solid var(--border)", borderRadius: "var(--r-sm)", fontSize: 12.5, fontWeight: 500, cursor: "pointer", fontFamily: "var(--font)" }}
                       >
                         📝 Edit Notes
                       </button>
@@ -616,7 +616,7 @@ function PartnersPageInner() {
             </div>
 
             {reviewStatus === "approved" && !selected.referral_code && (
-              <div style={{ marginBottom: 16, padding: "12px 14px", background: "#ECFDF5", border: "1px solid #6EE7B7", borderRadius: "var(--r-sm)", fontSize: 13, color: "#065F46" }}>
+              <div style={{ marginBottom: 16, padding: "12px 14px", background: "rgba(16,185,129,0.10)", border: "1px solid #6EE7B7", borderRadius: "var(--r-sm)", fontSize: 13, color: "#065F46" }}>
                 🔗 A unique referral code will be automatically generated upon approval.
               </div>
             )}
@@ -659,14 +659,14 @@ function PartnersPageInner() {
           {/* Header */}
           <div style={{ padding: "18px 22px", borderBottom: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 800, color: "#F1F5F9" }}>🌍 Salon Login History</div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#F7F5EF" }}>🌍 Salon Login History</div>
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginTop: 2 }}>{loginLogs.length} recent logins · IP + location tracked</div>
             </div>
             <input
               value={logsFilter}
               onChange={e => setLogsFilter(e.target.value)}
               placeholder="Search salon, email, IP, city…"
-              style={{ padding: "8px 14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, fontSize: 13, color: "#F1F5F9", outline: "none", width: 260 }}
+              style={{ padding: "8px 14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 9, fontSize: 13, color: "#F7F5EF", outline: "none", width: 260 }}
             />
           </div>
 
@@ -694,7 +694,7 @@ function PartnersPageInner() {
                         onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                         style={{ transition: "background 0.1s" }}
                       >
-                        <td style={{ padding: "11px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 13, fontWeight: 700, color: "#F1F5F9" }}>{log.salon_name || "—"}</td>
+                        <td style={{ padding: "11px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 13, fontWeight: 700, color: "#F7F5EF" }}>{log.salon_name || "—"}</td>
                         <td style={{ padding: "11px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 12, color: "rgba(255,255,255,0.45)" }}>{log.owner_email}</td>
                         <td style={{ padding: "11px 16px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
                           <span style={{ fontFamily: "monospace", fontSize: 12.5, color: "#67E8F9", background: "rgba(6,182,212,0.08)", padding: "2px 8px", borderRadius: 5, border: "1px solid rgba(6,182,212,0.2)" }}>{log.ip_address}</span>

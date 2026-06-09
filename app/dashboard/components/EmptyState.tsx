@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { ReactNode } from "react";
 import { CalendarDays } from "lucide-react";
 
@@ -59,7 +59,7 @@ export default function EmptyState({ icon, lucideIcon, title, description, actio
       </div>
 
       <div style={{
-        fontSize: 15.5, fontWeight: 800, color: "#F1F5F9",
+        fontSize: 15.5, fontWeight: 800, color: "#F7F5EF",
         marginBottom: 8, letterSpacing: "-0.4px",
       }}>{title}</div>
 

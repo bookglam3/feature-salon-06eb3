@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useCallback, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
@@ -152,7 +152,7 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
         }
         .ds-topbar-search input {
           background: none; border: none; outline: none;
-          font-size: 13px; color: #F1F5F9;
+          font-size: 13px; color: #2a3350;
           font-family: var(--font); width: 100%;
         }
         .ds-topbar-search input::placeholder { color: rgba(255,255,255,0.2); }
@@ -280,7 +280,7 @@ export default function DashboardShell({ children, salonName, topbar }: Dashboar
                 style={{
                   background: subStatus === "cancelled"
                     ? "linear-gradient(135deg,#DC2626,#991B1B)"
-                    : "linear-gradient(135deg,#D97706,#92400E)",
+                    : "linear-gradient(135deg,#D97706,#F59E0B)",
                   boxShadow: subStatus === "cancelled"
                     ? "0 4px 12px rgba(239,68,68,0.35)"
                     : "0 4px 12px rgba(245,158,11,0.35)",
@@ -354,7 +354,7 @@ function PremiumTopBar({ onMenuClick, salonName, plan }: {
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
         <HamburgerBtn onClick={onMenuClick} />
         <div style={{
-          fontSize: 14.5, fontWeight: 800, color: "#F1F5F9",
+          fontSize: 14.5, fontWeight: 800, color: "#F7F5EF",
           letterSpacing: "-0.4px", lineHeight: 1,
         }}>
           {pageTitle}
@@ -397,7 +397,7 @@ function PremiumTopBar({ onMenuClick, salonName, plan }: {
             boxShadow: "0 2px 8px rgba(201,162,75,0.25)",
           }}>{initials}</div>
           <span style={{
-            fontSize: 12.5, fontWeight: 700, color: "#F1F5F9",
+            fontSize: 12.5, fontWeight: 700, color: "#F7F5EF",
             maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
           }}>
             {salonName || vc.productName.replace(" OS","")}

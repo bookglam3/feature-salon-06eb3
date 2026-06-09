@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
@@ -126,9 +126,9 @@ export default function ClientsPage() {
   };
   const daysSince = (d: Date) => Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
   const statusColor = (s: string) =>
-    s === "confirmed" ? { bg: "#ECFDF5", color: "#059669", border: "#A7F3D0" }
-    : s === "cancelled" ? { bg: "#FEF2F2", color: "#DC2626", border: "#FECACA" }
-    : { bg: "#FFF7ED", color: "#D97706", border: "#FDE68A" };
+    s === "confirmed" ? { bg: "rgba(16,185,129,0.10)", color: "#10B981", border: "rgba(16,185,129,0.25)" }
+    : s === "cancelled" ? { bg: "rgba(239,68,68,0.10)", color: "#DC2626", border: "rgba(239,68,68,0.25)" }
+    : { bg: "rgba(245,158,11,0.10)", color: "#F59E0B", border: "rgba(245,158,11,0.25)" };
 
   if (loading) return <DashboardShell salonName=""><SkeletonDashboard /></DashboardShell>;
 
@@ -158,19 +158,19 @@ export default function ClientsPage() {
 
         <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
           {/* Client list */}
-          <div style={{ flex: selected ? "0 0 100%" : "1", minWidth: 0, background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(15,23,42,0.05)" }}>
+          <div style={{ flex: selected ? "0 0 100%" : "1", minWidth: 0, background: "#1C2438", border: "1.5px solid #2a3350", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 8px rgba(15,23,42,0.05)" }}>
             {/* Toolbar */}
-            <div style={{ padding: "14px 18px", borderBottom: "1px solid #F1F5F9", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", background: "#FAFBFF" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 160, background: "#F8FAFC", border: "1.5px solid #E2E8F0", borderRadius: 10, padding: "8px 12px" }}
-                onFocusCapture={e => { e.currentTarget.style.borderColor = "#C9A24B"; e.currentTarget.style.background = "#fff"; }}
-                onBlurCapture={e => { e.currentTarget.style.borderColor = "#E2E8F0"; e.currentTarget.style.background = "#F8FAFC"; }}
+            <div style={{ padding: "14px 18px", borderBottom: "1px solid #2a3350", display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", background: "#141A2E" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 160, background: "#141A2E", border: "1.5px solid #2a3350", borderRadius: 10, padding: "8px 12px" }}
+                onFocusCapture={e => { e.currentTarget.style.borderColor = "#C9A24B"; e.currentTarget.style.background = "#1C2438"; }}
+                onBlurCapture={e => { e.currentTarget.style.borderColor = "#2a3350"; e.currentTarget.style.background = "#141A2E"; }}
               >
                 <svg width="13" height="13" viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5.75" stroke="#94A3B8" strokeWidth="1.75"/><path d="M13 13L17 17" stroke="#94A3B8" strokeWidth="1.75" strokeLinecap="round"/></svg>
                 <input type="text" placeholder={`Search ${vc.clientPlural.toLowerCase()}…`} value={search} onChange={e => setSearch(e.target.value)}
                   style={{ background: "none", border: "none", outline: "none", fontSize: 13, color: "var(--text-1)", fontFamily: "var(--font)", width: "100%" }} />
               </div>
               <select value={sortKey} onChange={e => setSortKey(e.target.value as SortKey)}
-                style={{ padding: "8px 12px", border: "1.5px solid #E2E8F0", borderRadius: 10, fontSize: 12.5, fontFamily: "var(--font)", background: "#fff", cursor: "pointer", outline: "none", color: "var(--text-1)" }}>
+                style={{ padding: "8px 12px", border: "1.5px solid #2a3350", borderRadius: 10, fontSize: 12.5, fontFamily: "var(--font)", background: "#1C2438", cursor: "pointer", outline: "none", color: "var(--text-1)" }}>
                 <option value="lastVisit">Latest Visit</option>
                 <option value="spent">Most Spent</option>
                 <option value="bookings">Most Bookings</option>
@@ -189,9 +189,9 @@ export default function ClientsPage() {
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 540 }}>
                   <thead>
-                    <tr style={{ background: "#F8FAFC" }}>
+                    <tr style={{ background: "#141A2E" }}>
                       {[vc.clientSingular,"Contact","Bookings","Spent","Last Visit",""].map(h => (
-                        <th key={h} style={{ fontSize: 10.5, color: "var(--text-3)", textAlign: "left", padding: "11px 16px", fontWeight: 800, borderBottom: "1.5px solid #F1F5F9", letterSpacing: "0.7px", textTransform: "uppercase" }}>{h}</th>
+                        <th key={h} style={{ fontSize: 10.5, color: "var(--text-3)", textAlign: "left", padding: "11px 16px", fontWeight: 800, borderBottom: "1.5px solid #2a3350", letterSpacing: "0.7px", textTransform: "uppercase" }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -201,11 +201,11 @@ export default function ClientsPage() {
                       const isActive = selected?.email === c.email;
                       return (
                         <tr key={i} onClick={() => openClient(c)}
-                          style={{ cursor: "pointer", background: isActive ? "#EEF2FF" : "transparent", transition: "background 0.1s" }}
+                          style={{ cursor: "pointer", background: isActive ? "rgba(201,162,75,0.10)" : "transparent", transition: "background 0.1s" }}
                           onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "#FAFBFF"; }}
                           onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
                         >
-                          <td style={{ padding: "13px 16px", borderBottom: "1px solid #F8FAFC" }}>
+                          <td style={{ padding: "13px 16px", borderBottom: "1px solid #2a3350" }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                               <Avatar name={c.name} size={34} />
                               <div>
@@ -214,22 +214,22 @@ export default function ClientsPage() {
                               </div>
                             </div>
                           </td>
-                          <td style={{ padding: "13px 16px", borderBottom: "1px solid #F8FAFC" }}>
+                          <td style={{ padding: "13px 16px", borderBottom: "1px solid #2a3350" }}>
                             <div style={{ fontSize: 12.5, color: "var(--text-2)" }}>{c.email || "—"}</div>
                             <div style={{ fontSize: 11.5, color: "var(--text-3)", marginTop: 1 }}>{c.phone || "—"}</div>
                           </td>
-                          <td style={{ padding: "13px 16px", borderBottom: "1px solid #F8FAFC" }}>
-                            <span style={{ background: "#EEF2FF", color: "#C9A24B", fontSize: 12, padding: "3px 10px", borderRadius: 99, fontWeight: 800, border: "1px solid #C7D2FE" }}>{c.bookings}</span>
+                          <td style={{ padding: "13px 16px", borderBottom: "1px solid #2a3350" }}>
+                            <span style={{ background: "rgba(201,162,75,0.10)", color: "#C9A24B", fontSize: 12, padding: "3px 10px", borderRadius: 99, fontWeight: 800, border: "1px solid rgba(201,162,75,0.25)" }}>{c.bookings}</span>
                           </td>
-                          <td style={{ padding: "13px 16px", fontSize: 13.5, fontWeight: 800, color: "var(--text-1)", borderBottom: "1px solid #F8FAFC" }}>£{c.spent.toFixed(0)}</td>
-                          <td style={{ padding: "13px 16px", borderBottom: "1px solid #F8FAFC" }}>
+                          <td style={{ padding: "13px 16px", fontSize: 13.5, fontWeight: 800, color: "var(--text-1)", borderBottom: "1px solid #2a3350" }}>£{c.spent.toFixed(0)}</td>
+                          <td style={{ padding: "13px 16px", borderBottom: "1px solid #2a3350" }}>
                             <div style={{ fontSize: 12.5, color: "var(--text-2)" }}>{new Date(c.lastVisit).toLocaleDateString("en-GB")}</div>
                             <div style={{ fontSize: 10.5, color: ds > 60 ? "var(--red)" : ds > 30 ? "var(--amber)" : "var(--green)", marginTop: 1, fontWeight: 700 }}>
                               {ds === 0 ? "Today" : `${ds}d ago`}
                             </div>
                           </td>
-                          <td style={{ padding: "13px 16px", borderBottom: "1px solid #F8FAFC" }}>
-                            <span style={{ fontSize: 11.5, color: "#C9A24B", fontWeight: 700, background: "#EEF2FF", padding: "3px 10px", borderRadius: 8, border: "1px solid #C7D2FE" }}>View →</span>
+                          <td style={{ padding: "13px 16px", borderBottom: "1px solid #2a3350" }}>
+                            <span style={{ fontSize: 11.5, color: "#C9A24B", fontWeight: 700, background: "rgba(201,162,75,0.10)", padding: "3px 10px", borderRadius: 8, border: "1px solid rgba(201,162,75,0.25)" }}>View →</span>
                           </td>
                         </tr>
                       );
@@ -242,9 +242,9 @@ export default function ClientsPage() {
 
           {/* Detail panel */}
           {selected && (
-            <div style={{ width: "100%", background: "#fff", border: "1.5px solid #F1F5F9", borderRadius: 20, overflow: "hidden", boxShadow: "0 8px 32px rgba(201,162,75,0.12)", display: "flex", flexDirection: "column", maxHeight: "82vh" }}>
+            <div style={{ width: "100%", background: "#1C2438", border: "1.5px solid #2a3350", borderRadius: 20, overflow: "hidden", boxShadow: "0 8px 32px rgba(201,162,75,0.12)", display: "flex", flexDirection: "column", maxHeight: "82vh" }}>
               {/* Header */}
-              <div style={{ padding: "18px 20px", borderBottom: "1px solid #F1F5F9", display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(135deg,#EEF2FF,#F8FAFF)", flexShrink: 0 }}>
+              <div style={{ padding: "18px 20px", borderBottom: "1px solid #2a3350", display: "flex", alignItems: "center", justifyContent: "space-between", background: "linear-gradient(135deg,rgba(201,162,75,0.10),rgba(14,19,32,0.95))", flexShrink: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <Avatar name={selected.name} size={44} />
                   <div>
@@ -260,35 +260,35 @@ export default function ClientsPage() {
               </div>
 
               {/* Quick actions */}
-              <div style={{ padding: "12px 18px", borderBottom: "1px solid #F1F5F9", display: "flex", gap: 8, flexShrink: 0 }}>
+              <div style={{ padding: "12px 18px", borderBottom: "1px solid #2a3350", display: "flex", gap: 8, flexShrink: 0 }}>
                 {selected.phone && (
                   <a href={`https://wa.me/${selected.phone.replace(/\D/g,"")}`} target="_blank" rel="noopener"
-                    style={{ flex: 1, background: "#ECFDF5", color: "#059669", border: "1px solid #A7F3D0", borderRadius: 10, padding: "9px", fontSize: 12.5, fontWeight: 700, textAlign: "center", textDecoration: "none", display: "block" }}>
+                    style={{ flex: 1, background: "rgba(16,185,129,0.10)", color: "#10B981", border: "1px solid rgba(16,185,129,0.25)", borderRadius: 10, padding: "9px", fontSize: 12.5, fontWeight: 700, textAlign: "center", textDecoration: "none", display: "block" }}>
                     💬 WhatsApp
                   </a>
                 )}
                 {selected.phone && (
                   <a href={`tel:${selected.phone}`}
-                    style={{ flex: 1, background: "#EEF2FF", color: "#C9A24B", border: "1px solid #C7D2FE", borderRadius: 10, padding: "9px", fontSize: 12.5, fontWeight: 700, textAlign: "center", textDecoration: "none", display: "block" }}>
+                    style={{ flex: 1, background: "rgba(201,162,75,0.10)", color: "#C9A24B", border: "1px solid rgba(201,162,75,0.25)", borderRadius: 10, padding: "9px", fontSize: 12.5, fontWeight: 700, textAlign: "center", textDecoration: "none", display: "block" }}>
                     📞 Call
                   </a>
                 )}
                 {salon?.slug && (
                   <a href={`/book/${salon.slug}`} target="_blank" rel="noopener"
-                    style={{ flex: 1, background: "#F8FAFC", color: "var(--text-2)", border: "1px solid var(--border)", borderRadius: 10, padding: "9px", fontSize: 12.5, fontWeight: 700, textAlign: "center", textDecoration: "none", display: "block" }}>
+                    style={{ flex: 1, background: "#141A2E", color: "var(--text-2)", border: "1px solid var(--border)", borderRadius: 10, padding: "9px", fontSize: 12.5, fontWeight: 700, textAlign: "center", textDecoration: "none", display: "block" }}>
                     📅 Book Again
                   </a>
                 )}
               </div>
 
               {/* Stats bar */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 1, background: "#F1F5F9", flexShrink: 0 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 1, background: "#2a3350", flexShrink: 0 }}>
                 {[
                   { label: "Visits", value: selected.bookings },
                   { label: "Total Spent", value: `£${selected.spent.toFixed(0)}` },
                   { label: "Fav Service", value: favService(selected) || "—" },
                 ].map(s => (
-                  <div key={s.label} style={{ background: "#F8FAFC", padding: "13px 14px", textAlign: "center" }}>
+                  <div key={s.label} style={{ background: "#141A2E", padding: "13px 14px", textAlign: "center" }}>
                     <div style={{ fontSize: 17, fontWeight: 900, color: "var(--text-1)", letterSpacing: "-0.5px" }}>{s.value}</div>
                     <div style={{ fontSize: 10.5, color: "var(--text-3)", marginTop: 2, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.5px" }}>{s.label}</div>
                   </div>
@@ -296,11 +296,11 @@ export default function ClientsPage() {
               </div>
 
               {/* Notes */}
-              <div style={{ padding: "14px 18px", borderBottom: "1px solid #F1F5F9", flexShrink: 0 }}>
+              <div style={{ padding: "14px 18px", borderBottom: "1px solid #2a3350", flexShrink: 0 }}>
                 <div style={{ fontSize: 10.5, fontWeight: 800, color: "var(--text-3)", marginBottom: 8, letterSpacing: "1px", textTransform: "uppercase" }}>Notes</div>
                 <textarea value={note} onChange={e => setNote(e.target.value)} rows={2}
                   placeholder="Add notes about this client…"
-                  style={{ width: "100%", padding: "9px 12px", border: "1.5px solid #E2E8F0", borderRadius: 10, fontSize: 13, fontFamily: "var(--font)", resize: "none", outline: "none", color: "var(--text-1)", boxSizing: "border-box", background: "#F8FAFC" }} />
+                  style={{ width: "100%", padding: "9px 12px", border: "1.5px solid #2a3350", borderRadius: 10, fontSize: 13, fontFamily: "var(--font)", resize: "none", outline: "none", color: "var(--text-1)", boxSizing: "border-box", background: "#141A2E" }} />
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
                   <span style={{ fontSize: 11.5, color: "var(--green)", fontWeight: 600 }}>{noteMsg}</span>
                   <button onClick={saveNote} disabled={noteSaving}
@@ -322,7 +322,7 @@ export default function ClientsPage() {
                 ) : history.map(b => {
                   const sc = statusColor(b.status);
                   return (
-                    <div key={b.id} style={{ padding: "13px 18px", borderBottom: "1px solid #F8FAFC", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div key={b.id} style={{ padding: "13px 18px", borderBottom: "1px solid #2a3350", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <div>
                         <div style={{ fontSize: 13.5, fontWeight: 700, color: "var(--text-1)", marginBottom: 3 }}>
                           {Array.isArray(b.services) ? b.services[0]?.name : b.services?.name || "Service"}

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useEffect, useState, useRef, useCallback } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -50,13 +50,13 @@ function Toggle({
       style={{
         position: "relative", display: "inline-flex", width: 44, height: 24,
         borderRadius: 999, border: "none", cursor: disabled ? "not-allowed" : "pointer",
-        background: checked ? "#4F6EF7" : "#CBD5E1", transition: "background 0.2s",
+        background: checked ? "#C9A24B" : "#aab1c4", transition: "background 0.2s",
         flexShrink: 0, padding: 0, opacity: disabled ? 0.6 : 1,
       }}
     >
       <span style={{
         position: "absolute", top: 3, left: checked ? 23 : 3,
-        width: 18, height: 18, borderRadius: "50%", background: "#fff",
+        width: 18, height: 18, borderRadius: "50%", background: "#1C2438",
         boxShadow: "0 1px 3px rgba(0,0,0,0.18)", transition: "left 0.2s",
       }} />
     </button>
@@ -73,17 +73,17 @@ function PaymentMethodRow({
 }) {
   return (
     <div style={{
-      border: `1.5px solid ${checked ? "#4F6EF7" : "#E8EAF0"}`,
+      border: `1.5px solid ${checked ? "#C9A24B" : "#2a3350"}`,
       borderRadius: 12, padding: "16px 18px", marginBottom: 10,
-      background: checked ? "#F5F7FF" : "#FAFAFA",
+      background: checked ? "#F5F7FF" : "#141A2E",
       transition: "all 0.15s",
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <span style={{ fontSize: 22 }}>{icon}</span>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#0F172A" }}>{title}</div>
-            <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>{description}</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#F7F5EF" }}>{title}</div>
+            <div style={{ fontSize: 12, color: "#aab1c4", marginTop: 2 }}>{description}</div>
           </div>
         </div>
         <Toggle id={id} checked={checked} onChange={onChange} />
@@ -106,12 +106,12 @@ function BookingPreview({ pm, price = 65 }: { pm: PaymentMethods; price?: number
     pm.full_online    && { label: "Pay Full Amount",     sub: "Pay 100% now — nothing due at the salon", amount: `£${price}`, color: "#667eea" },
     pm.deposit_online && { label: "50% Deposit",          sub: "Pay half now, remainder at salon",         amount: `£${(price * 0.5).toFixed(2)}`, color: "#10B981" },
     pm.custom_deposit && { label: `${depositPct}% Deposit`, sub: `Pay ${depositPct}% now, remainder at salon`, amount: `£${depositAmt}`, color: "#F59E0B" },
-    pm.pay_at_salon   && { label: "Pay at Salon",         sub: "No payment required now",                  amount: "£0",    color: "#94A3B8" },
+    pm.pay_at_salon   && { label: "Pay at Salon",         sub: "No payment required now",                  amount: "£0",    color: "#aab1c4" },
   ].filter(Boolean) as { label: string; sub: string; amount: string; color: string }[];
 
   if (!options.length) {
     return (
-      <div style={{ padding: "16px", background: "#FEF2F2", borderRadius: 10, border: "1px solid #FECACA", fontSize: 12, color: "#DC2626" }}>
+      <div style={{ padding: "16px", background: "#141A2E", borderRadius: 10, border: "1px solid #FECACA", fontSize: 12, color: "#DC2626" }}>
         ⚠️ No payment methods enabled &mdash; clients won&apos;t be able to complete bookings.
       </div>
     );
@@ -119,24 +119,24 @@ function BookingPreview({ pm, price = 65 }: { pm: PaymentMethods; price?: number
 
   return (
     <div style={{ background: "#F8FAFF", borderRadius: 12, padding: 16, border: "1px solid #E0E7FF" }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: "#4F6EF7", letterSpacing: "1px", textTransform: "uppercase", marginBottom: 12 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: "#C9A24B", letterSpacing: "1px", textTransform: "uppercase", marginBottom: 12 }}>
         Preview — How clients see it
       </div>
       {options.map((opt, i) => (
         <div key={i} style={{
-          border: `2px solid ${i === 0 ? "#667eea" : "#E2E8F0"}`,
+          border: `2px solid ${i === 0 ? "#667eea" : "#2a3350"}`,
           borderRadius: 12, padding: "12px 14px", marginBottom: 8,
           background: i === 0 ? "rgba(102,126,234,0.04)" : "white",
           display: "flex", justifyContent: "space-between", alignItems: "center",
         }}>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#0F172A" }}>{opt.label}</div>
-            <div style={{ fontSize: 11, color: "#64748B", marginTop: 2 }}>{opt.sub}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#F7F5EF" }}>{opt.label}</div>
+            <div style={{ fontSize: 11, color: "#aab1c4", marginTop: 2 }}>{opt.sub}</div>
           </div>
           <div style={{ fontSize: 16, fontWeight: 800, color: opt.color }}>{opt.amount}</div>
         </div>
       ))}
-      <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 4, textAlign: "center" }}>
+      <div style={{ fontSize: 11, color: "#aab1c4", marginTop: 4, textAlign: "center" }}>
         Example service price: £{price}
       </div>
     </div>
@@ -421,7 +421,7 @@ export default function SettingsPage() {
   if (loading) return (
     <DashboardShell salonName="">
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
-        <div style={{ fontFamily: "Georgia, serif", fontSize: "24px", color: "#4F6EF7" }}>feature</div>
+        <div style={{ fontFamily: "Georgia, serif", fontSize: "24px", color: "#C9A24B" }}>feature</div>
       </div>
     </DashboardShell>
   );
@@ -431,17 +431,17 @@ export default function SettingsPage() {
     border: "0.5px solid #E8EAF0", padding: "24px", marginBottom: "20px",
   };
   const labelStyle: React.CSSProperties = {
-    fontSize: "12px", color: "#64748B", display: "block", marginBottom: "6px", fontWeight: 500,
+    fontSize: "12px", color: "#aab1c4", display: "block", marginBottom: "6px", fontWeight: 500,
   };
   const inputStyle: React.CSSProperties = {
     padding: "10px 14px", fontSize: "14px", border: "0.5px solid #E8EAF0",
     borderRadius: "8px", width: "100%", maxWidth: "360px",
-    boxSizing: "border-box", outline: "none", color: "#0F172A",
+    boxSizing: "border-box", outline: "none", color: "#F7F5EF",
   };
   const saveBtn = (isSaved: boolean, isSaving: boolean, label: string) => ({
     style: {
       padding: "10px 20px",
-      background: isSaved ? "#059669" : "#4F6EF7",
+      background: isSaved ? "#10B981" : "#C9A24B",
       color: "#fff", border: "none", borderRadius: "8px",
       fontSize: "13px", cursor: "pointer", fontWeight: 600,
       transition: "background 0.2s",
@@ -454,7 +454,7 @@ export default function SettingsPage() {
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
         <HamburgerBtn />
         <div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: "#F1F5F9", letterSpacing: "-0.4px" }}>Settings</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "#F7F5EF", letterSpacing: "-0.4px" }}>Settings</div>
           <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.3)", marginTop: 1 }}>Manage your {vc.productName.replace(" OS","")}</div>
         </div>
       </div>
@@ -488,8 +488,8 @@ export default function SettingsPage() {
 
       {/* ── Salon Brand ── */}
       <div style={cardStyle}>
-        <div style={{ fontSize: "14px", fontWeight: 600, color: "#0F172A", marginBottom: "4px" }}>🎨 {vc.productName.replace(" OS","")} Brand</div>
-        <p style={{ fontSize: "13px", color: "#64748B", marginBottom: "20px" }}>
+        <div style={{ fontSize: "14px", fontWeight: 600, color: "#F7F5EF", marginBottom: "4px" }}>🎨 {vc.productName.replace(" OS","")} Brand</div>
+        <p style={{ fontSize: "13px", color: "#aab1c4", marginBottom: "20px" }}>
           Your logo and name appear on the public booking page.
         </p>
 
@@ -501,11 +501,11 @@ export default function SettingsPage() {
             {/* Logo preview circle */}
             <div
               onClick={() => logoInputRef.current?.click()}
-              style={{ width: 96, height: 96, borderRadius: 22, overflow: "hidden", border: "2.5px dashed #CBD5E1", flexShrink: 0, background: "linear-gradient(135deg,#667eea,#764ba2)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative", transition: "border-color 0.2s" }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "#4F6EF7"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "#CBD5E1"; }}
-              onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = "#4F6EF7"; }}
-              onDragLeave={e => { e.currentTarget.style.borderColor = "#CBD5E1"; }}
+              style={{ width: 96, height: 96, borderRadius: 22, overflow: "hidden", border: "2.5px dashed #aab1c4", flexShrink: 0, background: "linear-gradient(135deg,#667eea,#764ba2)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative", transition: "border-color 0.2s" }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "#C9A24B"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = "#aab1c4"; }}
+              onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = "#C9A24B"; }}
+              onDragLeave={e => { e.currentTarget.style.borderColor = "#aab1c4"; }}
               onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleLogoUpload(f); }}
             >
               {logoUploading ? (
@@ -532,19 +532,19 @@ export default function SettingsPage() {
             </div>
 
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "#0F172A", marginBottom: 8 }}>{salonName || `Your ${vc.productName.replace(" OS","")}`}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#F7F5EF", marginBottom: 8 }}>{salonName || `Your ${vc.productName.replace(" OS","")}`}</div>
               <button
                 type="button"
                 onClick={() => logoInputRef.current?.click()}
                 disabled={logoUploading}
-                style={{ padding: "9px 18px", background: "#EEF2FF", border: "1.5px solid #C7D2FE", borderRadius: 10, fontSize: 13, fontWeight: 700, color: "#4F46E5", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}
+                style={{ padding: "9px 18px", background: "rgba(201,162,75,0.10)", border: "1.5px solid rgba(201,162,75,0.25)", borderRadius: 10, fontSize: 13, fontWeight: 700, color: "#C9A24B", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}
               >
                 {logoUploading ? "⏳ Uploading..." : "📤 Upload Logo"}
               </button>
               {logoUrl && (
                 <button type="button" onClick={() => { setLogoUrl(""); setLogoUrlInput(""); }} style={{ fontSize: 12, color: "#EF4444", background: "none", border: "none", cursor: "pointer", padding: 0 }}>✕ Remove logo</button>
               )}
-              <p style={{ fontSize: 11, color: "#94A3B8", margin: "8px 0 0", lineHeight: 1.5 }}>PNG, JPG, WEBP · Max 5MB<br />Click or drag & drop on the circle</p>
+              <p style={{ fontSize: 11, color: "#aab1c4", margin: "8px 0 0", lineHeight: 1.5 }}>PNG, JPG, WEBP · Max 5MB<br />Click or drag & drop on the circle</p>
             </div>
           </div>
 
@@ -559,7 +559,7 @@ export default function SettingsPage() {
 
           {/* Error message */}
           {logoError && (
-            <div style={{ marginTop: 10, padding: "10px 14px", background: "#FEF2F2", border: "1.5px solid #FECACA", borderRadius: 10, fontSize: 12.5, color: "#DC2626", lineHeight: 1.6 }}>
+            <div style={{ marginTop: 10, padding: "10px 14px", background: "#141A2E", border: "1.5px solid #FECACA", borderRadius: 10, fontSize: 12.5, color: "#DC2626", lineHeight: 1.6 }}>
               ⚠️ {logoError}
             </div>
           )}
@@ -567,7 +567,7 @@ export default function SettingsPage() {
           {/* Fallback: paste logo URL directly */}
           <div style={{ marginTop: 14 }}>
             <label style={{ ...labelStyle, marginBottom: 4 }}>
-              Or paste logo URL directly <span style={{ color: "#94A3B8", fontWeight: 400 }}>(if upload doesn&apos;t work)</span>
+              Or paste logo URL directly <span style={{ color: "#aab1c4", fontWeight: 400 }}>(if upload doesn&apos;t work)</span>
             </label>
             <input
               id="logo-url-input"
@@ -590,7 +590,7 @@ export default function SettingsPage() {
         </div>
 
         <div style={{ marginBottom: "16px" }}>
-          <label htmlFor="salon-desc" style={labelStyle}>Description <span style={{ color: "#94A3B8", fontWeight: 400 }}>(shows under salon name on booking page)</span></label>
+          <label htmlFor="salon-desc" style={labelStyle}>Description <span style={{ color: "#aab1c4", fontWeight: 400 }}>(shows under salon name on booking page)</span></label>
           <input
             id="salon-desc"
             value={description}
@@ -606,10 +606,10 @@ export default function SettingsPage() {
 
       {/* ── Payment Methods ── */}
       <div style={cardStyle}>
-        <div style={{ fontSize: "14px", fontWeight: 600, color: "#0F172A", marginBottom: "4px" }}>
+        <div style={{ fontSize: "14px", fontWeight: 600, color: "#F7F5EF", marginBottom: "4px" }}>
           💳 Payment Methods
         </div>
-        <p style={{ fontSize: "13px", color: "#64748B", marginBottom: "20px" }}>
+        <p style={{ fontSize: "13px", color: "#aab1c4", marginBottom: "20px" }}>
           Choose which payment options clients can use when booking. Changes apply instantly on your booking page.
         </p>
 
@@ -641,7 +641,7 @@ export default function SettingsPage() {
           onChange={v => updatePm("custom_deposit", v)}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <label htmlFor="deposit-pct" style={{ fontSize: 12, color: "#64748B", fontWeight: 500 }}>
+            <label htmlFor="deposit-pct" style={{ fontSize: 12, color: "#aab1c4", fontWeight: 500 }}>
               Deposit Percentage
             </label>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -653,13 +653,13 @@ export default function SettingsPage() {
                 onChange={e => updatePm("deposit_percent", Math.min(99, Math.max(1, parseInt(e.target.value) || 1)))}
                 style={{
                   width: 72, padding: "8px 10px", fontSize: 14, fontWeight: 700,
-                  border: "1.5px solid #4F6EF7", borderRadius: 8, color: "#0F172A",
+                  border: "1.5px solid #C9A24B", borderRadius: 8, color: "#F7F5EF",
                   textAlign: "center", outline: "none",
                 }}
               />
-              <span style={{ fontSize: 14, fontWeight: 700, color: "#4F6EF7" }}>%</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#C9A24B" }}>%</span>
             </div>
-            <span style={{ fontSize: 12, color: "#94A3B8" }}>
+            <span style={{ fontSize: 12, color: "#aab1c4" }}>
               Client pays {pm.deposit_percent}% now, {100 - pm.deposit_percent}% at salon
             </span>
           </div>
@@ -682,7 +682,7 @@ export default function SettingsPage() {
             borderRadius: 8, padding: "12px 14px", marginBottom: 16,
           }}>
             <span style={{ fontSize: 16 }}>⚠️</span>
-            <div style={{ fontSize: "12px", color: "#92400E", lineHeight: 1.6 }}>
+            <div style={{ fontSize: "12px", color: "#F59E0B", lineHeight: 1.6 }}>
               <strong>Pay at Salon only</strong> — Stripe payment will be skipped entirely.
               Clients will confirm their booking without any upfront payment.
             </div>
@@ -708,20 +708,20 @@ export default function SettingsPage() {
       {/* ── Automated Reminders ── */}
       <div style={cardStyle}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
-          <div style={{ fontSize: "14px", fontWeight: 600, color: "#0F172A" }}>Automated Reminders</div>
+          <div style={{ fontSize: "14px", fontWeight: 600, color: "#F7F5EF" }}>Automated Reminders</div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: "12px", color: remindersEnabled ? "#059669" : "#94A3B8", fontWeight: 600 }}>
+            <span style={{ fontSize: "12px", color: remindersEnabled ? "#10B981" : "#94A3B8", fontWeight: 600 }}>
               {remindersEnabled ? "On" : "Off"}
             </span>
             <Toggle id="reminders-toggle" checked={remindersEnabled} onChange={handleToggleReminders} />
           </div>
         </div>
-        <p style={{ fontSize: "13px", color: "#64748B", marginBottom: "20px" }}>
+        <p style={{ fontSize: "13px", color: "#aab1c4", marginBottom: "20px" }}>
           Automatically send WhatsApp &amp; email reminders to clients.
           All messages include a GDPR opt-out link. Timezone: <strong>Europe/London</strong> (GMT/BST auto).
         </p>
         <div style={{ background: "#F8FAFF", border: "0.5px solid #E0E7FF", borderRadius: "10px", padding: "16px", marginBottom: "20px" }}>
-          <div style={{ fontSize: "12px", fontWeight: 700, color: "#4F6EF7", letterSpacing: "0.8px", textTransform: "uppercase", marginBottom: "12px" }}>
+          <div style={{ fontSize: "12px", fontWeight: 700, color: "#C9A24B", letterSpacing: "0.8px", textTransform: "uppercase", marginBottom: "12px" }}>
             Message Schedule
           </div>
           {[
@@ -733,16 +733,16 @@ export default function SettingsPage() {
             <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 0", borderBottom: i < 3 ? "0.5px solid #EEF0F8" : "none" }}>
               <span style={{ fontSize: 18, lineHeight: 1, marginTop: 1 }}>{row.icon}</span>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: "13px", fontWeight: 600, color: "#0F172A" }}>{row.time}</div>
-                <div style={{ fontSize: "12px", color: "#64748B", margin: "2px 0" }}>{row.msg}</div>
-                <span style={{ display: "inline-block", fontSize: "11px", fontWeight: 600, color: "#4F6EF7", background: "#EEF2FF", padding: "2px 8px", borderRadius: 6, marginTop: 4 }}>{row.channel}</span>
+                <div style={{ fontSize: "13px", fontWeight: 600, color: "#F7F5EF" }}>{row.time}</div>
+                <div style={{ fontSize: "12px", color: "#aab1c4", margin: "2px 0" }}>{row.msg}</div>
+                <span style={{ display: "inline-block", fontSize: "11px", fontWeight: 600, color: "#C9A24B", background: "rgba(201,162,75,0.10)", padding: "2px 8px", borderRadius: 6, marginTop: 4 }}>{row.channel}</span>
               </div>
             </div>
           ))}
         </div>
         <div style={{ marginBottom: "16px" }}>
           <label htmlFor="review-link" style={labelStyle}>
-            Google Reviews Link <span style={{ color: "#94A3B8", fontWeight: 400 }}>(optional)</span>
+            Google Reviews Link <span style={{ color: "#aab1c4", fontWeight: 400 }}>(optional)</span>
           </label>
           <input
             id="review-link" type="url"
@@ -750,11 +750,11 @@ export default function SettingsPage() {
             value={reviewLink} onChange={e => setReviewLink(e.target.value)}
             style={{ ...inputStyle, maxWidth: "400px" }}
           />
-          <p style={{ fontSize: "11.5px", color: "#94A3B8", margin: "6px 0 0" }}>
+          <p style={{ fontSize: "11.5px", color: "#aab1c4", margin: "6px 0 0" }}>
             Sent in the 1h post-visit thank-you WhatsApp &amp; email.
           </p>
         </div>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, background: "#F0FDF4", border: "0.5px solid #BBF7D0", borderRadius: "8px", padding: "12px 14px", marginBottom: "20px" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, background: "#141A2E", border: "0.5px solid #BBF7D0", borderRadius: "8px", padding: "12px 14px", marginBottom: "20px" }}>
           <span style={{ fontSize: 16 }}>🛡️</span>
           <div style={{ fontSize: "12px", color: "#15803D", lineHeight: 1.6 }}>
             <strong>GDPR Compliant</strong> &mdash; Every WhatsApp message includes a STOP opt-out link and every email includes an unsubscribe link.
@@ -768,16 +768,16 @@ export default function SettingsPage() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 20 }}>💚</span>
-            <div style={{ fontSize: "14px", fontWeight: 600, color: "#0F172A" }}>WhatsApp Reminders</div>
+            <div style={{ fontSize: "14px", fontWeight: 600, color: "#F7F5EF" }}>WhatsApp Reminders</div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: "12px", color: whatsappEnabled ? "#059669" : "#94A3B8", fontWeight: 600 }}>
+            <span style={{ fontSize: "12px", color: whatsappEnabled ? "#10B981" : "#94A3B8", fontWeight: 600 }}>
               {waSaved ? "Saved ✓" : whatsappEnabled ? "On" : "Off"}
             </span>
             <Toggle id="whatsapp-toggle" checked={whatsappEnabled} onChange={handleToggleWhatsApp} />
           </div>
         </div>
-        <p style={{ fontSize: "13px", color: "#64748B", margin: "6px 0 20px" }}>
+        <p style={{ fontSize: "13px", color: "#aab1c4", margin: "6px 0 20px" }}>
           Send automated WhatsApp messages via Twilio. Clients must have WhatsApp and their number must be active.
           Messages are sent in <strong>English</strong> with GDPR opt-out included.
         </p>
@@ -786,31 +786,31 @@ export default function SettingsPage() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 18 }}>
 
           {/* Sandbox panel */}
-          <div style={{ background: "#FFFBEB", border: "1.5px solid #FDE68A", borderRadius: 12, padding: "14px 16px" }}>
-            <div style={{ fontSize: "11px", fontWeight: 800, color: "#92400E", letterSpacing: "0.8px", textTransform: "uppercase", marginBottom: 8 }}>🧪 Testing (Sandbox)</div>
+          <div style={{ background: "#141A2E", border: "1.5px solid #FDE68A", borderRadius: 12, padding: "14px 16px" }}>
+            <div style={{ fontSize: "11px", fontWeight: 800, color: "#F59E0B", letterSpacing: "0.8px", textTransform: "uppercase", marginBottom: 8 }}>🧪 Testing (Sandbox)</div>
             <div style={{ fontSize: "12px", color: "#78350F", lineHeight: 1.8 }}>
-              <div>1. Go to <a href="https://console.twilio.com" target="_blank" rel="noopener noreferrer" style={{ color: "#4F6EF7" }}>Twilio Console</a></div>
+              <div>1. Go to <a href="https://console.twilio.com" target="_blank" rel="noopener noreferrer" style={{ color: "#C9A24B" }}>Twilio Console</a></div>
               <div>2. Messaging → Try it Out → WhatsApp</div>
-              <div>3. Your client texts <code style={{ background: "#FEF3C7", padding: "1px 5px", borderRadius: 4, fontWeight: 700 }}>join &lt;code&gt;</code> to <strong>+1 415 523 8886</strong></div>
+              <div>3. Your client texts <code style={{ background: "rgba(245,158,11,0.10)", padding: "1px 5px", borderRadius: 4, fontWeight: 700 }}>join &lt;code&gt;</code> to <strong>+1 415 523 8886</strong></div>
               <div style={{ marginTop: 6, color: "#B45309", fontStyle: "italic" }}>⚠️ Only pre-joined numbers receive messages</div>
             </div>
           </div>
 
           {/* Production panel */}
-          <div style={{ background: "#F0FDF4", border: "1.5px solid #BBF7D0", borderRadius: 12, padding: "14px 16px" }}>
+          <div style={{ background: "#141A2E", border: "1.5px solid #BBF7D0", borderRadius: 12, padding: "14px 16px" }}>
             <div style={{ fontSize: "11px", fontWeight: 800, color: "#14532D", letterSpacing: "0.8px", textTransform: "uppercase", marginBottom: 8 }}>🚀 Production (All Clients)</div>
             <div style={{ fontSize: "12px", color: "#15803D", lineHeight: 1.8 }}>
-              <div>1. <a href="https://www.twilio.com/en-us/whatsapp/request-access" target="_blank" rel="noopener noreferrer" style={{ color: "#4F6EF7" }}>Apply for WhatsApp Business</a></div>
+              <div>1. <a href="https://www.twilio.com/en-us/whatsapp/request-access" target="_blank" rel="noopener noreferrer" style={{ color: "#C9A24B" }}>Apply for WhatsApp Business</a></div>
               <div>2. Verify your Meta Business Account</div>
               <div>3. Set your Twilio WhatsApp sender</div>
               <div>4. Update <code style={{ background: "#DCFCE7", padding: "1px 5px", borderRadius: 4 }}>TWILIO_WHATSAPP_FROM</code> in Vercel env</div>
-              <div style={{ marginTop: 6, color: "#059669", fontWeight: 600 }}>✅ Then ALL clients get messages</div>
+              <div style={{ marginTop: 6, color: "#10B981", fontWeight: 600 }}>✅ Then ALL clients get messages</div>
             </div>
           </div>
         </div>
 
         {/* Message schedule */}
-        <div style={{ background: "#F0FDF4", border: "0.5px solid #BBF7D0", borderRadius: 10, padding: "16px", marginBottom: 18 }}>
+        <div style={{ background: "#141A2E", border: "0.5px solid #BBF7D0", borderRadius: 10, padding: "16px", marginBottom: 18 }}>
           <div style={{ fontSize: "12px", fontWeight: 700, color: "#15803D", letterSpacing: "0.8px", textTransform: "uppercase", marginBottom: 12 }}>
             WhatsApp Message Schedule
           </div>
@@ -823,9 +823,9 @@ export default function SettingsPage() {
             <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 0", borderBottom: i < 3 ? "0.5px solid #D1FAE5" : "none" }}>
               <span style={{ fontSize: 18, lineHeight: 1, marginTop: 1 }}>{row.icon}</span>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: "13px", fontWeight: 600, color: "#0F172A" }}>{row.time}</div>
-                <div style={{ fontSize: "12px", color: "#64748B", margin: "2px 0" }}>{row.msg}</div>
-                <span style={{ display: "inline-block", fontSize: "11px", fontWeight: 600, color: "#059669", background: "#D1FAE5", padding: "2px 8px", borderRadius: 6, marginTop: 4 }}>WhatsApp</span>
+                <div style={{ fontSize: "13px", fontWeight: 600, color: "#F7F5EF" }}>{row.time}</div>
+                <div style={{ fontSize: "12px", color: "#aab1c4", margin: "2px 0" }}>{row.msg}</div>
+                <span style={{ display: "inline-block", fontSize: "11px", fontWeight: 600, color: "#10B981", background: "rgba(16,185,129,0.12)", padding: "2px 8px", borderRadius: 6, marginTop: 4 }}>WhatsApp</span>
               </div>
             </div>
           ))}
@@ -833,7 +833,7 @@ export default function SettingsPage() {
 
         {/* Country support */}
         <div style={{ background: "#F8FAFF", border: "0.5px solid #E0E7FF", borderRadius: 10, padding: "12px 14px", marginBottom: 18 }}>
-          <div style={{ fontSize: "12px", fontWeight: 700, color: "#4F6EF7", marginBottom: 6 }}>🌍 Supported Countries (Auto-detected)</div>
+          <div style={{ fontSize: "12px", fontWeight: 700, color: "#C9A24B", marginBottom: 6 }}>🌍 Supported Countries (Auto-detected)</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
             {[
               { flag: "🇬🇧", label: "UK", fmt: "+44" },
@@ -841,42 +841,42 @@ export default function SettingsPage() {
               { flag: "🇦🇪", label: "UAE", fmt: "+971" },
               { flag: "🇸🇦", label: "Saudi Arabia", fmt: "+966" },
             ].map(c => (
-              <span key={c.label} style={{ fontSize: "12px", background: "#EEF2FF", color: "#0E1320", padding: "4px 10px", borderRadius: 20, fontWeight: 500 }}>
+              <span key={c.label} style={{ fontSize: "12px", background: "rgba(201,162,75,0.10)", color: "#0E1320", padding: "4px 10px", borderRadius: 20, fontWeight: 500 }}>
                 {c.flag} {c.label} <span style={{ color: "#C9A24B", fontWeight: 400 }}>({c.fmt})</span>
               </span>
             ))}
           </div>
-          <div style={{ fontSize: "11.5px", color: "#94A3B8", marginTop: 8 }}>
+          <div style={{ fontSize: "11.5px", color: "#aab1c4", marginTop: 8 }}>
             Country code is auto-detected from the phone number entered at booking.
           </div>
         </div>
 
         {/* GDPR */}
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, background: "#F0FDF4", border: "0.5px solid #BBF7D0", borderRadius: "8px", padding: "12px 14px" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, background: "#141A2E", border: "0.5px solid #BBF7D0", borderRadius: "8px", padding: "12px 14px" }}>
           <span style={{ fontSize: 16 }}>🛡️</span>
           <div style={{ fontSize: "12px", color: "#15803D", lineHeight: 1.6 }}>
             <strong>GDPR Compliant</strong> — Every WhatsApp message includes a STOP opt-out link.
             Configure the webhook in Twilio Console → Messaging → Senders → WhatsApp sandbox →
-            <code style={{ background: "#D1FAE5", padding: "1px 6px", borderRadius: 4, marginLeft: 4 }}>https://featuresalon.co.uk/api/whatsapp-optout</code>
+            <code style={{ background: "rgba(16,185,129,0.12)", padding: "1px 6px", borderRadius: 4, marginLeft: 4 }}>https://featuresalon.co.uk/api/whatsapp-optout</code>
           </div>
         </div>
       </div>
 
       {/* ── Services ── */}
       <div style={cardStyle}>
-        <div style={{ fontSize: "14px", fontWeight: 600, color: "#0F172A", marginBottom: "4px" }}>Services</div>
-        <div style={{ fontSize: "12px", color: "#94A3B8", marginBottom: "16px" }}>{services.length} service{services.length !== 1 ? "s" : ""}</div>
+        <div style={{ fontSize: "14px", fontWeight: 600, color: "#F7F5EF", marginBottom: "4px" }}>Services</div>
+        <div style={{ fontSize: "12px", color: "#aab1c4", marginBottom: "16px" }}>{services.length} service{services.length !== 1 ? "s" : ""}</div>
 
         {serviceError && (
-          <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: "#DC2626", fontWeight: 500 }}>
+          <div style={{ background: "#141A2E", border: "1px solid #FECACA", borderRadius: 8, padding: "10px 14px", marginBottom: 14, fontSize: 13, color: "#DC2626", fontWeight: 500 }}>
             ⚠️ {serviceError}
           </div>
         )}
 
         {vc.serviceCategory && services.some(s => s.category) && (
-          <div style={{ fontSize: 11, fontWeight: 700, color: "#94A3B8", letterSpacing: "0.8px", textTransform: "uppercase", marginBottom: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#aab1c4", letterSpacing: "0.8px", textTransform: "uppercase", marginBottom: 8 }}>
             {Array.from(new Set(services.map(s => s.category || "General"))).map(cat => (
-              <span key={cat} style={{ marginRight: 12, color: "#C9A24B", background: "#EEF2FF", borderRadius: 6, padding: "2px 8px", fontWeight: 700, fontSize: 10.5 }}>{cat}</span>
+              <span key={cat} style={{ marginRight: 12, color: "#C9A24B", background: "rgba(201,162,75,0.10)", borderRadius: 6, padding: "2px 8px", fontWeight: 700, fontSize: 10.5 }}>{cat}</span>
             ))}
           </div>
         )}
@@ -889,36 +889,36 @@ export default function SettingsPage() {
               /* Inline edit form */
               <form onSubmit={handleUpdateService} style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "12px 0", borderBottom: "0.5px solid #E0E7FF", alignItems: "flex-start" }}>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, flex: 1 }}>
-                  <input value={editServiceForm.name} onChange={e => setEditServiceForm({ ...editServiceForm, name: e.target.value })} required placeholder="Service name" style={{ padding: "7px 10px", fontSize: "13px", border: "1.5px solid #4F6EF7", borderRadius: "8px", flex: "1 1 140px", color: "#0F172A", outline: "none" }} />
-                  <input type="number" value={editServiceForm.price} onChange={e => setEditServiceForm({ ...editServiceForm, price: e.target.value })} required placeholder="Price" min="0.01" step="0.01" style={{ padding: "7px 10px", fontSize: "13px", border: "1.5px solid #4F6EF7", borderRadius: "8px", width: 90, color: "#0F172A", outline: "none" }} />
-                  <input type="number" value={editServiceForm.duration_minutes} onChange={e => setEditServiceForm({ ...editServiceForm, duration_minutes: e.target.value })} placeholder="Mins" min="1" style={{ padding: "7px 10px", fontSize: "13px", border: "1.5px solid #4F6EF7", borderRadius: "8px", width: 80, color: "#0F172A", outline: "none" }} />
-                  <input value={editServiceForm.description} onChange={e => setEditServiceForm({ ...editServiceForm, description: e.target.value })} placeholder="Description (optional)" style={{ padding: "7px 10px", fontSize: "13px", border: "1.5px solid #4F6EF7", borderRadius: "8px", flex: "1 1 200px", color: "#0F172A", outline: "none" }} />
+                  <input value={editServiceForm.name} onChange={e => setEditServiceForm({ ...editServiceForm, name: e.target.value })} required placeholder="Service name" style={{ padding: "7px 10px", fontSize: "13px", border: "1.5px solid #C9A24B", borderRadius: "8px", flex: "1 1 140px", color: "#F7F5EF", outline: "none" }} />
+                  <input type="number" value={editServiceForm.price} onChange={e => setEditServiceForm({ ...editServiceForm, price: e.target.value })} required placeholder="Price" min="0.01" step="0.01" style={{ padding: "7px 10px", fontSize: "13px", border: "1.5px solid #C9A24B", borderRadius: "8px", width: 90, color: "#F7F5EF", outline: "none" }} />
+                  <input type="number" value={editServiceForm.duration_minutes} onChange={e => setEditServiceForm({ ...editServiceForm, duration_minutes: e.target.value })} placeholder="Mins" min="1" style={{ padding: "7px 10px", fontSize: "13px", border: "1.5px solid #C9A24B", borderRadius: "8px", width: 80, color: "#F7F5EF", outline: "none" }} />
+                  <input value={editServiceForm.description} onChange={e => setEditServiceForm({ ...editServiceForm, description: e.target.value })} placeholder="Description (optional)" style={{ padding: "7px 10px", fontSize: "13px", border: "1.5px solid #C9A24B", borderRadius: "8px", flex: "1 1 200px", color: "#F7F5EF", outline: "none" }} />
                   {vc.serviceCategory && (
-                    <input value={editServiceForm.category} onChange={e => setEditServiceForm({ ...editServiceForm, category: e.target.value })} placeholder="Category (e.g. Classes)" style={{ padding: "7px 10px", fontSize: "13px", border: "1.5px solid #4F6EF7", borderRadius: "8px", flex: "1 1 160px", color: "#0F172A", outline: "none" }} />
+                    <input value={editServiceForm.category} onChange={e => setEditServiceForm({ ...editServiceForm, category: e.target.value })} placeholder="Category (e.g. Classes)" style={{ padding: "7px 10px", fontSize: "13px", border: "1.5px solid #C9A24B", borderRadius: "8px", flex: "1 1 160px", color: "#F7F5EF", outline: "none" }} />
                   )}
                 </div>
                 <div style={{ display: "flex", gap: 6, alignSelf: "center" }}>
-                  <button type="submit" style={{ padding: "7px 14px", background: "#4F6EF7", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>✓ Save</button>
-                  <button type="button" onClick={() => { setEditingService(null); setServiceError(""); }} style={{ padding: "7px 12px", background: "#F1F5F9", color: "#64748B", border: "none", borderRadius: "8px", fontSize: "12px", cursor: "pointer" }}>Cancel</button>
+                  <button type="submit" style={{ padding: "7px 14px", background: "#C9A24B", color: "#fff", border: "none", borderRadius: "8px", fontSize: "12px", fontWeight: 700, cursor: "pointer" }}>✓ Save</button>
+                  <button type="button" onClick={() => { setEditingService(null); setServiceError(""); }} style={{ padding: "7px 12px", background: "#2a3350", color: "#aab1c4", border: "none", borderRadius: "8px", fontSize: "12px", cursor: "pointer" }}>Cancel</button>
                 </div>
               </form>
             ) : (
               /* Normal row */
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "0.5px solid #F1F5F9" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: "0.5px solid #2a3350" }}>
                 <div>
-                  <div style={{ fontSize: "13px", color: "#0F172A", fontWeight: 600 }}>{s.name}</div>
-                  <div style={{ fontSize: "12px", color: "#94A3B8" }}>
+                  <div style={{ fontSize: "13px", color: "#F7F5EF", fontWeight: 600 }}>{s.name}</div>
+                  <div style={{ fontSize: "12px", color: "#aab1c4" }}>
                     {((s.duration_minutes ?? 0) > 0 || (s.duration ?? 0) > 0) ? `${s.duration_minutes ?? s.duration} min · ` : ""}£{s.price}
                   </div>
                   {s.description && (
-                    <div style={{ fontSize: "11.5px", color: "#64748B", marginTop: 2, fontStyle: "italic" }}>{s.description}</div>
+                    <div style={{ fontSize: "11.5px", color: "#aab1c4", marginTop: 2, fontStyle: "italic" }}>{s.description}</div>
                   )}
                   {vc.serviceCategory && s.category && (
-                    <div style={{ display: "inline-block", marginTop: 4, fontSize: 10.5, fontWeight: 700, color: "#C9A24B", background: "#EEF2FF", borderRadius: 6, padding: "2px 8px" }}>{s.category}</div>
+                    <div style={{ display: "inline-block", marginTop: 4, fontSize: 10.5, fontWeight: 700, color: "#C9A24B", background: "rgba(201,162,75,0.10)", borderRadius: 6, padding: "2px 8px" }}>{s.category}</div>
                   )}
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={() => { setEditingService(s); setEditServiceForm({ name: s.name, price: String(s.price), duration_minutes: String(s.duration_minutes || s.duration || ""), description: s.description || "", category: s.category || "" }); setServiceError(""); }} style={{ color: "#4F6EF7", background: "none", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>✏️ Edit</button>
+                  <button onClick={() => { setEditingService(s); setEditServiceForm({ name: s.name, price: String(s.price), duration_minutes: String(s.duration_minutes || s.duration || ""), description: s.description || "", category: s.category || "" }); setServiceError(""); }} style={{ color: "#C9A24B", background: "none", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 600 }}>✏️ Edit</button>
                   <button onClick={() => handleDeleteService(s.id)} style={{ color: "#EF4444", background: "none", border: "none", cursor: "pointer", fontSize: "12px", fontWeight: 500 }}>Delete</button>
                 </div>
               </div>
@@ -928,24 +928,24 @@ export default function SettingsPage() {
 
         {/* Add service form */}
         <form onSubmit={handleAddService} style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "20px", paddingTop: "16px", borderTop: "1px dashed #E0E7FF" }}>
-          <input placeholder="Service name *" value={newService.name} onChange={e => { setNewService({ ...newService, name: e.target.value }); setServiceError(""); }} required style={{ padding: "8px 12px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "8px", flex: "1 1 140px", color: "#0F172A" }} />
-          <input placeholder="Price £ *" type="number" min="0.01" step="0.01" value={newService.price} onChange={e => setNewService({ ...newService, price: e.target.value })} required style={{ padding: "8px 12px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "8px", width: "100px", color: "#0F172A" }} />
-          <input placeholder="Duration (min)" type="number" min="1" value={newService.duration_minutes} onChange={e => setNewService({ ...newService, duration_minutes: e.target.value })} style={{ padding: "8px 12px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "8px", width: "120px", color: "#0F172A" }} />
-          <input placeholder="Description (optional)" value={newService.description} onChange={e => setNewService({ ...newService, description: e.target.value })} style={{ padding: "8px 12px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "8px", flex: "1 1 180px", color: "#0F172A" }} />
+          <input placeholder="Service name *" value={newService.name} onChange={e => { setNewService({ ...newService, name: e.target.value }); setServiceError(""); }} required style={{ padding: "8px 12px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "8px", flex: "1 1 140px", color: "#F7F5EF" }} />
+          <input placeholder="Price £ *" type="number" min="0.01" step="0.01" value={newService.price} onChange={e => setNewService({ ...newService, price: e.target.value })} required style={{ padding: "8px 12px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "8px", width: "100px", color: "#F7F5EF" }} />
+          <input placeholder="Duration (min)" type="number" min="1" value={newService.duration_minutes} onChange={e => setNewService({ ...newService, duration_minutes: e.target.value })} style={{ padding: "8px 12px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "8px", width: "120px", color: "#F7F5EF" }} />
+          <input placeholder="Description (optional)" value={newService.description} onChange={e => setNewService({ ...newService, description: e.target.value })} style={{ padding: "8px 12px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "8px", flex: "1 1 180px", color: "#F7F5EF" }} />
           {vc.serviceCategory && (
-            <input placeholder="Category (e.g. Classes)" value={newService.category} onChange={e => setNewService({ ...newService, category: e.target.value })} style={{ padding: "8px 12px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "8px", flex: "1 1 160px", color: "#0F172A" }} />
+            <input placeholder="Category (e.g. Classes)" value={newService.category} onChange={e => setNewService({ ...newService, category: e.target.value })} style={{ padding: "8px 12px", fontSize: "13px", border: "0.5px solid #E8EAF0", borderRadius: "8px", flex: "1 1 160px", color: "#F7F5EF" }} />
           )}
-          <button type="submit" style={{ padding: "8px 18px", background: "#4F6EF7", color: "#fff", border: "none", borderRadius: "8px", fontSize: "13px", cursor: "pointer", fontWeight: 600 }}>+ Add Service</button>
+          <button type="submit" style={{ padding: "8px 18px", background: "#C9A24B", color: "#fff", border: "none", borderRadius: "8px", fontSize: "13px", cursor: "pointer", fontWeight: 600 }}>+ Add Service</button>
         </form>
       </div>
 
       {/* ── Payout Settings ── */}
       <div style={cardStyle}>
-        <div style={{ fontSize: "14px", fontWeight: 700, color: "#0F172A", marginBottom: "4px" }}>💳 Payout Settings</div>
-        <div style={{ fontSize: "12.5px", color: "#64748B", marginBottom: "16px" }}>
+        <div style={{ fontSize: "14px", fontWeight: 700, color: "#F7F5EF", marginBottom: "4px" }}>💳 Payout Settings</div>
+        <div style={{ fontSize: "12.5px", color: "#aab1c4", marginBottom: "16px" }}>
           Connect your Stripe account to receive automatic payouts from bookings.
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: "linear-gradient(135deg,#F0F4FF,#EEF2FF)", border: "1px solid #C7D2FE", borderRadius: 12, marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: "linear-gradient(135deg,#F0F4FF,#EEF2FF)", border: "1px solid rgba(201,162,75,0.25)", borderRadius: 12, marginBottom: 16 }}>
           <span style={{ fontSize: 28 }}>🏦</span>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#1E1B4B" }}>Stripe Connect Express</div>
@@ -954,7 +954,7 @@ export default function SettingsPage() {
         </div>
         <button
           onClick={() => router.push("/dashboard/earnings")}
-          style={{ padding: "10px 20px", background: "linear-gradient(135deg,#C9A24B,#4F46E5)", color: "#fff", border: "none", borderRadius: "10px", fontSize: "13px", cursor: "pointer", fontWeight: 700, boxShadow: "0 4px 16px rgba(201,162,75,0.3)" }}
+          style={{ padding: "10px 20px", background: "linear-gradient(135deg,#C9A24B,#0E1320)", color: "#fff", border: "none", borderRadius: "10px", fontSize: "13px", cursor: "pointer", fontWeight: 700, boxShadow: "0 4px 16px rgba(201,162,75,0.3)" }}
         >
           💰 Manage Payouts →
         </button>
@@ -962,34 +962,34 @@ export default function SettingsPage() {
 
       {/* ── Account / Password ── */}
       <div style={cardStyle}>
-        <div style={{ fontSize: "14px", fontWeight: 600, color: "#0F172A", marginBottom: "4px" }}>👤 Account</div>
-        <p style={{ fontSize: "13px", color: "#64748B", marginBottom: "20px" }}>Manage your login credentials.</p>
+        <div style={{ fontSize: "14px", fontWeight: 600, color: "#F7F5EF", marginBottom: "4px" }}>👤 Account</div>
+        <p style={{ fontSize: "13px", color: "#aab1c4", marginBottom: "20px" }}>Manage your login credentials.</p>
 
-        <div style={{ marginBottom: 20, padding: "12px 16px", background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 10, display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ marginBottom: 20, padding: "12px 16px", background: "#141A2E", border: "1px solid #2a3350", borderRadius: 10, display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ fontSize: 18 }}>📧</span>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#94A3B8", letterSpacing: "1px", textTransform: "uppercase", marginBottom: 2 }}>Logged in as</div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#0F172A" }}>{userEmail}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#aab1c4", letterSpacing: "1px", textTransform: "uppercase", marginBottom: 2 }}>Logged in as</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#F7F5EF" }}>{userEmail}</div>
           </div>
         </div>
 
-        {pwError && <div style={{ padding: "10px 14px", background: "#FEF2F2", border: "1.5px solid #FECACA", borderRadius: 10, fontSize: 13, color: "#DC2626", marginBottom: 14 }}>⚠️ {pwError}</div>}
-        {pwSuccess && <div style={{ padding: "10px 14px", background: "#ECFDF5", border: "1.5px solid #A7F3D0", borderRadius: 10, fontSize: 13, color: "#059669", marginBottom: 14 }}>✅ Password changed!</div>}
+        {pwError && <div style={{ padding: "10px 14px", background: "#141A2E", border: "1.5px solid #FECACA", borderRadius: 10, fontSize: 13, color: "#DC2626", marginBottom: 14 }}>⚠️ {pwError}</div>}
+        {pwSuccess && <div style={{ padding: "10px 14px", background: "rgba(16,185,129,0.10)", border: "1.5px solid rgba(16,185,129,0.25)", borderRadius: 10, fontSize: 13, color: "#10B981", marginBottom: 14 }}>✅ Password changed!</div>}
 
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#0F172A", marginBottom: 12 }}>🔐 Change Password</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#F7F5EF", marginBottom: 12 }}>🔐 Change Password</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 360, marginBottom: 20 }}>
           <div>
             <label style={labelStyle}>Current Password</label>
             <div style={{ position: "relative" }}>
               <input type={showPw.current ? "text" : "password"} value={pwForm.current} onChange={e => setPwForm({ ...pwForm, current: e.target.value })} placeholder="Your current password" style={{ ...inputStyle, maxWidth: "100%", paddingRight: 44 }} />
-              <button type="button" onClick={() => setShowPw(p => ({ ...p, current: !p.current }))} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#94A3B8" }}>{showPw.current ? "🙈" : "👁️"}</button>
+              <button type="button" onClick={() => setShowPw(p => ({ ...p, current: !p.current }))} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#aab1c4" }}>{showPw.current ? "🙈" : "👁️"}</button>
             </div>
           </div>
           <div>
             <label style={labelStyle}>New Password</label>
             <div style={{ position: "relative" }}>
               <input type={showPw.newPw ? "text" : "password"} value={pwForm.newPw} onChange={e => setPwForm({ ...pwForm, newPw: e.target.value })} placeholder="Min. 8 characters" style={{ ...inputStyle, maxWidth: "100%", paddingRight: 44 }} />
-              <button type="button" onClick={() => setShowPw(p => ({ ...p, newPw: !p.newPw }))} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#94A3B8" }}>{showPw.newPw ? "🙈" : "👁️"}</button>
+              <button type="button" onClick={() => setShowPw(p => ({ ...p, newPw: !p.newPw }))} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#aab1c4" }}>{showPw.newPw ? "🙈" : "👁️"}</button>
             </div>
             {pwForm.newPw && pwForm.newPw.length < 8 && <div style={{ fontSize: 11.5, color: "#F59E0B", marginTop: 4 }}>At least 8 characters required</div>}
           </div>
@@ -997,15 +997,15 @@ export default function SettingsPage() {
             <label style={labelStyle}>Confirm New Password</label>
             <div style={{ position: "relative" }}>
               <input type={showPw.confirm ? "text" : "password"} value={pwForm.confirm} onChange={e => setPwForm({ ...pwForm, confirm: e.target.value })} placeholder="Repeat new password" style={{ ...inputStyle, maxWidth: "100%", paddingRight: 44, borderColor: pwForm.confirm && pwForm.newPw !== pwForm.confirm ? "#EF4444" : undefined }} />
-              <button type="button" onClick={() => setShowPw(p => ({ ...p, confirm: !p.confirm }))} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#94A3B8" }}>{showPw.confirm ? "🙈" : "👁️"}</button>
+              <button type="button" onClick={() => setShowPw(p => ({ ...p, confirm: !p.confirm }))} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 16, color: "#aab1c4" }}>{showPw.confirm ? "🙈" : "👁️"}</button>
             </div>
             {pwForm.confirm && pwForm.newPw !== pwForm.confirm && <div style={{ fontSize: 11.5, color: "#EF4444", marginTop: 4 }}>Passwords do not match</div>}
           </div>
         </div>
         <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
           <button onClick={handleChangePassword} disabled={pwSaving || !pwForm.current || !pwForm.newPw || !pwForm.confirm} style={{ padding: "10px 22px", background: "linear-gradient(135deg,#5B21B6,#C9A24B)", color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", opacity: (!pwForm.current || !pwForm.newPw || !pwForm.confirm) ? 0.4 : 1 }}>{pwSaving ? "Updating…" : "🔐 Update Password"}</button>
-          <div style={{ width: 1, height: 28, background: "#E2E8F0" }} />
-          <button onClick={handleLogout} style={{ padding: "10px 18px", background: "#FEF2F2", color: "#EF4444", border: "1px solid #FECACA", borderRadius: 8, fontSize: 13, cursor: "pointer", fontWeight: 500 }}>Sign out</button>
+          <div style={{ width: 1, height: 28, background: "#2a3350" }} />
+          <button onClick={handleLogout} style={{ padding: "10px 18px", background: "#141A2E", color: "#EF4444", border: "1px solid #FECACA", borderRadius: 8, fontSize: 13, cursor: "pointer", fontWeight: 500 }}>Sign out</button>
         </div>
       </div>
       </div>
