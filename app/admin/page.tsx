@@ -14,7 +14,8 @@ interface SalonAdmin {
   id: string; name: string; slug: string; plan: string; created_at: string;
   owner_id: string; owner_email: string; appointmentCount: number;
   subscription_status?: string; subscription_plan?: string;
-  trial_ends_at?: string; stripe_customer_id?: string;
+  trial_ends_at?: string; current_period_end?: string;
+  stripe_customer_id?: string; business_type?: string;
   [key: string]: unknown;
 }
 interface UserAdmin { id: string; email: string; salon: string; plan: string; created_at: string; }
@@ -214,7 +215,7 @@ export default function AdminPage() {
 
       const { data: salonData } = await supabase
         .from("salons")
-        .select("id, name, slug, plan, created_at, owner_id, owner_email")
+        .select("id, name, slug, plan, created_at, owner_id, owner_email, subscription_status, subscription_plan, subscription_id, stripe_customer_id, trial_ends_at, current_period_end, business_type")
         .eq("is_demo_data", false)
         .order("created_at", { ascending: false });
 
@@ -346,6 +347,18 @@ export default function AdminPage() {
   const activeCount = salons.filter(s => s.subscription_status === "active").length;
   const cancelledCount = salons.filter(s => s.subscription_status === "cancelled").length;
 
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 86400000);
+  const monthAgo = new Date(now.getTime() - 30 * 86400000);
+  const newThisWeek = salons.filter(s => new Date(s.created_at) >= weekAgo).length;
+  const newThisMonth = salons.filter(s => new Date(s.created_at) >= monthAgo).length;
+  const in7Days = new Date(now.getTime() + 7 * 86400000);
+  const trialsEndingSoon = salons.filter(s =>
+    (s.subscription_status === "trial" || s.subscription_status === "trialing") &&
+    s.trial_ends_at && new Date(s.trial_ends_at) >= now && new Date(s.trial_ends_at) <= in7Days
+  );
+  const pastDueSalons = salons.filter(s => s.subscription_status === "past_due");
+
   const filteredSalons = salons.filter(s =>
     s.name?.toLowerCase().includes(searchSalon.toLowerCase()) ||
     s.owner_email?.toLowerCase().includes(searchSalon.toLowerCase())
@@ -360,6 +373,34 @@ export default function AdminPage() {
   }, {} as Record<string, number>);
 
   const handleLogout = async () => { await supabase.auth.signOut(); router.push("/login"); };
+
+  const exportCSV = () => {
+    const headers = ["Name", "Slug", "Owner Email", "Business Type", "Plan", "Sub Status", "Sub Plan", "Signed Up", "Trial Ends", "Next Billing", "Bookings", "Stripe Customer ID"];
+    const rows = filteredSalons.map(s => [
+      s.name,
+      s.slug,
+      s.owner_email || "",
+      s.business_type || "—",
+      s.plan || "starter",
+      s.subscription_status || "trial",
+      s.subscription_plan || "—",
+      new Date(s.created_at).toLocaleDateString("en-GB"),
+      s.trial_ends_at ? new Date(s.trial_ends_at).toLocaleDateString("en-GB") : "—",
+      s.current_period_end ? new Date(s.current_period_end).toLocaleDateString("en-GB") : "pending Stripe",
+      String(s.appointmentCount),
+      s.stripe_customer_id || "—",
+    ]);
+    const csv = [headers, ...rows]
+      .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `feature-salons-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const TAB_TITLE: Record<Tab, string> = {
     overview: "Platform Overview", salons: "Salons", revenue: "Revenue & Billing",
@@ -536,12 +577,14 @@ export default function AdminPage() {
                 {/* KPIs */}
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 14 }}>
                   {([
-                    { label: "Monthly Revenue", value: `£${mrr}`, sub: `ARR £${mrr * 12}`, accent: T.indigo, icon: "£" },
+                    { label: "Monthly Revenue", value: mrr > 0 ? `£${mrr}` : "—", sub: mrr > 0 ? `ARR £${mrr * 12}` : "pending Stripe", accent: T.indigo, icon: "£" },
                     { label: "Active Salons", value: activeCount, sub: "Currently paying", accent: T.green, icon: "✓" },
                     { label: "On Trial", value: trialCount, sub: "Free trial period", accent: T.amber, icon: "⏱" },
                     { label: "Cancelled", value: cancelledCount, sub: "Churned accounts", accent: T.red, icon: "✕" },
                     { label: "Total Salons", value: salons.length, sub: "All time signups", accent: "#8B5CF6", icon: "✂" },
-                    { label: "Total Bookings", value: totalBookings, sub: "Across all salons", accent: "#06B6D4", icon: "✦" },
+                    { label: "New This Week", value: newThisWeek, sub: "Signed up last 7 days", accent: "#06B6D4", icon: "↑" },
+                    { label: "New This Month", value: newThisMonth, sub: "Signed up last 30 days", accent: "#0EA5E9", icon: "✦" },
+                    { label: "Total Bookings", value: totalBookings, sub: "Across all salons", accent: "#64748B", icon: "✦" },
                   ] as { label: string; value: string | number; sub: string; accent: string; icon: string }[]).map(s => (
                     <div key={s.label} className="kpi" style={{
                       background: T.surface, border: `1px solid ${T.border}`,
@@ -560,6 +603,56 @@ export default function AdminPage() {
                     </div>
                   ))}
                 </div>
+
+                {/* ── Alert: Trials ending soon ── */}
+                {trialsEndingSoon.length > 0 && (
+                  <div style={{ background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 14, padding: "16px 20px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                      <span style={{ fontSize: 16 }}>⏰</span>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#92400E" }}>Trials ending in 7 days ({trialsEndingSoon.length})</div>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {trialsEndingSoon.map(s => (
+                        <div key={s.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fff", borderRadius: 9, padding: "9px 14px", border: "1px solid #FDE68A" }}>
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: "#1E293B" }}>{s.name}</div>
+                            <div style={{ fontSize: 11.5, color: "#94A3B8", marginTop: 1 }}>{s.owner_email}</div>
+                          </div>
+                          <div style={{ textAlign: "right" }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: "#D97706" }}>
+                              Ends {s.trial_ends_at ? new Date(s.trial_ends_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "—"}
+                            </div>
+                            <div style={{ fontSize: 11, color: "#94A3B8", textTransform: "capitalize" }}>{s.business_type || "salon"} · {s.plan}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Alert: Past due / payment failed ── */}
+                {pastDueSalons.length > 0 && (
+                  <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 14, padding: "16px 20px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                      <span style={{ fontSize: 16 }}>⚠</span>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#991B1B" }}>Payment failed / Past due ({pastDueSalons.length})</div>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {pastDueSalons.map(s => (
+                        <div key={s.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fff", borderRadius: 9, padding: "9px 14px", border: "1px solid #FECACA" }}>
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: "#1E293B" }}>{s.name}</div>
+                            <div style={{ fontSize: 11.5, color: "#94A3B8", marginTop: 1 }}>{s.owner_email}</div>
+                          </div>
+                          <div style={{ textAlign: "right" }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: "#DC2626" }}>Past Due</div>
+                            <div style={{ fontSize: 11, color: "#94A3B8" }}>{s.stripe_customer_id ? `Stripe: ${s.stripe_customer_id.slice(0, 12)}…` : "No Stripe ID"}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Charts row */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
@@ -610,22 +703,35 @@ export default function AdminPage() {
             {/* ── SALONS ───────────────────────────────────────────────── */}
             {activeTab === "salons" && (
               <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
                   <div style={{ fontSize: 13, color: T.text2, fontWeight: 500 }}>{filteredSalons.length} salons found</div>
-                  <input
-                    type="text" placeholder="Search by name or email…" value={searchSalon}
-                    onChange={e => setSearchSalon(e.target.value)}
-                    style={{
-                      height: 36, padding: "0 14px", border: `1px solid ${T.border}`, borderRadius: 8,
-                      fontSize: 13, color: T.text, background: T.surface, width: 240,
-                      transition: "border-color 0.15s,box-shadow 0.15s",
-                    }}
-                  />
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <input
+                      type="text" placeholder="Search by name or email…" value={searchSalon}
+                      onChange={e => setSearchSalon(e.target.value)}
+                      style={{
+                        height: 36, padding: "0 14px", border: `1px solid ${T.border}`, borderRadius: 8,
+                        fontSize: 13, color: T.text, background: T.surface, width: 240,
+                        transition: "border-color 0.15s,box-shadow 0.15s",
+                      }}
+                    />
+                    <button
+                      onClick={exportCSV}
+                      style={{
+                        height: 36, padding: "0 16px", borderRadius: 8, border: `1px solid ${T.green}`,
+                        background: T.greenSoft, color: T.green, fontSize: 13, fontWeight: 700,
+                        cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6,
+                        transition: "all 0.15s", whiteSpace: "nowrap",
+                      }}
+                    >
+                      ↓ Export CSV
+                    </button>
+                  </div>
                 </div>
                 <Card style={{ padding: 0, overflow: "hidden" }}>
                   <div style={{ overflowX: "auto" }}>
                     <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                      <thead><tr>{["Salon", "Owner", "Plan", "Status", "Bookings", "Created", "Actions"].map(h => <Th key={h}>{h}</Th>)}</tr></thead>
+                      <thead><tr>{["Salon", "Owner", "Type", "Plan", "Status", "Trial Ends", "Next Billing", "Bookings", "Created", "Actions"].map(h => <Th key={h}>{h}</Th>)}</tr></thead>
                       <tbody>
                         {filteredSalons.map(salon => (
                           <tr key={salon.id} className="salon-row">
@@ -639,6 +745,11 @@ export default function AdminPage() {
                               </div>
                             </Td>
                             <Td style={{ color: T.text2, fontSize: 12.5 }}>{salon.owner_email || salon.owner_id?.slice(0, 8) + "…"}</Td>
+                            <Td>
+                              <span style={{ fontSize: 11.5, fontWeight: 600, color: T.text2, textTransform: "capitalize" }}>
+                                {salon.business_type || <span style={{ color: T.text3 }}>—</span>}
+                              </span>
+                            </Td>
                             <Td>
                               <select
                                 value={salon.plan || "starter"}
@@ -665,6 +776,18 @@ export default function AdminPage() {
                                   <option key={s} value={s}>{s}</option>
                                 ))}
                               </select>
+                            </Td>
+                            <Td style={{ fontSize: 12, whiteSpace: "nowrap" }}>
+                              {salon.trial_ends_at
+                                ? <span style={{ color: new Date(salon.trial_ends_at) <= in7Days && new Date(salon.trial_ends_at) >= now ? T.amber : T.text2, fontWeight: new Date(salon.trial_ends_at) <= in7Days && new Date(salon.trial_ends_at) >= now ? 700 : 400 }}>
+                                    {new Date(salon.trial_ends_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "2-digit" })}
+                                  </span>
+                                : <span style={{ color: T.text3 }}>—</span>}
+                            </Td>
+                            <Td style={{ fontSize: 12, color: T.text2, whiteSpace: "nowrap" }}>
+                              {salon.current_period_end
+                                ? new Date(salon.current_period_end).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "2-digit" })
+                                : <span style={{ color: T.text3, fontSize: 11 }}>pending Stripe</span>}
                             </Td>
                             <Td style={{ fontWeight: 600 }}>{salon.appointmentCount}</Td>
                             <Td style={{ color: T.text2, fontSize: 12 }}>{new Date(salon.created_at).toLocaleDateString("en-GB")}</Td>
