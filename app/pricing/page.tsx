@@ -98,7 +98,7 @@ function CurrencyDropdown({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const ref = useRef<HTMLDivElement>(null);
-  const cur = CURRENCIES[selected];
+  const cur = CURRENCIES[selected] ?? CURRENCIES.GBP;
 
   useEffect(() => {
     if (!open) return;
@@ -236,8 +236,8 @@ export default function PricingPage() {
       .catch(() => setDetected(true));
   }, []);
 
-  const cur    = CURRENCIES[currency];
-  const prices = PLAN_PRICES[currency];
+  const cur    = CURRENCIES[currency] ?? CURRENCIES.GBP;
+  const prices = PLAN_PRICES[currency] ?? PLAN_PRICES.GBP;
 
   return (
     <>
@@ -300,7 +300,7 @@ export default function PricingPage() {
         <section style={{ maxWidth:1040, margin:"0 auto", padding:"0 24px 80px" }}>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(290px,1fr))", gap:24, animation:"fadeUp 0.6s ease 0.1s both" }}>
             {PLANS.map((plan, idx) => {
-              const displayPrice = prices[idx];
+              const displayPrice = prices[idx] ?? 0;
               const gbpPrice     = PLAN_PRICES.GBP[idx];
               const isLocal      = currency !== "GBP";
               return (

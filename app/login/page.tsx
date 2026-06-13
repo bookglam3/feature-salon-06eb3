@@ -91,9 +91,9 @@ export default function LoginPage() {
           <Link href="/">
             <img src="/brand/logo-light.svg" alt="Feature Salon" style={{ height: 48, width: "auto", display: "inline-block" }} />
           </Link>
-          <p style={{ fontSize: "14px", color: "#aab1c4", marginTop: "8px" }}>
+          <h1 style={{ fontSize: "14px", color: "#aab1c4", marginTop: "8px", fontWeight: "normal" }}>
             {resetMode ? "Reset your password" : "Sign in to your salon"}
-          </p>
+          </h1>
         </div>
 
         {error === "RESENT" && (
