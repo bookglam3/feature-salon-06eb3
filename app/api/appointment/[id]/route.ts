@@ -19,7 +19,7 @@ export async function GET(
   const { id } = await params;
   const { data, error } = await supabaseAdmin
     .from("appointments")
-    .select("*, services(name,price), salon:salons(name,slug,owner_email)")
+    .select("id,date_time,status,client_name,client_email,client_phone,notes,payment_status,deposit_only, services(name,price), salon:salons(name,slug)")
     .eq("id", id)
     .single();
 
@@ -71,7 +71,7 @@ export async function PATCH(
       .from("appointments")
       .update({ date_time, status: "pending", notes })
       .eq("id", id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 
     // Send email to owner server-side (no origin check issues)
     if (getSalon()?.owner_email) {
@@ -118,7 +118,7 @@ export async function PATCH(
       .from("appointments")
       .update({ status: "cancelled", notes })
       .eq("id", id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 
     // Send cancellation email to owner
     if (getSalon()?.owner_email) {

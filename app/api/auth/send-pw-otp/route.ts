@@ -14,6 +14,21 @@ const supabaseAdmin = createClient(
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.FROM_EMAIL || "noreply@featuresalon.co.uk";
 
+// In-memory rate limiter: max 3 OTP sends per user per 10 minutes
+const otpRequests = new Map<string, { count: number; resetAt: number }>();
+
+function isOtpRateLimited(userId: string): boolean {
+  const now   = Date.now();
+  const entry = otpRequests.get(userId);
+  if (!entry || entry.resetAt < now) {
+    otpRequests.set(userId, { count: 1, resetAt: now + 10 * 60 * 1000 });
+    return false;
+  }
+  if (entry.count >= 3) return true;
+  entry.count++;
+  return false;
+}
+
 // Stateless: sign code with HMAC so no DB table needed
 function signCode(userId: string, code: string, window: number): string {
   const secret = process.env.OTP_SECRET;
@@ -78,6 +93,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    if (isOtpRateLimited(user.id)) {
+      return NextResponse.json(
+        { error: "Too many requests. Please wait 10 minutes before requesting another code." },
+        { status: 429 }
+      );
+    }
+
     // Generate OTP + sign it (stateless — no DB table required)
     const code = generateOtp();
     const window = getWindow();
@@ -93,10 +115,7 @@ export async function POST(request: NextRequest) {
 
     if (emailError) {
       console.error("[pw-otp] Resend error:", JSON.stringify(emailError));
-      return NextResponse.json(
-        { error: `Email delivery failed: ${JSON.stringify(emailError)}` },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: "Failed to send verification email" }, { status: 500 });
     }
 
     console.log(`[pw-otp] ✅ OTP sent to ${user.email}`);
@@ -104,6 +123,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, challenge, email: user.email });
   } catch (err) {
     console.error("[pw-otp] Unexpected error:", err);
-    return NextResponse.json({ error: `Server error: ${String(err)}` }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
