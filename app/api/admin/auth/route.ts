@@ -11,6 +11,23 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
+// In-memory rate limiter — protects against burst brute-force within the same serverless instance
+const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT    = 5;
+const RATE_WINDOW   = 15 * 60 * 1000; // 15 minutes in ms
+
+function isRateLimited(ip: string): boolean {
+  const now   = Date.now();
+  const entry = loginAttempts.get(ip);
+  if (!entry || entry.resetAt < now) {
+    loginAttempts.set(ip, { count: 1, resetAt: now + RATE_WINDOW });
+    return false;
+  }
+  if (entry.count >= RATE_LIMIT) return true;
+  entry.count++;
+  return false;
+}
+
 // ─────────────────────────────────────────────────────────────
 // POST /api/admin/auth  — Login (step 1)
 // Body: { email, password }
@@ -20,6 +37,14 @@ const supabaseAdmin = createClient(
 //   { success, requires_setup: true }            → JWT set (mfa_verified=false), go to /admin/setup-2fa
 // ─────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
+  if (isRateLimited(ip)) {
+    return NextResponse.json(
+      { error: "Too many login attempts. Please try again in 15 minutes." },
+      { status: 429, headers: { "Retry-After": "900" } },
+    );
+  }
+
   const { email, password } = await req.json().catch(() => ({}));
 
   if (!email || !password) {

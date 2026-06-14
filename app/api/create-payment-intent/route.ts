@@ -12,21 +12,33 @@ const PLATFORM_FEE_PERCENT = parseFloat(process.env.PLATFORM_FEE_PERCENT || "5")
 export async function POST(req: NextRequest) {
   try {
     const {
-      amount, charge_amount, email, booking_id,
+      email, booking_id,
       salon_name, service_name, deposit_only, salon_id,
     } = await req.json();
 
     if (!email) {
       return NextResponse.json({ error: "Missing email" }, { status: 400 });
     }
-    const rawAmount = charge_amount ?? amount;
-    if (!rawAmount || isNaN(Number(rawAmount)) || Number(rawAmount) <= 0) {
-      return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+    if (!booking_id) {
+      return NextResponse.json({ error: "Missing booking_id" }, { status: 400 });
     }
 
-    const chargeAmount = charge_amount
-      ? Math.round(charge_amount * 100)
-      : deposit_only ? Math.round(amount * 0.5 * 100) : Math.round(amount * 100);
+    // Server-side price lookup — never trust client-supplied amounts
+    const { data: apptData } = await supabaseAdmin
+      .from("appointments")
+      .select("services(price)")
+      .eq("id", booking_id)
+      .single();
+
+    const services = apptData?.services as { price?: number } | null;
+    const servicePrice = services?.price;
+    if (!servicePrice || servicePrice <= 0) {
+      return NextResponse.json({ error: "Could not determine service price" }, { status: 400 });
+    }
+
+    const chargeAmount = deposit_only
+      ? Math.round(servicePrice * 0.5 * 100)
+      : Math.round(servicePrice * 100);
 
     // Check if salon has a connected Stripe account
     let stripeAccountId: string | null = null;
@@ -53,7 +65,7 @@ export async function POST(req: NextRequest) {
         salon_name:    salon_name || "",
         service_name:  service_name || "",
         deposit_only:  deposit_only ? "true" : "false",
-        full_amount:   String(Math.round(amount * 100)),
+        full_amount:   String(Math.round(servicePrice * 100)),
         salon_id:      salon_id || "",
       },
       // Destination charge — routes payment to salon's Stripe account

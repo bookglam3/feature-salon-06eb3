@@ -13,19 +13,20 @@ export async function POST(req: NextRequest) {
   );
   const body = await req.text();
   const sig = req.headers.get("stripe-signature") || "";
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!webhookSecret) {
+    console.error("[webhook] STRIPE_WEBHOOK_SECRET is not configured — rejecting event");
+    return NextResponse.json({ error: "Webhook not configured" }, { status: 500 });
+  }
 
   let event: Stripe.Event;
 
   try {
-    if (webhookSecret) {
-      event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
-    } else {
-      event = JSON.parse(body) as Stripe.Event;
-    }
+    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Webhook error";
-    console.error("Webhook signature failed:", msg);
+    const msg = err instanceof Error ? err.message : "Webhook signature verification failed";
+    console.error("[webhook] Signature verification failed:", msg);
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 
@@ -33,6 +34,18 @@ export async function POST(req: NextRequest) {
 
   if (event.type === "payment_intent.succeeded") {
     const pi = event.data.object as Stripe.PaymentIntent;
+
+    // Idempotency: skip if this payment_intent was already processed
+    const { data: existingPayment } = await supabase
+      .from("payments")
+      .select("id")
+      .eq("stripe_payment_intent_id", pi.id)
+      .maybeSingle();
+    if (existingPayment) {
+      console.log(`[webhook] Duplicate event skipped — payment_intent ${pi.id} already processed`);
+      return NextResponse.json({ received: true });
+    }
+
     const bookingId  = pi.metadata?.booking_id;
     const depositOnly = pi.metadata?.deposit_only === "true";
     const amount = pi.amount / 100;

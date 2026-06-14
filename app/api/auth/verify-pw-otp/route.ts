@@ -11,7 +11,8 @@ const supabaseAdmin = createClient(
 );
 
 function signCode(userId: string, code: string, window: number): string {
-  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || "fallback-secret";
+  const secret = process.env.OTP_SECRET;
+  if (!secret) throw new Error("OTP_SECRET is not configured");
   return createHmac("sha256", secret)
     .update(`${userId}:${code}:${window}`)
     .digest("hex");
