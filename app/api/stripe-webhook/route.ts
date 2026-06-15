@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     const depositOnly = pi.metadata?.deposit_only === "true";
     const amount = pi.amount / 100;
 
-    await supabase.from("payments").insert({
+    const { error: paymentInsertErr } = await supabase.from("payments").insert({
       appointment_id: bookingId || null,
       stripe_payment_intent_id: pi.id,
       amount,
@@ -60,13 +60,21 @@ export async function POST(req: NextRequest) {
       receipt_email: pi.receipt_email,
       created_at: new Date().toISOString(),
     });
+    if (paymentInsertErr) {
+      console.error("[webhook] payments insert failed:", paymentInsertErr.message);
+      return NextResponse.json({ error: "DB error" }, { status: 500 });
+    }
 
     if (bookingId) {
-      await supabase.from("appointments").update({
+      const { error: apptUpdateErr } = await supabase.from("appointments").update({
         status: "confirmed",
         payment_status: depositOnly ? "deposit_paid" : "paid",
         payment_intent_id: pi.id,
       }).eq("id", bookingId);
+      if (apptUpdateErr) {
+        console.error("[webhook] appointments update failed:", apptUpdateErr.message);
+        return NextResponse.json({ error: "DB error" }, { status: 500 });
+      }
 
       // ── Send confirmation emails directly (no HTTP self-call) ──────────
       try {
@@ -118,7 +126,19 @@ export async function POST(req: NextRequest) {
     const pi = event.data.object as Stripe.PaymentIntent;
     const bookingId = pi.metadata?.booking_id;
 
-    await supabase.from("payments").insert({
+    // Idempotency: skip if this failure was already recorded
+    const { data: existingFailure } = await supabase
+      .from("payments")
+      .select("id")
+      .eq("stripe_payment_intent_id", pi.id)
+      .eq("status", "failed")
+      .maybeSingle();
+    if (existingFailure) {
+      console.log(`[webhook] Duplicate payment_failed skipped — ${pi.id}`);
+      return NextResponse.json({ received: true });
+    }
+
+    const { error: failInsertErr } = await supabase.from("payments").insert({
       appointment_id: bookingId || null,
       stripe_payment_intent_id: pi.id,
       amount: pi.amount / 100,
@@ -128,12 +148,20 @@ export async function POST(req: NextRequest) {
       receipt_email: pi.receipt_email,
       created_at: new Date().toISOString(),
     });
+    if (failInsertErr) {
+      console.error("[webhook] failed payment insert error:", failInsertErr.message);
+      return NextResponse.json({ error: "DB error" }, { status: 500 });
+    }
 
     if (bookingId) {
-      await supabase.from("appointments").update({
+      const { error: failApptErr } = await supabase.from("appointments").update({
         payment_status: "failed",
         notes: `⚠️ Payment failed on ${new Date().toLocaleDateString("en-GB")}. Client may need to rebook.`,
       }).eq("id", bookingId);
+      if (failApptErr) {
+        console.error("[webhook] failed payment appointment update error:", failApptErr.message);
+        return NextResponse.json({ error: "DB error" }, { status: 500 });
+      }
     }
   }
 

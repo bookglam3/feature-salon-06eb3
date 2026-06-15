@@ -113,7 +113,7 @@ function LoyaltyContent() {
       total_earned: adjForm.type === "earn" || adjForm.type === "bonus" ? selectedClient.total_earned + pts : selectedClient.total_earned,
       total_redeemed: adjForm.type === "redeem" ? selectedClient.total_redeemed + pts : selectedClient.total_redeemed,
       updated_at: new Date().toISOString(),
-    }).eq("id", selectedClient.id);
+    }).eq("id", selectedClient.id).eq("salon_id", salonId!);
 
     if (!error) {
       await supabase.from("loyalty_transactions").insert({

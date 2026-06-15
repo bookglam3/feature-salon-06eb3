@@ -130,12 +130,14 @@ function PartnersPageInner() {
     const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.push("/login"); return; }
-      // ── Super Admin only ─────────────────────────────────────
-      if (user.email !== "adilgill2008@gmail.com") {
-        router.replace("/dashboard");
-        return;
-      }
-      // ─────────────────────────────────────────────────────────
+      // ── Verify admin status server-side (email never exposed to client) ──
+      const token = await getToken();
+      const checkRes = await fetch("/api/admin/check", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const { isAdmin } = await checkRes.json();
+      if (!isAdmin) { router.replace("/dashboard"); return; }
+      // ────────────────────────────────────────────────────────────────────
       const { data: salon } = await supabase.from("salons").select("name").eq("owner_id", user.id).single();
       setSalonName(salon?.name || "");
       await loadAgents();
