@@ -28,6 +28,7 @@ export async function POST(req: NextRequest) {
     );
 
     // Fetch appointment with all related data
+    // Also check created_at — only allow re-sending confirmation within 15 minutes of booking
     const { data: appt, error } = await supabase
       .from("appointments")
       .select(`
@@ -37,6 +38,7 @@ export async function POST(req: NextRequest) {
         salons(id, name, slug, address, owner_email, owner_id, reminders_enabled, whatsapp_enabled, business_type)
       `)
       .eq("id", appointmentId)
+      .gte("created_at", new Date(Date.now() - 15 * 60 * 1000).toISOString())
       .single();
 
     if (error || !appt) {
@@ -74,7 +76,7 @@ export async function POST(req: NextRequest) {
       salonOwnerEmail: ownerEmail || clientEmail, // fallback: send owner copy to client
       price:           appt.services?.price,
       salonAddress:    salon?.address,
-      cancelLink:      `${appUrl}/reschedule/${appointmentId}`,
+      cancelLink:      `${appUrl}/reschedule/${appointmentId}?token=${appt.review_token}`,
       dashboardUrl:    `${appUrl}/dashboard/bookings`,
       paymentStatus:   appt.payment_status,
       depositOnly:     appt.payment_status === "deposit_paid",
@@ -94,7 +96,7 @@ export async function POST(req: NextRequest) {
           salonAddress: salon?.address,
           dateTime:     appt.date_time,
           price:        appt.services?.price,
-          cancelLink:   `${appUrl}/reschedule/${appointmentId}`,
+          cancelLink:   `${appUrl}/reschedule/${appointmentId}?token=${appt.review_token}`,
         });
         await supabase
           .from("appointments")
@@ -114,7 +116,7 @@ export async function POST(req: NextRequest) {
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://featuresalon.co.uk";
         const dateLabel = formatUKDate(appt.date_time);
         const timeLabel = formatUKTime(appt.date_time);
-        const body = `Hi ${appt.client_name}, your booking at ${salon?.name || "the salon"} is confirmed!\n${appt.services?.name} on ${dateLabel} at ${timeLabel}.\nManage: ${appUrl}/reschedule/${appointmentId}`;
+        const body = `Hi ${appt.client_name}, your booking at ${salon?.name || "the salon"} is confirmed!\n${appt.services?.name} on ${dateLabel} at ${timeLabel}.\nManage: ${appUrl}/reschedule/${appointmentId}?token=${appt.review_token}`;
         await sendSMS(appt.client_phone, body, salon?.name);
         smsSent = true;
         console.log(`[send-confirmation] ✅ SMS sent for appointment ${appointmentId}`);
@@ -124,13 +126,10 @@ export async function POST(req: NextRequest) {
     }
 
     console.log(`[send-confirmation] ✅ Emails sent for appointment ${appointmentId}`);
-    return NextResponse.json({ success: true, clientEmail, ownerEmail, whatsappSent, smsSent });
+    return NextResponse.json({ success: true, whatsappSent, smsSent });
 
   } catch (err) {
     console.error("[send-confirmation] Error:", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Unknown error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

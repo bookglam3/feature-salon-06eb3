@@ -103,10 +103,14 @@ export default async function BlogPostPage({
 
   const otherPosts = POSTS.filter((p) => p.slug !== slug).slice(0, 3);
 
+  // Escape </script> sequences to prevent XSS via JSON-LD injection
+  const safeJson = (obj: unknown) =>
+    JSON.stringify(obj).replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026");
+
   return (
     <main className="landing">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(articleSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJson(breadcrumbSchema) }} />
 
       {/* Nav */}
       <nav className="nav">

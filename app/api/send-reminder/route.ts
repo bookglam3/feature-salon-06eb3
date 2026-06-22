@@ -14,6 +14,14 @@ import {
   sendThankyouWhatsApp,
   formatWATime,
 } from "@/app/lib/whatsapp";
+import {
+  isMetaConfigured,
+  formatPhoneE164,
+  sendTemplateMessage,
+  sendTextMessage,
+  formatWADate as metaDate,
+  formatWATime as metaTime,
+} from "@/app/lib/whatsapp-meta";
 
 // ─────────────────────────────────────────────────────────
 // MUST use service-role key — anon key is blocked by RLS
@@ -51,20 +59,17 @@ export async function GET(req: Request) {
   // Accept:
   //  1. Vercel cron (Authorization: Bearer <CRON_SECRET> header) — auto-added by Vercel
   //  2. Manual test via ?secret=YOUR_CRON_SECRET query param
-  const { searchParams } = new URL(req.url);
-  const querySecret = searchParams.get("secret");
-  const authHeader  = req.headers.get("authorization");
+  const authHeader   = req.headers.get("authorization");
   const bearerSecret = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
   const cronSecret = process.env.CRON_SECRET;
   if (!cronSecret) {
     console.error("[Reminder] ❌ CRON_SECRET env var is not set!");
-    return NextResponse.json({ error: "Server misconfiguration: CRON_SECRET missing" }, { status: 500 });
+    return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });
   }
 
-  const isAuthorised = querySecret === cronSecret || bearerSecret === cronSecret;
-  if (!isAuthorised) {
-    console.warn(`[Reminder] ❌ Unauthorised. query=${querySecret?.slice(0,8)} bearer=${bearerSecret?.slice(0,8)}`);
+  if (bearerSecret !== cronSecret) {
+    console.warn("[Reminder] ❌ Unauthorised request");
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   }
 
@@ -142,20 +147,85 @@ export async function GET(req: Request) {
     }
 
     // WhatsApp
-    if (a.client_phone && !(await isOptedOut(a.client_phone))) {
-      try {
-        await send24hWhatsApp({
-          to:          a.client_phone,
-          clientName:  a.client_name,
-          time:        formatWATime(a.date_time),
-          salonName:   a.salons?.name || "Your Salon",
-          serviceName: a.services?.name,
-        });
-        await supabase
-          .from("appointments")
-          .update({ whatsapp_24h_sent: true })
-          .eq("id", a.id);
-      } catch (e) { errors.push(`24h WhatsApp ${a.id}: ${e}`); }
+    if (a.client_phone && a.salons?.whatsapp_enabled !== false && !(await isOptedOut(a.client_phone))) {
+      if (isMetaConfigured()) {
+        // ── Meta WhatsApp Cloud API ────────────────────────────────────────
+        try {
+          const phone = formatPhoneE164(a.client_phone);
+          if (phone) {
+            const salonName  = a.salons?.name || "Your Salon";
+            const [firstName] = (a.client_name || "Client").split(" ");
+            const date = metaDate(a.date_time);
+            const time = metaTime(a.date_time);
+
+            // Free-form is only legal within the 24h customer service window
+            const { data: sw } = await supabase
+              .from("whatsapp_service_windows")
+              .select("last_inbound_at")
+              .eq("recipient_e164", phone)
+              .maybeSingle();
+            const inWindow =
+              !!sw?.last_inbound_at &&
+              Date.now() - new Date(sw.last_inbound_at).getTime() < 24 * 60 * 60 * 1000;
+
+            let wamid: string;
+            let templateName: string | null = null;
+
+            if (inWindow) {
+              wamid = await sendTextMessage({
+                to:   phone,
+                body: `Hi ${firstName}! Just a reminder that your appointment at ${salonName} is on ${date} at ${time}. See you then!\n\nReply STOP to opt out of reminders.`,
+              });
+            } else {
+              // Template must be pre-approved in Meta Business Manager.
+              // Expected params: {{1}} firstName, {{2}} salonName, {{3}} date, {{4}} time
+              // Template must include an opt-out line to comply with PECR.
+              templateName = "appointment_reminder";
+              wamid = await sendTemplateMessage({
+                to: phone,
+                templateName,
+                languageCode: "en_GB",
+                components: [{
+                  type:       "body",
+                  parameters: [
+                    { type: "text", text: firstName },
+                    { type: "text", text: salonName },
+                    { type: "text", text: date },
+                    { type: "text", text: time },
+                  ],
+                }],
+              });
+            }
+
+            // Log the send for delivery tracking and auditability
+            await supabase.from("whatsapp_messages").insert({
+              appointment_id: a.id,
+              salon_id:       a.salon_id,
+              recipient_e164: phone,
+              direction:      "outbound",
+              template_name:  templateName,
+              wamid,
+              status:         "sent",
+            }).then(({ error: logErr }) => {
+              if (logErr) console.error(`[Reminder] whatsapp_messages log error ${a.id}:`, logErr.message);
+            });
+
+            await supabase.from("appointments").update({ whatsapp_24h_sent: true }).eq("id", a.id);
+          }
+        } catch (e) { errors.push(`24h Meta WhatsApp ${a.id}: ${e}`); }
+      } else {
+        // ── Twilio fallback (used when Meta env vars are absent) ───────────
+        try {
+          await send24hWhatsApp({
+            to:          a.client_phone,
+            clientName:  a.client_name,
+            time:        formatWATime(a.date_time),
+            salonName:   a.salons?.name || "Your Salon",
+            serviceName: a.services?.name,
+          });
+          await supabase.from("appointments").update({ whatsapp_24h_sent: true }).eq("id", a.id);
+        } catch (e) { errors.push(`24h WhatsApp ${a.id}: ${e}`); }
+      }
     }
 
     await supabase
@@ -200,19 +270,80 @@ export async function GET(req: Request) {
     }
 
     // WhatsApp
-    if (a.client_phone && !(await isOptedOut(a.client_phone))) {
-      try {
-        await send2hWhatsApp({
-          to:         a.client_phone,
-          clientName: a.client_name,
-          time:       formatWATime(a.date_time),
-          salonName:  a.salons?.name || "Your Salon",
-        });
-        await supabase
-          .from("appointments")
-          .update({ whatsapp_2h_sent: true })
-          .eq("id", a.id);
-      } catch (e) { errors.push(`2h WhatsApp ${a.id}: ${e}`); }
+    if (a.client_phone && a.salons?.whatsapp_enabled !== false && !(await isOptedOut(a.client_phone))) {
+      if (isMetaConfigured()) {
+        // ── Meta WhatsApp Cloud API ────────────────────────────────────────
+        try {
+          const phone = formatPhoneE164(a.client_phone);
+          if (phone) {
+            const salonName   = a.salons?.name || "Your Salon";
+            const [firstName] = (a.client_name || "Client").split(" ");
+            const date = metaDate(a.date_time);
+            const time = metaTime(a.date_time);
+
+            const { data: sw } = await supabase
+              .from("whatsapp_service_windows")
+              .select("last_inbound_at")
+              .eq("recipient_e164", phone)
+              .maybeSingle();
+            const inWindow =
+              !!sw?.last_inbound_at &&
+              Date.now() - new Date(sw.last_inbound_at).getTime() < 24 * 60 * 60 * 1000;
+
+            let wamid: string;
+            let templateName: string | null = null;
+
+            if (inWindow) {
+              wamid = await sendTextMessage({
+                to:   phone,
+                body: `Hi ${firstName}! Your appointment at ${salonName} is today at ${time}. See you soon!\n\nReply STOP to opt out of reminders.`,
+              });
+            } else {
+              // Reuses appointment_reminder template; the time param makes it read as "2 hours away"
+              templateName = "appointment_reminder";
+              wamid = await sendTemplateMessage({
+                to: phone,
+                templateName,
+                languageCode: "en_GB",
+                components: [{
+                  type:       "body",
+                  parameters: [
+                    { type: "text", text: firstName },
+                    { type: "text", text: salonName },
+                    { type: "text", text: date },
+                    { type: "text", text: time },
+                  ],
+                }],
+              });
+            }
+
+            await supabase.from("whatsapp_messages").insert({
+              appointment_id: a.id,
+              salon_id:       a.salon_id,
+              recipient_e164: phone,
+              direction:      "outbound",
+              template_name:  templateName,
+              wamid,
+              status:         "sent",
+            }).then(({ error: logErr }) => {
+              if (logErr) console.error(`[Reminder] whatsapp_messages log error ${a.id}:`, logErr.message);
+            });
+
+            await supabase.from("appointments").update({ whatsapp_2h_sent: true }).eq("id", a.id);
+          }
+        } catch (e) { errors.push(`2h Meta WhatsApp ${a.id}: ${e}`); }
+      } else {
+        // ── Twilio fallback ────────────────────────────────────────────────
+        try {
+          await send2hWhatsApp({
+            to:         a.client_phone,
+            clientName: a.client_name,
+            time:       formatWATime(a.date_time),
+            salonName:  a.salons?.name || "Your Salon",
+          });
+          await supabase.from("appointments").update({ whatsapp_2h_sent: true }).eq("id", a.id);
+        } catch (e) { errors.push(`2h WhatsApp ${a.id}: ${e}`); }
+      }
     }
 
     await supabase
@@ -392,7 +523,7 @@ export async function GET(req: Request) {
   return NextResponse.json({
     success: true,
     sent,
-    errors: errors.length > 0 ? errors : undefined,
+    errorCount: errors.length > 0 ? errors.length : undefined,
     checkedAt: now.toISOString(),
     timezone: "Europe/London",
   });

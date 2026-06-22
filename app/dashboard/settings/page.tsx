@@ -197,6 +197,7 @@ export default function SettingsPage() {
   const [userEmail, setUserEmail] = useState("");
   const [pwForm, setPwForm] = useState({ current: "", newPw: "", confirm: "" });
   const [pwSaving, setPwSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [pwError, setPwError] = useState("");
   const [pwSuccess, setPwSuccess] = useState(false);
   const [showPw, setShowPw] = useState({ current: false, newPw: false, confirm: false });
@@ -239,19 +240,18 @@ export default function SettingsPage() {
 
   const handleSaveBrand = async () => {
     if (!salon) return;
-    setSaving(true);
-    // Use storage URL first, then manual URL input, then null
+    setSaving(true); setSaveError("");
     const finalLogoUrl = (logoUrl && !logoUrl.startsWith("data:")) ? logoUrl
       : (logoUrlInput.trim() || null);
-    // Auto-update slug when name changes
     const newSlug = salonName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
     const slugChanged = newSlug !== salon.slug && salonName !== salon.name;
-    await supabase.from("salons").update({
+    const { error } = await supabase.from("salons").update({
       name: salonName,
       logo_url: finalLogoUrl,
       description: description || null,
       ...(slugChanged ? { slug: newSlug } : {}),
     }).eq("id", salon.id);
+    if (error) { setSaveError("Failed to save brand settings. Please try again."); setSaving(false); return; }
     if (finalLogoUrl) setLogoUrl(finalLogoUrl);
     if (slugChanged) setSalon((prev: SalonData | null) => prev ? { ...prev, slug: newSlug } : prev);
     setSaved(true); setSaving(false);
@@ -360,15 +360,17 @@ export default function SettingsPage() {
   const handleToggleReminders = async (value: boolean) => {
     setRemindersEnabled(value);
     if (!salon) return;
-    await supabase.from("salons").update({ reminders_enabled: value }).eq("id", salon.id);
+    const { error } = await supabase.from("salons").update({ reminders_enabled: value }).eq("id", salon.id);
+    if (error) setRemindersEnabled(!value); // revert on failure
   };
 
   const handleSaveReminders = async () => {
     if (!salon) return;
-    setReminderSaving(true);
-    await supabase.from("salons").update({
+    setReminderSaving(true); setSaveError("");
+    const { error } = await supabase.from("salons").update({
       reminders_enabled: remindersEnabled, review_link: reviewLink || null,
     }).eq("id", salon.id);
+    if (error) { setSaveError("Failed to save reminder settings. Please try again."); setReminderSaving(false); return; }
     setReminderSaved(true); setReminderSaving(false);
     setTimeout(() => setReminderSaved(false), 2000);
   };
@@ -376,19 +378,20 @@ export default function SettingsPage() {
   const handleToggleWhatsApp = async (value: boolean) => {
     setWhatsappEnabled(value);
     if (!salon) return;
-    await supabase.from("salons").update({ whatsapp_enabled: value }).eq("id", salon.id);
+    const { error } = await supabase.from("salons").update({ whatsapp_enabled: value }).eq("id", salon.id);
+    if (error) { setWhatsappEnabled(!value); return; } // revert on failure
     setWaSaved(true);
     setTimeout(() => setWaSaved(false), 1500);
   };
 
   const handleSavePaymentMethods = async () => {
     if (!salon) return;
-    // Validate deposit percent
     const pct = Math.min(100, Math.max(1, pm.deposit_percent || 50));
     const sanitised = { ...pm, deposit_percent: pct };
     setPm(sanitised);
-    setPmSaving(true);
-    await supabase.from("salons").update({ payment_methods: sanitised }).eq("id", salon.id);
+    setPmSaving(true); setSaveError("");
+    const { error } = await supabase.from("salons").update({ payment_methods: sanitised }).eq("id", salon.id);
+    if (error) { setSaveError("Failed to save payment settings. Please try again."); setPmSaving(false); return; }
     setPmSaved(true); setPmSaving(false);
     setTimeout(() => setPmSaved(false), 2000);
   };
@@ -464,6 +467,13 @@ export default function SettingsPage() {
   return (
     <DashboardShell salonName={salonName} topbar={Topbar}>
       <div style={{ padding: "28px 24px", maxWidth: 740 }}>
+
+      {saveError && (
+        <div style={{ background: "#FEF2F2", border: "1px solid #FCA5A5", borderRadius: 10, padding: "12px 16px", marginBottom: 16, fontSize: 13, color: "#DC2626", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span>⚠️ {saveError}</span>
+          <button onClick={() => setSaveError("")} style={{ background: "none", border: "none", cursor: "pointer", color: "#DC2626", fontSize: 16 }}>×</button>
+        </div>
+      )}
 
       {/* ── Booking Link ── */}
       <div style={{ ...cardStyle, background: "linear-gradient(135deg,#0F0B2D 0%,#3730A3 60%,#C9A24B 100%)", border: "none", marginBottom: 20 }}>

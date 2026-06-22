@@ -60,7 +60,7 @@ function SuccessContent() {
         {/* Action buttons */}
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {apptId && (
-            <a href={`/reschedule/${apptId}`}
+            <a href={`/reschedule/${apptId}?token=${reviewToken}`}
               style={{ display: "block", padding: "13px", background: "#F1F5F9", color: "#475569", borderRadius: 14, textDecoration: "none", fontSize: 14, fontWeight: 700, border: "1.5px solid #E2E8F0" }}>
               📅 Manage / Reschedule Appointment
             </a>

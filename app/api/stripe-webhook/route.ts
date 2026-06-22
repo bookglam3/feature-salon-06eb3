@@ -106,7 +106,7 @@ export async function POST(req: NextRequest) {
             salonOwnerEmail:  ownerEmail || appt.client_email,
             price:            appt.services?.price,
             salonAddress:     salon?.address,
-            cancelLink:       `${appUrl}/reschedule/${bookingId}`,
+            cancelLink:       `${appUrl}/reschedule/${bookingId}?token=${appt.review_token}`,
             dashboardUrl:     `${appUrl}/dashboard/bookings`,
             paymentStatus:    depositOnly ? "deposit_paid" : "paid",
             depositOnly,

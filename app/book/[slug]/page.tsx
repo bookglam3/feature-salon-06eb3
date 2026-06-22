@@ -422,7 +422,7 @@ export default function BookingPage() {
       }).catch(e => console.error("[send-confirmation] failed:", e));
 
       const dateStr = selDate?.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}) || "";
-      const payStatus = chargeAmount === 0 ? "free" : "pay_at_salon";
+      const payStatus = isPayAtSalon ? "pay_at_salon" : "free";
       setConfirmedBooking({ service: selectedService.name, date: dateStr, time: selTime, name: form.name, salon: salon.name, apptId: appt.id, paymentStatus: payStatus });
       setSubmitting(false);
       setStep(5);
@@ -982,7 +982,7 @@ export default function BookingPage() {
                 {/* Action buttons */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 20 }}>
                   {confirmedBooking?.apptId && (
-                    <a href={`/reschedule/${confirmedBooking.apptId}`}
+                    <a href={`/reschedule/${confirmedBooking.apptId}?token=${reviewToken}`}
                       style={{ display: "block", padding: "12px 24px", background: "#F1F5F9", color: "#475569", borderRadius: 12, textDecoration: "none", fontSize: 13, fontWeight: 700, border: "1.5px solid #E2E8F0", textAlign: "center" }}>
                       📅 Manage / Reschedule Appointment
                     </a>

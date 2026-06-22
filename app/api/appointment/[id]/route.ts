@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { timingSafeEqual } from "crypto";
 import { Resend } from "resend";
 
 // Service-role client to bypass RLS (public reschedule page)
@@ -17,9 +18,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  // Only return fields needed by the reschedule page — no PII (email/phone/payment)
   const { data, error } = await supabaseAdmin
     .from("appointments")
-    .select("id,date_time,status,client_name,client_email,client_phone,notes,payment_status,deposit_only, services(name,price), salon:salons(name,slug)")
+    .select("id,date_time,status,client_name,notes,services(name,price),salon:salons(name,slug)")
     .eq("id", id)
     .single();
 
@@ -35,36 +37,46 @@ export async function PATCH(
 ) {
   const { id } = await params;
   const body = await req.json();
-  const { action, date_time, notes, note } = body;
+  const { action, date_time, notes, note, token } = body;
 
   // Fetch appointment + salon for owner email
   const { data: rawAppt } = await supabaseAdmin
     .from("appointments")
-    .select("client_name, date_time, services(name), salon:salons(name,owner_email)")
+    .select("client_name, date_time, review_token, services(name), salon:salons(name,owner_email)")
     .eq("id", id)
     .single();
 
-  // Supabase joins return as array or object depending on relationship type — cast safely
   const appt = rawAppt as null | {
     client_name: string;
     date_time: string;
+    review_token: string | null;
     services: { name: string } | { name: string }[] | null;
     salon: { name: string; owner_email: string } | { name: string; owner_email: string }[] | null;
   };
 
+  // Verify the reschedule token using constant-time comparison to prevent timing attacks
+  const storedToken = appt?.review_token;
+  const tokenValid =
+    typeof token === "string" &&
+    token.length > 0 &&
+    typeof storedToken === "string" &&
+    storedToken.length > 0 &&
+    token.length === storedToken.length &&
+    timingSafeEqual(Buffer.from(token), Buffer.from(storedToken));
+
+  if (!appt || !tokenValid) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   // Helper to unwrap single-or-array join results
   const getSalon = () => {
-    if (!appt?.salon) return null;
+    if (!appt.salon) return null;
     return Array.isArray(appt.salon) ? appt.salon[0] : appt.salon;
   };
   const getService = () => {
-    if (!appt?.services) return null;
+    if (!appt.services) return null;
     return Array.isArray(appt.services) ? appt.services[0] : appt.services;
   };
-
-  // Narrow type — appt data used in email templates below
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const apptData = appt!;
 
   if (action === "reschedule") {
     const { error } = await supabaseAdmin
@@ -73,7 +85,6 @@ export async function PATCH(
       .eq("id", id);
     if (error) return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 
-    // Send email to owner server-side (no origin check issues)
     if (getSalon()?.owner_email) {
       const salon = getSalon()!;
       const fmt = (dt: string) => new Date(dt).toLocaleString("en-GB", {
@@ -85,7 +96,7 @@ export async function PATCH(
         await resend.emails.send({
           from: FROM,
           to: salon.owner_email,
-          subject: `🔄 Appointment Rescheduled — ${appt!.client_name} (${serviceName})`,
+          subject: `🔄 Appointment Rescheduled — ${appt.client_name} (${serviceName})`,
           html: `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#F4F4F5;font-family:Arial,sans-serif;">
 <div style="max-width:500px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.10);">
   <div style="background:linear-gradient(135deg,#4F46E5,#6366F1);padding:32px 28px;text-align:center;">
@@ -95,9 +106,9 @@ export async function PATCH(
   <div style="padding:28px;">
     <p style="font-size:14px;color:#475569;margin:0 0 16px;">A client has rescheduled their appointment.</p>
     <table style="width:100%;font-size:14px;border-collapse:collapse;background:#F8FAFC;border-radius:12px;overflow:hidden;">
-      <tr><td style="padding:12px 16px;color:#64748B;border-bottom:1px solid #E2E8F0;">Client</td><td style="padding:12px 16px;font-weight:700;color:#0F172A;border-bottom:1px solid #E2E8F0;">${appt!.client_name}</td></tr>
+      <tr><td style="padding:12px 16px;color:#64748B;border-bottom:1px solid #E2E8F0;">Client</td><td style="padding:12px 16px;font-weight:700;color:#0F172A;border-bottom:1px solid #E2E8F0;">${appt.client_name}</td></tr>
       <tr><td style="padding:12px 16px;color:#64748B;border-bottom:1px solid #E2E8F0;">Service</td><td style="padding:12px 16px;font-weight:700;color:#0F172A;border-bottom:1px solid #E2E8F0;">${serviceName || "—"}</td></tr>
-      <tr><td style="padding:12px 16px;color:#64748B;border-bottom:1px solid #E2E8F0;">Original</td><td style="padding:12px 16px;font-weight:700;color:#0F172A;border-bottom:1px solid #E2E8F0;">${fmt(appt!.date_time)}</td></tr>
+      <tr><td style="padding:12px 16px;color:#64748B;border-bottom:1px solid #E2E8F0;">Original</td><td style="padding:12px 16px;font-weight:700;color:#0F172A;border-bottom:1px solid #E2E8F0;">${fmt(appt.date_time)}</td></tr>
       <tr><td style="padding:12px 16px;color:#64748B;">New Time</td><td style="padding:12px 16px;font-weight:700;color:#059669;">${fmt(date_time)}</td></tr>
       ${note ? `<tr><td colspan="2" style="padding:12px 16px;color:#64748B;border-top:1px solid #E2E8F0;"><em>"${note}"</em></td></tr>` : ""}
     </table>
@@ -120,7 +131,6 @@ export async function PATCH(
       .eq("id", id);
     if (error) return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 
-    // Send cancellation email to owner
     if (getSalon()?.owner_email) {
       const salon = getSalon()!;
       const fmt = (dt: string) => new Date(dt).toLocaleString("en-GB", {
@@ -132,7 +142,7 @@ export async function PATCH(
         await resend.emails.send({
           from: FROM,
           to: salon.owner_email,
-          subject: `❌ Appointment Cancelled — ${appt!.client_name} (${serviceName})`,
+          subject: `❌ Appointment Cancelled — ${appt.client_name} (${serviceName})`,
           html: `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#F4F4F5;font-family:Arial,sans-serif;">
 <div style="max-width:500px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.10);">
   <div style="background:linear-gradient(135deg,#DC2626,#B91C1C);padding:32px 28px;text-align:center;">
@@ -142,9 +152,9 @@ export async function PATCH(
   <div style="padding:28px;">
     <p style="font-size:14px;color:#475569;margin:0 0 16px;">A client has cancelled their appointment.</p>
     <table style="width:100%;font-size:14px;border-collapse:collapse;background:#F8FAFC;border-radius:12px;overflow:hidden;">
-      <tr><td style="padding:12px 16px;color:#64748B;border-bottom:1px solid #E2E8F0;">Client</td><td style="padding:12px 16px;font-weight:700;color:#0F172A;border-bottom:1px solid #E2E8F0;">${appt!.client_name}</td></tr>
+      <tr><td style="padding:12px 16px;color:#64748B;border-bottom:1px solid #E2E8F0;">Client</td><td style="padding:12px 16px;font-weight:700;color:#0F172A;border-bottom:1px solid #E2E8F0;">${appt.client_name}</td></tr>
       <tr><td style="padding:12px 16px;color:#64748B;border-bottom:1px solid #E2E8F0;">Service</td><td style="padding:12px 16px;font-weight:700;color:#0F172A;border-bottom:1px solid #E2E8F0;">${serviceName || "—"}</td></tr>
-      <tr><td style="padding:12px 16px;color:#64748B;">Date</td><td style="padding:12px 16px;font-weight:700;color:#0F172A;">${fmt(appt!.date_time)}</td></tr>
+      <tr><td style="padding:12px 16px;color:#64748B;">Date</td><td style="padding:12px 16px;font-weight:700;color:#0F172A;">${fmt(appt.date_time)}</td></tr>
       ${note ? `<tr><td colspan="2" style="padding:12px 16px;color:#64748B;border-top:1px solid #E2E8F0;"><em>"${note}"</em></td></tr>` : ""}
     </table>
     <div style="margin-top:16px;padding:14px 16px;background:#FEF2F2;border-radius:10px;font-size:13px;color:#DC2626;font-weight:600;">
