@@ -959,7 +959,7 @@ export default function SettingsPage() {
           <span style={{ fontSize: 28 }}>🏦</span>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#1E1B4B" }}>Stripe Connect Express</div>
-            <div style={{ fontSize: 11.5, color: "#C9A24B", marginTop: 2 }}>5% platform fee · automatic payouts · Stripe-powered</div>
+            <div style={{ fontSize: 11.5, color: "#C9A24B", marginTop: 2 }}>2% platform fee · automatic payouts · Stripe-powered</div>
           </div>
         </div>
         <button

@@ -3,6 +3,59 @@ import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { sendBookingEmails } from "@/app/lib/email";
 
+// ── Subscription helpers ──────────────────────────────────────────────────────
+
+/** Price ID → plan name using env vars. Falls back to "starter". */
+function priceIdToPlan(priceId: string | undefined | null): string {
+  if (!priceId) return "starter";
+  if (priceId === process.env.STRIPE_BUSINESS_PRICE_ID) return "business";
+  if (priceId === process.env.STRIPE_PRO_PRICE_ID)      return "pro";
+  if (priceId === process.env.STRIPE_STARTER_PRICE_ID)  return "starter";
+  return "starter";
+}
+
+/**
+ * current_period_end: Stripe v22+ moved this to items in newer API versions.
+ * Check sub-level first (older serialisation), then items[0] (newer).
+ */
+function subPeriodEnd(sub: Stripe.Subscription): string | null {
+  const ts =
+    (sub as unknown as Record<string, number>).current_period_end ??
+    (sub.items?.data?.[0] as unknown as Record<string, number>)?.current_period_end;
+  return ts ? new Date(Number(ts) * 1000).toISOString() : null;
+}
+
+/** Resolve salon row by stripe_customer_id first; fallback to an explicit salonId. */
+async function resolveSalonId(
+  sb: ReturnType<typeof createClient>,
+  customerId: string,
+  fallbackId?: string | null,
+): Promise<string | null> {
+  if (customerId) {
+    const { data } = await sb
+      .from("salons")
+      .select("id")
+      .eq("stripe_customer_id", customerId)
+      .maybeSingle();
+    if (data?.id) return data.id;
+  }
+  return fallbackId ?? null;
+}
+
+/** Columns to write for every subscription state change. */
+function subColumns(sub: Stripe.Subscription, plan: string, customerId: string) {
+  return {
+    subscription_id:     sub.id,
+    subscription_status: sub.status,   // Stripe's actual value: trialing / active / past_due / etc.
+    subscription_plan:   plan,
+    stripe_customer_id:  customerId,
+    trial_ends_at:       sub.trial_end
+      ? new Date(sub.trial_end * 1000).toISOString()
+      : null,
+    current_period_end: subPeriodEnd(sub),
+  };
+}
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(req: NextRequest) {
@@ -167,46 +220,99 @@ export async function POST(req: NextRequest) {
 
   // ── Subscription Events ──────────────────────────────────────
 
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    if (session.mode === "subscription" && session.subscription) {
+      const customerId =
+        typeof session.customer === "string"
+          ? session.customer
+          : (session.customer as Stripe.Customer)?.id ?? "";
+
+      const salonId = await resolveSalonId(
+        supabase,
+        customerId,
+        session.client_reference_id || session.metadata?.salon_id,
+      );
+
+      if (salonId) {
+        const subId =
+          typeof session.subscription === "string"
+            ? session.subscription
+            : (session.subscription as Stripe.Subscription).id;
+
+        const sub = await stripe.subscriptions.retrieve(subId, {
+          expand: ["items.data.price"],
+        });
+
+        const priceId = sub.items?.data?.[0]?.price?.id;
+        const planFromPrice = priceIdToPlan(priceId);
+        const plan = planFromPrice !== "starter" || !session.metadata?.plan
+          ? planFromPrice
+          : session.metadata.plan;
+
+        await supabase.from("salons")
+          .update(subColumns(sub, plan, customerId))
+          .eq("id", salonId);
+
+        console.log(`[Webhook] checkout.session.completed salon=${salonId} status=${sub.status} plan=${plan}`);
+      } else {
+        console.warn(`[Webhook] checkout.session.completed — could not resolve salon for customer=${customerId}`);
+      }
+    }
+  }
+
   if (event.type === "customer.subscription.created" || event.type === "customer.subscription.updated") {
     const sub = event.data.object as Stripe.Subscription;
-    const salonId = sub.metadata?.salon_id;
-    const plan    = sub.metadata?.plan || "starter";
+    const customerId =
+      typeof sub.customer === "string"
+        ? sub.customer
+        : (sub.customer as Stripe.Customer).id;
+
+    const salonId = await resolveSalonId(supabase, customerId, sub.metadata?.salon_id);
+
     if (salonId) {
-      const customerId = typeof sub.customer === "string" ? sub.customer : (sub.customer as Stripe.Customer).id;
-      await supabase.from("salons").update({
-        subscription_id:     sub.id,
-        subscription_status: sub.status,
-        subscription_plan:   plan,
-        stripe_customer_id:  customerId,
-        trial_ends_at:       sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
-        // current_period_end varies by Stripe SDK version — use unknown cast for safety
-        current_period_end:  (sub as any).current_period_end
-          ? new Date((sub as any).current_period_end * 1000).toISOString()
-          : (sub as any).current_period?.end
-          ? new Date((sub as any).current_period.end * 1000).toISOString()
-          : null,
-      }).eq("id", salonId);
+      const priceId = sub.items?.data?.[0]?.price?.id;
+      const planFromPrice = priceIdToPlan(priceId);
+      const plan = planFromPrice !== "starter" || !sub.metadata?.plan
+        ? planFromPrice
+        : sub.metadata.plan;
+
+      await supabase.from("salons")
+        .update(subColumns(sub, plan, customerId))
+        .eq("id", salonId);
+
       console.log(`[Webhook] ${event.type} salon=${salonId} status=${sub.status} plan=${plan}`);
+    } else {
+      console.warn(`[Webhook] ${event.type} — could not resolve salon for customer=${customerId}`);
     }
   }
 
   if (event.type === "customer.subscription.deleted") {
     const sub = event.data.object as Stripe.Subscription;
-    const salonId = sub.metadata?.salon_id;
+    const customerId =
+      typeof sub.customer === "string"
+        ? sub.customer
+        : (sub.customer as Stripe.Customer).id;
+    const salonId = await resolveSalonId(supabase, customerId, sub.metadata?.salon_id);
     if (salonId) {
       await supabase.from("salons").update({
-        subscription_status: "cancelled",
+        subscription_status: sub.status,   // Stripe actual: "canceled"
         subscription_id:     null,
       }).eq("id", salonId);
-      console.log(`[Webhook] subscription.deleted salon=${salonId}`);
+      console.log(`[Webhook] subscription.deleted salon=${salonId} status=${sub.status}`);
     }
   }
 
   if (event.type === "invoice.payment_failed") {
     const inv = event.data.object as Stripe.Invoice;
-    const customerId = typeof inv.customer === "string" ? inv.customer : (inv.customer as Stripe.Customer)?.id;
+    const customerId =
+      typeof inv.customer === "string"
+        ? inv.customer
+        : (inv.customer as Stripe.Customer)?.id;
     if (customerId) {
-      await supabase.from("salons").update({ subscription_status: "past_due" }).eq("stripe_customer_id", customerId);
+      await supabase.from("salons")
+        .update({ subscription_status: "past_due" })
+        .eq("stripe_customer_id", customerId);
       console.log(`[Webhook] invoice.payment_failed customer=${customerId}`);
     }
   }

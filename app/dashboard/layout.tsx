@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import { SalonProvider } from "./context/SalonContext";
 
-type SubStatus = "trial" | "trialing" | "active" | "past_due" | "cancelled" | "unpaid" | null;
+type SubStatus = "trial" | "trialing" | "active" | "past_due" | "cancelled" | "canceled" | "unpaid" | null;
 
 interface SalonSub {
   id:                  string;
@@ -88,7 +88,7 @@ function LockedOverlay({ salon }: { salon: SalonSub }) {
           Dashboard Locked
         </h1>
         <p style={{ color:"rgba(255,255,255,0.5)", fontSize:15, lineHeight:1.7, marginBottom:32 }}>
-          {salon.subscription_status === "cancelled"
+          {salon.subscription_status === "cancelled" || salon.subscription_status === "canceled"
             ? "Your subscription has been cancelled. Reactivate to access your dashboard."
             : "Your subscription has expired. Please renew to continue managing your salon."}
         </p>
@@ -158,7 +158,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const status       = salon?.subscription_status ?? "trial";
   const trialDays    = daysLeft(salon?.trial_ends_at ?? null);
-  const isLocked     = status === "cancelled" || (status === "trial" && trialDays === 0);
+  const isLocked     = status === "cancelled" || status === "canceled" || (status === "trial" && trialDays === 0);
   const showTrial    = status === "trial" || status === "trialing";
   const showPastDue  = status === "past_due";
 

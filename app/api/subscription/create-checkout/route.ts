@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
       mode: "subscription",
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
+      client_reference_id: salonId,   // belt-and-suspenders salon lookup in webhook
       subscription_data: {
         trial_period_days: 14,
         metadata: { salon_id: salonId, plan },
