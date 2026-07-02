@@ -29,7 +29,7 @@ try {
 } catch { /* .env.local not found — rely on real env */ }
 
 const BASE_URL   = process.argv[2] || "http://localhost:3000";
-const CRON_SECRET = process.env.CRON_SECRET || "65361a5394edff6ecbce0e02c84b95c4a80a9a27adfef1a023bda8a2e914f354";
+const CRON_SECRET = process.env.CRON_SECRET;
 const RESEND_KEY  = process.env.RESEND_API_KEY;
 const FROM_EMAIL  = process.env.FROM_EMAIL || "onboarding@resend.dev";
 const TEST_EMAIL  = "bookglam3@gmail.com";

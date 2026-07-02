@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   try {
     const {
       email, booking_id,
-      salon_name, service_name, deposit_only, salon_id,
+      salon_name, service_name, deposit_only,
     } = await req.json();
 
     if (!email) {
@@ -23,10 +23,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing booking_id" }, { status: 400 });
     }
 
-    // Server-side price lookup — never trust client-supplied amounts
+    // Server-side price + salon lookup — never trust client-supplied amounts or routing
     const { data: apptData } = await supabaseAdmin
       .from("appointments")
-      .select("services(price)")
+      .select("salon_id, services(price)")
       .eq("id", booking_id)
       .single();
 
@@ -40,13 +40,14 @@ export async function POST(req: NextRequest) {
       ? Math.round(servicePrice * 0.5 * 100)
       : Math.round(servicePrice * 100);
 
-    // Check if salon has a connected Stripe account
+    // Resolve salon from DB (not client body) to prevent Connect routing injection
+    const resolvedSalonId = (apptData as { salon_id?: string } | null)?.salon_id ?? null;
     let stripeAccountId: string | null = null;
-    if (salon_id) {
+    if (resolvedSalonId) {
       const { data: salon } = await supabaseAdmin
         .from("salons")
         .select("stripe_account_id, charges_enabled")
-        .eq("id", salon_id)
+        .eq("id", resolvedSalonId)
         .single();
       if (salon?.stripe_account_id && salon?.charges_enabled) {
         stripeAccountId = salon.stripe_account_id;
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
         service_name:  service_name || "",
         deposit_only:  deposit_only ? "true" : "false",
         full_amount:   String(Math.round(servicePrice * 100)),
-        salon_id:      salon_id || "",
+        salon_id:      resolvedSalonId || "",
       },
       // Destination charge — routes payment to salon's Stripe account
       ...(stripeAccountId && {

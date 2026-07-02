@@ -16,9 +16,12 @@ export const dynamic = "force-dynamic";
  */
 export async function POST(req: NextRequest) {
   try {
-    const { appointmentId } = await req.json();
+    const { appointmentId, token } = await req.json();
     if (!appointmentId) {
       return NextResponse.json({ error: "Missing appointmentId" }, { status: 400 });
+    }
+    if (!token) {
+      return NextResponse.json({ error: "Missing token" }, { status: 400 });
     }
 
     // MUST use service role key — anon key is blocked by RLS for admin lookups
@@ -28,7 +31,8 @@ export async function POST(req: NextRequest) {
     );
 
     // Fetch appointment with all related data
-    // Also check created_at — only allow re-sending confirmation within 15 minutes of booking
+    // token must match review_token — prevents arbitrary appointmentIds triggering emails
+    // Also check created_at — only allow within 15 minutes of booking
     const { data: appt, error } = await supabase
       .from("appointments")
       .select(`
@@ -38,6 +42,7 @@ export async function POST(req: NextRequest) {
         salons(id, name, slug, address, owner_email, owner_id, reminders_enabled, whatsapp_enabled, business_type)
       `)
       .eq("id", appointmentId)
+      .eq("review_token", token)
       .gte("created_at", new Date(Date.now() - 15 * 60 * 1000).toISOString())
       .single();
 

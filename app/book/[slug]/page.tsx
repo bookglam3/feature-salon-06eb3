@@ -418,7 +418,7 @@ export default function BookingPage() {
       fetch("/api/send-confirmation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ appointmentId: appt.id }),
+        body: JSON.stringify({ appointmentId: appt.id, token: (appt as Record<string,unknown>).review_token || "" }),
       }).catch(e => console.error("[send-confirmation] failed:", e));
 
       const dateStr = selDate?.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}) || "";
