@@ -3,6 +3,10 @@ import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+);
 export const dynamic = "force-dynamic";
 
 const PRICE_MAP: Record<string, string> = {
@@ -13,47 +17,62 @@ const PRICE_MAP: Record<string, string> = {
 
 export async function POST(req: NextRequest) {
   try {
-    const { plan, salonId, email, salonName } = await req.json();
-    if (!plan || !salonId) return NextResponse.json({ error: "Missing plan or salonId" }, { status: 400 });
+    // Auth: verify Supabase session
+    const token = req.headers.get("authorization")?.replace("Bearer ", "").trim();
+    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const { data: { user }, error: authErr } = await supabaseAdmin.auth.getUser(token);
+    if (authErr || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    // Only plan comes from body — salonId/email/name come from DB/session
+    const { plan } = await req.json();
+    if (!plan) return NextResponse.json({ error: "Missing plan" }, { status: 400 });
 
     const priceId = PRICE_MAP[plan];
     if (!priceId) return NextResponse.json({ error: "Invalid plan: " + plan }, { status: 400 });
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://featuresalon.co.uk";
+    // Ownership: look up salon by owner_id — never trust salonId from body
+    const { data: salon } = await supabaseAdmin
+      .from("salons")
+      .select("id, name, stripe_customer_id")
+      .eq("owner_id", user.id)
+      .single();
+
+    if (!salon) return NextResponse.json({ error: "Salon not found" }, { status: 404 });
+
+    const appUrl  = process.env.NEXT_PUBLIC_APP_URL || "https://featuresalon.co.uk";
+    const salonId = salon.id;
 
     // Get or create Stripe customer
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY! // service role needed for stripe_customer_id update
-    );
-    const { data: salon } = await supabase.from("salons").select("stripe_customer_id").eq("id", salonId).single();
-
-    let customerId = salon?.stripe_customer_id;
+    let customerId = salon.stripe_customer_id;
     if (!customerId) {
       const customer = await stripe.customers.create({
-        email: email || undefined,
-        name: salonName || undefined,
+        email:    user.email    || undefined,
+        name:     salon.name   || undefined,
         metadata: { salon_id: salonId },
       });
       customerId = customer.id;
-      await supabase.from("salons").update({ stripe_customer_id: customerId }).eq("id", salonId);
+      await supabaseAdmin
+        .from("salons")
+        .update({ stripe_customer_id: customerId })
+        .eq("id", salonId);
     }
 
     // Create Checkout Session with 14-day trial
     const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      mode: "subscription",
+      customer:             customerId,
+      mode:                 "subscription",
       payment_method_types: ["card"],
-      line_items: [{ price: priceId, quantity: 1 }],
-      client_reference_id: salonId,   // belt-and-suspenders salon lookup in webhook
+      line_items:           [{ price: priceId, quantity: 1 }],
+      client_reference_id:  salonId,
       subscription_data: {
         trial_period_days: 14,
-        metadata: { salon_id: salonId, plan },
+        metadata:          { salon_id: salonId, plan },
       },
-      success_url: `${appUrl}/dashboard?subscription=success&plan=${plan}`,
-      cancel_url:  `${appUrl}/subscribe?cancelled=true`,
-      metadata: { salon_id: salonId, plan },
-      allow_promotion_codes: true,
+      success_url:                `${appUrl}/dashboard?subscription=success&plan=${plan}`,
+      cancel_url:                 `${appUrl}/subscribe?cancelled=true`,
+      metadata:                   { salon_id: salonId, plan },
+      allow_promotion_codes:      true,
       billing_address_collection: "auto",
     });
 

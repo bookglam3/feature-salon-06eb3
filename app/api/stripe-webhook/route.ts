@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { sendBookingEmails } from "@/app/lib/email";
 
 // ── Subscription helpers ──────────────────────────────────────────────────────
@@ -27,7 +27,8 @@ function subPeriodEnd(sub: Stripe.Subscription): string | null {
 
 /** Resolve salon row by stripe_customer_id first; fallback to an explicit salonId. */
 async function resolveSalonId(
-  sb: ReturnType<typeof createClient>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  sb: SupabaseClient<any>,
   customerId: string,
   fallbackId?: string | null,
 ): Promise<string | null> {
@@ -37,7 +38,7 @@ async function resolveSalonId(
       .select("id")
       .eq("stripe_customer_id", customerId)
       .maybeSingle();
-    if (data?.id) return data.id;
+    if (data?.id) return data.id as string;
   }
   return fallbackId ?? null;
 }

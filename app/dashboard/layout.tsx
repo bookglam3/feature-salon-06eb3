@@ -27,7 +27,8 @@ function TrialBanner({ salon }: { salon: SalonSub }) {
   const urgent = days <= 3;
   const openPortal = async () => {
     if (!salon.stripe_customer_id) { window.location.href = "/subscribe"; return; }
-    const res = await fetch("/api/subscription/portal", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ salonId: salon.id }) });
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch("/api/subscription/portal", { method:"POST", headers:{"Content-Type":"application/json","Authorization":`Bearer ${session?.access_token}`}, body: JSON.stringify({}) });
     const data = await res.json();
     if (data.url) window.location.href = data.url;
   };
@@ -55,9 +56,10 @@ function TrialBanner({ salon }: { salon: SalonSub }) {
   );
 }
 
-function PastDueBanner({ salon }: { salon: SalonSub }) {
+function PastDueBanner(_: { salon: SalonSub }) {
   const openPortal = async () => {
-    const res = await fetch("/api/subscription/portal", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ salonId: salon.id }) });
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch("/api/subscription/portal", { method:"POST", headers:{"Content-Type":"application/json","Authorization":`Bearer ${session?.access_token}`}, body: JSON.stringify({}) });
     const data = await res.json();
     if (data.url) window.location.href = data.url;
   };
@@ -75,7 +77,8 @@ function LockedOverlay({ salon }: { salon: SalonSub }) {
   const reactivate = () => window.location.href = "/subscribe";
   const openPortal = async () => {
     if (!salon.stripe_customer_id) { reactivate(); return; }
-    const res = await fetch("/api/subscription/portal", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ salonId: salon.id }) });
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch("/api/subscription/portal", { method:"POST", headers:{"Content-Type":"application/json","Authorization":`Bearer ${session?.access_token}`}, body: JSON.stringify({}) });
     const data = await res.json();
     if (data.url) window.location.href = data.url;
   };

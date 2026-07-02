@@ -344,7 +344,8 @@ export default function DashboardPage() {
 
   const handleManageSub = async () => {
     if (!hasCustId) { router.push("/subscribe"); return; }
-    const res = await fetch("/api/subscription/portal", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ salonId: salon?.id }) });
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch("/api/subscription/portal", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session?.access_token}` }, body: JSON.stringify({}) });
     const data = await res.json();
     if (data.url) window.location.href = data.url;
     else toast.error("Could not open billing portal");
