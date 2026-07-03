@@ -1062,6 +1062,27 @@ export default function BookingPage() {
           );
         })()}
 
+        {/* Powered by Feature */}
+        <div style={{ textAlign: "center", padding: "8px 0 24px" }}>
+          <a
+            href="https://featuresalon.co.uk"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 4,
+              fontSize: 12, textDecoration: "none",
+              background: "rgba(255,255,255,0.95)",
+              padding: "5px 14px",
+              borderRadius: 999,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.10)",
+            }}
+          >
+            <span style={{ color: "#6b7280", fontWeight: 500 }}>Powered by</span>
+            {" "}
+            <span style={{ fontWeight: 700, color: "#7C3AED" }}>Feature</span>
+          </a>
+        </div>
+
       </div>
     </>
   );
