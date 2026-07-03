@@ -805,7 +805,8 @@ export default function BookingPage() {
                   <div style={{marginTop:24}}>
                     <div className="input-label" style={{marginBottom:12}}>Payment Option</div>
                     {paymentOptions.map(opt => {
-                      const amt = (selectedService?.price || 0) * opt.pct / 100;
+                      const servicePrice = selectedService?.price || 0;
+                      const amt = opt.pct === 0 ? servicePrice : servicePrice * opt.pct / 100;
                       const isSelected = (paymentMethod || paymentOptions[0]?.id) === opt.id;
                       return (
                         <div key={opt.id} className={`deposit-option ${isSelected ? "selected" : ""}`} onClick={() => setPaymentMethod(opt.id)}>
@@ -828,6 +829,12 @@ export default function BookingPage() {
 
                 <div className="summary">
                   <div className="summary-row"><span className="summary-label">Service</span><span className="summary-value">{selectedService?.name}</span></div>
+                  {isPayAtSalon && (
+                    <div className="summary-row">
+                      <span className="summary-label">Price</span>
+                      <span className="summary-value">£{(selectedService?.price || 0).toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="summary-row"><span className="summary-label">{bookingVc.staffSingular}</span><span className="summary-value">{selectedStaff?.name||"Any available"}</span></div>
                   <div className="summary-row"><span className="summary-label">Date</span><span className="summary-value">{selDate?.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}</span></div>
                   <div className="summary-row"><span className="summary-label">Time</span><span className="summary-value">{selTime}</span></div>
