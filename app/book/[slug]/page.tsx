@@ -100,6 +100,27 @@ function utcToSalonTime(isoStr: string, timezone: string): string {
   });
 }
 
+function addMinutesToSlot(slot: string, minutes: number): string {
+  const [h, m] = slot.split(":").map(Number);
+  const total = h * 60 + m + minutes;
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+}
+
+function intervalsOverlap(aStart: string, aEnd: string, bStart: string, bEnd: string): boolean {
+  return aStart < bEnd && bStart < aEnd;
+}
+
+// Returns true if staff can serve the full window [slotStart, slotEnd) on dayKey.
+// Mirrors isSlotInRange but checks end-of-window, not just start.
+function isStaffAvailableForWindow(
+  staff: StaffMember, slotStart: string, slotEnd: string, dayKey: string
+): boolean {
+  if (!staff.working_hours) return true;           // no schedule → available all day
+  const hours = staff.working_hours[dayKey];
+  if (!hours?.enabled) return false;               // off this day
+  return hours.start <= slotStart && hours.end >= slotEnd; // shift covers full window
+}
+
 // ── Country definitions ───────────────────────────────────────
 const COUNTRIES = [
   {
@@ -248,7 +269,7 @@ export default function BookingPage() {
   const [salonReviews, setSalonReviews] = useState<{ client_name: string; rating: number; comment: string | null; created_at: string }[]>([]);
 
   // Track already-booked time slots for selected date/staff
-  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  const [bookedSlots, setBookedSlots] = useState<{ staffId: string | null; start: string; end: string }[]>([]);
 
   // Phone OTP verification
   const [phoneVerified, setPhoneVerified] = useState(false);
@@ -258,19 +279,24 @@ export default function BookingPage() {
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpChallenge, setOtpChallenge] = useState("");
 
-  const loadBookedSlots = useCallback(async (date: Date, staffId: string | null, salonId: string, salonTz = "Europe/London") => {
+  const loadBookedSlots = useCallback(async (date: Date, _staffId: string | null, salonId: string, salonTz = "Europe/London") => {
+    // _staffId kept for call-site compatibility; capacity filtering done in render, not the query
     const dateStr = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
     // Query wider window to account for timezone differences
-    let q = supabase.from("appointments")
-      .select("date_time")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (supabase.from("appointments") as any)
+      .select("staff_id, date_time, services(duration_minutes)")
       .eq("salon_id", salonId)
       .gte("date_time", `${dateStr}T00:00:00`)
       .lte("date_time", `${dateStr}T23:59:59`)
       .not("status", "eq", "cancelled");
-    if (staffId) q = q.eq("staff_id", staffId);
-    const { data } = await q;
-    // Convert UTC times back to salon local time for slot comparison
-    setBookedSlots((data || []).map(a => utcToSalonTime(a.date_time, salonTz)));
+    // Build [start, end) intervals tagged by staff for per-staff capacity checks
+    const intervals = (data || []).map((a: { staff_id: string | null; date_time: string; services: { duration_minutes?: number } | null }) => {
+      const start = utcToSalonTime(a.date_time, salonTz);
+      const duration = a.services?.duration_minutes || 30;
+      return { staffId: a.staff_id, start, end: addMinutesToSlot(start, duration) };
+    });
+    setBookedSlots(intervals);
   }, []);
 
   // Auto-detect country from IP — tries two services, falls back to PK
@@ -676,10 +702,29 @@ export default function BookingPage() {
                   );
                   const now = new Date();
                   const filteredSlots = TIME_SLOTS.filter(t => isSlotInRange(t, selectedStaff, selDate));
+                  const serviceDuration = selectedService
+                    ? (selectedService.duration_minutes ?? selectedService.duration ?? 30)
+                    : 30;
+                  const dayKey = DAY_KEYS[selDate.getDay()];
+
+                  const isStaffBusy = (sId: string, slotStart: string, slotEnd: string): boolean =>
+                    bookedSlots.some(b => b.staffId === sId && intervalsOverlap(slotStart, slotEnd, b.start, b.end));
+
+                  const computeBlocked = (t: string): boolean => {
+                    const slotEnd = addMinutesToSlot(t, serviceDuration);
+                    if (selectedStaff !== null) {
+                      return !isStaffAvailableForWindow(selectedStaff, t, slotEnd, dayKey)
+                        || isStaffBusy(selectedStaff.id, t, slotEnd);
+                    }
+                    const eligible = staffList.filter(s => isStaffAvailableForWindow(s, t, slotEnd, dayKey));
+                    if (eligible.length === 0) return true;
+                    return eligible.every(s => isStaffBusy(s.id, t, slotEnd));
+                  };
+
                   const availableCount = filteredSlots.filter(t => {
                     const dt = new Date(`${selDate.getFullYear()}-${String(selDate.getMonth()+1).padStart(2,"0")}-${String(selDate.getDate()).padStart(2,"0")}T${t}`);
                     const isPast = dt < now && selDate.toDateString()===now.toDateString();
-                    return !isPast && !bookedSlots.includes(t);
+                    return !isPast && !computeBlocked(t);
                   }).length;
                   return (
                     <>
@@ -702,15 +747,19 @@ export default function BookingPage() {
                           {filteredSlots.map(t => {
                             const dt = new Date(`${selDate.getFullYear()}-${String(selDate.getMonth()+1).padStart(2,"0")}-${String(selDate.getDate()).padStart(2,"0")}T${t}`);
                             const isPast = dt < now && selDate.toDateString()===now.toDateString();
-                            const isTaken = bookedSlots.includes(t);
-                            const disabled = isPast || isTaken;
+                            const slotEnd = addMinutesToSlot(t, serviceDuration);
+                            const isBlocked = computeBlocked(t);
+                            const isEligible = selectedStaff !== null
+                              ? isStaffAvailableForWindow(selectedStaff, t, slotEnd, dayKey)
+                              : staffList.some(s => isStaffAvailableForWindow(s, t, slotEnd, dayKey));
+                            const disabled = isPast || isBlocked;
                             return (
                               <button key={t} disabled={disabled}
                                 className={`time-btn ${selTime===t?"selected":""}`}
                                 onClick={()=>!disabled&&setSelTime(t)}
-                                title={isTaken ? "This slot is already booked" : ""}
-                                style={isTaken ? { textDecoration:"line-through",opacity:0.45,cursor:"not-allowed",fontSize:12 } : {}}>
-                                {t}{isTaken ? <span style={{display:"block",fontSize:9,color:"#EF4444",fontWeight:700}}>Taken</span> : null}
+                                title={isBlocked ? (isEligible ? "Fully booked" : "Outside working hours") : ""}
+                                style={isBlocked ? { textDecoration:"line-through",opacity:0.45,cursor:"not-allowed",fontSize:12 } : {}}>
+                                {t}{isBlocked ? <span style={{display:"block",fontSize:9,color:"#EF4444",fontWeight:700}}>Taken</span> : null}
                               </button>
                             );
                           })}
