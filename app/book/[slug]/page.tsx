@@ -8,6 +8,11 @@ import { getVerticalConfig } from "@/app/lib/verticalConfig";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 
+import {
+  DAY_KEYS, COUNTRY_TIMEZONES, type BookedInterval,
+  addMinutesToSlot, intervalsOverlap, utcToSalonTime, isStaffAvailableForWindow, computeBlocked,
+} from "@/app/lib/slot-availability";
+
 interface SalonData {
   id: string; name: string; slug: string; description?: string;
   logo_url?: string; payment_methods?: any;
@@ -50,9 +55,6 @@ function getInitials(name: string): string {
   return name.split(" ").map((w) => w[0]).join("").slice(0,2).toUpperCase();
 }
 
-// Day of week label matching staff working_hours keys
-const DAY_KEYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-
 // Filter TIME_SLOTS to only those within staff working hours for the selected date
 function getAvailableSlots(allSlots: string[], staff: StaffMember | null, date: Date): { slot: string; offDay: boolean } {
   void allSlots;
@@ -71,14 +73,6 @@ function isSlotInRange(slot: string, staff: StaffMember | null, date: Date): boo
   return slot >= hours.start && slot <= hours.end;
 }
 
-// ── Country → Timezone map ───────────────────────────────────
-const COUNTRY_TIMEZONES: Record<string, string> = {
-  GB: "Europe/London",
-  PK: "Asia/Karachi",
-  AE: "Asia/Dubai",
-  SA: "Asia/Riyadh",
-};
-
 // Convert YYYY-MM-DD + HH:MM in the salon's timezone → UTC ISO string
 function localTimeToUTC(dateStr: string, timeStr: string, timezone: string): string {
   const [y, m, d] = dateStr.split("-").map(Number);
@@ -91,34 +85,6 @@ function localTimeToUTC(dateStr: string, timeStr: string, timezone: string): str
   // Create target in "fake UTC" (as if timezone were UTC) then apply offset
   const fakeUTC = new Date(Date.UTC(y, m - 1, d, h, min, 0));
   return new Date(fakeUTC.getTime() + offsetMs).toISOString();
-}
-
-// Format UTC datetime string in salon's local timezone → HH:MM
-function utcToSalonTime(isoStr: string, timezone: string): string {
-  return new Date(isoStr).toLocaleTimeString("en-GB", {
-    timeZone: timezone, hour: "2-digit", minute: "2-digit", hour12: false,
-  });
-}
-
-function addMinutesToSlot(slot: string, minutes: number): string {
-  const [h, m] = slot.split(":").map(Number);
-  const total = h * 60 + m + minutes;
-  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
-}
-
-function intervalsOverlap(aStart: string, aEnd: string, bStart: string, bEnd: string): boolean {
-  return aStart < bEnd && bStart < aEnd;
-}
-
-// Returns true if staff can serve the full window [slotStart, slotEnd) on dayKey.
-// Mirrors isSlotInRange but checks end-of-window, not just start.
-function isStaffAvailableForWindow(
-  staff: StaffMember, slotStart: string, slotEnd: string, dayKey: string
-): boolean {
-  if (!staff.working_hours) return true;           // no schedule → available all day
-  const hours = staff.working_hours[dayKey];
-  if (!hours?.enabled) return false;               // off this day
-  return hours.start <= slotStart && hours.end >= slotEnd; // shift covers full window
 }
 
 // ── Country definitions ───────────────────────────────────────
@@ -269,7 +235,7 @@ export default function BookingPage() {
   const [salonReviews, setSalonReviews] = useState<{ client_name: string; rating: number; comment: string | null; created_at: string }[]>([]);
 
   // Track already-booked time slots for selected date/staff
-  const [bookedSlots, setBookedSlots] = useState<{ staffId: string | null; start: string; end: string }[]>([]);
+  const [bookedSlots, setBookedSlots] = useState<BookedInterval[]>([]);
 
   // Phone OTP verification
   const [phoneVerified, setPhoneVerified] = useState(false);
@@ -707,24 +673,12 @@ export default function BookingPage() {
                     : 30;
                   const dayKey = DAY_KEYS[selDate.getDay()];
 
-                  const isStaffBusy = (sId: string, slotStart: string, slotEnd: string): boolean =>
-                    bookedSlots.some(b => b.staffId === sId && intervalsOverlap(slotStart, slotEnd, b.start, b.end));
-
-                  const computeBlocked = (t: string): boolean => {
-                    const slotEnd = addMinutesToSlot(t, serviceDuration);
-                    if (selectedStaff !== null) {
-                      return !isStaffAvailableForWindow(selectedStaff, t, slotEnd, dayKey)
-                        || isStaffBusy(selectedStaff.id, t, slotEnd);
-                    }
-                    const eligible = staffList.filter(s => isStaffAvailableForWindow(s, t, slotEnd, dayKey));
-                    if (eligible.length === 0) return true;
-                    return eligible.every(s => isStaffBusy(s.id, t, slotEnd));
-                  };
+                  const cbOpts = { selectedStaff, staffList, bookedIntervals: bookedSlots, serviceDuration, dayKey };
 
                   const availableCount = filteredSlots.filter(t => {
                     const dt = new Date(`${selDate.getFullYear()}-${String(selDate.getMonth()+1).padStart(2,"0")}-${String(selDate.getDate()).padStart(2,"0")}T${t}`);
                     const isPast = dt < now && selDate.toDateString()===now.toDateString();
-                    return !isPast && !computeBlocked(t);
+                    return !isPast && !computeBlocked(t, cbOpts);
                   }).length;
                   return (
                     <>
@@ -748,7 +702,7 @@ export default function BookingPage() {
                             const dt = new Date(`${selDate.getFullYear()}-${String(selDate.getMonth()+1).padStart(2,"0")}-${String(selDate.getDate()).padStart(2,"0")}T${t}`);
                             const isPast = dt < now && selDate.toDateString()===now.toDateString();
                             const slotEnd = addMinutesToSlot(t, serviceDuration);
-                            const isBlocked = computeBlocked(t);
+                            const isBlocked = computeBlocked(t, cbOpts);
                             const isEligible = selectedStaff !== null
                               ? isStaffAvailableForWindow(selectedStaff, t, slotEnd, dayKey)
                               : staffList.some(s => isStaffAvailableForWindow(s, t, slotEnd, dayKey));

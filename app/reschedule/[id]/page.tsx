@@ -2,13 +2,21 @@
 import { useEffect, useState, use, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
+import { supabase } from "@/app/lib/supabase";
+import {
+  DAY_KEYS, COUNTRY_TIMEZONES, type BookedInterval,
+  addMinutesToSlot, utcToSalonTime, isStaffAvailableForWindow, computeBlocked,
+} from "@/app/lib/slot-availability";
+
 interface Appointment {
   id: string;
+  salon_id: string;
+  staff_id: string | null;
   client_name: string;
   date_time: string;
   status: string;
-  services: { name: string; price: number } | null;
-  salon: { name: string; slug: string } | null;
+  services: { name: string; price: number; duration_minutes?: number } | null;
+  salon: { name: string; slug: string; timezone?: string; country?: string } | null;
   notes?: string;
 }
 
@@ -30,8 +38,37 @@ function RescheduleContent({ params }: { params: Promise<{ id: string }> }) {
   const [status, setStatus] = useState<"idle" | "rescheduled" | "cancelled" | "error">("idle");
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [staffList, setStaffList] = useState<{ id: string; working_hours?: Record<string, { enabled: boolean; start: string; end: string }> }[]>([]);
+  const [bookedIntervals, setBookedIntervals] = useState<BookedInterval[]>([]);
 
   const todayStr = new Date().toISOString().slice(0, 10);
+
+  const loadAvailability = async (date: string, salonId: string, apptId: string, tz: string) => {
+    const { data: st } = await supabase
+      .from("staff")
+      .select("id, working_hours")
+      .eq("salon_id", salonId)
+      .eq("active", true);
+    setStaffList(st || []);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: appts } = await (supabase.from("appointments") as any)
+      .select("staff_id, date_time, services(duration_minutes)")
+      .eq("salon_id", salonId)
+      .gte("date_time", `${date}T00:00:00`)
+      .lte("date_time", `${date}T23:59:59`)
+      .not("status", "eq", "cancelled")
+      .neq("id", apptId);
+
+    const intervals: BookedInterval[] = (appts || []).map(
+      (a: { staff_id: string | null; date_time: string; services: { duration_minutes?: number } | null }) => {
+        const start = utcToSalonTime(a.date_time, tz);
+        const dur = a.services?.duration_minutes || 30;
+        return { staffId: a.staff_id, start, end: addMinutesToSlot(start, dur) };
+      }
+    );
+    setBookedIntervals(intervals);
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -41,8 +78,13 @@ function RescheduleContent({ params }: { params: Promise<{ id: string }> }) {
       setAppt(data);
       if (data?.date_time) {
         const d = new Date(data.date_time);
-        setNewDate(d.toISOString().slice(0, 10));
+        const initDate = d.toISOString().slice(0, 10);
+        setNewDate(initDate);
         setNewTime(d.toTimeString().slice(0, 5));
+        if (data.salon_id) {
+          const tz = data.salon?.timezone || COUNTRY_TIMEZONES[data.salon?.country || ""] || "Europe/London";
+          await loadAvailability(initDate, data.salon_id, data.id, tz);
+        }
       }
       setLoading(false);
     };
@@ -187,19 +229,54 @@ function RescheduleContent({ params }: { params: Promise<{ id: string }> }) {
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 <div>
                   <label style={{ fontSize: 12, fontWeight: 700, color: "#475569", display: "block", marginBottom: 6 }}>New Date</label>
-                  <input type="date" value={newDate} onChange={e => { setNewDate(e.target.value); setNewTime(""); }}
+                  <input type="date" value={newDate} onChange={e => {
+                    const d = e.target.value;
+                    setNewDate(d);
+                    setNewTime("");
+                    if (appt?.salon_id) {
+                      const tz = appt.salon?.timezone || COUNTRY_TIMEZONES[appt.salon?.country || ""] || "Europe/London";
+                      loadAvailability(d, appt.salon_id, appt.id, tz);
+                    }
+                  }}
                     min={todayStr}
                     style={{ width: "100%", padding: "11px 14px", border: "1.5px solid #E2E8F0", borderRadius: 12, fontSize: 15, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} />
                 </div>
                 <div>
                   <label style={{ fontSize: 12, fontWeight: 700, color: "#475569", display: "block", marginBottom: 8 }}>New Time</label>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6 }}>
-                    {availableSlots.map(t => (
-                      <button key={t} type="button" onClick={() => setNewTime(t)}
-                        style={{ padding: "8px 4px", borderRadius: 8, border: `1.5px solid ${newTime === t ? "#6366F1" : "#E2E8F0"}`, background: newTime === t ? "#EEF2FF" : "#F8FAFC", color: newTime === t ? "#4F46E5" : "#475569", fontSize: 13, fontWeight: newTime === t ? 700 : 500, cursor: "pointer", transition: "all 0.12s" }}>
-                        {t}
-                      </button>
-                    ))}
+                    {(() => {
+                      const selectedStaff = appt?.staff_id
+                        ? (staffList.find(s => s.id === appt.staff_id) ?? null)
+                        : null;
+                      const serviceDuration = appt?.services?.duration_minutes || 30;
+                      const dayKey = newDate ? DAY_KEYS[new Date(newDate + "T12:00:00Z").getDay()] : "";
+                      const cbOpts = { selectedStaff, staffList, bookedIntervals, serviceDuration, dayKey };
+                      return availableSlots.map(t => {
+                        const isBlocked = newDate ? computeBlocked(t, cbOpts) : false;
+                        const slotEnd = addMinutesToSlot(t, serviceDuration);
+                        const isEligible = staffList.length === 0 || staffList.some(s => isStaffAvailableForWindow(s, t, slotEnd, dayKey));
+                        return (
+                          <button key={t} type="button"
+                            disabled={isBlocked}
+                            onClick={() => !isBlocked && setNewTime(t)}
+                            title={isBlocked ? (isEligible ? "Fully booked" : "Outside working hours") : ""}
+                            style={{
+                              padding: "8px 4px", borderRadius: 8,
+                              border: `1.5px solid ${newTime === t ? "#6366F1" : isBlocked ? "rgba(239,68,68,0.3)" : "#E2E8F0"}`,
+                              background: newTime === t ? "#EEF2FF" : isBlocked ? "rgba(239,68,68,0.05)" : "#F8FAFC",
+                              color: newTime === t ? "#4F46E5" : isBlocked ? "#FCA5A5" : "#475569",
+                              fontSize: 13, fontWeight: newTime === t ? 700 : 500,
+                              cursor: isBlocked ? "not-allowed" : "pointer",
+                              opacity: isBlocked ? 0.5 : 1,
+                              transition: "all 0.12s",
+                              textDecoration: isBlocked ? "line-through" : "none",
+                            }}>
+                            {t}
+                            {isBlocked ? <span style={{ display: "block", fontSize: 9, color: "#EF4444", fontWeight: 700 }}>Taken</span> : null}
+                          </button>
+                        );
+                      });
+                    })()}
                   </div>
                 </div>
                 <div>

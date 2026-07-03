@@ -21,7 +21,7 @@ export async function GET(
   // Only return fields needed by the reschedule page — no PII (email/phone/payment)
   const { data, error } = await supabaseAdmin
     .from("appointments")
-    .select("id,date_time,status,client_name,notes,services(name,price),salon:salons(name,slug)")
+    .select("id,salon_id,staff_id,date_time,status,client_name,notes,services(name,price,duration_minutes),salon:salons(name,slug,timezone,country)")
     .eq("id", id)
     .single();
 
@@ -42,15 +42,17 @@ export async function PATCH(
   // Fetch appointment + salon for owner email
   const { data: rawAppt } = await supabaseAdmin
     .from("appointments")
-    .select("client_name, date_time, review_token, services(name), salon:salons(name,owner_email)")
+    .select("salon_id, staff_id, client_name, date_time, review_token, services(name,duration_minutes), salon:salons(name,owner_email)")
     .eq("id", id)
     .single();
 
   const appt = rawAppt as null | {
+    salon_id: string;
+    staff_id: string | null;
     client_name: string;
     date_time: string;
     review_token: string | null;
-    services: { name: string } | { name: string }[] | null;
+    services: { name: string; duration_minutes?: number } | { name: string; duration_minutes?: number }[] | null;
     salon: { name: string; owner_email: string } | { name: string; owner_email: string }[] | null;
   };
 
@@ -79,6 +81,62 @@ export async function PATCH(
   };
 
   if (action === "reschedule") {
+    // Server-side double-booking guard (mirrors client capacity logic, works in UTC)
+    const svc = getService();
+    const duration = svc?.duration_minutes || 30;
+    const newStart = new Date(date_time);
+    const newEnd   = new Date(newStart.getTime() + duration * 60_000);
+    const dateStr  = (date_time as string).slice(0, 10);
+
+    const { data: existing } = await supabaseAdmin
+      .from("appointments")
+      .select("id, staff_id, date_time, services(duration_minutes)")
+      .eq("salon_id", appt.salon_id)
+      .gte("date_time", `${dateStr}T00:00:00Z`)
+      .lte("date_time", `${dateStr}T23:59:59Z`)
+      .not("status", "eq", "cancelled")
+      .neq("id", id);
+
+    if (existing && existing.length > 0) {
+      if (appt.staff_id) {
+        // Specific staff: reject if that staff has any overlapping booking
+        const conflict = existing.some(e => {
+          if (e.staff_id !== appt.staff_id) return false;
+          const eSvc = Array.isArray(e.services) ? e.services[0] : e.services;
+          const eDur = (eSvc as { duration_minutes?: number } | null)?.duration_minutes || 30;
+          const eStart = new Date(e.date_time);
+          const eEnd   = new Date(eStart.getTime() + eDur * 60_000);
+          return newStart < eEnd && eStart < newEnd;
+        });
+        if (conflict) {
+          return NextResponse.json({ error: "Time slot unavailable" }, { status: 409 });
+        }
+      } else {
+        // Any Available: reject only if ALL active staff are busy during the window
+        const { data: allStaff } = await supabaseAdmin
+          .from("staff")
+          .select("id")
+          .eq("salon_id", appt.salon_id)
+          .eq("active", true);
+
+        if (allStaff && allStaff.length > 0) {
+          const allBusy = allStaff.every(staff =>
+            existing.some(e => {
+              if (e.staff_id !== staff.id) return false;
+              const eSvc = Array.isArray(e.services) ? e.services[0] : e.services;
+              const eDur = (eSvc as { duration_minutes?: number } | null)?.duration_minutes || 30;
+              const eStart = new Date(e.date_time);
+              const eEnd   = new Date(eStart.getTime() + eDur * 60_000);
+              return newStart < eEnd && eStart < newEnd;
+            })
+          );
+          if (allBusy) {
+            return NextResponse.json({ error: "Time slot unavailable" }, { status: 409 });
+          }
+        }
+      }
+    }
+
     const { error } = await supabaseAdmin
       .from("appointments")
       .update({ date_time, status: "pending", notes })
