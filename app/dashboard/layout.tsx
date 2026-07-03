@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import { SalonProvider } from "./context/SalonContext";
 
@@ -114,25 +114,44 @@ function LockedOverlay({ salon }: { salon: SalonSub }) {
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const router   = useRouter();
-  const pathname = usePathname();
+  const router  = useRouter();
   const [salon,  setSalon]  = useState<SalonSub | null>(null);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    const check = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push("/login"); return; }
+    const fetchSalon = async (userId: string) => {
       const { data } = await supabase
         .from("salons")
         .select("id,subscription_status,subscription_plan,trial_ends_at,current_period_end,stripe_customer_id")
-        .eq("owner_id", user.id)
+        .eq("owner_id", userId)
         .single();
       setSalon(data as SalonSub | null);
       setLoaded(true);
     };
-    check();
-  }, [router, pathname]);
+
+    // Run once on mount: verify session and load subscription status.
+    const init = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { router.push("/login"); return; }
+      await fetchSalon(user.id);
+    };
+    init();
+
+    // React to auth state changes (logout, token expiry, login in another tab).
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT" || !session) {
+        setSalon(null);
+        setLoaded(false);
+        router.push("/login");
+      } else if (event === "SIGNED_IN" && session.user) {
+        fetchSalon(session.user.id);
+      } else if (event === "TOKEN_REFRESHED" && session?.user) {
+        fetchSalon(session.user.id);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router]);
 
   // Always render inside SalonProvider from the very first paint so children
   // never fall back to the bare context default (which uses "hair" / salon terms).
