@@ -226,7 +226,7 @@ export default function BookingPage() {
   const [paymentError, setPaymentError] = useState("");
 
   // Confirmation screen state (for pay_at_salon and free services)
-  const [confirmedBooking, setConfirmedBooking] = useState<{ service: string; date: string; time: string; name: string; salon: string; apptId: string; paymentStatus: string } | null>(null);
+  const [confirmedBooking, setConfirmedBooking] = useState<{ service: string; date: string; time: string; name: string; salon: string; apptId: string; paymentStatus: string; servicePrice: number } | null>(null);
 
   // Review token — captured at booking time, shown as a "leave a review" link
   const [reviewToken, setReviewToken] = useState("");
@@ -414,8 +414,9 @@ export default function BookingPage() {
       }).catch(e => console.error("[send-confirmation] failed:", e));
 
       const dateStr = selDate?.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}) || "";
-      const payStatus = isPayAtSalon ? "pay_at_salon" : "free";
-      setConfirmedBooking({ service: selectedService.name, date: dateStr, time: selTime, name: form.name, salon: salon.name, apptId: appt.id, paymentStatus: payStatus });
+      const servicePrice = selectedService?.price ?? 0;
+      const payStatus = servicePrice > 0 ? "pay_at_salon" : "free";
+      setConfirmedBooking({ service: selectedService.name, date: dateStr, time: selTime, name: form.name, salon: salon.name, apptId: appt.id, paymentStatus: payStatus, servicePrice });
       setSubmitting(false);
       setStep(5);
       return;
@@ -978,7 +979,7 @@ export default function BookingPage() {
                           {confirmedBooking.paymentStatus === "free" ? (
                             <span style={{ fontSize: 13, fontWeight: 700, color: "#6366F1", background: "rgba(99,102,241,0.1)", padding: "4px 10px", borderRadius: 20, border: "1px solid rgba(99,102,241,0.2)" }}>Free Service — No Payment</span>
                           ) : (
-                            <span style={{ fontSize: 13, fontWeight: 700, color: "#10B981", background: "rgba(16,185,129,0.1)", padding: "4px 10px", borderRadius: 20, border: "1px solid rgba(16,185,129,0.2)" }}>Pay at Salon</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: "#10B981", background: "rgba(16,185,129,0.1)", padding: "4px 10px", borderRadius: 20, border: "1px solid rgba(16,185,129,0.2)" }}>Pay at Salon — £{confirmedBooking.servicePrice.toFixed(2)} due at salon</span>
                           )}
                         </div>
                       </div>
