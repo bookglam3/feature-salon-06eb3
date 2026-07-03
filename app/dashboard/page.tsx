@@ -19,6 +19,7 @@ import { useToast } from "./components/Toast";
 import type { Salon, Appointment, Service, Offer } from "../types";
 import OnboardingChecklist from "./components/OnboardingChecklist";
 import { useSalon } from "./context/SalonContext";
+import PushNotificationButton from "@/app/components/PushNotificationButton";
 
 type StaffItem = { id: string; name: string };
 
@@ -435,6 +436,13 @@ export default function DashboardPage() {
           <MiniStat label={`Total ${vc.bookingPlural}`} value={appointments.length} color="#E7C878" lucideIcon={<BookOpen size={17} strokeWidth={1.8} />} sub={`${pendingAppts.length} pending`} />
           <MiniStat label={vc.staffPlural} value={staff.length} color="#EC4899" lucideIcon={<Users size={17} strokeWidth={1.8} />} sub="active team" />
         </div>
+
+        {/* ── Push Notifications ─────────────────────────────────── */}
+        {salon?.id && (
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 6 }}>
+            <PushNotificationButton salonId={salon.id} />
+          </div>
+        )}
 
         {/* ── Quick Actions ──────────────────────────────────────── */}
         <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 20, padding: "20px 22px", marginBottom: 20, boxShadow: "0 4px 20px rgba(0,0,0,0.25)" }}>

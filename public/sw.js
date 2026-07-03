@@ -49,3 +49,31 @@ self.addEventListener("fetch", (e) => {
       .catch(() => caches.match(e.request))
   );
 });
+
+// Push: display notification when server sends a push event
+self.addEventListener("push", (e) => {
+  let data = { title: "Feature Salon", body: "You have a new notification.", url: "/dashboard" };
+  try { data = Object.assign(data, e.data?.json()); } catch (_) {}
+  e.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      data: { url: data.url },
+    })
+  );
+});
+
+// Notificationclick: focus existing tab or open the target url
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const url = e.notification.data?.url || "/dashboard";
+  e.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
+      for (const w of wins) {
+        if (w.url.includes(url) && "focus" in w) return w.focus();
+      }
+      if (clients.openWindow) return clients.openWindow(url);
+    })
+  );
+});
