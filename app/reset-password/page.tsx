@@ -15,8 +15,22 @@ function ResetContent() {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    // Supabase puts the access token in the URL hash when coming from reset email
-    const checkSession = async () => {
+    const verify = async () => {
+      const token_hash = params.get("token_hash");
+      const type = params.get("type");
+
+      if (token_hash && type === "recovery") {
+        const { error } = await supabase.auth.verifyOtp({
+          type: "recovery",
+          token_hash,
+        });
+        if (!error) {
+          setValidSession(true);
+          setChecking(false);
+          return;
+        }
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         setValidSession(true);
@@ -25,7 +39,7 @@ function ResetContent() {
       }
       setChecking(false);
     };
-    checkSession();
+    verify();
   }, [params]);
 
   const handleReset = async (e: React.FormEvent) => {
