@@ -568,9 +568,11 @@ export default function BookingPage() {
         .summary-value{font-size:14px;color:#0F172A;font-weight:700;}
         .deposit-option{border:2px solid #E2E8F0;border-radius:16px;padding:16px;cursor:pointer;transition:all 0.2s;margin-bottom:10px;}
         .deposit-option.selected{border-color:#667eea;background:linear-gradient(135deg,rgba(102,126,234,0.05),rgba(118,75,162,0.05));}
+        .summary-total{color:#667eea;font-size:18px}
         @keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
         @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
-        @media(max-width:640px){.time-grid{grid-template-columns:repeat(3,1fr)}.hero{padding:32px 20px 100px}.hero h1{font-size:26px}.card{padding:24px 20px;margin-top:-60px}.logo-wrapper{width:88px;height:88px}}
+        @media(max-width:640px){.time-grid{grid-template-columns:repeat(3,1fr)}.hero{padding:32px 20px 100px}.hero h1{font-size:26px}.card{padding:24px 20px;margin-top:-60px}.logo-wrapper{width:88px;height:88px}.time-btn{min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center}}
+        @media(max-width:480px){.progress-label{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:20%}.otp-input{font-size:24px;letter-spacing:8px}.summary-total{font-size:16px}}
       `}</style>
 
       <div className="page-bg">
@@ -686,7 +688,7 @@ export default function BookingPage() {
                       <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8 }}>
                         <label className="input-label" style={{margin:0}}>Available Times</label>
                         {selectedStaff && hoursLabel && (
-                          <span style={{ fontSize:11.5,color:"#64748B",background:"#F1F5F9",padding:"3px 10px",borderRadius:20,fontWeight:600 }}>
+                          <span style={{ fontSize:11.5,color:"#64748B",background:"#F1F5F9",padding:"3px 10px",borderRadius:20,fontWeight:600,flexShrink:0 }}>
                             {selectedStaff.name}: {hoursLabel}
                           </span>
                         )}
@@ -811,12 +813,12 @@ export default function BookingPage() {
                       const isSelected = (paymentMethod || paymentOptions[0]?.id) === opt.id;
                       return (
                         <div key={opt.id} className={`deposit-option ${isSelected ? "selected" : ""}`} onClick={() => setPaymentMethod(opt.id)}>
-                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:8}}>
                             <div>
                               <div style={{fontSize:15,fontWeight:700,color:"#0F172A"}}>{opt.label}</div>
                               <div style={{fontSize:13,color:"#64748B",marginTop:2}}>{opt.sub}</div>
                             </div>
-                            <div style={{textAlign:"right"}}>
+                            <div style={{textAlign:"right",flexShrink:0}}>
                               <div style={{fontSize:18,fontWeight:800,color:opt.color}}>£{amt.toFixed(2)}</div>
                               {opt.pct < 100 && opt.pct > 0 && <div style={{fontSize:11,color:"#94A3B8"}}>today</div>}
                               {opt.pct === 0 && <div style={{fontSize:11,color:"#94A3B8"}}>at salon</div>}
@@ -839,7 +841,7 @@ export default function BookingPage() {
                   <div className="summary-row"><span className="summary-label">{bookingVc.staffSingular}</span><span className="summary-value">{selectedStaff?.name||"Any available"}</span></div>
                   <div className="summary-row"><span className="summary-label">Date</span><span className="summary-value">{selDate?.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}</span></div>
                   <div className="summary-row"><span className="summary-label">Time</span><span className="summary-value">{selTime}</span></div>
-                  <div className="summary-row"><span className="summary-label">{isPayAtSalon ? "Due Now" : selectedOption?.pct === 100 ? "Total" : "Deposit Due"}</span><span className="summary-value" style={{color:"#667eea",fontSize:18}}>£{chargeAmount.toFixed(2)}{isPayAtSalon ? " (pay at salon)" : ""}</span></div>
+                  <div className="summary-row"><span className="summary-label">{isPayAtSalon ? "Due Now" : selectedOption?.pct === 100 ? "Total" : "Deposit Due"}</span><span className="summary-value summary-total">£{chargeAmount.toFixed(2)}{isPayAtSalon ? " (pay at salon)" : ""}</span></div>
                 </div>
 
                 {/* OTP Verification Screen */}
@@ -854,6 +856,7 @@ export default function BookingPage() {
                     <input
                       type="text"
                       inputMode="numeric"
+                      className="otp-input"
                       maxLength={6}
                       placeholder="000000"
                       value={otpCode}
