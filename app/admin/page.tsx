@@ -207,6 +207,11 @@ export default function AdminPage() {
   const [lightboxUrl, setLightboxUrl] = useState<string|null>(null);
   const [selectedVerif, setSelectedVerif] = useState<Agent|null>(null);
   const [verifNotes, setVerifNotes] = useState("");
+  // ── Add Salon modal ──
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addForm, setAddForm] = useState({ name: "", ownerEmail: "", businessType: "salon", plan: "starter" });
+  const [addLoading, setAddLoading] = useState(false);
+  const [addError, setAddError] = useState("");
 
   // ── Auth + data load ──
   useEffect(() => {
@@ -373,6 +378,33 @@ export default function AdminPage() {
   }, {} as Record<string, number>);
 
   const handleLogout = async () => { await supabase.auth.signOut(); router.push("/login"); };
+
+  const createSalon = async () => {
+    setAddLoading(true);
+    setAddError("");
+    try {
+      const res = await fetch("/api/admin/salons", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name:          addForm.name,
+          owner_email:   addForm.ownerEmail,
+          business_type: addForm.businessType,
+          plan:          addForm.plan,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setAddError(json.error || "Failed to create salon"); return; }
+      setSalons(p => [{ ...json.salon, subscription_status: "trial", appointmentCount: 0 } as SalonAdmin, ...p]);
+      setShowAddModal(false);
+      setAddForm({ name: "", ownerEmail: "", businessType: "salon", plan: "starter" });
+      setActiveTab("salons");
+    } catch {
+      setAddError("Network error — please try again.");
+    } finally {
+      setAddLoading(false);
+    }
+  };
 
   const exportCSV = () => {
     const headers = ["Name", "Slug", "Owner Email", "Business Type", "Plan", "Sub Status", "Sub Plan", "Signed Up", "Trial Ends", "Next Billing", "Bookings", "Stripe Customer ID"];
@@ -549,7 +581,7 @@ export default function AdminPage() {
                 ● Maintenance ON
               </div>
             )}
-            <Btn variant="primary" size="sm" onClick={() => setActiveTab("salons")}>
+            <Btn variant="primary" size="sm" onClick={() => { setShowAddModal(true); setAddError(""); }}>
               + Add Salon
             </Btn>
           </div>
@@ -1664,6 +1696,143 @@ export default function AdminPage() {
           </div>
         </main>
       </div>
+
+      {/* ── Add Salon Modal ─────────────────────────────────────── */}
+      {showAddModal && (
+        <div
+          onClick={e => { if (e.target === e.currentTarget) { setShowAddModal(false); setAddError(""); } }}
+          style={{
+            position: "fixed", inset: 0, zIndex: 1000,
+            background: "rgba(10,15,28,0.6)", backdropFilter: "blur(6px)",
+            display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+          }}>
+          <div style={{
+            background: T.surface, borderRadius: 20, width: "100%", maxWidth: 480,
+            boxShadow: "0 24px 80px rgba(0,0,0,0.2)", animation: "fadeUp 0.2s ease",
+          }}>
+            {/* Modal header */}
+            <div style={{
+              background: T.nav, borderRadius: "20px 20px 0 0",
+              padding: "20px 24px", display: "flex", alignItems: "center", justifyContent: "space-between",
+            }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#fff" }}>Add New Salon</div>
+              <button onClick={() => { setShowAddModal(false); setAddError(""); }} style={{
+                background: "rgba(255,255,255,0.1)", border: "none", borderRadius: 8,
+                padding: "6px 12px", color: "#fff", cursor: "pointer", fontSize: 16, lineHeight: 1,
+              }}>×</button>
+            </div>
+
+            {/* Form body */}
+            <div style={{ padding: 24 }}>
+              {addError && (
+                <div style={{
+                  background: T.redSoft, border: `1px solid #FECACA`,
+                  borderRadius: 9, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: T.red,
+                }}>{addError}</div>
+              )}
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                {/* Salon name */}
+                <div>
+                  <label style={{ fontSize: 11.5, fontWeight: 700, color: T.text2, display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                    Salon Name *
+                  </label>
+                  <input
+                    value={addForm.name}
+                    onChange={e => setAddForm(f => ({ ...f, name: e.target.value }))}
+                    placeholder="e.g. Luxe Hair Studio"
+                    style={{
+                      width: "100%", height: 38, padding: "0 12px", border: `1px solid ${T.border}`,
+                      borderRadius: 8, fontSize: 13.5, color: T.text, background: T.bg, boxSizing: "border-box",
+                      fontFamily: "inherit",
+                    }}
+                  />
+                </div>
+
+                {/* Owner email */}
+                <div>
+                  <label style={{ fontSize: 11.5, fontWeight: 700, color: T.text2, display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                    Owner Email *
+                  </label>
+                  <input
+                    type="email"
+                    value={addForm.ownerEmail}
+                    onChange={e => setAddForm(f => ({ ...f, ownerEmail: e.target.value }))}
+                    placeholder="owner@theirsalon.co.uk"
+                    style={{
+                      width: "100%", height: 38, padding: "0 12px", border: `1px solid ${T.border}`,
+                      borderRadius: 8, fontSize: 13.5, color: T.text, background: T.bg, boxSizing: "border-box",
+                      fontFamily: "inherit",
+                    }}
+                  />
+                  <div style={{ fontSize: 11, color: T.text3, marginTop: 4 }}>
+                    A set-password email will be sent to this address.
+                  </div>
+                </div>
+
+                {/* Business type */}
+                <div>
+                  <label style={{ fontSize: 11.5, fontWeight: 700, color: T.text2, display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                    Business Type
+                  </label>
+                  <select
+                    value={addForm.businessType}
+                    onChange={e => setAddForm(f => ({ ...f, businessType: e.target.value }))}
+                    style={{
+                      width: "100%", height: 38, padding: "0 12px", border: `1px solid ${T.border}`,
+                      borderRadius: 8, fontSize: 13.5, color: T.text, background: T.bg, fontFamily: "inherit",
+                    }}
+                  >
+                    <option value="salon">Salon</option>
+                    <option value="barbershop">Barbershop</option>
+                    <option value="spa">Spa</option>
+                    <option value="nail studio">Nail Studio</option>
+                    <option value="beauty studio">Beauty Studio</option>
+                  </select>
+                </div>
+
+                {/* Plan */}
+                <div>
+                  <label style={{ fontSize: 11.5, fontWeight: 700, color: T.text2, display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                    Plan
+                  </label>
+                  <select
+                    value={addForm.plan}
+                    onChange={e => setAddForm(f => ({ ...f, plan: e.target.value }))}
+                    style={{
+                      width: "100%", height: 38, padding: "0 12px", border: `1px solid ${T.border}`,
+                      borderRadius: 8, fontSize: 13.5, color: T.text, background: T.bg, fontFamily: "inherit",
+                    }}
+                  >
+                    {PLAN_OPTIONS.map(p => (
+                      <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
+                <Btn variant="outline" onClick={() => { setShowAddModal(false); setAddError(""); }} style={{ flex: 1 }}>
+                  Cancel
+                </Btn>
+                <button
+                  onClick={createSalon}
+                  disabled={addLoading || !addForm.name.trim() || !addForm.ownerEmail.trim()}
+                  style={{
+                    flex: 2, height: 38, borderRadius: 10, border: "none", fontFamily: "inherit",
+                    background: (addLoading || !addForm.name.trim() || !addForm.ownerEmail.trim()) ? T.text3 : T.indigo,
+                    color: "#fff", fontWeight: 700, fontSize: 13.5,
+                    cursor: (addLoading || !addForm.name.trim() || !addForm.ownerEmail.trim()) ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {addLoading ? "Creating…" : "Create Salon & Send Invite"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
