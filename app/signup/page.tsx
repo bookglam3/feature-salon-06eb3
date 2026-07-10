@@ -1,12 +1,12 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "../lib/supabase";
 import { POPULAR_COUNTRIES, ALL_COUNTRIES, type Country } from "../lib/countries";
-import { getDefaultServices } from "../lib/defaultServices";
 
 const C = { indigo:"#C9A24B", indigoDark:"#C9A24B", indigoSoft:"rgba(201,162,75,0.10)", green:"#10B981", red:"#EF4444", text:"#F7F5EF", text2:"#aab1c4", text3:"#aab1c4", border:"#2a3350", bg:"#1C2438" };
-const STEPS = ["Account", "Your Business", "Done!"];
+const STEPS = ["Account", "Your Business", "Verify Email", "Done!"];
 
 const BUSINESS_TYPES = [
   { key:"hair",       label:"💇 Hair Salon"            },
@@ -27,6 +27,12 @@ function pwStrength(p: string) {
   if (p.length < 6) return { label:"Weak", color:"#EF4444", w:"30%" };
   if (p.length < 10 || !/[0-9]/.test(p)) return { label:"Fair", color:"#F59E0B", w:"60%" };
   return { label:"Strong", color:"#10B981", w:"100%" };
+}
+
+function maskEmail(email: string): string {
+  const [local, domain] = email.split("@");
+  if (!domain || local.length <= 1) return email;
+  return `${local[0]}${"*".repeat(Math.min(local.length - 1, 4))}@${domain}`;
 }
 
 function Inp({ label, type="text", value, onChange, placeholder, required, hint, right }:
@@ -101,25 +107,33 @@ function CountryDropdown({ value, onChange }: { value: Country|null; onChange:(c
 }
 
 export default function SignupPage() {
+  const router = useRouter();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [showCpw, setShowCpw] = useState(false);
-  // Step 0
+  // Step 0 — account info
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPw, setConfirmPw] = useState("");
-  // Step 1
+  // Step 1 — business info
   const [salonName, setSalonName] = useState("");
   const [country, setCountry] = useState<Country|null>(null);
   const [phone, setPhone] = useState("");
   const [company, setCompany] = useState("");
   const [terms, setTerms] = useState(false);
   const [category, setCategory] = useState("hair");
+  // Step 2 — email OTP
+  const [otp, setOtp] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpError, setOtpError] = useState("");
+  const [cooldown, setCooldown] = useState(0);
+  const [isResending, setIsResending] = useState(false);
+  const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Auto-detect country
+  // Auto-detect country on mount
   useEffect(() => {
     fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(3000) })
       .then(r=>r.json()).then(d => {
@@ -129,8 +143,35 @@ export default function SignupPage() {
       }).catch(()=>{});
   }, []);
 
+  // Auto-redirect to dashboard after success screen
+  useEffect(() => {
+    if (step !== 3) return;
+    const t = setTimeout(() => router.push("/dashboard"), 2000);
+    return () => clearTimeout(t);
+  }, [step, router]);
+
+  // Cleanup cooldown interval on unmount
+  useEffect(() => {
+    return () => { if (cooldownRef.current) clearInterval(cooldownRef.current); };
+  }, []);
+
+  const startCooldown = () => {
+    if (cooldownRef.current) clearInterval(cooldownRef.current);
+    setCooldown(60);
+    cooldownRef.current = setInterval(() => {
+      setCooldown(c => {
+        if (c <= 1) {
+          if (cooldownRef.current) { clearInterval(cooldownRef.current); cooldownRef.current = null; }
+          return 0;
+        }
+        return c - 1;
+      });
+    }, 1000);
+  };
+
   const pw = pwStrength(password);
 
+  // ── Step 0: validate account fields, advance to step 1 ──────────
   const step0 = (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName.trim()) { setError("Full name is required."); return; }
@@ -139,6 +180,7 @@ export default function SignupPage() {
     setError(""); setStep(1);
   };
 
+  // ── Step 1: send email OTP (no account created yet) ─────────────
   const step1 = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!salonName.trim()) { setError("Business name is required."); return; }
@@ -146,56 +188,94 @@ export default function SignupPage() {
     if (!terms) { setError("Please accept the Terms & Conditions."); return; }
     setLoading(true); setError("");
 
-    const { data, error: signupErr } = await supabase.auth.signUp({ email, password,
-      options: { data: { full_name: fullName, salon_name: salonName, business_type: category } } });
+    const { error: otpErr } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: true },
+    });
 
-    if (signupErr) {
-      const msg = signupErr.message;
-      setError(msg.includes("already") || msg.includes("registered")
-        ? "An account with this email already exists. Please sign in."
-        : msg);
+    if (otpErr) {
+      const msg = otpErr.message;
+      setError(
+        msg.toLowerCase().includes("already") || msg.toLowerCase().includes("registered")
+          ? "An account with this email already exists. Please sign in."
+          : msg,
+      );
       setLoading(false); return;
     }
 
-    if (data.user) {
-      const baseSlug = salonName.toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9-]/g,"");
-      let slug = baseSlug, attempt = 1;
-      while (true) {
-        const { data: ex } = await supabase.from("salons").select("id").eq("slug",slug).maybeSingle();
-        if (!ex) break;
-        slug = `${baseSlug}-${++attempt}`;
-      }
-      const { data: newSalon } = await supabase
-        .from("salons")
-        .insert({ name: salonName, slug, owner_id: data.user.id, owner_email: email, plan:"starter", business_type: category })
-        .select("id")
-        .single();
-
-      // Seed vertical-appropriate default services — silent fallback if anything fails
-      try {
-        const defaults = getDefaultServices(category);
-        if (defaults.length > 0 && newSalon?.id) {
-          await supabase.from("services").insert(
-            defaults.map(svc => ({ salon_id: newSalon.id, ...svc }))
-          );
-        }
-      } catch { /* non-fatal — signup always completes */ }
-
-      // Notify founder — fire-and-forget, never blocks signup
-      fetch("/api/notify-founder/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          salonName,
-          email,
-          businessType: category,
-          signedUpAt: new Date().toISOString(),
-        }),
-      }).catch(() => { /* silent — notification failure must never affect signup */ });
-
-      setStep(2);
-    }
+    startCooldown();
     setLoading(false);
+    setStep(2);
+  };
+
+  // ── Step 2: verify OTP then complete signup server-side ──────────
+  const verifyOtpAndComplete = async () => {
+    if (otp.length !== 6 || otpLoading) return;
+    setOtpLoading(true); setOtpError("");
+
+    const { data, error: verifyErr } = await supabase.auth.verifyOtp({
+      email, token: otp, type: "email",
+    });
+
+    if (verifyErr) {
+      const msg = verifyErr.message.toLowerCase();
+      setOtpError(
+        msg.includes("expired") || msg.includes("invalid")
+          ? "Incorrect code or it has expired. Try again or request a new one."
+          : msg.includes("security") || msg.includes("rate")
+            ? "Too many attempts. Please wait before requesting a new code."
+            : verifyErr.message,
+      );
+      setOtpLoading(false); return;
+    }
+
+    if (!data.session) {
+      setOtpError("Verification failed — no session. Please try again.");
+      setOtpLoading(false); return;
+    }
+
+    // Complete account + salon creation server-side
+    const res = await fetch("/api/signup/complete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        accessToken: data.session.access_token,
+        fullName, password, salonName, phone, company, category,
+      }),
+    });
+    const json = await res.json();
+
+    if (!res.ok) {
+      setOtpError(json.error || "Failed to complete signup. Please try again.");
+      setOtpLoading(false); return;
+    }
+
+    // Notify founder — fire-and-forget, never blocks signup
+    fetch("/api/notify-founder/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ salonName, email, businessType: category, signedUpAt: new Date().toISOString() }),
+    }).catch(() => {});
+
+    setOtpLoading(false);
+    setStep(3);
+  };
+
+  // ── Resend OTP with 60-second cooldown ───────────────────────────
+  const resendOtp = async () => {
+    if (cooldown > 0 || isResending) return;
+    setIsResending(true); setOtpError("");
+    const { error: resendErr } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: true },
+    });
+    if (resendErr) {
+      setOtpError(resendErr.message);
+    } else {
+      setOtp("");
+      startCooldown();
+    }
+    setIsResending(false);
   };
 
   const EyeBtn = ({ show, toggle }: { show:boolean; toggle:()=>void }) => (
@@ -204,28 +284,29 @@ export default function SignupPage() {
     </button>
   );
 
-  if (step === 2) return (
+  // ── Step 3: Success / redirect ───────────────────────────────────
+  if (step === 3) return (
     <main style={{ minHeight:"100vh", background:"#141A2E", display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
       <div style={{ background:"#1C2438", borderRadius:24, padding:"48px 40px", maxWidth:480, width:"100%", textAlign:"center", boxShadow:"0 24px 64px rgba(0,0,0,0.4)", border:"1px solid #2a3350" }}>
         <div style={{ width:72, height:72, borderRadius:"50%", background:"linear-gradient(135deg,#10B981,#059669)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:32, margin:"0 auto 20px", boxShadow:"0 8px 24px rgba(16,185,129,0.3)" }}>✓</div>
         <h1 style={{ fontSize:24, fontWeight:900, color:C.text, letterSpacing:"-0.5px", marginBottom:8 }}>{salonName} is ready!</h1>
         <p style={{ fontSize:14, color:C.text2, lineHeight:1.7, marginBottom:20 }}>
-          Verification link sent to <strong>{email}</strong>.<br/>Check spam if not received within 2 mins.
+          Email verified. Taking you to your dashboard…
         </p>
-        <div style={{ background:"rgba(201,162,75,0.10)", border:"1.5px solid rgba(201,162,75,0.30)", borderRadius:12, padding:"12px 16px", marginBottom:24, fontSize:13, color:"#C9A24B" }}>
-          💡 Verify your email then sign in to access your dashboard.
-        </div>
         {["Online booking page ready","WhatsApp reminders configured","14-day free trial started","Zero setup fees"].map(f=>(
           <div key={f} style={{ display:"flex", alignItems:"center", gap:10, fontSize:13, color:C.text2, padding:"7px 12px", background:"rgba(16,185,129,0.10)", borderRadius:8, marginBottom:8 }}>
             <span style={{color:C.green, fontWeight:800}}>✓</span> {f}
           </div>
         ))}
-        <a href="/login" style={{ display:"block", marginTop:24, padding:"14px", background:`linear-gradient(135deg,${C.indigo},${C.indigoDark})`, color:"#fff", borderRadius:12, fontWeight:800, fontSize:15, textDecoration:"none" }}>
-          Go to Login →
+        <a href="/dashboard" style={{ display:"block", marginTop:24, padding:"14px", background:`linear-gradient(135deg,${C.indigo},${C.indigoDark})`, color:"#fff", borderRadius:12, fontWeight:800, fontSize:15, textDecoration:"none" }}>
+          Go to Dashboard →
         </a>
       </div>
     </main>
   );
+
+  // ── Active error: steps 0-1 use `error`, step 2 uses `otpError` ──
+  const activeError = step < 2 ? error : otpError;
 
   return (
     <main style={{ minHeight:"100vh", background:C.bg, display:"flex" }}>
@@ -270,27 +351,35 @@ export default function SignupPage() {
             </div>
           </div>
 
-          {/* Badge */}
-          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:16 }}>
-            <div style={{ fontSize:10, fontWeight:800, color:C.indigo, letterSpacing:"2px", textTransform:"uppercase", background:C.indigoSoft, padding:"3px 10px", borderRadius:99, border:"1px solid rgba(201,162,75,0.30)" }}>14-Day Free Trial</div>
-            <div style={{ fontSize:11, color:C.text3 }}>No credit card required</div>
-          </div>
-          <h1 style={{ fontSize:26, fontWeight:900, color:C.text, letterSpacing:"-0.8px", marginBottom:4, lineHeight:1.2 }}>
-            {step===0?"Create your account":"Tell us about your business"}
-          </h1>
-          <p style={{ fontSize:13.5, color:C.text2, marginBottom:24 }}>
-            {step===0?"Start your free trial in under 60 seconds.":"Help us personalise your experience."}
-          </p>
-
-          {/* Error */}
-          {error && (
-            <div style={{ background:"rgba(239,68,68,0.10)", border:"1.5px solid rgba(239,68,68,0.25)", borderRadius:10, padding:"11px 14px", marginBottom:16, fontSize:13, color:"#F87171" }}>
-              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom: error.includes("already exists")?8:0 }}>⚠ {error}</div>
-              {error.includes("already exists") && <Link href="/login" style={{ fontSize:13, fontWeight:700, color:C.indigo, textDecoration:"none", background:C.indigoSoft, padding:"5px 12px", borderRadius:7, display:"inline-block", marginTop:4, border:"1px solid rgba(201,162,75,0.30)" }}>→ Sign in</Link>}
+          {/* Badge — only on steps 0 and 1 */}
+          {step < 2 && (
+            <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:16 }}>
+              <div style={{ fontSize:10, fontWeight:800, color:C.indigo, letterSpacing:"2px", textTransform:"uppercase", background:C.indigoSoft, padding:"3px 10px", borderRadius:99, border:"1px solid rgba(201,162,75,0.30)" }}>14-Day Free Trial</div>
+              <div style={{ fontSize:11, color:C.text3 }}>No credit card required</div>
             </div>
           )}
 
-          {/* Step 0 */}
+          <h1 style={{ fontSize:26, fontWeight:900, color:C.text, letterSpacing:"-0.8px", marginBottom:4, lineHeight:1.2 }}>
+            {step===0 ? "Create your account" : step===1 ? "Tell us about your business" : "Check your inbox"}
+          </h1>
+          <p style={{ fontSize:13.5, color:C.text2, marginBottom:24 }}>
+            {step===0
+              ? "Start your free trial in under 60 seconds."
+              : step===1
+                ? "Help us personalise your experience."
+                : <>We sent a 6-digit code to <strong style={{color:C.text}}>{maskEmail(email)}</strong>. Enter it below to verify your email.</>
+            }
+          </p>
+
+          {/* Error banner */}
+          {activeError && (
+            <div style={{ background:"rgba(239,68,68,0.10)", border:"1.5px solid rgba(239,68,68,0.25)", borderRadius:10, padding:"11px 14px", marginBottom:16, fontSize:13, color:"#F87171" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom: activeError.includes("already exists")?8:0 }}>⚠ {activeError}</div>
+              {activeError.includes("already exists") && <Link href="/login" style={{ fontSize:13, fontWeight:700, color:C.indigo, textDecoration:"none", background:C.indigoSoft, padding:"5px 12px", borderRadius:7, display:"inline-block", marginTop:4, border:"1px solid rgba(201,162,75,0.30)" }}>→ Sign in</Link>}
+            </div>
+          )}
+
+          {/* ── Step 0: Account info ───────────────────────────────── */}
           {step===0 && (
             <form onSubmit={step0}>
               <Inp label="Full Name" value={fullName} onChange={setFullName} placeholder="Sarah Johnson" required />
@@ -322,7 +411,7 @@ export default function SignupPage() {
             </form>
           )}
 
-          {/* Step 1 */}
+          {/* ── Step 1: Business info ──────────────────────────────── */}
           {step===1 && (
             <form onSubmit={step1}>
               <Inp label="Business Name" value={salonName} onChange={setSalonName} placeholder="e.g. The Cut Studio, Serenity Physio…" required hint="Appears on your public booking page." />
@@ -349,13 +438,107 @@ export default function SignupPage() {
               <div style={{ display:"flex", gap:10 }}>
                 <button type="button" onClick={()=>{ setStep(0); setError(""); }} style={{ padding:"13px 20px", borderRadius:12, border:`1.5px solid ${C.border}`, background:C.bg, color:C.text2, fontSize:14, fontWeight:700, cursor:"pointer" }}>← Back</button>
                 <button type="submit" disabled={loading} style={{ flex:1, padding:"13px", background: loading?C.text3:`linear-gradient(135deg,${C.indigo},${C.indigoDark})`, color:"#fff", border:"none", borderRadius:12, fontSize:15, fontWeight:800, cursor: loading?"not-allowed":"pointer", boxShadow: loading?"none":"0 6px 20px rgba(201,162,75,0.35)", transition:"all .15s" }}>
-                  {loading ? <span>Creating… <span style={{ display:"inline-block", animation:"spin 1s linear infinite" }}>⟳</span></span> : "Create Free Account →"}
+                  {loading ? <span>Sending code… <span style={{ display:"inline-block", animation:"spin 1s linear infinite" }}>⟳</span></span> : "Send Verification Code →"}
                 </button>
               </div>
             </form>
           )}
 
-          {/* Trust */}
+          {/* ── Step 2: Email OTP entry ────────────────────────────── */}
+          {step===2 && (
+            <div>
+              {/* OTP input */}
+              <div style={{ marginBottom:20 }}>
+                <label style={{ fontSize:12.5, fontWeight:700, color:C.text, display:"block", marginBottom:10 }}>
+                  6-digit code <span style={{color:C.indigo}}>*</span>
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  autoFocus
+                  maxLength={6}
+                  value={otp}
+                  onChange={e => {
+                    const v = e.target.value.replace(/\D/g, "").slice(0, 6);
+                    setOtp(v);
+                    setOtpError("");
+                  }}
+                  onPaste={e => {
+                    e.preventDefault();
+                    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+                    setOtp(pasted);
+                    setOtpError("");
+                  }}
+                  onKeyDown={e => { if (e.key === "Enter") verifyOtpAndComplete(); }}
+                  style={{
+                    width:"100%", fontSize:38, fontWeight:800, letterSpacing:14,
+                    textAlign:"center", padding:"18px 12px",
+                    border:`1.5px solid ${otpError ? C.red : otp.length===6 ? C.green : C.border}`,
+                    borderRadius:14, background:C.bg, color:C.text, outline:"none",
+                    fontFamily:"monospace", boxSizing:"border-box", caretColor:C.indigo,
+                    transition:"border-color .15s",
+                    boxShadow: otp.length===6 ? `0 0 0 3px rgba(16,185,129,0.12)` : "none",
+                  }}
+                  placeholder="000000"
+                />
+              </div>
+
+              {/* 10-minute hint */}
+              <div style={{ background:"rgba(201,162,75,0.08)", border:"1px solid rgba(201,162,75,0.25)", borderRadius:10, padding:"10px 14px", marginBottom:20, fontSize:12.5, color:"#C9A24B" }}>
+                ⏱ This code is valid for 10 minutes. Check your spam folder if you don&apos;t see it.
+              </div>
+
+              {/* Verify button */}
+              <button
+                onClick={verifyOtpAndComplete}
+                disabled={otp.length !== 6 || otpLoading}
+                style={{
+                  width:"100%", padding:"13px",
+                  background: otp.length!==6 || otpLoading ? C.text3 : `linear-gradient(135deg,${C.indigo},${C.indigoDark})`,
+                  color:"#fff", border:"none", borderRadius:12, fontSize:15, fontWeight:800,
+                  cursor: otp.length!==6 || otpLoading ? "not-allowed" : "pointer",
+                  boxShadow: otp.length!==6 || otpLoading ? "none" : "0 6px 20px rgba(201,162,75,0.35)",
+                  transition:"all .15s", marginBottom:14,
+                }}
+              >
+                {otpLoading
+                  ? <span>Verifying… <span style={{ display:"inline-block", animation:"spin 1s linear infinite" }}>⟳</span></span>
+                  : "Verify & Create Account →"
+                }
+              </button>
+
+              {/* Resend + back */}
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                <button
+                  type="button"
+                  onClick={()=>{ setStep(1); setOtp(""); setOtpError(""); if(cooldownRef.current){clearInterval(cooldownRef.current);cooldownRef.current=null;}setCooldown(0); }}
+                  style={{ background:"none", border:"none", cursor:"pointer", color:C.text3, fontSize:13, padding:0 }}
+                >
+                  ← Change details
+                </button>
+                <button
+                  type="button"
+                  onClick={resendOtp}
+                  disabled={cooldown > 0 || isResending}
+                  style={{
+                    background:"none", border:"none", cursor: cooldown>0||isResending ? "not-allowed" : "pointer",
+                    color: cooldown>0||isResending ? C.text3 : C.indigo,
+                    fontSize:13, fontWeight:700, padding:0, transition:"color .15s",
+                  }}
+                >
+                  {isResending
+                    ? "Sending…"
+                    : cooldown > 0
+                      ? `Resend code in ${cooldown}s`
+                      : "Resend code"
+                  }
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Trust badges */}
           <div style={{ display:"flex", justifyContent:"center", gap:20, marginTop:24, flexWrap:"wrap" }}>
             {[{icon:"🔒",text:"SSL Encrypted"},{icon:"🌍",text:"Global Servers"},{icon:"✓",text:"GDPR Compliant"}].map(b=>(
               <div key={b.text} style={{ display:"flex", alignItems:"center", gap:5, fontSize:11, color:C.text3 }}><span>{b.icon}</span>{b.text}</div>
