@@ -282,7 +282,7 @@ export default function StaffPage() {
         {/* Tabs */}
         <div style={{ display: "flex", gap: 2, background: "var(--slate-100)", padding: 3, borderRadius: 8, marginBottom: 20 }}>
           {(["info","services","hours"] as const).map(tab => (
-            <button key={tab} type="button" onClick={() => setFormTab(tab)} style={{ flex: 1, padding: "6px 12px", fontSize: 12.5, borderRadius: 6, border: "none", background: formTab === tab ? "#fff" : "transparent", color: formTab === tab ? "var(--text-1)" : "var(--text-3)", fontWeight: formTab === tab ? 600 : 400, cursor: "pointer", boxShadow: formTab === tab ? "var(--shadow-xs)" : "none", transition: "all 0.12s", fontFamily: "var(--font)", textTransform: "capitalize" }}>
+            <button key={tab} type="button" onClick={() => setFormTab(tab)} style={{ flex: 1, padding: "6px 12px", fontSize: 12.5, borderRadius: 6, border: "none", background: formTab === tab ? "#fff" : "transparent", color: formTab === tab ? "#0F172A" : "var(--text-3)", fontWeight: formTab === tab ? 600 : 400, cursor: "pointer", boxShadow: formTab === tab ? "var(--shadow-xs)" : "none", transition: "all 0.12s", fontFamily: "var(--font)", textTransform: "capitalize" }}>
               {tab}
             </button>
           ))}
