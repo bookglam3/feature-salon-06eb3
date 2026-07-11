@@ -375,10 +375,10 @@ export async function send2hReminder({
 // 4. WIN-BACK — 6 Weeks After Last Visit
 // ═══════════════════════════════════════════════
 export async function sendWinbackEmail({
-  to, clientName, salonName, lastServiceName, bookingLink,
+  to, clientName, salonName, lastServiceName, bookingLink, unsubLink,
 }: {
   to: string; clientName: string; salonName: string;
-  lastServiceName?: string; bookingLink: string;
+  lastServiceName?: string; bookingLink: string; unsubLink?: string;
 }) {
   await sendEmailSafe({
     from: FROM, to,
@@ -386,7 +386,7 @@ export async function sendWinbackEmail({
     html: emailTemplate({
       title: "We Miss You! 💕", clientName,
       message: `It has been a little while since your last visit${lastServiceName ? ` for your <strong>${lastServiceName}</strong>` : ""}, and we would love to welcome you back. As a valued client, we are offering you an exclusive discount on your next appointment.`,
-      salonName, color: "#C2185B",
+      salonName, color: "#C2185B", unsubLink,
       extra: `
         <div style="background:linear-gradient(135deg,#FDE8F0,#F3E8FD);border:1.5px solid #C2185B;border-radius:12px;padding:22px;margin-bottom:20px;text-align:center;">
           <p style="font-size:11px;color:#C2185B;font-weight:600;margin:0 0 6px;letter-spacing:1.5px;text-transform:uppercase;">Exclusive Returning Client Offer</p>

@@ -38,6 +38,7 @@ const NAV = [
       { label: "Bookings",     path: "/dashboard/bookings" },
       { label: "Waitlist",     path: "/dashboard/waitlist" },
       { label: "Clients",      path: "/dashboard/clients" },
+      { label: "Import Clients", path: "/dashboard/clients/import" },
       { label: "Staff",        path: "/dashboard/staff" },
     ],
   },

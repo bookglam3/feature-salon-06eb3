@@ -14,6 +14,7 @@ interface ClientRecord {
   name: string; email: string; phone: string;
   lastVisit: Date; bookings: number; spent: number;
   note?: string; services: Record<string, number>;
+  imported?: boolean;
 }
 interface HistoryItem {
   id: string; date_time: string; status: string;
@@ -79,6 +80,30 @@ export default function ClientsPage() {
           if (svcName) c.services[svcName] = (c.services[svcName] || 0) + 1;
         }
       });
+
+      // Merge in persisted clients (e.g. CSV-imported) that may have zero bookings yet
+      const { data: persisted } = await supabase
+        .from("clients")
+        .select("id,name,email,phone,notes,last_visit_at,created_at")
+        .eq("salon_id", profile.salon.id);
+
+      (persisted || []).forEach((c: {
+        id: string; name: string; email: string | null; phone: string | null;
+        notes: string | null; last_visit_at: string | null; created_at: string;
+      }) => {
+        const key = c.email || c.phone || c.id;
+        if (map.has(key)) {
+          const existing = map.get(key)!;
+          if (c.notes && !existing.note) existing.note = c.notes;
+        } else {
+          map.set(key, {
+            name: c.name, email: c.email || "", phone: c.phone || "",
+            lastVisit: new Date(c.last_visit_at || c.created_at),
+            bookings: 0, spent: 0, services: {}, note: c.notes || undefined, imported: true,
+          });
+        }
+      });
+
       setClients(Array.from(map.values()));
       setLoading(false);
     })();
@@ -141,6 +166,10 @@ export default function ClientsPage() {
           <div style={{ fontSize: 11.5, color: "var(--text-3)" }}>{clients.length} {vc.clientPlural.toLowerCase()} in CRM</div>
         </div>
       </div>
+      <button onClick={() => router.push("/dashboard/clients/import")}
+        style={{ padding: "8px 16px", background: "var(--indigo)", color: "#fff", fontSize: 13, fontWeight: 600, borderRadius: "var(--r-sm)", border: "none", cursor: "pointer", whiteSpace: "nowrap" }}>
+        ⬆ Import {vc.clientPlural}
+      </button>
     </header>
   );
 

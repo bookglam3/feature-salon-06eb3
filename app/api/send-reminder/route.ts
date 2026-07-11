@@ -54,6 +54,22 @@ async function isOptedOut(phone: string | null): Promise<boolean> {
   return !!data;
 }
 
+// Marketing-email opt-out — checked against the persisted clients table
+// (populated via CSV import or the /unsubscribe page). Appointments with
+// no matching clients row (never imported, never unsubscribed) are not
+// opted out by default.
+async function isEmailOptedOut(salonId: string, email: string | null): Promise<boolean> {
+  if (!email) return false;
+  const { data } = await supabase
+    .from("clients")
+    .select("id")
+    .eq("salon_id", salonId)
+    .eq("email", email.toLowerCase().trim())
+    .eq("marketing_opt_out", true)
+    .maybeSingle();
+  return !!data;
+}
+
 export async function GET(req: Request) {
   // ── Security ──────────────────────────────────────
   // Accept:
@@ -467,7 +483,7 @@ export async function GET(req: Request) {
   // ════════════════════════════════════════════════════════
   const { data: appts6wk, error: err6wk } = await supabase
     .from("appointments")
-    .select("*, services(name), salons(name,slug,reminders_enabled,whatsapp_enabled)")
+    .select("*, services(name), salons(id,name,slug,reminders_enabled,whatsapp_enabled)")
     .eq("status", "confirmed")
     .eq("winback_sent", false)
     .gte("date_time", w6wkAgo.start)
@@ -482,15 +498,17 @@ export async function GET(req: Request) {
 
     const bookingLink = `${process.env.NEXT_PUBLIC_APP_URL}/book/${a.salons?.slug}`;
 
-    // Email
-    if (a.client_email) {
+    // Email — skipped if the client has unsubscribed from marketing emails
+    if (a.client_email && a.salons?.id && !(await isEmailOptedOut(a.salons.id, a.client_email))) {
       try {
+        const unsubLink = `${process.env.NEXT_PUBLIC_APP_URL}/unsubscribe?email=${encodeURIComponent(a.client_email)}&salon=${encodeURIComponent(a.salons?.slug || "")}`;
         await sendWinbackEmail({
           to: a.client_email,
           clientName: a.client_name,
           salonName: a.salons?.name || "Your Salon",
           lastServiceName: a.services?.name,
           bookingLink,
+          unsubLink,
         });
       } catch (e) { errors.push(`winback email ${a.id}: ${e}`); }
     }

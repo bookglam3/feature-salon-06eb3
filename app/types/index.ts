@@ -60,3 +60,18 @@ export interface Offer {
 }
 
 export type AppointmentStatus = 'confirmed' | 'pending' | 'cancelled' | 'completed' | 'no_show';
+
+export interface Client {
+  id: string;
+  salon_id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  notes: string | null;
+  date_of_birth: string | null;
+  last_visit_at: string | null;
+  source: 'manual' | 'import' | 'booking';
+  marketing_opt_out: boolean;
+  created_at: string;
+  updated_at: string;
+}
