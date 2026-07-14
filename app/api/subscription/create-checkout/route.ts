@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     // Ownership: look up salon by owner_id — never trust salonId from body
     const { data: salon } = await supabaseAdmin
       .from("salons")
-      .select("id, name, stripe_customer_id")
+      .select("id, name, stripe_customer_id, trial_ends_at")
       .eq("owner_id", user.id)
       .single();
 
@@ -58,7 +58,14 @@ export async function POST(req: NextRequest) {
         .eq("id", salonId);
     }
 
-    // Create Checkout Session with 14-day trial
+    // Only grant a free trial if the salon's original 14-day trial window
+    // hasn't already elapsed. Without this check, a salon reactivating
+    // AFTER their trial expired would get a brand-new 14-day trial instead
+    // of being charged immediately — the exact "customer can't pay us" bug.
+    const trialEndsAtMs = salon.trial_ends_at ? new Date(salon.trial_ends_at).getTime() : 0;
+    const stillInTrial = trialEndsAtMs > Date.now();
+
+    // Create Checkout Session
     const session = await stripe.checkout.sessions.create({
       customer:             customerId,
       mode:                 "subscription",
@@ -66,8 +73,10 @@ export async function POST(req: NextRequest) {
       line_items:           [{ price: priceId, quantity: 1 }],
       client_reference_id:  salonId,
       subscription_data: {
-        trial_period_days: 14,
-        metadata:          { salon_id: salonId, plan },
+        metadata: { salon_id: salonId, plan },
+        // Align to their existing trial end rather than resetting to a
+        // fresh 14 days; omitted entirely (charge immediately) once expired.
+        ...(stillInTrial ? { trial_end: Math.floor(trialEndsAtMs / 1000) } : {}),
       },
       success_url:                `${appUrl}/dashboard?subscription=success&plan=${plan}`,
       cancel_url:                 `${appUrl}/subscribe?cancelled=true`,

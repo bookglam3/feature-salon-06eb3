@@ -11,6 +11,7 @@ interface SalonSub {
   id:                  string;
   subscription_status: SubStatus;
   subscription_plan:   string | null;
+  plan:                string | null;
   trial_ends_at:       string | null;
   current_period_end:  string | null;
   stripe_customer_id:  string | null;
@@ -27,10 +28,15 @@ function TrialBanner({ salon }: { salon: SalonSub }) {
   const urgent = days <= 3;
   const openPortal = async () => {
     if (!salon.stripe_customer_id) { window.location.href = "/subscribe"; return; }
-    const { data: { session } } = await supabase.auth.getSession();
-    const res = await fetch("/api/subscription/portal", { method:"POST", headers:{"Content-Type":"application/json","Authorization":`Bearer ${session?.access_token}`}, body: JSON.stringify({}) });
-    const data = await res.json();
-    if (data.url) window.location.href = data.url;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch("/api/subscription/portal", { method:"POST", headers:{"Content-Type":"application/json","Authorization":`Bearer ${session?.access_token}`}, body: JSON.stringify({}) });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) { window.location.href = data.url; return; }
+      alert(data.error || "Couldn't open the billing portal. Please try again or email support@featuresalon.co.uk.");
+    } catch {
+      alert("Network error. Please try again or email support@featuresalon.co.uk.");
+    }
   };
   return (
     <div style={{
@@ -58,10 +64,15 @@ function TrialBanner({ salon }: { salon: SalonSub }) {
 
 function PastDueBanner(_: { salon: SalonSub }) {
   const openPortal = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const res = await fetch("/api/subscription/portal", { method:"POST", headers:{"Content-Type":"application/json","Authorization":`Bearer ${session?.access_token}`}, body: JSON.stringify({}) });
-    const data = await res.json();
-    if (data.url) window.location.href = data.url;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch("/api/subscription/portal", { method:"POST", headers:{"Content-Type":"application/json","Authorization":`Bearer ${session?.access_token}`}, body: JSON.stringify({}) });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) { window.location.href = data.url; return; }
+      alert(data.error || "Couldn't open the billing portal. Please try again or email support@featuresalon.co.uk.");
+    } catch {
+      alert("Network error. Please try again or email support@featuresalon.co.uk.");
+    }
   };
   return (
     <div style={{ background:"linear-gradient(90deg,rgba(120,53,15,0.95),rgba(161,98,7,0.95))", backdropFilter:"blur(8px)", color:"#fff", padding:"10px 20px", fontSize:13, fontWeight:600, display:"flex", alignItems:"center", justifyContent:"space-between", gap:12, flexWrap:"wrap", borderBottom:"1px solid rgba(245,158,11,0.3)" }}>
@@ -74,13 +85,43 @@ function PastDueBanner(_: { salon: SalonSub }) {
 }
 
 function LockedOverlay({ salon }: { salon: SalonSub }) {
-  const reactivate = () => window.location.href = "/subscribe";
-  const openPortal = async () => {
-    if (!salon.stripe_customer_id) { reactivate(); return; }
-    const { data: { session } } = await supabase.auth.getSession();
-    const res = await fetch("/api/subscription/portal", { method:"POST", headers:{"Content-Type":"application/json","Authorization":`Bearer ${session?.access_token}`}, body: JSON.stringify({}) });
-    const data = await res.json();
-    if (data.url) window.location.href = data.url;
+  const [reactivating, setReactivating] = useState(false);
+  const [error, setError] = useState("");
+  const knownPlan = salon.subscription_plan || salon.plan || null;
+
+  // Starts a fresh Stripe Checkout session and redirects to pay — this is
+  // the correct flow for reactivation. (Previously this called the Stripe
+  // Billing Portal, which is for managing an EXISTING subscription and
+  // fails/no-ops for a customer with no billable subscription history.)
+  const reactivate = async () => {
+    if (reactivating) return;
+    setError("");
+
+    if (!knownPlan) {
+      // No plan on record at all — let them pick one.
+      window.location.href = "/subscribe";
+      return;
+    }
+
+    setReactivating(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch("/api/subscription/create-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ plan: knownPlan }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.url) {
+        setError(data.error || "Couldn't start checkout. Please try again, or email support@featuresalon.co.uk for help.");
+        setReactivating(false);
+        return;
+      }
+      window.location.href = data.url;
+    } catch {
+      setError("Network error. Please try again, or email support@featuresalon.co.uk for help.");
+      setReactivating(false);
+    }
   };
 
   return (
@@ -97,13 +138,19 @@ function LockedOverlay({ salon }: { salon: SalonSub }) {
         </p>
         <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
           <button
-            onClick={openPortal}
-            style={{ background:"linear-gradient(135deg,#C9A24B 0%,#0E1320 100%)", color:"#fff", border:"none", borderRadius:12, padding:"16px 32px", fontSize:16, fontWeight:800, cursor:"pointer", boxShadow:"0 8px 32px rgba(201,162,75,0.5)", transition:"all 0.18s" }}
-            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(201,162,75,0.65)"; }}
+            onClick={reactivate}
+            disabled={reactivating}
+            style={{ background:"linear-gradient(135deg,#C9A24B 0%,#0E1320 100%)", color:"#fff", border:"none", borderRadius:12, padding:"16px 32px", fontSize:16, fontWeight:800, cursor: reactivating ? "default" : "pointer", boxShadow:"0 8px 32px rgba(201,162,75,0.5)", transition:"all 0.18s", opacity: reactivating ? 0.75 : 1 }}
+            onMouseEnter={e => { if (!reactivating) { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(201,162,75,0.65)"; } }}
             onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(201,162,75,0.5)"; }}
           >
-            {salon.stripe_customer_id ? "Reactivate Subscription →" : "Choose a Plan →"}
+            {reactivating ? "Redirecting to checkout…" : knownPlan ? "Reactivate Subscription →" : "Choose a Plan →"}
           </button>
+          {error && (
+            <div style={{ fontSize:12.5, color:"#FCA5A5", background:"rgba(239,68,68,0.12)", border:"1px solid rgba(239,68,68,0.3)", borderRadius:10, padding:"12px 14px", textAlign:"left", lineHeight:1.6 }}>
+              ⚠️ {error}
+            </div>
+          )}
           <div style={{ fontSize:13, color:"rgba(255,255,255,0.3)" }}>
             Plans from £29/month · Cancel anytime
           </div>
@@ -122,7 +169,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const fetchSalon = async (userId: string) => {
       const { data } = await supabase
         .from("salons")
-        .select("id,subscription_status,subscription_plan,trial_ends_at,current_period_end,stripe_customer_id")
+        .select("id,subscription_status,subscription_plan,plan,trial_ends_at,current_period_end,stripe_customer_id")
         .eq("owner_id", userId)
         .single();
       setSalon(data as SalonSub | null);
