@@ -18,7 +18,8 @@ interface SalonData {
   logo_url?: string; payment_methods?: any;
   timezone?: string; country?: string; business_type?: string;
 }
-interface ServiceItem { id: string; name: string; price: number; duration?: number; duration_minutes?: number; description?: string; }
+interface ServiceItem { id: string; name: string; price: number; duration?: number; duration_minutes?: number; description?: string; category_id?: string | null; gender_restriction?: "all" | "female" | "male"; }
+interface ServiceCategoryItem { id: string; name: string; sort_order: number; }
 interface StaffMember {
   id: string; name: string; role?: string;
   working_hours?: Record<string, { enabled: boolean; start: string; end: string }>;
@@ -202,6 +203,8 @@ export default function BookingPage() {
   const [salon, setSalon] = useState<SalonData | null>(null);
   const [bookingVc, setBookingVc] = useState(getVerticalConfig("other"));
   const [services, setServices] = useState<ServiceItem[]>([]);
+  const [categories, setCategories] = useState<ServiceCategoryItem[]>([]);
+  const [selectedCategoryTab, setSelectedCategoryTab] = useState<string>("all");
   const [staffList, setStaffList] = useState<StaffMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -317,14 +320,16 @@ export default function BookingPage() {
       if (!s) { setNotFound(true); setLoading(false); return; }
       setSalon(s);
       setBookingVc(getVerticalConfig(s.business_type));
-      const [{ data: sv },{ data: st },{ data: rv }] = await Promise.all([
+      const [{ data: sv },{ data: st },{ data: rv },{ data: cats }] = await Promise.all([
         supabase.from("services").select("*").eq("salon_id", s.id).order("price"),
         supabase.from("staff").select("*").eq("salon_id", s.id).eq("active", true),
         supabase.from("reviews").select("client_name,rating,comment,created_at").eq("salon_id", s.id).eq("is_published", true).order("created_at",{ascending:false}).limit(10),
+        supabase.from("service_categories").select("id,name,sort_order").eq("salon_id", s.id).order("sort_order"),
       ]);
       setServices(sv||[]);
       setStaffList(st||[]);
       setSalonReviews(rv||[]);
+      setCategories(cats||[]);
       setLoading(false);
     })();
   }, [slug]);
@@ -343,6 +348,14 @@ export default function BookingPage() {
   }, [form.email, phoneRaw, countryCode]);
 
   // Derive available payment options from salon.payment_methods
+  // Category filter tabs — only categories with at least one service render a tab.
+  // If a business has never created a category, this list is empty and no tab
+  // row renders at all, leaving the flat service list exactly as before.
+  const categoriesWithServices = categories.filter(cat => services.some(s => s.category_id === cat.id));
+  const visibleServices = selectedCategoryTab === "all"
+    ? services
+    : services.filter(s => s.category_id === selectedCategoryTab);
+
   const salonPm: PaymentMethods = salon?.payment_methods
     ? { ...DEFAULT_PM, ...salon.payment_methods }
     : DEFAULT_PM;
@@ -546,7 +559,13 @@ export default function BookingPage() {
         .item-content{flex:1;}
         .item-content h3{font-size:16px;font-weight:700;letter-spacing:-0.3px;margin-bottom:4px;color:#0F172A;}
         .item-content p{font-size:14px;color:#64748B;font-weight:600;}
-        .item-meta{font-size:13px;color:#94A3B8;font-weight:500;}
+        .item-meta{font-size:13px;color:#64748B;font-weight:500;}
+        .cat-tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 10px;margin-bottom:6px;-webkit-overflow-scrolling:touch;scrollbar-width:none;max-width:100%;}
+        .cat-tabs::-webkit-scrollbar{display:none;}
+        .cat-tab{flex-shrink:0;padding:8px 16px;border-radius:999px;font-size:13px;font-weight:700;border:1.5px solid #64748B;background:#fff;color:#1E293B;cursor:pointer;white-space:nowrap;font-family:inherit;transition:background 0.15s,border-color 0.15s,color 0.15s;}
+        .cat-tab:hover{border-color:#334155;}
+        .cat-tab:focus-visible{outline:3px solid #0F172A;outline-offset:2px;}
+        .cat-tab.active{background:#0F172A;border-color:#0F172A;color:#fff;}
         .btn{width:100%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:white;border:none;padding:16px;border-radius:14px;font-weight:700;cursor:pointer;margin-top:24px;font-size:16px;letter-spacing:-0.3px;box-shadow:0 8px 16px rgba(102,126,234,0.4);transition:all 0.2s;}
         .btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 12px 24px rgba(102,126,234,0.5);}
         .btn:disabled{opacity:0.5;cursor:not-allowed;box-shadow:none;}
@@ -600,6 +619,18 @@ export default function BookingPage() {
             {step===0 && (
               <>
                 <h2>Choose Your Service</h2>
+                {categoriesWithServices.length > 0 && (
+                  <div className="cat-tabs" aria-label="Filter services by category">
+                    <button type="button" aria-pressed={selectedCategoryTab === "all"}
+                      className={`cat-tab ${selectedCategoryTab === "all" ? "active" : ""}`}
+                      onClick={() => setSelectedCategoryTab("all")}>All</button>
+                    {categoriesWithServices.map(cat => (
+                      <button key={cat.id} type="button" aria-pressed={selectedCategoryTab === cat.id}
+                        className={`cat-tab ${selectedCategoryTab === cat.id ? "active" : ""}`}
+                        onClick={() => setSelectedCategoryTab(cat.id)}>{cat.name}</button>
+                    ))}
+                  </div>
+                )}
                 {services.length === 0 ? (
                   <div style={{ textAlign:"center",padding:"32px 16px",background:"#F8FAFF",borderRadius:16,border:"1.5px dashed #C7D2FE" }}>
                     <div style={{ fontSize:48,marginBottom:12 }}>📋</div>
@@ -607,18 +638,23 @@ export default function BookingPage() {
                     <div style={{ fontSize:13,color:"#64748B",lineHeight:1.6 }}>{salon?.name} hasn&apos;t set up their services yet.<br/>Please contact them directly to book.</div>
                   </div>
                 ) : (
-                  services.map(s => (
-
-                  <div key={s.id} className={`item-card ${selectedService?.id===s.id?"selected":""}`} onClick={()=>setSelectedService(s)}>
-                    <div className="item-icon">{isSalonLike ? getServiceIcon(s.name) : "📋"}</div>
-                    <div className="item-content">
-                      <h3>{s.name}</h3>
-                      <p>£{s.price}</p>
-                      {((s.duration_minutes ?? 0) > 0 || (s.duration ?? 0) > 0) && <span className="item-meta">{s.duration_minutes || s.duration} mins</span>}
-                      {s.description && <span style={{display:"block",fontSize:12,color:"#94A3B8",fontStyle:"italic",marginTop:2}}>{s.description}</span>}
+                  visibleServices.map(s => {
+                    const metaParts = [
+                      ((s.duration_minutes ?? 0) > 0 || (s.duration ?? 0) > 0) ? `${s.duration_minutes || s.duration} mins` : null,
+                      (s.gender_restriction && s.gender_restriction !== "all") ? (s.gender_restriction === "female" ? "Female only" : "Men only") : null,
+                    ].filter(Boolean);
+                    return (
+                    <div key={s.id} className={`item-card ${selectedService?.id===s.id?"selected":""}`} onClick={()=>setSelectedService(s)}>
+                      <div className="item-icon">{isSalonLike ? getServiceIcon(s.name) : "📋"}</div>
+                      <div className="item-content">
+                        <h3>{s.name}</h3>
+                        <p>£{s.price}</p>
+                        {metaParts.length > 0 && <span className="item-meta">{metaParts.join(" · ")}</span>}
+                        {s.description && <span style={{display:"block",fontSize:12,color:"#94A3B8",fontStyle:"italic",marginTop:2}}>{s.description}</span>}
+                      </div>
                     </div>
-                  </div>
-                  ))
+                    );
+                  })
                 )}
                 <button className="btn" disabled={!canNext0} onClick={()=>setStep(1)}>Continue →</button>
               </>

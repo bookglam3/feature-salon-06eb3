@@ -37,14 +37,28 @@ export interface StaffMember {
   created_at?: string;
 }
 
+export type GenderRestriction = 'all' | 'female' | 'male';
+
+export interface ServiceCategory {
+  id: string;
+  salon_id: string;
+  name: string;
+  sort_order: number;
+  created_at: string;
+}
+
 export interface Service {
   id: string;
   salon_id: string;
   name: string;
   price: number;
   duration?: number;
+  duration_minutes?: number;
   description?: string;
-  category?: string | null;
+  category?: string | null; // legacy free-text field — superseded by category_id, do not remove
+  category_id?: string | null;
+  sort_order?: number;
+  gender_restriction?: GenderRestriction;
 }
 
 export interface Offer {

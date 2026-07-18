@@ -70,10 +70,13 @@ export async function POST(req: NextRequest) {
   if (!salon) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
 
   const body = await req.json();
-  const { name, price, duration_minutes, description, category } = body;
+  const { name, price, duration_minutes, description, category, category_id, gender_restriction } = body;
 
   if (!name?.trim()) return NextResponse.json({ error: "Service name is required" }, { status: 400 });
   if (!price || parseFloat(price) <= 0) return NextResponse.json({ error: "Price must be greater than 0" }, { status: 400 });
+  if (gender_restriction && !["all", "female", "male"].includes(gender_restriction)) {
+    return NextResponse.json({ error: "Invalid gender_restriction" }, { status: 400 });
+  }
 
   const payload: Record<string, unknown> = {
     salon_id: salon.id,
@@ -83,6 +86,8 @@ export async function POST(req: NextRequest) {
   };
   if (description?.trim()) payload.description = description.trim();
   payload.category = category?.trim() || null;
+  payload.category_id = category_id || null;
+  payload.gender_restriction = gender_restriction || "all";
 
   const { data, error } = await adminSupabase.from("services").insert(payload).select().single();
   if (error) {
@@ -98,9 +103,12 @@ export async function PATCH(req: NextRequest) {
   if (!salon) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
 
   const body = await req.json();
-  const { id, name, price, duration_minutes, description, category } = body;
+  const { id, name, price, duration_minutes, description, category, category_id, gender_restriction } = body;
 
   if (!id) return NextResponse.json({ error: "Service ID required" }, { status: 400 });
+  if (gender_restriction && !["all", "female", "male"].includes(gender_restriction)) {
+    return NextResponse.json({ error: "Invalid gender_restriction" }, { status: 400 });
+  }
 
   const payload: Record<string, unknown> = {
     name: name?.trim(),
@@ -110,6 +118,8 @@ export async function PATCH(req: NextRequest) {
   if (description?.trim()) payload.description = description.trim();
   else payload.description = null;
   payload.category = category?.trim() || null;
+  payload.category_id = category_id || null;
+  if (gender_restriction) payload.gender_restriction = gender_restriction;
 
   const { error } = await adminSupabase
     .from("services")
