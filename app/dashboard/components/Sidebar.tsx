@@ -40,6 +40,7 @@ const NAV = [
       { label: "Clients",      path: "/dashboard/clients" },
       { label: "Import Clients", path: "/dashboard/clients/import" },
       { label: "Staff",        path: "/dashboard/staff" },
+      { label: "Services",     path: "/dashboard/services" },
     ],
   },
   {

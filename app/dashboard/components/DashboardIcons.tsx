@@ -42,6 +42,7 @@ import {
   Menu,
   TrendingUp,
   Upload,
+  Tag,
 } from "lucide-react";
 import type { LucideProps } from "lucide-react";
 
@@ -77,6 +78,7 @@ export const WaitlistIcon     = makeIcon(Clock3);
 export const ClientsIcon      = makeIcon(Users);
 export const ImportClientsIcon = makeIcon(Upload);
 export const StaffIcon        = makeIcon(Scissors);
+export const ServicesIcon     = makeIcon(Tag);
 export const PaymentsIcon     = makeIcon(Wallet);
 export const TipsIcon         = makeIcon(BadgeDollarSign);
 export const InvoicesIcon     = makeIcon(ReceiptText);
@@ -125,6 +127,7 @@ export const NAV_ICON_MAP: Record<string, React.FC<IconProps>> = {
   "Clients":       ClientsIcon,
   "Import Clients": ImportClientsIcon,
   "Staff":         StaffIcon,
+  "Services":      ServicesIcon,
   "Payments":      PaymentsIcon,
   "Tips":          TipsIcon,
   "Invoices":      InvoicesIcon,
