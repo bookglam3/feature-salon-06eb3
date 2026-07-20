@@ -18,7 +18,7 @@ interface SalonData {
   logo_url?: string; payment_methods?: any;
   timezone?: string; country?: string; business_type?: string;
 }
-interface ServiceItem { id: string; name: string; price: number; duration?: number; duration_minutes?: number; description?: string; category_id?: string | null; gender_restriction?: "all" | "female" | "male"; }
+interface ServiceItem { id: string; name: string; price: number; duration?: number; duration_minutes?: number; description?: string; category_id?: string | null; gender_restriction?: "all" | "female" | "male"; price_is_from?: boolean; }
 interface ServiceCategoryItem { id: string; name: string; sort_order: number; }
 interface StaffMember {
   id: string; name: string; role?: string;
@@ -229,7 +229,7 @@ export default function BookingPage() {
   const [paymentError, setPaymentError] = useState("");
 
   // Confirmation screen state (for pay_at_salon and free services)
-  const [confirmedBooking, setConfirmedBooking] = useState<{ service: string; date: string; time: string; name: string; salon: string; apptId: string; paymentStatus: string; servicePrice: number } | null>(null);
+  const [confirmedBooking, setConfirmedBooking] = useState<{ service: string; date: string; time: string; name: string; salon: string; apptId: string; paymentStatus: string; servicePrice: number; servicePriceIsFrom: boolean } | null>(null);
 
   // Review token — captured at booking time, shown as a "leave a review" link
   const [reviewToken, setReviewToken] = useState("");
@@ -429,7 +429,7 @@ export default function BookingPage() {
       const dateStr = selDate?.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}) || "";
       const servicePrice = selectedService?.price ?? 0;
       const payStatus = servicePrice > 0 ? "pay_at_salon" : "free";
-      setConfirmedBooking({ service: selectedService.name, date: dateStr, time: selTime, name: form.name, salon: salon.name, apptId: appt.id, paymentStatus: payStatus, servicePrice });
+      setConfirmedBooking({ service: selectedService.name, date: dateStr, time: selTime, name: form.name, salon: salon.name, apptId: appt.id, paymentStatus: payStatus, servicePrice, servicePriceIsFrom: !!selectedService?.price_is_from });
       setSubmitting(false);
       setStep(5);
       return;
@@ -648,7 +648,7 @@ export default function BookingPage() {
                       <div className="item-icon">{isSalonLike ? getServiceIcon(s.name) : "📋"}</div>
                       <div className="item-content">
                         <h3>{s.name}</h3>
-                        <p>£{s.price}</p>
+                        <p>{s.price_is_from ? "from " : ""}£{s.price}</p>
                         {metaParts.length > 0 && <span className="item-meta">{metaParts.join(" · ")}</span>}
                         {s.description && <span style={{display:"block",fontSize:12,color:"#94A3B8",fontStyle:"italic",marginTop:2}}>{s.description}</span>}
                       </div>
@@ -855,7 +855,7 @@ export default function BookingPage() {
                               <div style={{fontSize:13,color:"#64748B",marginTop:2}}>{opt.sub}</div>
                             </div>
                             <div style={{textAlign:"right",flexShrink:0}}>
-                              <div style={{fontSize:18,fontWeight:800,color:opt.color}}>£{amt.toFixed(2)}</div>
+                              <div style={{fontSize:18,fontWeight:800,color:opt.color}}>{selectedService?.price_is_from ? "from " : ""}£{amt.toFixed(2)}</div>
                               {opt.pct < 100 && opt.pct > 0 && <div style={{fontSize:11,color:"#94A3B8"}}>today</div>}
                               {opt.pct === 0 && <div style={{fontSize:11,color:"#94A3B8"}}>at salon</div>}
                             </div>
@@ -871,7 +871,7 @@ export default function BookingPage() {
                   {isPayAtSalon && (
                     <div className="summary-row">
                       <span className="summary-label">Price</span>
-                      <span className="summary-value">£{(selectedService?.price || 0).toFixed(2)}</span>
+                      <span className="summary-value">{selectedService?.price_is_from ? "from " : ""}£{(selectedService?.price || 0).toFixed(2)}</span>
                     </div>
                   )}
                   <div className="summary-row"><span className="summary-label">{bookingVc.staffSingular}</span><span className="summary-value">{selectedStaff?.name||"Any available"}</span></div>
@@ -1018,7 +1018,7 @@ export default function BookingPage() {
                           {confirmedBooking.paymentStatus === "free" ? (
                             <span style={{ fontSize: 13, fontWeight: 700, color: "#6366F1", background: "rgba(99,102,241,0.1)", padding: "4px 10px", borderRadius: 20, border: "1px solid rgba(99,102,241,0.2)" }}>Free Service — No Payment</span>
                           ) : (
-                            <span style={{ fontSize: 13, fontWeight: 700, color: "#10B981", background: "rgba(16,185,129,0.1)", padding: "4px 10px", borderRadius: 20, border: "1px solid rgba(16,185,129,0.2)" }}>Pay at Salon — £{confirmedBooking.servicePrice.toFixed(2)} due at salon</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: "#10B981", background: "rgba(16,185,129,0.1)", padding: "4px 10px", borderRadius: 20, border: "1px solid rgba(16,185,129,0.2)" }}>Pay at Salon — {confirmedBooking.servicePriceIsFrom ? "from " : ""}£{confirmedBooking.servicePrice.toFixed(2)} due at salon</span>
                           )}
                         </div>
                       </div>

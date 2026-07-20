@@ -16,6 +16,7 @@ interface ServiceModalProps {
 const EMPTY_FORM = {
   name: "", description: "", price: "", duration_minutes: "",
   category_id: "", gender_restriction: "all" as GenderRestriction,
+  price_is_from: false,
 };
 
 const GENDER_OPTIONS: { value: GenderRestriction; label: string }[] = [
@@ -60,6 +61,7 @@ function ServiceModalForm({
     duration_minutes: String(editingService.duration_minutes ?? editingService.duration ?? ""),
     category_id: editingService.category_id || "",
     gender_restriction: (editingService.gender_restriction as GenderRestriction) || "all",
+    price_is_from: !!editingService.price_is_from,
   } : EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -111,6 +113,7 @@ function ServiceModalForm({
         description: form.description,
         category_id: form.category_id || null,
         gender_restriction: form.gender_restriction,
+        price_is_from: form.price_is_from,
       };
       const res = editingService
         ? await fetch("/api/services", {
@@ -162,6 +165,13 @@ function ServiceModalForm({
           </FormGroup>
         </div>
       </div>
+
+      <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginBottom: 16 }}>
+        <input type="checkbox" checked={form.price_is_from} onChange={e => setForm(f => ({ ...f, price_is_from: e.target.checked }))} />
+        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.7)" }}>
+          Price varies — show as &quot;from £{form.price || "25"}&quot;
+        </span>
+      </label>
 
       <div style={sectionLabelStyle}>Organisation</div>
       <FormGroup label="Category">

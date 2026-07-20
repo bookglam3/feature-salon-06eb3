@@ -16,7 +16,7 @@ function ServiceRow({ service, onEdit, onDelete }: { service: Service; onEdit: (
       <div>
         <div style={{ fontSize: "13px", color: "#1E293B", fontWeight: 600 }}>{service.name}</div>
         <div style={{ fontSize: "12px", color: "#475569" }}>
-          {((service.duration_minutes ?? 0) > 0 || (service.duration ?? 0) > 0) ? `${service.duration_minutes ?? service.duration} min · ` : ""}£{service.price}
+          {((service.duration_minutes ?? 0) > 0 || (service.duration ?? 0) > 0) ? `${service.duration_minutes ?? service.duration} min · ` : ""}{service.price_is_from ? "from " : ""}£{service.price}
         </div>
         {service.description && (
           <div style={{ fontSize: "11.5px", color: "#475569", marginTop: 2, fontStyle: "italic" }}>{service.description}</div>

@@ -333,6 +333,7 @@ function PremiumTopBar({ onMenuClick, salonName, plan }: {
   salonName: string;
   plan: string | null;
 }) {
+  const router = useRouter();
   const pathname = usePathname();
   const [searchVal, setSearchVal] = useState("");
   const { vc } = useSalon();
@@ -381,10 +382,9 @@ function PremiumTopBar({ onMenuClick, salonName, plan }: {
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
         <div className="ds-plan-badge">{planLabel}</div>
 
-        {/* Notification bell */}
-        <button className="ds-notif-btn" title="Notifications">
+        {/* Notification bell — links to Bookings; no unread badge (that's a separate phase) */}
+        <button className="ds-notif-btn" title="View bookings" onClick={() => router.push("/dashboard/bookings")}>
           <Bell size={15} strokeWidth={1.8} />
-          <span className="ds-notif-dot" />
         </button>
 
         {/* Avatar chip */}

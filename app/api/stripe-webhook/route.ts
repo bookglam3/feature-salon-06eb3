@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { sendBookingEmails } from "@/app/lib/email";
+import { sendWhatsAppConfirmation } from "@/app/lib/whatsapp";
 
 // ── Subscription helpers ──────────────────────────────────────────────────────
 
@@ -137,7 +138,7 @@ export async function POST(req: NextRequest) {
         // Fetch full appointment data (same as send-confirmation route)
         const { data: appt } = await supabase
           .from("appointments")
-          .select(`*, services(name,price), staff(name), salons(id,name,slug,address,owner_email,owner_id,business_type)`)
+          .select(`*, services(name,price,price_is_from), staff(name), salons(id,name,slug,address,owner_email,owner_id,business_type,whatsapp_enabled)`)
           .eq("id", bookingId)
           .single();
 
@@ -157,7 +158,7 @@ export async function POST(req: NextRequest) {
             dateTime:         appt.date_time,
             staffName:        appt.staff?.name,
             salonName:        salon?.name || "The Salon",
-            salonOwnerEmail:  ownerEmail || appt.client_email,
+            salonOwnerEmail:  ownerEmail,
             price:            appt.services?.price,
             salonAddress:     salon?.address,
             cancelLink:       `${appUrl}/reschedule/${bookingId}?token=${appt.review_token}`,
@@ -165,8 +166,31 @@ export async function POST(req: NextRequest) {
             paymentStatus:    depositOnly ? "deposit_paid" : "paid",
             depositOnly,
             businessType:     salon?.business_type,
+            salonId:          salon?.id,
+            appointmentId:    bookingId,
+            priceIsFrom:      !!appt.services?.price_is_from,
           });
           console.log(`[Webhook] ✅ Confirmation emails sent for booking ${bookingId}`);
+
+          // ── WhatsApp confirmation — fire-and-forget so a WhatsApp failure
+          // can never break webhook processing or the payment record above ──
+          if (appt.client_phone && salon?.whatsapp_enabled) {
+            sendWhatsAppConfirmation({
+              to:           appt.client_phone,
+              clientName:   appt.client_name,
+              serviceName:  appt.services?.name || "Appointment",
+              staffName:    appt.staff?.name,
+              salonName:    salon?.name || "The Salon",
+              salonAddress: salon?.address,
+              dateTime:     appt.date_time,
+              price:        appt.services?.price,
+              cancelLink:   `${appUrl}/reschedule/${bookingId}?token=${appt.review_token}`,
+            }).then(() => {
+              console.log(`[Webhook] ✅ WhatsApp confirmation sent for booking ${bookingId}`);
+            }).catch(waErr => {
+              console.error(`[Webhook] WhatsApp confirmation error (non-fatal) for booking ${bookingId}:`, waErr);
+            });
+          }
         } else {
           console.error(`[Webhook] ❌ Appointment ${bookingId} not found for email`);
         }

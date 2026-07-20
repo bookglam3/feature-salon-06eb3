@@ -56,7 +56,7 @@ export default function BookingsPage() {
       setSalon(salonData);
       if (salonData) {
         const [{ data: appts }, { data: staffData }, { data: svcs }] = await Promise.all([
-          supabase.from("appointments").select("*, services(name,price), staff(name)").eq("salon_id", salonData.id).order("date_time", { ascending: true }),
+          supabase.from("appointments").select("*, services(name,price,price_is_from), staff(name)").eq("salon_id", salonData.id).order("date_time", { ascending: true }),
           supabase.from("staff").select("id,name").eq("salon_id", salonData.id),
           supabase.from("services").select("*").eq("salon_id", salonData.id),
         ]);
@@ -71,7 +71,7 @@ export default function BookingsPage() {
 
   const reloadAppts = useCallback(async () => {
     if (!salon) return;
-    const { data } = await supabase.from("appointments").select("*, services(name,price), staff(name)").eq("salon_id", salon.id).order("date_time", { ascending: true });
+    const { data } = await supabase.from("appointments").select("*, services(name,price,price_is_from), staff(name)").eq("salon_id", salon.id).order("date_time", { ascending: true });
     setAppointments(data || []);
   }, [salon]);
 
@@ -225,7 +225,7 @@ export default function BookingsPage() {
                         <td style={{ color: "rgba(255,255,255,0.55)" }}>{a.services?.name || <span style={{opacity:.3}}>—</span>}</td>
                         <td style={{ color: "rgba(255,255,255,0.4)" }}>{a.staff?.name || <span style={{fontSize:11,opacity:.4}}>Any</span>}</td>
                         <td style={{ color: "rgba(255,255,255,0.55)", whiteSpace: "nowrap" }}>{new Date(a.date_time).toLocaleString("en-GB",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"})}</td>
-                        <td style={{ fontWeight: 700, color: "#34D399" }}>{a.services?.price ? `£${a.services.price}` : <span style={{opacity:.3}}>—</span>}</td>
+                        <td style={{ fontWeight: 700, color: "#34D399" }}>{a.services?.price ? `${a.services.price_is_from ? "from " : ""}£${a.services.price}` : <span style={{opacity:.3}}>—</span>}</td>
                         <td style={{ whiteSpace: "nowrap" }}>
                           <div style={{ display: "flex", gap: 4 }}>
                             <button onClick={() => handleEdit(a)} className="elite-btn-ghost" style={{ padding: "4px 10px", fontSize: 11.5 }}>Edit</button>
@@ -304,7 +304,7 @@ export default function BookingsPage() {
           <FormGroup label="Email"><Input type="email" placeholder="sarah@email.com" value={formData.client_email} onChange={e => setFormData({ ...formData, client_email: e.target.value })} /></FormGroup>
           <FormGroup label="Phone"><Input placeholder="+44 7700 900000" value={formData.client_phone} onChange={e => setFormData({ ...formData, client_phone: e.target.value })} /></FormGroup>
           <FormGroup label="Date & Time *"><Input type="datetime-local" value={formData.date_time} onChange={e => setFormData({ ...formData, date_time: e.target.value })} required /></FormGroup>
-          <FormGroup label="Service"><Select value={formData.service_id} onChange={e => setFormData({ ...formData, service_id: e.target.value })}><option value="">Select service</option>{services.map(s => <option key={s.id} value={s.id}>{s.name} - {s.price}</option>)}</Select></FormGroup>
+          <FormGroup label="Service"><Select value={formData.service_id} onChange={e => setFormData({ ...formData, service_id: e.target.value })}><option value="">Select service</option>{services.map(s => <option key={s.id} value={s.id}>{s.name} - {s.price_is_from ? "from " : ""}{s.price}</option>)}</Select></FormGroup>
           <FormGroup label={vc.staffSingular}><Select value={formData.staff_id} onChange={e => setFormData({ ...formData, staff_id: e.target.value })}><option value="">Any Available {vc.staffSingular}</option>{staff.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</Select></FormGroup>
           <FormGroup label="Status"><Select value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}><option value="pending">Pending</option><option value="confirmed">Confirmed</option><option value="completed">✓ Completed</option><option value="no_show">💤 No-show</option><option value="cancelled">Cancelled</option></Select></FormGroup>
           {vc.treatmentNotes && (

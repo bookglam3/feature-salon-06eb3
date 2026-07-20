@@ -20,7 +20,7 @@ export interface Appointment {
   date_time: string;
   status: 'confirmed' | 'pending' | 'cancelled' | 'completed' | 'no_show';
   created_at: string;
-  services?: { name: string; price: number } | null;
+  services?: { name: string; price: number; price_is_from?: boolean } | null;
   staff?: { name: string } | null;
   notes?: string | null;
 }
@@ -59,6 +59,7 @@ export interface Service {
   category_id?: string | null;
   sort_order?: number;
   gender_restriction?: GenderRestriction;
+  price_is_from?: boolean;
 }
 
 export interface Offer {

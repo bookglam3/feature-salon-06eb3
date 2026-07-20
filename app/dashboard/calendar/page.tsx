@@ -14,7 +14,7 @@ interface Appointment {
   client_phone: string;
   date_time: string;
   status: "confirmed" | "pending" | "cancelled";
-  services?: { name: string; price: number } | null;
+  services?: { name: string; price: number; price_is_from?: boolean } | null;
   staff?: { name: string } | null;
 }
 
@@ -193,7 +193,7 @@ function DayView({ currentDate, getApptsByDay, setSelectedAppt }: DayViewProps) 
                         <div style={{ fontSize: 12, color: "#aab1c4", marginTop: 2 }}>{a.services?.name || "No service"}{a.staff ? ` · ${a.staff.name}` : ""}</div>
                       </div>
                       <div style={{ textAlign: "right" }}>
-                        {a.services?.price && <div style={{ fontSize: 14, fontWeight: 800, color: "#10B981" }}>£{a.services.price}</div>}
+                        {a.services?.price && <div style={{ fontSize: 14, fontWeight: 800, color: "#10B981" }}>{a.services.price_is_from ? "from " : ""}£{a.services.price}</div>}
                         <div style={{ fontSize: 11, color: "#aab1c4", textTransform: "capitalize" }}>{a.status}</div>
                       </div>
                     </div>
@@ -238,7 +238,7 @@ function ApptModal({ selectedAppt, setSelectedAppt, onViewAll }: ApptModalProps)
             { icon: "💇", label: "Service",          value: selectedAppt.services?.name || "—" },
             { icon: "✂️", label: vc.staffSingular,   value: selectedAppt.staff?.name || "—" },
             { icon: "📅", label: "Date",             value: new Date(selectedAppt.date_time).toLocaleString("en-GB", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }) },
-            { icon: "💰", label: "Amount",           value: selectedAppt.services?.price ? `£${selectedAppt.services.price}` : "—" },
+            { icon: "💰", label: "Amount",           value: selectedAppt.services?.price ? `${selectedAppt.services.price_is_from ? "from " : ""}£${selectedAppt.services.price}` : "—" },
           ].map(row => (
             <div key={row.label} style={{ display: "flex", gap: 12, alignItems: "center" }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: "#141A2E", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }}>{row.icon}</div>
@@ -280,7 +280,7 @@ function CalendarContent() {
       setSalonName(profile.salon.name);
       const { data } = await supabase
         .from("appointments")
-        .select("*, services(name,price), staff(name)")
+        .select("*, services(name,price,price_is_from), staff(name)")
         .eq("salon_id", profile.salon.id)
         .order("date_time", { ascending: true });
       setAppts(data || []);

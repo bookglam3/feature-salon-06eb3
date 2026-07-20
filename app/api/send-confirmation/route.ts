@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       .from("appointments")
       .select(`
         *,
-        services(name, price),
+        services(name, price, price_is_from),
         staff(name),
         salons(id, name, slug, address, owner_email, owner_id, reminders_enabled, whatsapp_enabled, business_type)
       `)
@@ -60,7 +60,6 @@ export async function POST(req: NextRequest) {
       ownerEmail = authUser?.user?.email || "";
     }
 
-    // Final fallback — don't block client email if owner email unknown
     const clientEmail = appt.client_email;
     if (!clientEmail) {
       return NextResponse.json({ error: "No client email on appointment" }, { status: 400 });
@@ -78,7 +77,7 @@ export async function POST(req: NextRequest) {
       dateTime:        appt.date_time,
       staffName:       appt.staff?.name,
       salonName:       salon?.name || "The Salon",
-      salonOwnerEmail: ownerEmail || clientEmail, // fallback: send owner copy to client
+      salonOwnerEmail: ownerEmail,
       price:           appt.services?.price,
       salonAddress:    salon?.address,
       cancelLink:      `${appUrl}/reschedule/${appointmentId}?token=${appt.review_token}`,
@@ -86,6 +85,9 @@ export async function POST(req: NextRequest) {
       paymentStatus:   appt.payment_status,
       depositOnly:     appt.payment_status === "deposit_paid",
       businessType:    salon?.business_type,
+      salonId:         salon?.id,
+      appointmentId,
+      priceIsFrom:     !!appt.services?.price_is_from,
     });
 
     // ── WhatsApp Confirmation ────────────────────────────────

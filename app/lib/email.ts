@@ -158,12 +158,16 @@ export async function sendBookingEmails({
   clientEmail, clientName, clientPhone, serviceName,
   dateTime, staffName, salonName, salonOwnerEmail, price,
   salonAddress, cancelLink, dashboardUrl, paymentStatus, depositOnly, businessType,
+  salonId, appointmentId, priceIsFrom,
 }: {
   clientEmail: string; clientName: string; clientPhone: string;
   serviceName: string; dateTime: string; staffName?: string;
   salonName: string; salonOwnerEmail: string; price?: number;
   salonAddress?: string; cancelLink?: string; dashboardUrl?: string;
   paymentStatus?: string; depositOnly?: boolean; businessType?: string;
+  // Only used for the error log below if salonOwnerEmail can't be resolved.
+  salonId?: string; appointmentId?: string;
+  priceIsFrom?: boolean;
 }) {
   const { formattedDate, formattedTime } = formatDate(dateTime);
   const terms = getEmailTerms(businessType);
@@ -177,9 +181,13 @@ export async function sendBookingEmails({
   })();
 
   const amountPaid = depositOnly && price ? (price * 0.5).toFixed(2) : price?.toFixed(2);
-  // amountDue is used inside template literal strings below
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const amountDue  = depositOnly && price ? (price * 0.5).toFixed(2) : undefined;
+  // "from" only belongs on a figure that hasn't been definitively charged yet —
+  // a completed online payment (full or deposit) is a concrete fact, not an
+  // estimate. Only the un-charged pay-at-salon amount, or the still-uncollected
+  // deposit remainder, are genuinely "from" figures.
+  const amountPaidPrefix = priceIsFrom && paymentStatus !== "paid" && !depositOnly ? "from " : "";
+  const amountDuePrefix  = priceIsFrom ? "from " : "";
 
   // ── CLIENT EMAIL ──────────────────────────────────────────
   const clientHtml = `
@@ -209,7 +217,7 @@ export async function sendBookingEmails({
             ${staffName ? `<tr><td style="color:#999;padding:7px 0;">${terms.staffEmoji} ${terms.staffLabel}</td><td style="font-weight:600;color:#0F172A;">${staffName}</td></tr>` : ""}
             <tr><td style="color:#999;padding:7px 0;">📅 Date</td><td style="font-weight:600;color:#0F172A;">${formattedDate}</td></tr>
             <tr><td style="color:#999;padding:7px 0;">🕐 Time</td><td style="font-weight:700;color:#C2185B;font-size:16px;">${formattedTime}</td></tr>
-            ${price ? `<tr><td style="color:#999;padding:7px 0;">💷 Price</td><td style="font-weight:700;color:#0F172A;">£${amountPaid}${depositOnly ? " <span style='color:#D97706;font-size:12px;'>(deposit — £${amountDue} due at salon)</span>" : ""}</td></tr>` : ""}
+            ${price ? `<tr><td style="color:#999;padding:7px 0;">💷 Price</td><td style="font-weight:700;color:#0F172A;">${amountPaidPrefix}£${amountPaid}${depositOnly ? ` <span style='color:#D97706;font-size:12px;'>(deposit — ${amountDuePrefix}£${amountDue} due at salon)</span>` : ""}</td></tr>` : ""}
           </table>
         </div>
 
@@ -291,7 +299,7 @@ export async function sendBookingEmails({
             ${staffName ? `<tr><td style="color:#999;padding:7px 0;">${terms.staffEmoji} ${terms.staffLabel}</td><td style="font-weight:600;color:#0F172A;">${staffName}</td></tr>` : ""}
             <tr><td style="color:#999;padding:7px 0;">📅 Date</td><td style="font-weight:600;color:#0F172A;">${formattedDate}</td></tr>
             <tr><td style="color:#999;padding:7px 0;">🕐 Time</td><td style="font-weight:700;color:#C2185B;font-size:16px;">${formattedTime}</td></tr>
-            ${price ? `<tr><td style="color:#999;padding:7px 0;">💷 Amount</td><td style="font-weight:700;color:#059669;">£${amountPaid} ${depositOnly ? "<span style='color:#D97706;font-size:12px;'>(deposit — £${amountDue} due at salon)</span>" : "received"}</td></tr>` : ""}
+            ${price ? `<tr><td style="color:#999;padding:7px 0;">💷 Amount</td><td style="font-weight:700;color:#059669;">${amountPaidPrefix}£${amountPaid} ${depositOnly ? `<span style='color:#D97706;font-size:12px;'>(deposit — ${amountDuePrefix}£${amountDue} due at salon)</span>` : "received"}</td></tr>` : ""}
           </table>
         </div>
 
@@ -313,18 +321,31 @@ export async function sendBookingEmails({
   </body>
   </html>`;
 
-  await Promise.all([
+  const sends = [
     sendEmailSafe({
       from: FROM, to: clientEmail,
       subject: `Booking Confirmed! ${terms.headerIcon} — ${salonName}`,
       html: clientHtml,
     }),
-    sendEmailSafe({
+  ];
+
+  // Never send the owner's "New Booking!" copy to the client as a fallback —
+  // if we can't resolve a real owner address, skip that send and log it
+  // loudly instead. The client confirmation above still goes out regardless.
+  if (salonOwnerEmail) {
+    sends.push(sendEmailSafe({
       from: FROM, to: salonOwnerEmail,
       subject: `New Booking! ${clientName} — ${formattedDate} at ${formattedTime}`,
       html: ownerHtml,
-    }),
-  ]);
+    }));
+  } else {
+    console.error(
+      `[email] ❌ Owner email could not be resolved — "New Booking!" notification NOT sent. ` +
+      `salon_id=${salonId ?? "unknown"} appointment_id=${appointmentId ?? "unknown"}`
+    );
+  }
+
+  await Promise.all(sends);
 }
 
 // ═══════════════════════════════════════════════
