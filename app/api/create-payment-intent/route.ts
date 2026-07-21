@@ -26,14 +26,25 @@ export async function POST(req: NextRequest) {
     // Server-side price + salon lookup — never trust client-supplied amounts or routing
     const { data: apptData } = await supabaseAdmin
       .from("appointments")
-      .select("salon_id, services(price)")
+      .select("salon_id, services(price, price_is_from)")
       .eq("id", booking_id)
       .single();
 
-    const services = apptData?.services as { price?: number } | null;
+    const services = apptData?.services as { price?: number; price_is_from?: boolean } | null;
     const servicePrice = services?.price;
     if (!servicePrice || servicePrice <= 0) {
       return NextResponse.json({ error: "Could not determine service price" }, { status: 400 });
+    }
+
+    // A variable-priced ("from £X") service can't be charged in full online —
+    // the final amount is unknown and there's no balance-due flow, so the salon
+    // would be locked into charging the listed floor price. Client-side hiding
+    // of the option is not security; this is the real enforcement.
+    if (!deposit_only && services?.price_is_from) {
+      return NextResponse.json(
+        { error: "This service has a variable price and can't be paid in full online. Please choose a deposit or pay at the salon." },
+        { status: 400 },
+      );
     }
 
     const chargeAmount = deposit_only

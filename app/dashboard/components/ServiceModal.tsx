@@ -166,12 +166,17 @@ function ServiceModalForm({
         </div>
       </div>
 
-      <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginBottom: 16 }}>
+      <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginBottom: form.price_is_from ? 6 : 16 }}>
         <input type="checkbox" checked={form.price_is_from} onChange={e => setForm(f => ({ ...f, price_is_from: e.target.checked }))} />
         <span style={{ fontSize: 13, color: "rgba(255,255,255,0.7)" }}>
           Price varies — show as &quot;from £{form.price || "25"}&quot;
         </span>
       </label>
+      {form.price_is_from && (
+        <p style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", lineHeight: 1.5, marginBottom: 16, marginLeft: 24 }}>
+          Full online payment is unavailable for variable-priced services — clients booking this service can only pay a deposit or pay at the salon.
+        </p>
+      )}
 
       <div style={sectionLabelStyle}>Organisation</div>
       <FormGroup label="Category">

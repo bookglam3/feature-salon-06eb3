@@ -360,12 +360,24 @@ export default function BookingPage() {
     ? { ...DEFAULT_PM, ...salon.payment_methods }
     : DEFAULT_PM;
 
-  const paymentOptions = [
-    salonPm.full_online    && { id: "full_online",    label: "Pay Full Amount",           sub: "Pay 100% now — nothing due at the salon", pct: 100,                      color: "#667eea" },
+  // A variable-priced ("from £X") service can't be paid in full online — the
+  // final amount is unknown and there's no balance-due flow, so the salon would
+  // be locked into charging the listed floor price. Just omit the option.
+  const isFromService = !!selectedService?.price_is_from;
+
+  const paymentOptionsRaw = [
+    (salonPm.full_online && !isFromService) && { id: "full_online",    label: "Pay Full Amount",           sub: "Pay 100% now — nothing due at the salon", pct: 100,                      color: "#667eea" },
     salonPm.deposit_online && { id: "deposit_online",  label: "50% Deposit",               sub: "Pay half now, remainder at salon",         pct: 50,                       color: "#10B981" },
     salonPm.custom_deposit && { id: "custom_deposit",  label: `${salonPm.deposit_percent}% Deposit`, sub: `Pay ${salonPm.deposit_percent}% now, remainder at salon`, pct: salonPm.deposit_percent, color: "#F59E0B" },
     salonPm.pay_at_salon   && { id: "pay_at_salon",   label: "Pay at Salon",               sub: "No payment required now",                  pct: 0,                        color: "#94A3B8" },
   ].filter(Boolean) as { id: string; label: string; sub: string; pct: number; color: string }[];
+
+  // Fallback: if the salon's only enabled method was full online payment, hiding
+  // it for a "from" service would leave zero bookable options. Force Pay at
+  // Salon on instead of silently falling through to a broken $0/pending booking.
+  const paymentOptions = (isFromService && paymentOptionsRaw.length === 0)
+    ? [{ id: "pay_at_salon", label: "Pay at Salon", sub: "No payment required now", pct: 0, color: "#94A3B8" }]
+    : paymentOptionsRaw;
 
   // Auto-select first available option
   const selectedOption = paymentOptions.find(o => o.id === paymentMethod) || paymentOptions[0];
@@ -394,6 +406,14 @@ export default function BookingPage() {
 
     const pm = selectedOption?.id || "full_online";
 
+    // Single source of truth for "this booking needs no online payment right
+    // now" (pay-at-salon, or a genuinely £0 service) — computed once and used
+    // for BOTH the insert's status/payment_status AND the branch below that
+    // skips Stripe. These must never be decided separately: if they disagree,
+    // the client sees "confirmed" on screen and in the confirmation email
+    // while the row is silently stuck at status=pending/payment_status=pending.
+    const isImmediatelyConfirmed = isPayAtSalon || chargeAmount === 0;
+
     // Build insert — payment_method column only exists after migration
     // salon.payment_methods being set is the proxy for whether migration has run
     const hasMigration = !!salon?.payment_methods;
@@ -403,8 +423,8 @@ export default function BookingPage() {
         salon_id: salon.id, client_name: form.name, client_email: form.email,
         client_phone: form.phone, service_id: selectedService.id,
         staff_id: selectedStaff?.id || null, date_time: iso,
-        status: isPayAtSalon ? "confirmed" : "pending",
-        payment_status: isPayAtSalon ? "pay_at_salon" : "pending",
+        status: isImmediatelyConfirmed ? "confirmed" : "pending",
+        payment_status: isImmediatelyConfirmed ? "pay_at_salon" : "pending",
         ...(hasMigration ? { payment_method: pm } : {}),
       })
       .select().single();
@@ -418,7 +438,7 @@ export default function BookingPage() {
     setReviewToken((appt as Record<string,unknown>).review_token as string || "");
 
     // Pay at salon OR free service (£0) — skip Stripe, show confirmation directly
-    if (isPayAtSalon || chargeAmount === 0) {
+    if (isImmediatelyConfirmed) {
       // Fire confirmation email immediately (no Stripe webhook needed)
       fetch("/api/send-confirmation", {
         method: "POST",
