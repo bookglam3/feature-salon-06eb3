@@ -65,6 +65,11 @@ INSERT INTO salons (
 ) ON CONFLICT (id) DO NOTHING;
 
 -- ── 3. SERVICES ──────────────────────────────────────────────────
+-- NOTE: `category` (free-text) is deprecated in favour of category_id
+-- (see supabase-service-menu-migration-A.sql). Left as-is here since
+-- this is a demo-only seed with ON CONFLICT DO NOTHING against fixed
+-- UUIDs — but if this script is ever rewritten, insert category_id
+-- (pointing at a service_categories row) instead of category.
 INSERT INTO services (id, salon_id, name, price, duration_minutes, description, category, created_at) VALUES
 (
   'd4000001-0000-4000-8000-000000000001',

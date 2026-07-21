@@ -70,12 +70,19 @@ export async function POST(req: NextRequest) {
   if (!salon) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
 
   const body = await req.json();
-  const { name, price, duration_minutes, description, category, category_id, gender_restriction, price_is_from } = body;
+  const { name, price, duration_minutes, description, category_id, gender_restriction, price_type } = body;
 
   if (!name?.trim()) return NextResponse.json({ error: "Service name is required" }, { status: 400 });
   if (!price || parseFloat(price) <= 0) return NextResponse.json({ error: "Price must be greater than 0" }, { status: 400 });
   if (gender_restriction && !["all", "female", "male"].includes(gender_restriction)) {
     return NextResponse.json({ error: "Invalid gender_restriction" }, { status: 400 });
+  }
+  const resolvedPriceType = price_type || "fixed";
+  if (!["fixed", "from", "free"].includes(resolvedPriceType)) {
+    return NextResponse.json({ error: "Invalid price_type" }, { status: 400 });
+  }
+  if (resolvedPriceType === "free" && parseFloat(price) !== 0) {
+    return NextResponse.json({ error: "A free service must have a price of 0" }, { status: 400 });
   }
 
   const payload: Record<string, unknown> = {
@@ -85,10 +92,14 @@ export async function POST(req: NextRequest) {
     duration_minutes: parseInt(duration_minutes) || null,
   };
   if (description?.trim()) payload.description = description.trim();
-  payload.category = category?.trim() || null;
   payload.category_id = category_id || null;
   payload.gender_restriction = gender_restriction || "all";
-  payload.price_is_from = !!price_is_from;
+  payload.price_type = resolvedPriceType;
+  // BRIDGE: price_is_from is still a plain writable column until
+  // supabase-service-menu-migration-B.sql converts it to a GENERATED
+  // column derived from price_type. Remove this line the moment B
+  // lands — a generated column rejects any explicit write.
+  payload.price_is_from = resolvedPriceType === "from";
 
   const { data, error } = await adminSupabase.from("services").insert(payload).select().single();
   if (error) {
@@ -104,11 +115,18 @@ export async function PATCH(req: NextRequest) {
   if (!salon) return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
 
   const body = await req.json();
-  const { id, name, price, duration_minutes, description, category, category_id, gender_restriction, price_is_from } = body;
+  const { id, name, price, duration_minutes, description, category_id, gender_restriction, price_type } = body;
 
   if (!id) return NextResponse.json({ error: "Service ID required" }, { status: 400 });
   if (gender_restriction && !["all", "female", "male"].includes(gender_restriction)) {
     return NextResponse.json({ error: "Invalid gender_restriction" }, { status: 400 });
+  }
+  const resolvedPriceType = price_type || "fixed";
+  if (!["fixed", "from", "free"].includes(resolvedPriceType)) {
+    return NextResponse.json({ error: "Invalid price_type" }, { status: 400 });
+  }
+  if (resolvedPriceType === "free" && parseFloat(price) !== 0) {
+    return NextResponse.json({ error: "A free service must have a price of 0" }, { status: 400 });
   }
 
   const payload: Record<string, unknown> = {
@@ -118,10 +136,11 @@ export async function PATCH(req: NextRequest) {
   };
   if (description?.trim()) payload.description = description.trim();
   else payload.description = null;
-  payload.category = category?.trim() || null;
   payload.category_id = category_id || null;
   if (gender_restriction) payload.gender_restriction = gender_restriction;
-  payload.price_is_from = !!price_is_from;
+  payload.price_type = resolvedPriceType;
+  // BRIDGE: see POST handler above — remove once Migration B lands.
+  payload.price_is_from = resolvedPriceType === "from";
 
   const { error } = await adminSupabase
     .from("services")

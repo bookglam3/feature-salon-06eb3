@@ -96,8 +96,12 @@ export async function POST(req: NextRequest) {
   try {
     const defaults = getDefaultServices(category || "hair");
     if (defaults.length > 0) {
+      // category (legacy free-text) is deprecated in favour of category_id —
+      // stop writing it for new salons; category_id assignment is a dashboard
+      // action, not something the seed data should presume.
       await supabaseAdmin.from("services").insert(
-        defaults.map(svc => ({ salon_id: newSalon.id, ...svc })),
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        defaults.map(({ category, ...svc }) => ({ salon_id: newSalon.id, ...svc })),
       );
     }
   } catch { /* non-fatal — salon is still created */ }

@@ -113,7 +113,10 @@ function ServiceModalForm({
         description: form.description,
         category_id: form.category_id || null,
         gender_restriction: form.gender_restriction,
-        price_is_from: form.price_is_from,
+        // price_is_from is a generated column derived from price_type — the
+        // checkbox is still the UI for now (Step 2 replaces it with a proper
+        // Fixed/From/Free control), so translate it to the wire format here.
+        price_type: form.price_is_from ? "from" : "fixed",
       };
       const res = editingService
         ? await fetch("/api/services", {
